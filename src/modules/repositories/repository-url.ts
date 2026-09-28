@@ -20,8 +20,20 @@ export function validateRemoteRepositoryUrl(value: string): URL {
     throw new Error("Repository host is not supported.");
   }
 
-  url.username = "";
-  url.password = "";
+  if (url.username || url.password) {
+    throw new Error(
+      "Repository credentials must not be embedded in the repository URL."
+    );
+  }
+
+  if (url.search || url.hash) {
+    throw new Error(
+      "Repository URLs must not contain query parameters or fragments."
+    );
+  }
+
+  url.hostname = url.hostname.toLowerCase();
+  url.pathname = url.pathname.replace(/\/+$/, "");
 
   return url;
 }

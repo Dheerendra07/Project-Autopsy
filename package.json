@@ -8,8 +8,10 @@
     "dev": "tsx watch src/server.ts",
     "dev:worker": "tsx watch src/workers/analysis.worker.ts",
     "build": "tsc",
+    "test": "tsx --test tests/*.test.ts",
     "start": "node dist/server.js",
     "start:worker": "node dist/workers/analysis.worker.js",
+    "db:migrate": "tsx src/database/migrate.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

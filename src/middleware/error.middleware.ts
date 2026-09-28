@@ -3,6 +3,7 @@ import type {
   Request,
   Response
 } from "express";
+import { z } from "zod";
 
 export function errorMiddleware(
   error: unknown,
@@ -13,6 +14,18 @@ export function errorMiddleware(
   console.error(error);
 
   if (res.headersSent) {
+    return;
+  }
+
+  if (error instanceof z.ZodError) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Request validation failed.",
+        issues: error.issues
+      }
+    });
     return;
   }
 
