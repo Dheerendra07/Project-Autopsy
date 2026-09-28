@@ -79,7 +79,7 @@ export function parseNumstatLine(
   const deletionsField = match[2];
   const path = match[3];
 
-  if (!path) {
+  if (!additionsField || !deletionsField || !path) {
     return null;
   }
 
