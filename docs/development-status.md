@@ -25,6 +25,7 @@ Git history alone must never be used to claim observed runtime performance regre
 9. Refactor signals: commit-subject refactor candidates with explicit heuristic semantics.
 10. Commit change statistics: per-commit and per-file additions/deletions from Git numstat.
 11. File change coupling: deterministic file co-change counts from persisted commit evidence.
+12. Repeatedly modified files: deterministic historical file-change summaries derived from persisted Git evidence.
 
 ## Current work
 
@@ -34,7 +35,7 @@ Runtime hardening is also merged: API and worker graceful shutdown, public-respo
 
 The deterministic analyzer cache is merged on main. It reuses complexity analysis by Git blob SHA and analyzer version.
 
-The current branch `feat/full-incremental-analysis-v1` adds explicit full vs incremental analysis runs. Incremental runs are anchored to a previously completed target head and process only the new commit range for commit/dependency/architecture/complexity evidence. File-churn and coupling aggregates still rebuild from persisted/full Git evidence in v1 so their results remain idempotent and correct on retries.
+Full incremental repository analysis is merged on main. Incremental runs are anchored to a previously completed target head and process only the new commit range for commit/dependency/architecture/complexity evidence. File-churn and coupling aggregates still rebuild from persisted/full Git evidence in v1 so their results remain idempotent and correct on retries.
 
 ## Code complexity evidence
 
@@ -56,8 +57,8 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Next planned layers
 
-1. Full incremental repository analysis from a previous analyzed head to a new head.
-2. Repeatedly modified-file summaries and richer historical change statistics.
+1. Runtime telemetry ingestion for observed performance history.
+2. Database/schema evolution.
 3. Runtime telemetry ingestion for observed performance history.
 4. Database/schema evolution.
 5. Test evolution.
@@ -73,7 +74,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked main commit before the current cache branch: `3f68f6321278a7f956a9243c21ea58e2a38dadd5`. The runtime hardening and deployment verification changes are now part of main. Preserve all existing API routes, evidence models, migrations, and shutdown behavior when continuing.
+Locked main baseline for this feature: `8cb2f8a0cc0488bb39ae348f4a238225cc08c014`. The runtime hardening and deployment verification changes are now part of main. Preserve all existing API routes, evidence models, migrations, and shutdown behavior when continuing.
 
 ## Evidence semantics
 
@@ -82,6 +83,12 @@ Locked main commit before the current cache branch: `3f68f6321278a7f956a9243c21e
 - Bug-area signals are correlations, not proof of causality.
 - Architecture history is based on Git tree structure, not runtime architecture.
 - Code complexity is AST-derived from source snapshots; parse failures and size limits remain explicit.
+
+## Repeatedly modified files API
+
+GET /api/repositories/:repositoryId/repeatedly-modified-files?minTouches=3&limit=20
+
+This endpoint reports files touched by at least the requested number of persisted commits. It exposes line churn and the observed first/last change timestamps. Ordering is deterministic and this is a historical change-frequency signal, not a claim that a file is architecturally problematic.
 
 ## Change coupling API
 
