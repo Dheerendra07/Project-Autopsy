@@ -3,7 +3,7 @@ import { z } from "zod";
 const gitShaSchema = z
   .string()
   .trim()
-  .regex(/^[0-9a-fA-F]{7,64}$/, "revisionSha must be a Git commit SHA.");
+  .regex(/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/, "revisionSha must be a full Git commit SHA.");
 
 const boundedLabel = (name: string, max: number) =>
   z
