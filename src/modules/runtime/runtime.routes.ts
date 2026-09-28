@@ -37,39 +37,42 @@ const runtimeQueryFields = {
     .optional()
 };
 
+const runtimeFilterFields = {
+  from: runtimeQueryFields.from,
+  to: runtimeQueryFields.to,
+  revisionSha: runtimeQueryFields.revisionSha,
+  environment: runtimeQueryFields.environment,
+  operationName: runtimeQueryFields.operationName,
+  signalType: runtimeQueryFields.signalType
+};
+
+function validateDateRange(
+  value: {
+    from?: Date;
+    to?: Date;
+  },
+  ctx: z.RefinementCtx
+): void {
+  if (
+    value.from &&
+    value.to &&
+    value.from.getTime() >= value.to.getTime()
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["from"],
+      message: "from must be earlier than to."
+    });
+  }
+}
+
 const querySchema = z
   .object(runtimeQueryFields)
-  .superRefine((value, ctx) => {
-    if (
-      value.from &&
-      value.to &&
-      value.from.getTime() >= value.to.getTime()
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["from"],
-        message: "from must be earlier than to."
-      });
-    }
-  });
+  .superRefine(validateDateRange);
 
 const summaryQuerySchema = z
-  .object(runtimeQueryFields)
-  .superRefine((value, ctx) => {
-    if (
-      value.from &&
-      value.to &&
-      value.from.getTime() >= value.to.getTime()
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["from"],
-        message: "from must be earlier than to."
-      });
-    }
-  })
-  .omit({ page: true, limit: true })
-  .extend({
+  .object({
+    ...runtimeFilterFields,
     groupBy: z
       .enum([
         "revision",
@@ -80,7 +83,8 @@ const summaryQuerySchema = z
       ])
       .default("revision"),
     groupLimit: z.coerce.number().int().min(1).max(100).default(25)
-  });
+  })
+  .superRefine(validateDateRange);
 function getRepositoryId(
   params: Record<string, string | undefined>
 ): string {
