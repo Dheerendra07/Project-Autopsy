@@ -278,7 +278,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Complexity is AST-derived source evidence and may be absent when parsing limits apply."
           )
         )
-      ],
+      ].slice(0, input.sampleLimit),
       "Evolution sections describe history without claiming causality or future impact."
     )
   );
