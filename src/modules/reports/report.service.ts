@@ -178,7 +178,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Touch frequency is historical and is not an architectural or maintainability verdict."
           )
         )
-      ],
+      ].slice(0, input.sampleLimit),
       "These signals are observational and not causal conclusions."
     )
   );
@@ -229,7 +229,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
               " to " +
               (item.current_spec ?? "none") +
               ".",
-            [evidenceRef("dependency_change", item.package_name)],
+            [evidenceRef("dependency_change", item.sha + ":" + item.package_name, { commitSha: item.sha })],
             "Dependency history does not establish runtime compatibility or production impact."
           )
         ),
@@ -242,7 +242,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
               " under " +
               item.root_path +
               ".",
-            [evidenceRef("architecture_event", item.path, { path: item.path })],
+            [evidenceRef("architecture_event", item.sha + ":" + item.path, { commitSha: item.sha, path: item.path })],
             "Architecture events are inferred from Git tree structure, not runtime topology."
           )
         ),
@@ -274,7 +274,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
       "database-evolution",
       "Database and schema evolution",
       "parsed migration-file evidence",
-      input.migrationEvents.map((item, index) =>
+      input.migrationEvents.slice(0, input.sampleLimit).map((item, index) =>
         evidenceClaim(
           "migration-" + String(index + 1),
           item.path +
@@ -300,7 +300,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
     )
   );
 
-  const testClaims = input.testEvolution.events.map((item, index) =>
+  const testClaims = input.testEvolution.events.slice(0, input.sampleLimit).map((item, index) =>
     evidenceClaim(
       "test-" + String(index + 1),
       item.path +
@@ -360,7 +360,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             [evidenceRef("runtime_telemetry_summary", "repository:" + input.repository.id)],
             "Runtime telemetry describes observed samples and does not prove that code changes caused a regression."
           ),
-          ...input.runtimeSummary.groups.map((group, index) =>
+          ...input.runtimeSummary.groups.slice(0, input.sampleLimit).map((group, index) =>
             evidenceClaim(
               "runtime-group-" + String(index + 1),
               "Runtime group " +
