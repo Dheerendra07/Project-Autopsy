@@ -81,15 +81,34 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         architectureEvolution.events
       );
 
+      const complexityCache = {
+        get: (cacheKey: string) =>
+          getAnalysisCache(
+            repositoryId,
+            "code_complexity",
+            ANALYZER_VERSION,
+            cacheKey
+          ),
+        set: (cacheKey: string, value: unknown) =>
+          putAnalysisCache(
+            repositoryId,
+            "code_complexity",
+            ANALYZER_VERSION,
+            cacheKey,
+            value
+          )
+      };
+
       const complexityEvolution =
         await discoverCodeComplexityEvolution(
           repository.storage_path,
-          commits
+          commits,
+          complexityCache
         );
 
       await replaceCodeComplexityEvolution(
         repositoryId,
-        complexityEvolution
+        complexityEvolution.events
       );
 
       const couplingPairs = await rebuildFileChangeCoupling(
@@ -109,7 +128,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         dependencyChanges: dependencyEvolution.changes.length,
         architectureSnapshots: architectureEvolution.snapshots.length,
         architectureEvents: architectureEvolution.events.length,
-        complexityEvents: complexityEvolution.length,
+        complexityEvents: complexityEvolution.events.length,
+        complexityCacheHits: complexityEvolution.cacheHits,
+        complexityCacheMisses: complexityEvolution.cacheMisses,
         couplingPairs: couplingPairs
       };
     } catch (error) {
