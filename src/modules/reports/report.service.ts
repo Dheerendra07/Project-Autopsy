@@ -421,8 +421,24 @@ export function buildEvidenceReport(
   const unsigned = {
     reportVersion: REPORT_VERSION as const,
     analyzerVersion: input.analysis.analyzer_version || ANALYZER_VERSION,
-    repository: input.repository,
-    analysis: input.analysis,
+    repository: {
+      id: input.repository.id,
+      name: input.repository.name,
+      sourceType: input.repository.source_type,
+      sourceUrl: input.repository.source_url,
+      trackedBranch: input.repository.tracked_branch,
+      defaultBranch: input.repository.default_branch,
+      headSha: input.repository.head_sha
+    },
+    analysis: {
+      runId: input.analysis.id,
+      status: input.analysis.status,
+      mode: input.analysis.analysis_mode,
+      baseHeadSha: input.analysis.base_head_sha,
+      targetHeadSha: input.analysis.target_head_sha,
+      startedAt: input.analysis.started_at,
+      completedAt: input.analysis.completed_at
+    },
     coverage: {
       persistedCommits: input.persistedCommitCount,
       reportSampleLimit: input.sampleLimit,
