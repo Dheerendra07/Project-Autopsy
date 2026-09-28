@@ -16,8 +16,8 @@ export interface DiscoveredCommit {
   }>;
 }
 
-const RECORD_SEPARATOR = "";
-const FIELD_SEPARATOR = "";
+const RECORD_SEPARATOR = "\x1e";
+const FIELD_SEPARATOR = "\x1f";
 
 export async function discoverCommits(
   repositoryPath: string
@@ -28,6 +28,7 @@ export async function discoverCommits(
     "log",
     "--all",
     "--full-history",
+    "--reverse",
     "--date=iso-strict",
     "--format=%x1e%H%x1f%P%x1f%an%x1f%ae%x1f%aI%x1f%cn%x1f%ce%x1f%cI%x1f%s",
     "--name-status",
@@ -36,14 +37,14 @@ export async function discoverCommits(
 
   const records = output
     .split(RECORD_SEPARATOR)
-    .map((record) => record.trim())
+    .map((record) => record.replace(/^\r?\n/, "").replace(/\r?\n$/, ""))
     .filter(Boolean);
 
   return records.map(parseCommitRecord);
 }
 
 export function parseCommitRecord(record: string): DiscoveredCommit {
-  const lines = record.split(/?\n/);
+  const lines = record.split(/\r?\n/);
   const header = lines.shift() ?? "";
   const fields = header.split(FIELD_SEPARATOR);
 
@@ -63,8 +64,12 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
     subject
   ] = fields;
 
-  if (!sha || !subject) {
-    throw new Error("Git commit record is missing required fields.");
+  if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
+    throw new Error("Git commit record is missing a valid SHA.");
+  }
+
+  if (!authoredAt || !committedAt) {
+    throw new Error("Git commit record is missing required timestamps.");
   }
 
   const files = lines
@@ -82,18 +87,21 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
         path: line.slice(separatorIndex + 1)
       };
     })
-    .filter((file): file is { status: string; path: string } => file !== null);
+    .filter(
+      (file): file is { status: string; path: string } =>
+        file !== null && file.path.length > 0
+    );
 
   return {
     sha,
     parentShas: parentField ? parentField.split(" ") : [],
     authorName: authorName ?? "",
     authorEmail: authorEmail ?? "",
-    authoredAt: authoredAt ?? "",
+    authoredAt,
     committerName: committerName ?? "",
     committerEmail: committerEmail ?? "",
-    committedAt: committedAt ?? "",
-    subject,
+    committedAt,
+    subject: subject ?? "",
     files
   };
 }
