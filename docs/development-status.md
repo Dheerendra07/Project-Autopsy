@@ -28,9 +28,11 @@ Git history alone must never be used to claim observed runtime performance regre
 
 ## Current work
 
-Code complexity evolution is implemented on branch `feat/code-complexity-v1`. It adds AST-derived file-change evidence for TypeScript/JavaScript-family source files and keeps parse failures or oversized files explicitly marked instead of inventing metrics.
+Code complexity evolution is merged on main and runs as analyzer version `0.2.1`. It adds AST-derived file-change evidence for TypeScript/JavaScript-family source files and keeps parse failures or oversized files explicitly marked instead of inventing metrics.
 
-The runtime analyzer dependency is installed as a production dependency because complexity analysis executes inside the background worker.
+Runtime hardening is also merged: API and worker graceful shutdown, public-response redaction of internal paths/errors, TCP port validation, and a deployment-path CI gate using PostgreSQL and Redis service containers.
+
+The current branch `feat/analysis-cache-v1` adds deterministic analyzer caching by Git blob SHA and analyzer version. This is computation caching, not yet full repository re-analysis from only new commits. Existing derived evidence tables still rebuild from the complete history until the later full incremental-run layer.
 
 ## Code complexity evidence
 
@@ -52,7 +54,7 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Next planned layers
 
-1. Incremental analysis keyed by commit SHA and analyzer version.
+1. Full incremental repository analysis from a previous analyzed head to a new head.
 2. Repeatedly modified-file summaries and richer historical change statistics.
 3. Runtime telemetry ingestion for observed performance history.
 4. Database/schema evolution.
@@ -61,7 +63,7 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Verification rule
 
-Every feature branch must pass GitHub Actions `typecheck`, `build`, and `test` before squash-merging to `main`. Do not merge based on code inspection alone.
+Every feature branch must pass GitHub Actions `typecheck`, `build`, `test`, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before squash-merging to `main`. Do not merge based on code inspection alone.
 
 ## Local environment note
 
@@ -69,7 +71,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-The code-complexity branch starts from locked main commit `35cf14bce5d574071df5973450f1d4dc1452ee6e`. Preserve all existing API routes, evidence models, and migration history when continuing.
+Locked main commit before the current cache branch: `3f68f6321278a7f956a9243c21ea58e2a38dadd5`. The runtime hardening and deployment verification changes are now part of main. Preserve all existing API routes, evidence models, migrations, and shutdown behavior when continuing.
 
 ## Evidence semantics
 
@@ -84,3 +86,19 @@ The code-complexity branch starts from locked main commit `35cf14bce5d574071df59
 GET /api/repositories/:repositoryId/coupling?minCoChanges=2&limit=50
 
 A pair count means the two paths were both changed in the same persisted commit. It is a co-change signal, not proof of architectural dependency.
+
+
+## Analysis cache v1
+
+Migration: `007_analysis_cache.sql`.
+
+Cache entries are keyed by:
+- repository ID
+- analyzer name
+- analyzer version
+- Git blob SHA plus source extension
+
+The cache stores deterministic analysis results only. It does not store repository source code. Cache reads and writes are best-effort optimization paths; a cache failure must not change the analysis result.
+
+The current code-complexity worker exposes cache hit/miss counts in the BullMQ job result. First-pass source parsing remains unchanged; repeated analysis of identical blobs can reuse the cached AST metrics.
+
