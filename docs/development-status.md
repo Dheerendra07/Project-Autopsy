@@ -128,3 +128,13 @@ Planning rules:
 Only one queued/running analysis is permitted per repository at the database level.
 
 For v1, commit history and historical dependency/architecture/complexity evidence can be appended from a new commit range. File churn and co-change coupling continue to rebuild from complete evidence so repeated execution remains idempotent.
+
+Repository import is asynchronous in the current branch: the HTTP layer persists a pending repository and queues an import job; the worker clones the repository, records its target head, and then queues the initial analysis job.
+
+## Async import v1
+
+POST /api/repositories/import now returns `202 Accepted` after validating and persisting a pending repository. The clone is performed by the background worker instead of the HTTP request.
+
+The import job uses the same BullMQ queue as analysis with an explicit `kind` discriminator. Existing analysis jobs without a kind continue to be treated as analysis jobs for backward compatibility.
+
+Import failure marks the analysis run as failed and the clone service removes partial repository storage. Successful import updates tracked branch, default branch, repository head SHA, and analysis target SHA before enqueueing the analysis job.
