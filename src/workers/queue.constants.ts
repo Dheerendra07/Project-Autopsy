@@ -1,2 +1,2 @@
 export const ANALYSIS_QUEUE_NAME = "repository-analysis";
-export const ANALYZER_VERSION = "0.2.0";
+export const ANALYZER_VERSION = "0.2.1";
