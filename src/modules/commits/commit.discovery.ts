@@ -51,7 +51,7 @@ export async function discoverCommits(
     .map((commit) => applyNumstat(commit, numstat.get(commit.sha)));
 }
 
-export async function parseCommitRecord(record: string): Promise<DiscoveredCommit> {
+export function parseCommitRecord(record: string): DiscoveredCommit {
   const lines = record.split(/\r?\n/);
   const header = lines.shift() ?? "";
   const fields = header.split(FIELD_SEPARATOR);
