@@ -7,6 +7,10 @@ import type {
   RuntimeSampleComparison
 } from "./change-assessment.types.js";
 
+function roundMetric(value: number): number {
+  return Number(value.toFixed(6));
+}
+
 function compareMeasurement(
   baselineValue: number | null,
   targetValue: number | null
@@ -22,11 +26,11 @@ function compareMeasurement(
   const delta = targetValue - baselineValue;
 
   return {
-    delta,
+    delta: roundMetric(delta),
     relativePercent:
       baselineValue === 0
         ? null
-        : (delta / Math.abs(baselineValue)) * 100,
+        : roundMetric((delta / Math.abs(baselineValue)) * 100),
     direction:
       delta > 0
         ? "increased"
@@ -51,8 +55,8 @@ function compareErrorRate(
   const delta = targetValue - baselineValue;
 
   return {
-    delta,
-    percentagePoints: delta * 100,
+    delta: roundMetric(delta),
+    percentagePoints: roundMetric(delta * 100),
     direction:
       delta > 0
         ? "increased"
@@ -83,11 +87,11 @@ function buildSampleComparison(
     targetSampleCount: targetSamples,
     sampleCountDifference: difference,
     targetToBaselineRatio:
-      baselineSamples === 0 ? null : targetSamples / baselineSamples,
+      baselineSamples === 0 ? null : roundMetric(targetSamples / baselineSamples),
     absoluteImbalancePercent:
       largerSampleCount === 0
         ? null
-        : (Math.abs(difference) / largerSampleCount) * 100,
+        : roundMetric((Math.abs(difference) / largerSampleCount) * 100),
     baselineDurationCoveragePercent: toPercentage(
       baseline.aggregate.durationSampleCount,
       baselineSamples
