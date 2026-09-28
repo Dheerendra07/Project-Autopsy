@@ -25,7 +25,7 @@ Git history alone must never be used to claim observed runtime performance regre
 
 ## Current work
 
-Refactor signals are being added using commit-subject heuristics and `files_changed` as evidence. This must remain a signal, not proof that a particular commit was a refactor.
+Refactor signals are implemented on branch `feat/refactor-signals-checkpoint-v1` using commit-subject heuristics and `files_changed` as evidence. The feature must remain a signal, not proof that a particular commit was a refactor.
 
 ## Next planned layers
 
