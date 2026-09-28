@@ -9,7 +9,8 @@ import {
 import {
   createRepositoryWithAnalysis,
   getAnalysisRunById,
-  getRepositoryById
+  getRepositoryById,
+  updateAnalysisRun
 } from "./repository.persistence.js";
 import {
   enqueueRepositoryAnalysis
@@ -82,6 +83,20 @@ router.post("/import", async (req, res, next) => {
         }
       });
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to queue analysis.";
+
+      try {
+        await updateAnalysisRun(analysis.analysisRunId, "failed", {
+          errorMessage: message
+        });
+      } catch (persistenceError) {
+        console.error(
+          `Failed to record queue failure for ${analysis.analysisRunId}:`,
+          persistenceError
+        );
+      }
+
       next(error);
     }
   } catch (error) {
@@ -91,7 +106,8 @@ router.post("/import", async (req, res, next) => {
 
 router.get("/:repositoryId", async (req, res, next) => {
   try {
-    const repository = await getRepositoryById(req.params.repositoryId);
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const repository = await getRepositoryById(repositoryId);
 
     if (!repository) {
       res.status(404).json({
@@ -115,11 +131,13 @@ router.get("/:repositoryId", async (req, res, next) => {
 
 router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
   try {
-    const analysis = await getAnalysisRunById(req.params.analysisRunId);
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const analysisRunId = z.string().uuid().parse(req.params.analysisRunId);
+    const analysis = await getAnalysisRunById(analysisRunId);
 
     if (
       !analysis ||
-      analysis.repository_id !== req.params.repositoryId
+      analysis.repository_id !== repositoryId
     ) {
       res.status(404).json({
         success: false,
