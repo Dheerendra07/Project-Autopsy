@@ -1,5 +1,12 @@
 import { simpleGit } from "simple-git";
 
+export interface DiscoveredCommitFile {
+  path: string;
+  status: string;
+  additions: number;
+  deletions: number;
+}
+
 export interface DiscoveredCommit {
   sha: string;
   parentShas: string[];
@@ -10,10 +17,9 @@ export interface DiscoveredCommit {
   committerEmail: string;
   committedAt: string;
   subject: string;
-  files: Array<{
-    path: string;
-    status: string;
-  }>;
+  additions: number;
+  deletions: number;
+  files: DiscoveredCommitFile[];
 }
 
 const RECORD_SEPARATOR = "\x1e";
@@ -35,15 +41,17 @@ export async function discoverCommits(
     "--no-renames"
   ]);
 
-  const records = output
+  const numstat = await discoverNumstat(git);
+
+  return output
     .split(RECORD_SEPARATOR)
     .map((record) => record.replace(/^\r?\n/, "").replace(/\r?\n$/, ""))
-    .filter(Boolean);
-
-  return records.map(parseCommitRecord);
+    .filter(Boolean)
+    .map(parseCommitRecord)
+    .map((commit) => applyNumstat(commit, numstat.get(commit.sha)));
 }
 
-export function parseCommitRecord(record: string): DiscoveredCommit {
+export async function parseCommitRecord(record: string): Promise<DiscoveredCommit> {
   const lines = record.split(/\r?\n/);
   const header = lines.shift() ?? "";
   const fields = header.split(FIELD_SEPARATOR);
@@ -84,11 +92,13 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
 
       return {
         status: line.slice(0, separatorIndex),
-        path: line.slice(separatorIndex + 1)
+        path: line.slice(separatorIndex + 1),
+        additions: 0,
+        deletions: 0
       };
     })
     .filter(
-      (file): file is { status: string; path: string } =>
+      (file): file is DiscoveredCommitFile =>
         file !== null && file.path.length > 0
     );
 
@@ -102,6 +112,110 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
     committerEmail: committerEmail ?? "",
     committedAt,
     subject: subject ?? "",
+    additions: 0,
+    deletions: 0,
+    files
+  };
+}
+
+async function discoverNumstat(
+  git: ReturnType<typeof simpleGit>
+): Promise<Map<string, Map<string, { additions: number; deletions: number }>>> {
+  const output = await git.raw([
+    "log",
+    "--all",
+    "--full-history",
+    "--reverse",
+    "--format=%x1e%H",
+    "--numstat",
+    "--no-renames"
+  ]);
+
+  const result = new Map<string, Map<string, { additions: number; deletions: number }>>();
+
+  for (const rawRecord of output.split(RECORD_SEPARATOR)) {
+    const record = rawRecord.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
+    if (!record) continue;
+
+    const lines = record.split(/\r?\n/);
+    const sha = lines.shift()?.trim();
+
+    if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
+      continue;
+    }
+
+    const files = new Map<string, { additions: number; deletions: number }>();
+
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/\r$/, "");
+      const fields = line.split("\t");
+
+      if (fields.length !== 3) {
+        continue;
+      }
+
+      const [additionsField, deletionsField, path] = fields;
+
+      if (!additionsField || !deletionsField || !path) {
+        continue;
+      }
+
+      if (additionsField === "-" && deletionsField === "-") {
+        files.set(path, { additions: 0, deletions: 0 });
+        continue;
+      }
+
+      const additions = Number.parseInt(additionsField, 10);
+      const deletions = Number.parseInt(deletionsField, 10);
+
+      if (
+        Number.isSafeInteger(additions) &&
+        Number.isSafeInteger(deletions) &&
+        additions >= 0 &&
+        deletions >= 0
+      ) {
+        files.set(path, { additions, deletions });
+      }
+    }
+
+    result.set(sha, files);
+  }
+
+  return result;
+}
+
+function applyNumstat(
+  commit: DiscoveredCommit,
+  stats: Map<string, { additions: number; deletions: number }> | undefined
+): DiscoveredCommit {
+  if (!stats) {
+    return commit;
+  }
+
+  let additions = 0;
+  let deletions = 0;
+
+  const files = commit.files.map((file) => {
+    const fileStats = stats.get(file.path);
+
+    if (!fileStats) {
+      return file;
+    }
+
+    additions += fileStats.additions;
+    deletions += fileStats.deletions;
+
+    return {
+      ...file,
+      additions: fileStats.additions,
+      deletions: fileStats.deletions
+    };
+  });
+
+  return {
+    ...commit,
+    additions,
+    deletions,
     files
   };
 }
