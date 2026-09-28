@@ -32,6 +32,17 @@ export interface CodeComplexityEvent {
   after: CodeComplexityMetrics | null;
 }
 
+export interface CodeComplexityCache {
+  get(cacheKey: string): Promise<unknown | null>;
+  set(cacheKey: string, value: CodeComplexityAnalysis): Promise<void>;
+}
+
+export interface CodeComplexityEvolutionResult {
+  events: CodeComplexityEvent[];
+  cacheHits: number;
+  cacheMisses: number;
+}
+
 const MAX_SOURCE_BYTES = 2_000_000;
 
 const SUPPORTED_EXTENSIONS = new Set([
@@ -234,15 +245,128 @@ export function analyzeSourceCode(
   };
 }
 
+function isCodeComplexityAnalysis(
+  value: unknown
+): value is CodeComplexityAnalysis {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as {
+    status?: unknown;
+    metrics?: unknown;
+    parseErrorCount?: unknown;
+  };
+
+  if (
+    candidate.status !== "supported" &&
+    candidate.status !== "parse_error" &&
+    candidate.status !== "skipped_too_large"
+  ) {
+    return false;
+  }
+
+  if (
+    !Number.isInteger(candidate.parseErrorCount) ||
+    Number(candidate.parseErrorCount) < 0
+  ) {
+    return false;
+  }
+
+  if (candidate.metrics === null) {
+    return true;
+  }
+
+  if (!candidate.metrics || typeof candidate.metrics !== "object") {
+    return false;
+  }
+
+  const metrics = candidate.metrics as Record<string, unknown>;
+
+  return [
+    "sourceLines",
+    "functionCount",
+    "classCount",
+    "cyclomaticComplexity",
+    "maxNestingDepth"
+  ].every(
+    (key) =>
+      Number.isSafeInteger(metrics[key]) &&
+      Number(metrics[key]) >= 0
+  );
+}
+
+export function parseBlobTree(
+  output: string
+): Map<string, string> {
+  const blobShas = new Map<string, string>();
+
+  for (const record of output.split("\0")) {
+    if (!record) {
+      continue;
+    }
+
+    const separatorIndex = record.indexOf("\t");
+
+    if (separatorIndex <= 0) {
+      continue;
+    }
+
+    const metadata = record.slice(0, separatorIndex).split(" ");
+    const filePath = record.slice(separatorIndex + 1);
+    const objectType = metadata[1];
+    const objectSha = metadata[2];
+
+    if (
+      objectType === "blob" &&
+      objectSha &&
+      /^[0-9a-f]{7,64}$/i.test(objectSha) &&
+      filePath
+    ) {
+      blobShas.set(filePath, objectSha);
+    }
+  }
+
+  return blobShas;
+}
+
+async function readBlobShas(
+  git: ReturnType<typeof simpleGit>,
+  sha: string
+): Promise<Map<string, string>> {
+  const output = await git.raw([
+    "ls-tree",
+    "-r",
+    "-z",
+    "--full-name",
+    sha
+  ]);
+
+  return parseBlobTree(output);
+}
+
 export async function discoverCodeComplexityEvolution(
   repositoryPath: string,
-  commits: DiscoveredCommit[]
-): Promise<CodeComplexityEvent[]> {
+  commits: DiscoveredCommit[],
+  cache?: CodeComplexityCache
+): Promise<CodeComplexityEvolutionResult> {
   const git = simpleGit(repositoryPath);
   const previousByPath = new Map<string, CodeComplexityMetrics>();
   const events: CodeComplexityEvent[] = [];
+  let cacheHits = 0;
+  let cacheMisses = 0;
 
   for (const commit of commits) {
+    let blobShas = new Map<string, string>();
+
+    if (cache) {
+      try {
+        blobShas = await readBlobShas(git, commit.sha);
+      } catch {
+        blobShas = new Map();
+      }
+    }
+
     for (const file of commit.files) {
       if (!isSupportedSourcePath(file.path)) {
         continue;
@@ -271,21 +395,50 @@ export async function discoverCodeComplexityEvolution(
         continue;
       }
 
-      let source: string;
+      let analysis: CodeComplexityAnalysis | null = null;
+      const blobSha = blobShas.get(file.path);
 
-      try {
-        source = await git.raw([
-          "show",
-          "--format=",
-          "--no-ext-diff",
-          "--no-textconv",
-          commit.sha + ":" + file.path
-        ]);
-      } catch {
-        continue;
+      if (cache && blobSha) {
+        const cacheKey = `${blobSha}:${extname(file.path).toLowerCase()}`;
+        const cachedValue = await cache.get(cacheKey);
+
+        if (isCodeComplexityAnalysis(cachedValue)) {
+          analysis = cachedValue;
+          cacheHits += 1;
+        } else {
+          cacheMisses += 1;
+        }
+      } else if (cache) {
+        cacheMisses += 1;
       }
 
-      const analysis = analyzeSourceCode(source, file.path);
+      if (!analysis) {
+        let source: string;
+
+        try {
+          source = await git.raw([
+            "show",
+            "--format=",
+            "--no-ext-diff",
+            "--no-textconv",
+            commit.sha + ":" + file.path
+          ]);
+        } catch {
+          continue;
+        }
+
+        analysis = analyzeSourceCode(source, file.path);
+
+        if (cache && blobSha) {
+          const cacheKey = `${blobSha}:${extname(file.path).toLowerCase()}`;
+          try {
+            await cache.set(cacheKey, analysis);
+          } catch {
+            // Cache is an optimization; analysis correctness does not depend
+            // on a cache write succeeding.
+          }
+        }
+      }
 
       if (analysis.status !== "supported" || !analysis.metrics) {
         events.push({
@@ -296,6 +449,8 @@ export async function discoverCodeComplexityEvolution(
           before: previous,
           after: null
         });
+
+        previousByPath.delete(file.path);
         continue;
       }
 
@@ -312,5 +467,9 @@ export async function discoverCodeComplexityEvolution(
     }
   }
 
-  return events;
+  return {
+    events,
+    cacheHits,
+    cacheMisses
+  };
 }
