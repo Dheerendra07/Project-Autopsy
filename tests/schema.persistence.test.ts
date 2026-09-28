@@ -138,6 +138,7 @@ test(
         "DELETE FROM repositories WHERE id = $1",
         [repositoryId]
       );
+      await db.end();
     }
   }
 );
