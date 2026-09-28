@@ -79,6 +79,7 @@ async function startServer(): Promise<void> {
 
     httpServer.on("error", (error) => {
       console.error("HTTP server error:", error);
+      void shutdown("HTTP server error");
     });
 
     registerShutdownHandlers();
