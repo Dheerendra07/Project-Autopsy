@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
+import { applyNumstat, parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
 import { parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
 import { isBugSignalSubject } from "../src/modules/metrics/bug-signals.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
@@ -27,6 +27,8 @@ test("parses commit metadata and changed files", () => {
   assert.equal(commit.files.length, 1);
   assert.equal(commit.files[0]?.status, "A");
   assert.equal(commit.files[0]?.path, " src/timeline.ts");
+  assert.equal(commit.additions, 0);
+  assert.equal(commit.deletions, 0);
 });
 
 test("accepts a commit with an empty subject", () => {
@@ -100,4 +102,34 @@ test("detects explicit bug-fix subjects", () => {
   assert.equal(isBugSignalSubject("regression in checkout flow"), true);
   assert.equal(isBugSignalSubject("refactor: simplify service"), false);
   assert.equal(isBugSignalSubject("prefix parser cleanup"), false);
+});
+
+test("derives commit-level additions and deletions from numstat", () => {
+  const commit = parseCommitRecord(
+    [
+      [
+        "abc1234",
+        "",
+        "Dev",
+        "dev@example.com",
+        "2026-01-01T10:00:00Z",
+        "Dev",
+        "dev@example.com",
+        "2026-01-01T10:05:00Z",
+        "feat: update app"
+      ].join("\x1f"),
+      "M\tsrc/app.ts"
+    ].join("\n")
+  );
+
+  const stats = new Map([
+    ["src/app.ts", { additions: 12, deletions: 5 }]
+  ]);
+
+  const withStats = applyNumstat(commit, stats);
+
+  assert.equal(withStats.additions, 12);
+  assert.equal(withStats.deletions, 5);
+  assert.equal(withStats.files[0]?.additions, 12);
+  assert.equal(withStats.files[0]?.deletions, 5);
 });
