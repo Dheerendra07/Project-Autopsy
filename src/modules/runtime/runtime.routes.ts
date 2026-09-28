@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getRepositoryById } from "../repositories/repository.persistence.js";
 import { isRuntimeTelemetryAuthorized } from "./runtime.auth.js";
+import { generateRuntimeCorrelationEvidence } from "./correlation.service.js";
 import {
   insertRuntimeTelemetryBatch,
   listRuntimeTelemetryEvents,
@@ -251,6 +252,40 @@ runtimeRouter.get("/telemetry", async (req, res, next) => {
         httpStatusCode: event.http_status_code,
         errorType: event.error_type
       }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+runtimeRouter.get("/correlation", async (req, res, next) => {
+  try {
+    const repositoryId = getRepositoryId(req.params as Record<string, string | undefined>);
+    const query = z.object({
+      revisionSha: z.string().trim().regex(/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/),
+      windowMinutes: z.coerce.number().int().min(5).max(1_440).default(60),
+      minSamples: z.coerce.number().int().min(1).max(10_000).default(10),
+      environment: runtimeQueryFields.environment,
+      operationName: runtimeQueryFields.operationName,
+      signalType: runtimeQueryFields.signalType
+    }).parse(req.query);
+
+    const result = await generateRuntimeCorrelationEvidence(
+      repositoryId,
+      query.revisionSha,
+      query.windowMinutes,
+      query.minSamples,
+      {
+        ...(query.environment ? { environment: query.environment } : {}),
+        ...(query.operationName ? { operationName: query.operationName } : {}),
+        ...(query.signalType ? { signalType: query.signalType } : {})
+      }
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      result
     });
   } catch (error) {
     next(error);
