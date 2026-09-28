@@ -57,6 +57,73 @@ test("hash is deterministic across object-key ordering", () => {
   );
 });
 
+test("enforces OpenTelemetry trace and span identifier lengths", () => {
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          traceId: "a".repeat(31)
+        })
+      ]
+    })
+  );
+
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          traceId: "a".repeat(33)
+        })
+      ]
+    })
+  );
+
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          spanId: "a".repeat(15)
+        })
+      ]
+    })
+  );
+
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          spanId: "a".repeat(17)
+        })
+      ]
+    })
+  );
+});
+
+test("rejects a telemetry batch above the 500-event limit", () => {
+  const events = Array.from({ length: 501 }, (_, index) =>
+    validEvent({
+      eventId: `evt-${index + 1}`
+    })
+  );
+
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events
+    })
+  );
+});
+
+test("runtime router module loads without refined-schema runtime errors", {
+  skip: !process.env.DATABASE_URL
+}, async () => {
+  const { runtimeRouter } = await import(
+    "../src/modules/runtime/runtime.routes.js"
+  );
+
+  assert.ok(runtimeRouter);
+  assert.ok(runtimeRouter.stack.length > 0);
+});
+
 test("preparation normalizes timestamps and computes hashes", () => {
   const [event] = prepareRuntimeTelemetryBatch(
     { events: [validEvent()] },
