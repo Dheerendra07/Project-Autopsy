@@ -6,8 +6,10 @@ import {
 } from "./queue.constants.js";
 import {
   getAnalysisRunById,
+  getLatestCompletedAnalysisRun,
   getRepositoryById,
   persistCommitBatch,
+  setAnalysisRunPlan,
   setAnalysisRunTargetHead,
   updateRepositoryImportMetadata,
   replaceFileChangeMetrics,
@@ -39,11 +41,14 @@ import {
 import {
   checkoutRepositoryAtCommit,
   cloneRepository,
+  isCommitAncestor,
+  refreshRepository,
   removeRepositoryStorage
 } from "../modules/repositories/repository.service.js";
 import {
   enqueueRepositoryAnalysis
 } from "../modules/analysis/analysis.queue.js";
+import { planAnalysisRun } from "../modules/analysis/analysis-planner.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
@@ -116,6 +121,94 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         throw new Error(
           `Analysis run not found: ${analysisRunId}`
         );
+      }
+
+      if (job.data.kind === "refresh") {
+        if (
+          !repository.source_url ||
+          !repository.tracked_branch
+        ) {
+          throw new Error(
+            `Repository refresh metadata is incomplete: ${repositoryId}`
+          );
+        }
+
+        const metadata = await refreshRepository(
+          repository.id,
+          repository.source_url,
+          repository.tracked_branch
+        );
+
+        await updateRepositoryImportMetadata(
+          repository.id,
+          metadata,
+          repository.tracked_branch
+        );
+
+        const latestCompleted =
+          await getLatestCompletedAnalysisRun(repositoryId);
+
+        const latestAnalyzedHead =
+          latestCompleted?.target_head_sha ?? null;
+
+        const isAncestor =
+          latestAnalyzedHead !== null &&
+          await isCommitAncestor(
+            repository.storage_path,
+            latestAnalyzedHead,
+            metadata.headSha
+          );
+
+        const plan = planAnalysisRun(
+          metadata.headSha,
+          latestAnalyzedHead,
+          isAncestor
+        );
+
+        if (plan.kind === "up_to_date") {
+          await setAnalysisRunPlan(analysisRunId, {
+            analysisMode: "check",
+            baseHeadSha: null,
+            targetHeadSha: plan.targetHeadSha
+          });
+          await updateAnalysisRun(analysisRunId, "completed");
+
+          return {
+            status: "up_to_date",
+            repositoryId,
+            analysisRunId,
+            targetHeadSha: plan.targetHeadSha,
+            analysisMode: "check"
+          };
+        }
+
+        if (!plan.analysisMode) {
+          throw new Error(
+            `Analysis planner returned an invalid mode: ${analysisRunId}`
+          );
+        }
+
+        await setAnalysisRunPlan(analysisRunId, {
+          analysisMode: plan.analysisMode,
+          baseHeadSha: plan.baseHeadSha ?? null,
+          targetHeadSha: plan.targetHeadSha
+        });
+
+        const analysisJobId =
+          await enqueueRepositoryAnalysis(
+            repositoryId,
+            analysisRunId
+          );
+
+        return {
+          status: "refresh-complete",
+          repositoryId,
+          analysisRunId,
+          analysisMode: plan.analysisMode,
+          baseHeadSha: plan.baseHeadSha ?? null,
+          targetHeadSha: plan.targetHeadSha,
+          analysisJobId
+        };
       }
 
       if (!analysis.target_head_sha) {
@@ -285,6 +378,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown analysis error";
+
+      const maxAttempts = job.opts.attempts ?? 1;
+      const willRetry = job.attemptsMade + 1 < maxAttempts;
+
+      if (willRetry) {
+        console.error(
+          `Analysis job ${job.id ?? "unknown"} failed; retrying:`,
+          error
+        );
+        throw error;
+      }
 
       try {
         await updateAnalysisRun(analysisRunId, "failed", {
