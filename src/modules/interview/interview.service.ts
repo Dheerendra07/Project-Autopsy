@@ -1,4 +1,5 @@
 import { generateEvidenceReport } from "../reports/report.service.js";
+import type { EvidenceReport } from "../reports/report.types.js";
 import type { EvidenceClaim, EvidenceRef, EvidenceReportSection } from "../reports/report.types.js";
 import type {
   InterviewStoriesResponse,
@@ -126,15 +127,16 @@ function buildStory(
   };
 }
 
-export async function generateInterviewStories(
+export function buildInterviewStoriesFromReport(
+  report: EvidenceReport,
   repositoryId: string,
   limit = 6
-): Promise<InterviewStoriesResponse> {
-  const report = await generateEvidenceReport(repositoryId, Math.max(3, limit));
+): InterviewStoriesResponse {
+  const safeLimit = Math.max(1, Math.min(6, limit));
   const selected: InterviewStory[] = [];
 
   for (const definition of STORY_DEFINITIONS) {
-    if (selected.length >= limit) {
+    if (selected.length >= safeLimit) {
       break;
     }
 
@@ -159,4 +161,12 @@ export async function generateInterviewStories(
       "Missing evidence is represented as a verification task rather than being filled with invented detail."
     ]
   };
+}
+
+export async function generateInterviewStories(
+  repositoryId: string,
+  limit = 6
+): Promise<InterviewStoriesResponse> {
+  const report = await generateEvidenceReport(repositoryId, Math.max(3, limit));
+  return buildInterviewStoriesFromReport(report, repositoryId, limit);
 }
