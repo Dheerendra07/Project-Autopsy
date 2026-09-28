@@ -108,3 +108,52 @@ test(
     }
   }
 );
+
+
+test(
+  "reports a missing parent when the referenced first parent is not persisted",
+  { skip: !DATABASE_AVAILABLE },
+  async () => {
+    const { db } = await import("../src/config/database.js");
+    const {
+      generateRuntimeCorrelationEvidence
+    } = await import("../src/modules/runtime/correlation.service.js");
+
+    const repositoryId = randomUUID();
+    const targetSha = "3".repeat(40);
+    const missingParentSha = "4".repeat(40);
+
+    try {
+      await db.query(
+        "INSERT INTO repositories (id, source_type, name) VALUES ($1, 'github', 'missing-parent-test')",
+        [repositoryId]
+      );
+
+      await db.query(
+        "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas) VALUES ($1, $2, $3, $4, $5)",
+        [
+          repositoryId,
+          targetSha,
+          "target with missing parent",
+          new Date("2026-09-29T03:00:00.000Z"),
+          JSON.stringify([missingParentSha])
+        ]
+      );
+
+      const evidence = await generateRuntimeCorrelationEvidence(
+        repositoryId,
+        targetSha,
+        5,
+        1
+      );
+
+      assert.equal(evidence.status, "missing_parent_revision");
+      assert.equal(evidence.parentRevisionSha, missingParentSha);
+      assert.equal(evidence.baseline, null);
+      assert.equal(evidence.target, null);
+    } finally {
+      await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+      await db.end();
+    }
+  }
+);
