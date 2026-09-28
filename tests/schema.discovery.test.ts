@@ -71,6 +71,40 @@ test("splits SQL without breaking semicolons in strings, comments, or dollar-quo
   assert.match(statements[2]?.text ?? "", /^INSERT INTO users/i);
 });
 
+test("classifies lowercase SQL statements case-insensitively", () => {
+  const statements = [
+    "create table users (id bigint primary key);",
+    "alter table users add column email text;",
+    "alter table users rename column email to email_address;",
+    "alter table users alter column email_address type varchar(320);",
+    "alter table users alter column email_address set not null;",
+    "alter table users add constraint users_email_key unique (email_address);",
+    "create unique index concurrently idx_users_email on users(email_address);",
+    "drop index concurrently idx_users_email;",
+    "insert into users(id) values (1);",
+    "update users set email_address = 'a@example.com';",
+    "delete from users where id = 1;"
+  ].join("\n");
+
+  const event = classifyDatabaseMigrationSource(
+    "db/migrations/001_users.sql",
+    statements,
+    "0123456789abcdef0123456789abcdef01234567",
+    "added"
+  );
+
+  assert.equal(event.analysisStatus, "supported_sql");
+  assert.equal(event.operationCount, 11);
+  assert.equal(event.schemaOperationCount, 8);
+  assert.equal(event.dataOperationCount, 3);
+  assert.equal(event.operations[0]?.operationType, "create_table");
+  assert.equal(event.operations[1]?.operationType, "alter_table_add_column");
+  assert.equal(event.operations[2]?.operationType, "alter_table_rename_column");
+  assert.equal(event.operations[8]?.operationType, "insert");
+  assert.equal(event.operations[9]?.operationType, "update");
+  assert.equal(event.operations[10]?.operationType, "delete");
+});
+
 test("classifies representative PostgreSQL schema and data operations", () => {
   const sql = [
     "CREATE TABLE users (id BIGINT PRIMARY KEY);",
