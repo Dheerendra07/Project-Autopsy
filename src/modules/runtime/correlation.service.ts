@@ -6,6 +6,7 @@ import {
   getRuntimeRevisionContext
 } from "./correlation.persistence.js";
 import type { RuntimeCorrelationEvidence } from "./correlation.types.js";
+import { buildRuntimeChangeAssessment } from "./change-assessment.service.js";
 import type { RuntimeTelemetryFilters } from "./runtime.types.js";
 
 export async function generateRuntimeCorrelationEvidence(
@@ -28,6 +29,7 @@ export async function generateRuntimeCorrelationEvidence(
       parentRevisionSha: null,
       targetCommitAt: null,
       changeContext: null,
+      assessment: null,
       windowMinutes,
       minimumSamples,
       filters,
@@ -53,6 +55,7 @@ export async function generateRuntimeCorrelationEvidence(
       parentRevisionSha: context.parentRevisionSha,
       targetCommitAt: null,
       changeContext: buildRuntimeChangeContext(context),
+      assessment: null,
       windowMinutes,
       minimumSamples,
       filters,
@@ -78,6 +81,7 @@ export async function generateRuntimeCorrelationEvidence(
       parentRevisionSha: context.parentRevisionSha,
       targetCommitAt: context.committedAt,
       changeContext: buildRuntimeChangeContext(context),
+      assessment: null,
       windowMinutes,
       minimumSamples,
       filters,
@@ -149,6 +153,10 @@ export async function generateRuntimeCorrelationEvidence(
     parentRevisionSha: context.parentRevisionSha,
     targetCommitAt: context.committedAt,
     changeContext: buildRuntimeChangeContext(context),
+    assessment:
+      status === "ready"
+        ? buildRuntimeChangeAssessment(baseline, target, filters)
+        : null,
     windowMinutes,
     minimumSamples,
     filters,

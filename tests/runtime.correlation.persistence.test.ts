@@ -150,10 +150,35 @@ test(
       assert.equal(evidence.target?.aggregate.p95DurationMs, 140);
       assert.equal(evidence.observedDelta.avgDurationMs, 40);
       assert.equal(evidence.observedDelta.errorRate, 0);
+      assert.equal(evidence.assessment?.averageDuration.direction, "increased");
+      assert.equal(evidence.assessment?.averageDuration.delta, 40);
+      assert.equal(evidence.assessment?.averageDuration.relativePercent, 40);
+      assert.equal(evidence.assessment?.p95Duration.delta, 40);
+      assert.equal(evidence.assessment?.p95Duration.relativePercent, 40);
+      assert.equal(evidence.assessment?.errorRate.delta, 0);
+      assert.equal(evidence.assessment?.sampleComparison.targetToBaselineRatio, 1);
       assert.equal(
         evidence.evidencePolicy.some((item) => /does not establish/i.test(item)),
         true
       );
+
+      const insufficientEvidence = await generateRuntimeCorrelationEvidence(
+        repositoryId,
+        targetSha,
+        5,
+        2,
+        {
+          environment: "test",
+          operationName: "GET /items",
+          signalType: "http"
+        }
+      );
+
+      assert.equal(
+        insufficientEvidence.status,
+        "insufficient_baseline_samples"
+      );
+      assert.equal(insufficientEvidence.assessment, null);
 
       const missingParentRepositoryId = randomUUID();
       const missingParentTargetSha = "3".repeat(40);

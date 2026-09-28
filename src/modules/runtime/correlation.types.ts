@@ -1,4 +1,7 @@
 import type {
+  RuntimeChangeAssessment
+} from "./change-assessment.types.js";
+import type {
   RuntimeTelemetryAggregate,
   RuntimeTelemetryFilters
 } from "./runtime.types.js";
@@ -46,6 +49,7 @@ export interface RuntimeCorrelationEvidence {
   parentRevisionSha: string | null;
   targetCommitAt: string | null;
   changeContext: RuntimeCorrelationChangeContext | null;
+  assessment: RuntimeChangeAssessment | null;
   windowMinutes: number;
   minimumSamples: number;
   filters: Omit<RuntimeTelemetryFilters, "from" | "to" | "revisionSha">;
