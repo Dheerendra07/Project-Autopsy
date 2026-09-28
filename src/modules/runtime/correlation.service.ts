@@ -67,7 +67,7 @@ export async function generateRuntimeCorrelationEvidence(
     };
   }
 
-  if (!context.parentRevisionSha) {
+  if (!context.parentRevisionSha || !context.parentRevisionPersisted) {
     return {
       status: "missing_parent_revision",
       repositoryId,
@@ -85,8 +85,8 @@ export async function generateRuntimeCorrelationEvidence(
         errorRate: null
       },
       evidencePolicy: [
-        "The target commit has no persisted first parent.",
-        "A parent-revision baseline is required for this correlation mode."
+        "The target commit does not have a persisted first parent revision.",
+        "A persisted parent-revision baseline is required for this correlation mode."
       ]
     };
   }
