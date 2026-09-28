@@ -2,15 +2,22 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
+  checkoutRepositoryAtCommit,
   cloneRepository,
   getRepositoryStoragePath,
+  isCommitAncestor,
+  refreshRepository,
   removeRepositoryStorage
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
+  createAnalysisRunForRepository,
   createRepositoryWithAnalysis,
+  getActiveAnalysisRun,
   getAnalysisRunById,
+  getLatestCompletedAnalysisRun,
   getRepositoryById,
+  updateRepositoryHead,
   listRepositoryCommits,
   listRepositoryHotspots,
   updateAnalysisRun
@@ -29,6 +36,7 @@ import {
   listDependencyChanges
 } from "../evolution/evolution.persistence.js";
 import { listCodeComplexityEvents } from "../complexity/complexity.persistence.js";
+import { planAnalysisRun } from "../analysis/analysis-planner.js";
 
 const router = Router();
 
@@ -67,6 +75,7 @@ router.post("/import", async (req, res, next) => {
           sourceType: getSourceType(input.url),
           sourceUrl: safeUrl.toString(),
           name: metadata.name,
+          trackedBranch: input.branch ?? metadata.defaultBranch,
           metadata,
           storagePath: getRepositoryStoragePath(repositoryId)
         },
@@ -107,6 +116,183 @@ router.post("/import", async (req, res, next) => {
       } catch (persistenceError) {
         console.error(
           `Failed to record queue failure for ${analysis.analysisRunId}:`,
+          persistenceError
+        );
+      }
+
+      next(error);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:repositoryId/analyze", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const activeRun = await getActiveAnalysisRun(repositoryId);
+
+    if (activeRun) {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: "ANALYSIS_ALREADY_RUNNING",
+          message: "An analysis is already queued or running for this repository.",
+          analysisRunId: activeRun.id
+        }
+      });
+      return;
+    }
+
+    if (
+      !repository.source_url ||
+      !repository.storage_path ||
+      !repository.tracked_branch
+    ) {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_REANALYSIS_UNAVAILABLE",
+          message: "This repository cannot be refreshed with the stored metadata."
+        }
+      });
+      return;
+    }
+
+    let metadata;
+    try {
+      metadata = await refreshRepository(
+        repository.id,
+        repository.source_url,
+        repository.tracked_branch
+      );
+    } catch {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_REFRESH_FAILED",
+          message: "Unable to refresh the tracked repository branch."
+        }
+      });
+      return;
+    }
+
+    await updateRepositoryHead(repository.id, metadata);
+
+    const latestCompleted = await getLatestCompletedAnalysisRun(
+      repositoryId
+    );
+
+    const latestAnalyzedHead =
+      latestCompleted?.target_head_sha ??
+      repository.head_sha ??
+      null;
+
+    const isAncestor =
+      latestAnalyzedHead !== null &&
+      await isCommitAncestor(
+        repository.storage_path,
+        latestAnalyzedHead,
+        metadata.headSha
+      );
+
+    const plan = planAnalysisRun(
+      metadata.headSha,
+      latestAnalyzedHead,
+      isAncestor
+    );
+
+    if (plan.kind === "up_to_date") {
+      res.status(200).json({
+        success: true,
+        repositoryId,
+        analysis: {
+          status: "up_to_date",
+          targetHeadSha: plan.targetHeadSha,
+          analysisRunId: latestCompleted?.id ?? null
+        }
+      });
+      return;
+    }
+
+    if (!plan.analysisMode) {
+      throw new Error("Analysis planner returned an invalid run mode.");
+    }
+
+    let analysisRunId: string;
+
+    try {
+      analysisRunId = await createAnalysisRunForRepository(
+        repositoryId,
+        {
+          analyzerVersion: ANALYZER_VERSION,
+          analysisMode: plan.analysisMode,
+          baseHeadSha: plan.baseHeadSha ?? null,
+          targetHeadSha: plan.targetHeadSha
+        }
+      );
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+      ) {
+        res.status(409).json({
+          success: false,
+          error: {
+            code: "ANALYSIS_ALREADY_RUNNING",
+            message: "An analysis is already queued or running for this repository."
+          }
+        });
+        return;
+      }
+
+      throw error;
+    }
+
+    try {
+      const jobId = await enqueueRepositoryAnalysis(
+        repositoryId,
+        analysisRunId
+      );
+
+      res.status(202).json({
+        success: true,
+        repositoryId,
+        analysis: {
+          id: analysisRunId,
+          status: "queued",
+          mode: plan.analysisMode,
+          baseHeadSha: plan.baseHeadSha ?? null,
+          targetHeadSha: plan.targetHeadSha,
+          jobId
+        }
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to queue analysis.";
+
+      try {
+        await updateAnalysisRun(analysisRunId, "failed", {
+          errorMessage: message
+        });
+      } catch (persistenceError) {
+        console.error(
+          `Failed to record queue failure for ${analysisRunId}:`,
           persistenceError
         );
       }
@@ -602,6 +788,9 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
         id: analysis.id,
         repository_id: analysis.repository_id,
         analyzer_version: analysis.analyzer_version,
+        mode: analysis.analysis_mode,
+        base_head_sha: analysis.base_head_sha,
+        target_head_sha: analysis.target_head_sha,
         status: analysis.status,
         started_at: analysis.started_at,
         completed_at: analysis.completed_at,
