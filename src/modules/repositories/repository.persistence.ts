@@ -23,6 +23,21 @@ export interface StoredAnalysisRun {
   error_message: string | null;
 }
 
+export interface StoredCommit {
+  sha: string;
+  parent_shas: string[];
+  author_name: string | null;
+  author_email: string | null;
+  authored_at: string | null;
+  committer_name: string | null;
+  committer_email: string | null;
+  committed_at: string | null;
+  subject: string;
+  files_changed: number;
+  additions: number | null;
+  deletions: number | null;
+}
+
 export interface CreateRepositoryInput {
   id: string;
   sourceType: string;
@@ -307,4 +322,58 @@ export async function persistCommitBatch(
   } finally {
     client.release();
   }
+}
+
+
+export async function listRepositoryCommits(
+  repositoryId: string,
+  page: number,
+  limit: number
+): Promise<{ commits: StoredCommit[]; total: number }> {
+  const offset = (page - 1) * limit;
+
+  const [rowsResult, countResult] = await Promise.all([
+    db.query<StoredCommit>(
+      `
+        SELECT
+          sha,
+          parent_shas,
+          author_name,
+          author_email,
+          authored_at,
+          committer_name,
+          committer_email,
+          committed_at,
+          subject,
+          files_changed,
+          additions,
+          deletions
+        FROM commits
+        WHERE repository_id = $1
+        ORDER BY committed_at ASC NULLS LAST, sha ASC
+        LIMIT $2
+        OFFSET $3
+      `,
+      [repositoryId, limit, offset]
+    ),
+    db.query<{ count: string }>(
+      `
+        SELECT COUNT(*)::text AS count
+        FROM commits
+        WHERE repository_id = $1
+      `,
+      [repositoryId]
+    )
+  ]);
+
+  const countRow = countResult.rows[0];
+
+  if (!countRow) {
+    throw new Error("Failed to count repository commits.");
+  }
+
+  return {
+    commits: rowsResult.rows,
+    total: Number.parseInt(countRow.count, 10)
+  };
 }
