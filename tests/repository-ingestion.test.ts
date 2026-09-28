@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
+import { parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
 
 test("parses commit metadata and changed files", () => {
@@ -65,4 +66,30 @@ test("accepts supported HTTPS repository URLs", () => {
   assert.equal(url.protocol, "https:");
   assert.equal(url.hostname, "github.com");
   assert.equal(url.pathname, "/Owner/Repo.git");
+});
+
+test("parses numeric numstat evidence", () => {
+  const metric = parseNumstatLine("12\t5\tsrc/app.ts");
+
+  assert.deepEqual(metric, {
+    path: "src/app.ts",
+    additions: 12,
+    deletions: 5,
+    binary: false
+  });
+});
+
+test("records binary numstat evidence without inventing line counts", () => {
+  const metric = parseNumstatLine("-\t-\tassets/logo.png");
+
+  assert.deepEqual(metric, {
+    path: "assets/logo.png",
+    additions: 0,
+    deletions: 0,
+    binary: true
+  });
+});
+
+test("ignores non-numstat lines", () => {
+  assert.equal(parseNumstatLine("commit header"), null);
 });
