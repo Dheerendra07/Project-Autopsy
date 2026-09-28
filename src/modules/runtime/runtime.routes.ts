@@ -9,7 +9,6 @@ import {
   summarizeRuntimeTelemetry
 } from "./runtime.persistence.js";
 import {
-  parseRuntimeTelemetryDateRange,
   prepareRuntimeTelemetryBatch,
   RuntimeTelemetryValidationError
 } from "./runtime.service.js";
@@ -274,8 +273,6 @@ runtimeRouter.get("/telemetry/summary", async (req, res, next) => {
       });
       return;
     }
-
-    parseRuntimeTelemetryDateRange(query.from, query.to);
 
     const result = await summarizeRuntimeTelemetry(
       repositoryId,
