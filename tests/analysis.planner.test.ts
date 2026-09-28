@@ -48,3 +48,16 @@ test("uses full mode when no previous analyzed head exists", () => {
     }
   );
 });
+
+
+test("plans a full analysis when no completed run exists", () => {
+  assert.deepEqual(
+    planAnalysisRun("same-head", null, true),
+    {
+      kind: "run",
+      analysisMode: "full",
+      baseHeadSha: null,
+      targetHeadSha: "same-head"
+    }
+  );
+});
