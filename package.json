@@ -10,6 +10,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "start:worker": "node dist/workers/analysis.worker.js",
+    "db:migrate": "tsx src/database/migrate.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
