@@ -22,6 +22,7 @@ import {
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
 import { classifyRefactorSignal } from "../refactors/refactor-signals.js";
+import { listFileChangeCoupling } from "../coupling/coupling.persistence.js";
 import { listRefactorSignals } from "../refactors/refactor.persistence.js";
 import {
   listArchitectureEvents,
@@ -285,6 +286,44 @@ router.get("/:repositoryId/hotspots", async (req, res, next) => {
   }
 });
 
+
+router.get("/:repositoryId/coupling", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      minCoChanges: z.coerce.number().int().min(1).max(10_000).default(2),
+      limit: z.coerce.number().int().min(1).max(100).default(50)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const pairs = await listFileChangeCoupling(
+      repositoryId,
+      query.minCoChanges,
+      query.limit
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "files_changed_together_in_same_commits",
+      minCoChanges: query.minCoChanges,
+      pairs
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/:repositoryId/refactors", async (req, res, next) => {
   try {
