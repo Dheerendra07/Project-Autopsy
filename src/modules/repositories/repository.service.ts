@@ -21,9 +21,10 @@ export async function cloneRepository(
 ): Promise<RepositoryMetadata> {
   const safeUrl = validateRemoteRepositoryUrl(remoteUrl);
   const repositoryPath = await prepareRepositoryStorage(repositoryId);
+  const parentPath = path.dirname(repositoryPath);
 
   const git = simpleGit({
-    baseDir: repositoryPath,
+    baseDir: parentPath,
     maxConcurrentProcesses: 1,
     timeout: {
       block: env.MAX_ANALYSIS_TIME_MINUTES * 60 * 1000
