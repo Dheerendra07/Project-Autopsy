@@ -57,6 +57,38 @@ test("hash is deterministic across object-key ordering", () => {
   );
 });
 
+test("requires full Git revision identity for telemetry", () => {
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          revisionSha: "a".repeat(39)
+        })
+      ]
+    })
+  );
+
+  assert.doesNotThrow(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          revisionSha: "a".repeat(40)
+        })
+      ]
+    })
+  );
+
+  assert.doesNotThrow(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          revisionSha: "b".repeat(64)
+        })
+      ]
+    })
+  );
+});
+
 test("enforces OpenTelemetry trace and span identifier lengths", () => {
   assert.throws(() =>
     runtimeTelemetryBatchSchema.parse({
