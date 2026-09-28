@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
 
-import { generateEvidenceReport } from "./report.service.js";
+import {
+  EvidenceReportNotReadyError,
+  EvidenceReportRepositoryNotFoundError,
+  generateEvidenceReport
+} from "./report.service.js";
 
 export const reportRouter = Router({ mergeParams: true });
 
@@ -21,6 +25,28 @@ reportRouter.get("/", async (req, res, next) => {
       report
     });
   } catch (error) {
+    if (error instanceof EvidenceReportRepositoryNotFoundError) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: error.message
+        }
+      });
+      return;
+    }
+
+    if (error instanceof EvidenceReportNotReadyError) {
+      res.status(409).json({
+        success: false,
+        error: {
+          code: "REPORT_NOT_READY",
+          message: error.message
+        }
+      });
+      return;
+    }
+
     next(error);
   }
 });
