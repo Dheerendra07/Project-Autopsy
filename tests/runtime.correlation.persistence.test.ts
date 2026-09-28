@@ -92,12 +92,58 @@ test(
       assert.equal(evidence.parentRevisionSha, parentSha);
       assert.equal(evidence.baseline?.aggregate.sampleCount, 1);
       assert.equal(evidence.target?.aggregate.sampleCount, 1);
+      assert.equal(evidence.baseline?.aggregate.p50DurationMs, 100);
+      assert.equal(evidence.baseline?.aggregate.p95DurationMs, 100);
+      assert.equal(evidence.target?.aggregate.p50DurationMs, 140);
+      assert.equal(evidence.target?.aggregate.p95DurationMs, 140);
       assert.equal(evidence.observedDelta.avgDurationMs, 40);
       assert.equal(evidence.observedDelta.errorRate, 0);
       assert.equal(
         evidence.evidencePolicy.some((item) => /does not establish/i.test(item)),
         true
       );
+
+      const missingParentRepositoryId = randomUUID();
+      const missingParentTargetSha = "3".repeat(40);
+      const missingParentSha = "4".repeat(40);
+
+      await db.query(
+        "INSERT INTO repositories (id, source_type, name) VALUES ($1, 'github', 'missing-parent-test')",
+        [missingParentRepositoryId]
+      );
+
+      await db.query(
+        "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas) VALUES ($1, $2, $3, $4, $5)",
+        [
+          missingParentRepositoryId,
+          missingParentTargetSha,
+          "target with missing parent",
+          commitAt,
+          JSON.stringify([missingParentSha])
+        ]
+      );
+
+      const missingParentEvidence = await generateRuntimeCorrelationEvidence(
+        missingParentRepositoryId,
+        missingParentTargetSha,
+        5,
+        1
+      );
+
+      assert.equal(
+        missingParentEvidence.status,
+        "missing_parent_revision"
+      );
+      assert.equal(
+        missingParentEvidence.parentRevisionSha,
+        missingParentSha
+      );
+      assert.equal(missingParentEvidence.baseline, null);
+      assert.equal(missingParentEvidence.target, null);
+
+      await db.query("DELETE FROM repositories WHERE id = $1", [
+        missingParentRepositoryId
+      ]);
     } finally {
       await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
       await db.end();
