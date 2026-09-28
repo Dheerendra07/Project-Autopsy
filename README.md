@@ -124,3 +124,10 @@ Dependency API: GET /api/repositories/:repositoryId/dependencies?limit=100
 Architecture API: GET /api/repositories/:repositoryId/architecture?limit=100
 
 Dependency history is derived from historical package.json snapshots. Architecture history currently tracks repository top-level directories and top-level directories under src. These are structural signals, not claims about runtime architecture.
+
+
+## Refactor signals
+
+Refactor candidates: GET /api/repositories/:repositoryId/refactors?limit=20
+
+Results are evidence-backed heuristic signals from commit subjects and files_changed. They are not proof that a commit was a refactor.
