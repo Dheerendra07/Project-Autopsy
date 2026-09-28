@@ -69,7 +69,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked functional main baseline: `3acaa129547cdc6085cf92f0957b3fbb3c7bb66f`.
+Locked functional main baseline: `f9c8ed7e02363491c71fd68e6273176acfab2e1c`.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -269,6 +269,7 @@ Verified merge sequence:
 - Evidence-backed interview story scaffolds: merged via PR #22.
 - Runtime ↔ Git revision correlation evidence v1: merged via PR #23.
 - Runtime correlation hardening: merged via PR #24.
+- Deterministic runtime change assessment: merged via PR #28.
 
 Current verification policy remains unchanged: feature branches must pass typecheck, build, test, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before merge.
 
@@ -302,3 +303,15 @@ The runtime correlation response now carries deterministic source-change context
 - source-change context is returned even when runtime correlation is blocked by commit-time or parent-revision evidence gaps
 
 This context is source evidence only. It does not turn observed runtime deltas into causal claims about the target commit.
+
+### Runtime change assessment v1
+
+Ready runtime correlations now include deterministic measurement structure for:
+- average and p95 duration absolute deltas, relative percentage changes, and numeric direction
+- error-rate delta and percentage-point change
+- baseline/target sample counts, sample-count ratio, sample imbalance, and duration-data coverage
+- exact environment, operation, and signal-type filter scope
+
+Derived metrics are normalized to six decimal places to avoid floating-point representation noise. Assessment output is emitted only when correlation status is ready; insufficient-sample and other evidence-gap states remain explicit without interpretation.
+
+The assessment is observational measurement only. Direction labels do not establish regressions, quality impact, or causality.
