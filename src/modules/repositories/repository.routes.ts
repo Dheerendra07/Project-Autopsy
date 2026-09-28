@@ -186,9 +186,7 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
     );
 
     const latestAnalyzedHead =
-      latestCompleted?.target_head_sha ??
-      repository.head_sha ??
-      null;
+      latestCompleted?.target_head_sha ?? null;
 
     const isAncestor =
       latestAnalyzedHead !== null &&
