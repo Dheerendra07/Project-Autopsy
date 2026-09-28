@@ -1,0 +1,185 @@
+import { simpleGit } from "simple-git";
+
+export type DependencyScope = "dependencies" | "devDependencies";
+export type DependencyChangeType = "added" | "removed" | "changed";
+
+export interface DependencySnapshot {
+  manifestPath: string;
+  packageManager: "npm";
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+}
+
+export interface DependencyChange {
+  manifestPath: string;
+  packageManager: "npm";
+  packageName: string;
+  scope: DependencyScope;
+  changeType: DependencyChangeType;
+  previousSpec: string | null;
+  currentSpec: string | null;
+}
+
+interface PackageManifest {
+  dependencies?: Record<string, unknown>;
+  devDependencies?: Record<string, unknown>;
+}
+
+export async function discoverDependencyEvolution(
+  repositoryPath: string,
+  commits: Array<{ sha: string }>
+): Promise<{
+  snapshots: Array<DependencySnapshot & { sha: string }>;
+  changes: Array<DependencyChange & { sha: string }>;
+}> {
+  const git = simpleGit(repositoryPath);
+  const snapshots: Array<DependencySnapshot & { sha: string }> = [];
+  const changes: Array<DependencyChange & { sha: string }> = [];
+  let previous: DependencySnapshot | null = null;
+
+  for (const commit of commits) {
+    const manifest = await readPackageJsonAtCommit(git, commit.sha);
+
+    if (!manifest) {
+      previous = null;
+      continue;
+    }
+
+    const current: DependencySnapshot = {
+      manifestPath: "package.json",
+      packageManager: "npm",
+      dependencies: normalizeDependencyMap(manifest.dependencies),
+      devDependencies: normalizeDependencyMap(manifest.devDependencies)
+    };
+
+    snapshots.push({ sha: commit.sha, ...current });
+
+    if (previous) {
+      changes.push(
+        ...mapChanges(
+          diffDependencyMaps(
+            previous.dependencies,
+            current.dependencies
+          ),
+          current,
+          commit.sha,
+          "dependencies"
+        ),
+        ...mapChanges(
+          diffDependencyMaps(
+            previous.devDependencies,
+            current.devDependencies
+          ),
+          current,
+          commit.sha,
+          "devDependencies"
+        )
+      );
+    } else {
+      changes.push(
+        ...Object.entries(current.dependencies).map(([packageName, currentSpec]) => ({
+          sha: commit.sha,
+          manifestPath: current.manifestPath,
+          packageManager: current.packageManager,
+          packageName,
+          scope: "dependencies" as const,
+          changeType: "added" as const,
+          previousSpec: null,
+          currentSpec
+        })),
+        ...Object.entries(current.devDependencies).map(([packageName, currentSpec]) => ({
+          sha: commit.sha,
+          manifestPath: current.manifestPath,
+          packageManager: current.packageManager,
+          packageName,
+          scope: "devDependencies" as const,
+          changeType: "added" as const,
+          previousSpec: null,
+          currentSpec
+        }))
+      );
+    }
+
+    previous = current;
+  }
+
+  return { snapshots, changes };
+}
+
+async function readPackageJsonAtCommit(
+  git: ReturnType<typeof simpleGit>,
+  sha: string
+): Promise<PackageManifest | null> {
+  try {
+    const raw = await git.show([`${sha}:package.json`]);
+    return JSON.parse(raw) as PackageManifest;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeDependencyMap(
+  value: Record<string, unknown> | undefined
+): Record<string, string> {
+  if (!value) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+      .sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+export function diffDependencyMaps(
+  previous: Record<string, string>,
+  current: Record<string, string>
+): Array<{
+  packageName: string;
+  changeType: DependencyChangeType;
+  previousSpec: string | null;
+  currentSpec: string | null;
+}> {
+  const packageNames = new Set([
+    ...Object.keys(previous),
+    ...Object.keys(current)
+  ]);
+
+  return [...packageNames].sort((a, b) => a.localeCompare(b)).flatMap((packageName) => {
+    const previousSpec = previous[packageName] ?? null;
+    const currentSpec = current[packageName] ?? null;
+
+    if (previousSpec === null && currentSpec !== null) {
+      return [{ packageName, changeType: "added" as const, previousSpec, currentSpec }];
+    }
+
+    if (previousSpec !== null && currentSpec === null) {
+      return [{ packageName, changeType: "removed" as const, previousSpec, currentSpec }];
+    }
+
+    if (previousSpec !== null && currentSpec !== null && previousSpec !== currentSpec) {
+      return [{ packageName, changeType: "changed" as const, previousSpec, currentSpec }];
+    }
+
+    return [];
+  });
+}
+
+function mapChanges(
+  changes: ReturnType<typeof diffDependencyMaps>,
+  snapshot: DependencySnapshot,
+  sha: string,
+  scope: DependencyScope
+): Array<DependencyChange & { sha: string }> {
+  return changes.map((change) => ({
+    sha,
+    manifestPath: snapshot.manifestPath,
+    packageManager: snapshot.packageManager,
+    packageName: change.packageName,
+    scope,
+    changeType: change.changeType,
+    previousSpec: change.previousSpec,
+    currentSpec: change.currentSpec
+  }));
+}
