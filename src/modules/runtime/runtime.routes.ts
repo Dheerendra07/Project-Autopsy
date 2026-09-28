@@ -48,8 +48,8 @@ const runtimeFilterFields = {
 
 function validateDateRange(
   value: {
-    from?: Date;
-    to?: Date;
+    from?: Date | undefined;
+    to?: Date | undefined;
   },
   ctx: z.RefinementCtx
 ): void {
