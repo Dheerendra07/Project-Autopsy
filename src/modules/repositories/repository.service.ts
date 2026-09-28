@@ -73,6 +73,123 @@ export async function cloneRepository(
   }
 }
 
+function assertSafeBranchName(branch: string): void {
+  if (!branch || branch.length > 255) {
+    throw new Error("Repository branch is invalid.");
+  }
+
+  if (!/^[A-Za-z0-9._/-]+$/.test(branch)) {
+    throw new Error("Repository branch contains unsupported characters.");
+  }
+}
+
+function assertValidSha(sha: string): void {
+  if (!/^[0-9a-f]{7,64}$/i.test(sha)) {
+    throw new Error("Git reference is invalid.");
+  }
+}
+
+export async function refreshRepository(
+  repositoryId: string,
+  remoteUrl: string,
+  branch: string
+): Promise<RepositoryMetadata> {
+  const safeUrl = validateRemoteRepositoryUrl(remoteUrl);
+  assertSafeBranchName(branch);
+
+  const repositoryPath = getRepositoryStoragePath(repositoryId);
+  const git = simpleGit(repositoryPath, {
+    maxConcurrentProcesses: 1,
+    timeout: {
+      block: env.MAX_ANALYSIS_TIME_MINUTES * 60 * 1000
+    }
+  });
+
+  try {
+    await git.raw([
+      "check-ref-format",
+      "--branch",
+      branch
+    ]);
+
+    await git.raw([
+      "remote",
+      "set-url",
+      "origin",
+      safeUrl.toString()
+    ]);
+
+    await git.raw([
+      "fetch",
+      "origin",
+      "--prune",
+      "--no-tags",
+      `refs/heads/${branch}:refs/remotes/origin/${branch}`
+    ]);
+
+    await git.raw([
+      "checkout",
+      "-B",
+      branch,
+      `origin/${branch}`
+    ]);
+
+    const sizeBytes = await calculateDirectorySize(repositoryPath);
+    const maxBytes = env.MAX_REPOSITORY_SIZE_MB * 1024 * 1024;
+
+    if (sizeBytes > maxBytes) {
+      throw new Error(
+        `Repository exceeds the configured size limit of ${env.MAX_REPOSITORY_SIZE_MB} MB.`
+      );
+    }
+
+    const metadata = await readRepositoryMetadata(repositoryPath);
+    metadata.name = getRepositoryNameFromUrl(safeUrl);
+
+    return metadata;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function checkoutRepositoryAtCommit(
+  repositoryPath: string,
+  commitSha: string
+): Promise<void> {
+  assertValidSha(commitSha);
+
+  const git = simpleGit(repositoryPath);
+
+  await git.raw([
+    "checkout",
+    "--detach",
+    commitSha
+  ]);
+}
+
+export async function isCommitAncestor(
+  repositoryPath: string,
+  ancestorSha: string,
+  descendantSha: string
+): Promise<boolean> {
+  assertValidSha(ancestorSha);
+  assertValidSha(descendantSha);
+
+  const git = simpleGit(repositoryPath);
+
+  try {
+    const mergeBase = await git.raw([
+      "merge-base",
+      ancestorSha,
+      descendantSha
+    ]);
+
+    return mergeBase.trim() === ancestorSha;
+  } catch {
+    return false;
+  }
+}
+
 export async function readRepositoryMetadata(
   repositoryPath: string
 ): Promise<RepositoryMetadata> {
