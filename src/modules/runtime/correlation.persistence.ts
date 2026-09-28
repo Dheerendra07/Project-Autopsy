@@ -107,7 +107,7 @@ export async function getRuntimeRevisionContext(
   const result = await db.query<{
     sha: string;
     parent_revision_sha: string | null;
-    committed_at: string | null;
+    committed_at: Date | string | null;
     subject: string;
     files_changed: number;
     additions: number | null;
@@ -170,7 +170,10 @@ export async function getRuntimeRevisionContext(
     targetRevisionSha: row.sha,
     parentRevisionSha: row.parent_revision_sha,
     parentRevisionPersisted: row.parent_revision_persisted,
-    committedAt: row.committed_at,
+    committedAt:
+      row.committed_at instanceof Date
+        ? row.committed_at.toISOString()
+        : row.committed_at,
     subject: row.subject,
     filesChanged: row.files_changed,
     additions: row.additions,
