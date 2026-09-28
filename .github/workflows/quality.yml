@@ -117,7 +117,7 @@ jobs:
           status=$?
           set -e
 
-          if [ "$status" -ne 124 ]; then
+          if [ "$status" -ne 124 ] && [ "$status" -ne 143 ]; then
             cat worker-smoke.log
             exit "$status"
           fi
