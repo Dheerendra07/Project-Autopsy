@@ -267,3 +267,21 @@ Verified merge sequence:
 - Evidence-backed interview story scaffolds: merged via PR #22.
 
 Current verification policy remains unchanged: feature branches must pass typecheck, build, test, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before merge.
+
+
+## Runtime correlation evidence v1
+
+Endpoint:
+GET /api/repositories/:repositoryId/runtime/correlation?revisionSha=<sha>&windowMinutes=60&minSamples=10
+
+The correlation layer aligns a persisted target Git revision with its first parent revision:
+- baseline window: parent revision telemetry before the target commit timestamp
+- target window: target revision telemetry after the target commit timestamp
+- optional filters: environment, operationName, signalType
+- explicit readiness states for missing revision/time/parent data and insufficient samples
+- observed duration/error deltas are returned only as measurements
+
+Evidence policy:
+- "ready" means revision/time alignment and minimum sample requirements are satisfied; it is not a regression verdict.
+- The comparison is observational and does not establish that a commit caused a runtime change.
+- Workload changes, instrumentation coverage, deployment timing, and environmental factors can affect the comparison.
