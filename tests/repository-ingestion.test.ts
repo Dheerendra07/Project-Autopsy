@@ -4,11 +4,20 @@ import { parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
 
 test("parses commit metadata and changed files", () => {
+  const header = [
+    "abc1234",
+    "parent1 parent2",
+    "Dev",
+    "dev@example.com",
+    "2026-01-01T10:00:00Z",
+    "Dev",
+    "dev@example.com",
+    "2026-01-01T10:05:00Z",
+    "feat: add timeline"
+  ].join("\x1f");
+
   const commit = parseCommitRecord(
-    [
-      "abc1234\x1fparent1 parent2\x1fDev\x1fdev@example.com\x12026-01-01T10:00:00Z\x1fDev\x1fdev@example.com\x12026-01-01T10:05:00Z\x1ffeat: add timeline",
-      "A\t src/timeline.ts"
-    ].join("\n")
+    [header, "A\t src/timeline.ts"].join("\n")
   );
 
   assert.equal(commit.sha, "abc1234");
@@ -16,6 +25,26 @@ test("parses commit metadata and changed files", () => {
   assert.equal(commit.files.length, 1);
   assert.equal(commit.files[0]?.status, "A");
   assert.equal(commit.files[0]?.path, " src/timeline.ts");
+});
+
+test("accepts a commit with an empty subject", () => {
+  const header = [
+    "def5678",
+    "",
+    "Dev",
+    "dev@example.com",
+    "2026-01-02T10:00:00Z",
+    "Dev",
+    "dev@example.com",
+    "2026-01-02T10:01:00Z",
+    ""
+  ].join("\x1f");
+
+  const commit = parseCommitRecord(header);
+
+  assert.equal(commit.sha, "def5678");
+  assert.equal(commit.subject, "");
+  assert.deepEqual(commit.parentShas, []);
 });
 
 test("rejects repository URL credentials", () => {
