@@ -22,6 +22,7 @@ import {
   updateAnalysisRun
 } from "./repository.persistence.js";
 import { listRepeatedBugAreas } from "./bug-area.persistence.js";
+import { listRepeatedlyModifiedFiles } from "../metrics/change-patterns.persistence.js";
 import {
   enqueueRepositoryAnalysis,
   enqueueRepositoryImport
