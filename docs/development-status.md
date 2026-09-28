@@ -69,7 +69,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked main baseline: `75e775daac9b3b2a2c6dc39a79ba51b591424f12`.
+Locked functional main baseline: `3acaa129547cdc6085cf92f0957b3fbb3c7bb66f`.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -78,6 +78,8 @@ The current main baseline includes:
 - state-aware import/refresh/analyze retry recovery
 - evidence-backed repository reports
 - evidence-backed interview story scaffolds
+- runtime correlation evidence v1
+- deterministic Git change context attached to runtime correlation
 
 Preserve all existing API routes, evidence models, migrations, deterministic analyzer behavior, retry semantics, and shutdown behavior when continuing. Start any new roadmap item from this baseline and add it to this document only after implementation and verification.
 
@@ -289,3 +291,14 @@ Evidence policy:
 - Workload changes, instrumentation coverage, deployment timing, and environmental factors can affect the comparison.
 - The first parent must itself be persisted; a referenced-but-missing parent is returned as an explicit evidence gap.
 - Correlation windows now expose the complete persisted aggregate shape: min/avg/p50/p95/p99/max duration, duration sample count, error count/rate, and observed time bounds.
+
+### Runtime Git change context v1
+
+The runtime correlation response now carries deterministic source-change context for the target Git revision:
+- exact target commit SHA, subject, parent revision, commit timestamp, and persisted change statistics
+- bounded changed-file evidence (maximum 100 paths)
+- deterministic changed-file ordering by path/status/statistics
+- explicit changedFilesTruncated and changedFilesComplete flags so callers can distinguish an intentional bound from incomplete persisted file evidence
+- source-change context is returned even when runtime correlation is blocked by commit-time or parent-revision evidence gaps
+
+This context is source evidence only. It does not turn observed runtime deltas into causal claims about the target commit.
