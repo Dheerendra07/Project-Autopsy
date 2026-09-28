@@ -61,17 +61,94 @@ import {
   enqueueRepositoryAnalysis
 } from "../modules/analysis/analysis.queue.js";
 import { planAnalysisRun } from "../modules/analysis/analysis-planner.js";
+import { classifyAnalysisJobRecovery } from "../modules/analysis/job-recovery.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
   ANALYSIS_QUEUE_NAME,
   async (job) => {
     const { repositoryId, analysisRunId } = job.data;
+    const jobKind = job.data.kind ?? "analyze";
 
     try {
+      const initialAnalysis = await getAnalysisRunById(analysisRunId);
+
+      if (!initialAnalysis || initialAnalysis.repository_id !== repositoryId) {
+        throw new Error(
+          `Analysis run not found: ${analysisRunId}`
+        );
+      }
+
+      const recovery = classifyAnalysisJobRecovery({
+        kind: jobKind,
+        attemptsMade: job.attemptsMade,
+        status: initialAnalysis.status,
+        analysisMode: initialAnalysis.analysis_mode,
+        targetHeadSha: initialAnalysis.target_head_sha
+      });
+
+      if (recovery.action === "already_completed") {
+        return {
+          status: "already-completed",
+          repositoryId,
+          analysisRunId,
+          analysisMode: initialAnalysis.analysis_mode,
+          targetHeadSha: initialAnalysis.target_head_sha
+        };
+      }
+
+      if (recovery.action === "terminal_failed") {
+        throw new Error(
+          `Analysis run is already failed: ${analysisRunId}`
+        );
+      }
+
       await updateAnalysisRun(analysisRunId, "running");
 
-      if (job.data.kind === "import") {
+      if (recovery.action === "resume_import_analysis") {
+        const analysisJobId = await enqueueRepositoryAnalysis(
+          repositoryId,
+          analysisRunId
+        );
+
+        return {
+          status: "import-retry-resumed",
+          repositoryId,
+          analysisRunId,
+          targetHeadSha: recovery.targetHeadSha,
+          analysisJobId
+        };
+      }
+
+      if (recovery.action === "resume_refresh_check") {
+        await updateAnalysisRun(analysisRunId, "completed");
+
+        return {
+          status: "up-to-date",
+          repositoryId,
+          analysisRunId,
+          targetHeadSha: recovery.targetHeadSha,
+          analysisMode: "check"
+        };
+      }
+
+      if (recovery.action === "resume_refresh_analysis") {
+        const analysisJobId = await enqueueRepositoryAnalysis(
+          repositoryId,
+          analysisRunId
+        );
+
+        return {
+          status: "refresh-retry-resumed",
+          repositoryId,
+          analysisRunId,
+          analysisMode: recovery.analysisMode,
+          targetHeadSha: recovery.targetHeadSha,
+          analysisJobId
+        };
+      }
+
+      if (jobKind === "import") {
         if (!job.data.remoteUrl) {
           throw new Error(
             `Repository import URL is missing: ${analysisRunId}`
@@ -135,7 +212,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
-      if (job.data.kind === "refresh") {
+      if (jobKind === "refresh") {
         if (
           !repository.source_url ||
           !repository.tracked_branch
