@@ -22,6 +22,7 @@ import {
   updateAnalysisRun
 } from "./repository.persistence.js";
 import { listRepeatedBugAreas } from "./bug-area.persistence.js";
+import { listRepeatedlyModifiedFiles } from "../metrics/change-patterns.persistence.js";
 import {
   enqueueRepositoryAnalysis,
   enqueueRepositoryImport
@@ -703,6 +704,52 @@ router.get("/:repositoryId/complexity", async (req, res, next) => {
         "generated"
       ],
       events
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/repeatedly-modified-files", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+
+    const query = z.object({
+      minTouches: z.coerce.number().int().min(2).max(10_000).default(3),
+      limit: z.coerce.number().int().min(1).max(100).default(20)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const files = await listRepeatedlyModifiedFiles(
+      repositoryId,
+      query.minTouches,
+      query.limit
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "persisted_git_file_change_history",
+      minTouches: query.minTouches,
+      ordering: [
+        "commits_touched DESC",
+        "total_churn DESC",
+        "change_span_days DESC",
+        "path ASC"
+      ],
+      files
     });
   } catch (error) {
     next(error);
