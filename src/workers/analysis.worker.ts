@@ -38,7 +38,8 @@ import {
 } from "../modules/analysis/analysis-cache.persistence.js";
 import {
   checkoutRepositoryAtCommit,
-  cloneRepository
+  cloneRepository,
+  removeRepositoryStorage
 } from "../modules/repositories/repository.service.js";
 import {
   enqueueRepositoryAnalysis
@@ -59,6 +60,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
             `Repository import URL is missing: ${analysisRunId}`
           );
         }
+
+        await removeRepositoryStorage(repositoryId);
 
         const metadata = await cloneRepository(
           repositoryId,
