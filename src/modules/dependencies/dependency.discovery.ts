@@ -146,24 +146,52 @@ export function diffDependencyMaps(
     ...Object.keys(current)
   ]);
 
-  return [...packageNames].sort((a, b) => a.localeCompare(b)).flatMap((packageName) => {
+  const changes: Array<{
+    packageName: string;
+    changeType: DependencyChangeType;
+    previousSpec: string | null;
+    currentSpec: string | null;
+  }> = [];
+
+  for (const packageName of [...packageNames].sort((a, b) => a.localeCompare(b))) {
     const previousSpec = previous[packageName] ?? null;
     const currentSpec = current[packageName] ?? null;
 
     if (previousSpec === null && currentSpec !== null) {
-      return [{ packageName, changeType: "added" as const, previousSpec, currentSpec }];
+      changes.push({
+        packageName,
+        changeType: "added",
+        previousSpec,
+        currentSpec
+      });
+      continue;
     }
 
     if (previousSpec !== null && currentSpec === null) {
-      return [{ packageName, changeType: "removed" as const, previousSpec, currentSpec }];
+      changes.push({
+        packageName,
+        changeType: "removed",
+        previousSpec,
+        currentSpec
+      });
+      continue;
     }
 
-    if (previousSpec !== null && currentSpec !== null && previousSpec !== currentSpec) {
-      return [{ packageName, changeType: "changed" as const, previousSpec, currentSpec }];
+    if (
+      previousSpec !== null &&
+      currentSpec !== null &&
+      previousSpec !== currentSpec
+    ) {
+      changes.push({
+        packageName,
+        changeType: "changed",
+        previousSpec,
+        currentSpec
+      });
     }
+  }
 
-    return [];
-  });
+  return changes;
 }
 
 function mapChanges(
