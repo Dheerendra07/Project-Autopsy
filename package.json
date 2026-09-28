@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@typescript/typescript6": "^6.0.2",
     "bullmq": "^6.3.9",
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
@@ -24,7 +25,6 @@
     "morgan": "^1.12.1",
     "pg": "^8.23.0",
     "simple-git": "^4.0.2",
-    "typescript": "^7.0.2",
     "uuid": "^14.0.2",
     "zod": "^4.6.5"
   },
@@ -33,6 +33,7 @@
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.6.3",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "nodemon": "^3.1.14",
     "tsx": "^4.23.15"
   }
