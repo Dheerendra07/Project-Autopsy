@@ -2,15 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
-  cloneRepository,
+  getRepositoryNameFromUrl,
   getRepositoryStoragePath,
   isCommitAncestor,
-  refreshRepository,
-  removeRepositoryStorage
+  refreshRepository
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
   createAnalysisRunForRepository,
+  createPendingRepositoryWithAnalysis,
   createRepositoryWithAnalysis,
   getActiveAnalysisRun,
   getAnalysisRunById,
@@ -23,7 +23,8 @@ import {
 } from "./repository.persistence.js";
 import { listRepeatedBugAreas } from "./bug-area.persistence.js";
 import {
-  enqueueRepositoryAnalysis
+  enqueueRepositoryAnalysis,
+  enqueueRepositoryImport
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
@@ -56,65 +57,54 @@ router.post("/import", async (req, res, next) => {
     const safeUrl = validateRemoteRepositoryUrl(input.url);
     const repositoryId = randomUUID();
 
-    const metadata = await cloneRepository(
-      repositoryId,
-      safeUrl.toString(),
-      input.branch
+    const repository = await createPendingRepositoryWithAnalysis(
+      {
+        id: repositoryId,
+        sourceType: getSourceType(safeUrl.toString()),
+        sourceUrl: safeUrl.toString(),
+        name: getRepositoryNameFromUrl(safeUrl),
+        trackedBranch: input.branch ?? null,
+        storagePath: getRepositoryStoragePath(repositoryId)
+      },
+      ANALYZER_VERSION
     );
 
-    let analysis: {
-      repositoryId: string;
-      analysisRunId: string;
-    };
-
     try {
-      analysis = await createRepositoryWithAnalysis(
-        {
-          id: repositoryId,
-          sourceType: getSourceType(input.url),
-          sourceUrl: safeUrl.toString(),
-          name: metadata.name,
-          trackedBranch: input.branch ?? metadata.defaultBranch,
-          metadata,
-          storagePath: getRepositoryStoragePath(repositoryId)
-        },
-        ANALYZER_VERSION
-      );
-    } catch (error) {
-      await removeRepositoryStorage(repositoryId);
-      throw error;
-    }
-
-    try {
-      const jobId = await enqueueRepositoryAnalysis(
-        analysis.repositoryId,
-        analysis.analysisRunId
+      const jobId = await enqueueRepositoryImport(
+        repository.repositoryId,
+        repository.analysisRunId,
+        safeUrl.toString(),
+        input.branch
       );
 
-      res.status(201).json({
+      res.status(202).json({
         success: true,
         repository: {
-          id: analysis.repositoryId,
+          id: repository.repositoryId,
           source: safeUrl.toString(),
-          metadata
+          name: getRepositoryNameFromUrl(safeUrl),
+          trackedBranch: input.branch ?? null
         },
         analysis: {
-          id: analysis.analysisRunId,
+          id: repository.analysisRunId,
           status: "queued",
+          mode: "full",
           jobId
         }
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to queue analysis.";
+        error instanceof Error
+          ? error.message
+          : "Failed to queue repository import.";
 
       try {
-        await updateAnalysisRun(analysis.analysisRunId, "failed", {
+        await updateAnalysisRun(repository.analysisRunId, "failed", {
           errorMessage: message
         });
       } catch (persistenceError) {
         console.error(
-          `Failed to record queue failure for ${analysis.analysisRunId}:`,
+          `Failed to record import queue failure for ${repository.analysisRunId}:`,
           persistenceError
         );
       }
