@@ -29,8 +29,6 @@ export async function discoverArchitectureEvolution(
 
   let previousRoot = new Set<string>();
   let previousSrc = new Set<string>();
-  let hasPrevious = false;
-
   if (options.baseHeadSha) {
     previousRoot = new Set(
       await listDirectoriesAtCommit(git, options.baseHeadSha, "")
@@ -38,7 +36,6 @@ export async function discoverArchitectureEvolution(
     previousSrc = new Set(
       await listDirectoriesAtCommit(git, options.baseHeadSha, "src")
     );
-    hasPrevious = true;
   }
 
   for (const commit of commits) {
@@ -75,7 +72,6 @@ export async function discoverArchitectureEvolution(
 
     previousRoot = root;
     previousSrc = src;
-    hasPrevious = true;
   }
 
   return { snapshots, events };
@@ -91,8 +87,7 @@ async function listDirectoriesAtCommit(
     const prefix = rootPath ? `${rootPath}/` : "";
     const directories = new Set<string>();
 
-    for (const rawPath of output.split(/?
-/)) {
+    for (const rawPath of output.split(new RegExp("\\r?\\n"))) {
       const filePath = rawPath.trim();
 
       if (!filePath || (prefix && !filePath.startsWith(prefix))) {
