@@ -3,7 +3,7 @@ import { db } from "../../config/database.js";
 import type { AnalysisRunStatus } from "../analysis/analysis.types.js";
 import type { RepositoryMetadata } from "./repository.types.js";
 
-export type AnalysisMode = "full" | "incremental";
+export type AnalysisMode = "check" | "full" | "incremental";
 
 export interface StoredRepository {
   id: string;
@@ -265,6 +265,32 @@ export async function createAnalysisRunForRepository(
   } finally {
     client.release();
   }
+}
+
+export async function setAnalysisRunPlan(
+  analysisRunId: string,
+  input: {
+    analysisMode: Exclude<AnalysisMode, "check"> | "check";
+    baseHeadSha: string | null;
+    targetHeadSha: string;
+  }
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE analysis_runs
+      SET
+        analysis_mode = $2,
+        base_head_sha = $3,
+        target_head_sha = $4
+      WHERE id = $1
+    `,
+    [
+      analysisRunId,
+      input.analysisMode,
+      input.baseHeadSha,
+      input.targetHeadSha
+    ]
+  );
 }
 
 export async function updateRepositoryHead(
