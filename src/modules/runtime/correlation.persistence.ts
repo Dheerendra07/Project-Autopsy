@@ -95,21 +95,21 @@ export async function getRuntimeRevisionContext(
 ): Promise<RuntimeRevisionContext | null> {
   const result = await db.query<{
     sha: string;
-    parent_shas: string[];
+    parent_revision_sha: string | null;
     committed_at: string | null;
     parent_revision_persisted: boolean;
   }>(
     `SELECT
        c.sha,
-       c.parent_shas,
+       c.parent_revision_sha,
        c.committed_at,
        CASE
-         WHEN c.parent_shas ->> 0 IS NULL THEN false
+         WHEN c.parent_revision_sha IS NULL THEN false
          ELSE EXISTS (
            SELECT 1
            FROM commits p
            WHERE p.repository_id = c.repository_id
-             AND p.sha = c.parent_shas ->> 0
+             AND p.sha = c.parent_revision_sha
          )
        END AS parent_revision_persisted
      FROM commits c
@@ -124,7 +124,7 @@ export async function getRuntimeRevisionContext(
 
   return {
     targetRevisionSha: row.sha,
-    parentRevisionSha: row.parent_shas[0] ?? null,
+    parentRevisionSha: row.parent_revision_sha,
     parentRevisionPersisted: row.parent_revision_persisted,
     committedAt: row.committed_at
   };
