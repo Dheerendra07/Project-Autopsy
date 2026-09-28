@@ -116,11 +116,11 @@ jobs:
 
           kill -TERM "$server_pid"
 
-          if ! wait "$server_pid"; then
+          wait "$server_pid" || {
             status=$?
             cat server-smoke.log
             exit "$status"
-          fi
+          }
 
           trap - EXIT
           cat server-smoke.log
@@ -149,11 +149,11 @@ jobs:
 
           kill -TERM "$worker_pid"
 
-          if ! wait "$worker_pid"; then
+          wait "$worker_pid" || {
             status=$?
             cat worker-smoke.log
             exit "$status"
-          fi
+          }
 
           trap - EXIT
           cat worker-smoke.log
