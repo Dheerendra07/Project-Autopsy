@@ -207,13 +207,18 @@ export function analyzeSourceCode(
 
   visitor(sourceFile);
 
+  const lines = source.split(/\r\n|\r|\n/);
+  const sourceLines =
+    lines.length === 1 && lines[0] === ""
+      ? 0
+      : source.endsWith("\n") || source.endsWith("\r")
+        ? lines.length - 1
+        : lines.length;
+
   return {
     status: "supported",
     metrics: {
-      sourceLines:
-        source.length === 0
-          ? 0
-          : source.split(/\r\n|\r|\n/).length,
+      sourceLines,
       functionCount,
       classCount,
       cyclomaticComplexity,
