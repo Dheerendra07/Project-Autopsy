@@ -74,12 +74,12 @@ function getRepositoryId(
 
 function getFilters(
   query: {
-    from?: Date;
-    to?: Date;
-    revisionSha?: string;
-    environment?: string;
-    operationName?: string;
-    signalType?: RuntimeTelemetryFilters["signalType"];
+    from?: Date | undefined;
+    to?: Date | undefined;
+    revisionSha?: string | undefined;
+    environment?: string | undefined;
+    operationName?: string | undefined;
+    signalType?: RuntimeTelemetryFilters["signalType"] | undefined;
   }
 ): RuntimeTelemetryFilters {
   const filters: RuntimeTelemetryFilters = {};
