@@ -103,8 +103,6 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
-      await updateAnalysisRun(analysisRunId, "running");
-
       if (recovery.action === "resume_import_analysis") {
         const analysisJobId = await enqueueRepositoryAnalysis(
           repositoryId,
@@ -147,6 +145,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           analysisJobId
         };
       }
+
+      await updateAnalysisRun(analysisRunId, "running");
 
       if (jobKind === "import") {
         if (!job.data.remoteUrl) {
