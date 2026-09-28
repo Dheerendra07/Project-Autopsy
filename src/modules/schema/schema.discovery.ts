@@ -453,7 +453,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+ADD\\s+(?:COLUMN\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
@@ -470,7 +470,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+DROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
@@ -487,7 +487,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+RENAME\\s+COLUMN\\s+(" +
         IDENTIFIER +
@@ -507,7 +507,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+ALTER\\s+COLUMN\\s+(" +
         IDENTIFIER +
@@ -526,7 +526,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+ALTER\\s+COLUMN\\s+(" +
         IDENTIFIER +
@@ -543,7 +543,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+ALTER\\s+COLUMN\\s+(" +
         IDENTIFIER +
@@ -560,7 +560,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+ADD\\s+CONSTRAINT\\s+(" +
         IDENTIFIER +
@@ -577,7 +577,7 @@ export function classifySqlStatement(
 
   match = cleaned.match(
     new RegExp(
-      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+      "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
         ")\\s+DROP\\s+CONSTRAINT\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
@@ -830,7 +830,7 @@ export function classifySqlStatement(
     const tableName = matchIdentifier(
       cleaned,
       new RegExp(
-        "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
+        "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
           IDENTIFIER +
           ")",
         "i"
