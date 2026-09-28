@@ -306,6 +306,7 @@ export async function listDependencyChanges(
   repositoryId: string,
   limit: number
 ): Promise<Array<{
+  sha: string;
   package_name: string;
   scope: string;
   change_type: string;
@@ -315,6 +316,7 @@ export async function listDependencyChanges(
   subject: string;
 }>> {
   const result = await db.query<{
+    sha: string;
     package_name: string;
     scope: string;
     change_type: string;
@@ -324,6 +326,7 @@ export async function listDependencyChanges(
     subject: string;
   }>(
     `SELECT
+      commits.sha,
       changes.package_name,
       changes.scope,
       changes.change_type,
@@ -348,6 +351,7 @@ export async function listArchitectureEvents(
   repositoryId: string,
   limit: number
 ): Promise<Array<{
+  sha: string;
   root_path: string;
   event_type: string;
   path: string;
@@ -355,6 +359,7 @@ export async function listArchitectureEvents(
   subject: string;
 }>> {
   const result = await db.query<{
+    sha: string;
     root_path: string;
     event_type: string;
     path: string;
@@ -362,6 +367,7 @@ export async function listArchitectureEvents(
     subject: string;
   }>(
     `SELECT
+      commits.sha,
       events.root_path,
       events.event_type,
       events.path,
