@@ -101,3 +101,11 @@ GET /api/repositories/:repositoryId/commits?page=1&limit=50
 ```
 
 The response is paginated and exposes only persisted engineering evidence; repository storage paths are never returned by this endpoint.
+
+## Deterministic hotspots
+
+```http
+GET /api/repositories/:repositoryId/hotspots?limit=20
+```
+
+Hotspots are ordered by commit frequency, then total line churn, then path. Binary files contribute to `binary_changes`; line additions/deletions are not fabricated for them.

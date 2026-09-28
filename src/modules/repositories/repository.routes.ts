@@ -12,6 +12,7 @@ import {
   getAnalysisRunById,
   getRepositoryById,
   listRepositoryCommits,
+  listRepositoryHotspots,
   updateAnalysisRun
 } from "./repository.persistence.js";
 import {
@@ -132,7 +133,6 @@ router.get("/:repositoryId", async (req, res, next) => {
   }
 });
 
-
 router.get("/:repositoryId/commits", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
@@ -176,6 +176,47 @@ router.get("/:repositoryId/commits", async (req, res, next) => {
         totalPages
       },
       commits: result.commits
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/hotspots", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(20)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const hotspots = await listRepositoryHotspots(
+      repositoryId,
+      query.limit
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      ordering: [
+        "commits_touched DESC",
+        "total_churn DESC",
+        "path ASC"
+      ],
+      hotspots
     });
   } catch (error) {
     next(error);
