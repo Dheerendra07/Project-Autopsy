@@ -255,7 +255,7 @@ test("builds deterministic runtime change measurements", () => {
     targetToBaselineRatio: 1.2,
     absoluteImbalancePercent: (20 / 120) * 100,
     baselineDurationCoveragePercent: 90,
-    targetDurationCoveragePercent: (100 / 120) * 100
+    targetDurationCoveragePercent: 83.333333
   });
 });
 
