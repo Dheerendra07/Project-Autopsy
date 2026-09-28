@@ -28,7 +28,7 @@ const runtimeQueryFields = {
   revisionSha: z
     .string()
     .trim()
-    .regex(/^[0-9a-fA-F]{7,64}$/)
+    .regex(/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/)
     .optional(),
   environment: z.string().trim().min(1).max(64).optional(),
   operationName: z.string().trim().min(1).max(256).optional(),
