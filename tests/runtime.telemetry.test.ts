@@ -23,7 +23,7 @@ function validEvent(overrides: Record<string, unknown> = {}) {
     serviceName: "api",
     operationName: "GET /health",
     environment: "test",
-    revisionSha: "abcdef1234567",
+    revisionSha: "abcdef1234567890abcdef1234567890abcdef12",
     durationMs: 42.5,
     status: "ok",
     httpStatusCode: 200,
