@@ -28,6 +28,7 @@ import {
   listArchitectureEvents,
   listDependencyChanges
 } from "../evolution/evolution.persistence.js";
+import { listCodeComplexityEvents } from "../complexity/complexity.persistence.js";
 
 const router = Router();
 
@@ -191,7 +192,6 @@ router.get("/:repositoryId/commits", async (req, res, next) => {
   }
 });
 
-
 router.get("/:repositoryId/timeline", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
@@ -285,7 +285,6 @@ router.get("/:repositoryId/hotspots", async (req, res, next) => {
     next(error);
   }
 });
-
 
 router.get("/:repositoryId/coupling", async (req, res, next) => {
   try {
@@ -426,6 +425,107 @@ router.get("/:repositoryId/architecture", async (req, res, next) => {
       scope: [
         "repository top-level directories",
         "src top-level directories"
+      ],
+      events
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/complexity", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(500).default(100)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const storedEvents = await listCodeComplexityEvents(
+      repositoryId,
+      query.limit
+    );
+
+    const events = storedEvents.map((event) => {
+      const before = {
+        sourceLines: event.before_source_lines,
+        functionCount: event.before_function_count,
+        classCount: event.before_class_count,
+        cyclomaticComplexity: event.before_cyclomatic_complexity,
+        maxNestingDepth: event.before_max_nesting_depth
+      };
+
+      const after = {
+        sourceLines: event.after_source_lines,
+        functionCount: event.after_function_count,
+        classCount: event.after_class_count,
+        cyclomaticComplexity: event.after_cyclomatic_complexity,
+        maxNestingDepth: event.after_max_nesting_depth
+      };
+
+      const delta =
+        event.analysis_status === "supported" &&
+        (event.change_type === "added" ||
+          event.change_type === "modified" ||
+          event.change_type === "deleted")
+          ? {
+              sourceLines:
+                (event.after_source_lines ?? 0) -
+                (event.before_source_lines ?? 0),
+              functionCount:
+                (event.after_function_count ?? 0) -
+                (event.before_function_count ?? 0),
+              classCount:
+                (event.after_class_count ?? 0) -
+                (event.before_class_count ?? 0),
+              cyclomaticComplexity:
+                (event.after_cyclomatic_complexity ?? 0) -
+                (event.before_cyclomatic_complexity ?? 0),
+              maxNestingDepth:
+                (event.after_max_nesting_depth ?? 0) -
+                (event.before_max_nesting_depth ?? 0)
+            }
+          : null;
+
+      return {
+        path: event.path,
+        sha: event.sha,
+        subject: event.subject,
+        committed_at: event.committed_at,
+        change_type: event.change_type,
+        analysis_status: event.analysis_status,
+        before,
+        after,
+        delta
+      };
+    });
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "typescript_ast_file_change_snapshots",
+      supportedExtensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
+      excludedGeneratedPaths: [
+        "node_modules",
+        "dist",
+        "build",
+        "coverage",
+        "vendor",
+        "out",
+        ".next",
+        ".nuxt",
+        "generated"
       ],
       events
     });
