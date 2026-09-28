@@ -9,6 +9,7 @@ import {
   getRepositoryById,
   persistCommitBatch,
   replaceFileChangeMetrics,
+  replaceRepositoryCommitHistory,
   updateAnalysisRun
 } from "../modules/repositories/repository.persistence.js";
 import { discoverCommits } from "../modules/commits/commit.discovery.js";
@@ -99,10 +100,13 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
-      const persistedCount = await persistCommitBatch(
-        repositoryId,
-        commits
-      );
+      const persistedCount =
+        analysis.analysis_mode === "incremental"
+          ? await persistCommitBatch(repositoryId, commits)
+          : await replaceRepositoryCommitHistory(
+              repositoryId,
+              commits
+            );
 
       const fileChurn = await discoverFileChurn(
         repository.storage_path
