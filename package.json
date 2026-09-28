@@ -1,13 +1,15 @@
 {
-  "name": "autopsy",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "project-autopsy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-backed development history analyzer for software projects.",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "bullmq": "^6.3.9",
     "cors": "^2.8.6",
@@ -29,9 +31,5 @@
     "nodemon": "^3.1.14",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
-  },
-  "directories": {
-    "test": "tests"
-  },
-  "description": ""
+  }
 }

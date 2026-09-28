@@ -1,0 +1,25 @@
+import pg from "pg";
+import { env } from "./env.js";
+
+const { Pool } = pg;
+
+export const db = new Pool({
+  connectionString: env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 5_000
+});
+
+db.on("error", (error) => {
+  console.error("Unexpected PostgreSQL error:", error);
+});
+
+export async function checkDatabaseConnection(): Promise<void> {
+  const client = await db.connect();
+
+  try {
+    await client.query("SELECT 1");
+  } finally {
+    client.release();
+  }
+}
