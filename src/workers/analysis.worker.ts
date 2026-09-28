@@ -142,3 +142,39 @@ analysisWorker.on("failed", (job, error) => {
     error
   );
 });
+
+
+let shuttingDown = false;
+
+async function shutdownWorker(signal: string): Promise<void> {
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
+  console.log(`Received ${signal}. Shutting down Project Autopsy worker...`);
+
+  const forceExitTimer = setTimeout(() => {
+    console.error("Worker graceful shutdown timed out.");
+    process.exit(1);
+  }, 10_000);
+
+  forceExitTimer.unref();
+
+  try {
+    await analysisWorker.close();
+    await redis.quit();
+    clearTimeout(forceExitTimer);
+    process.exit(0);
+  } catch (error) {
+    clearTimeout(forceExitTimer);
+    console.error("Worker shutdown failed:", error);
+    process.exit(1);
+  }
+}
+
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.once(signal, () => {
+    void shutdownWorker(signal);
+  });
+}
