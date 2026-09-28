@@ -210,9 +210,13 @@ export async function persistCommitBatch(
     committerEmail: string;
     committedAt: string;
     subject: string;
+    additions: number;
+    deletions: number;
     files: Array<{
       path: string;
       status: string;
+      additions: number;
+      deletions: number;
     }>;
   }>
 ): Promise<number> {
@@ -315,7 +319,7 @@ export async function persistCommitBatch(
               additions,
               deletions
             )
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1, $2, $3, $4, $5)
           `,
           [commitId, file.path, file.status, file.additions, file.deletions]
         );
