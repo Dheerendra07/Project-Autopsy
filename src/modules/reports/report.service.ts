@@ -30,7 +30,7 @@ import type {
   ReportBuildInput
 } from "./report.types.js";
 
-export const REPORT_VERSION = "1.0";
+export const REPORT_VERSION: "1.0" = "1.0";
 
 export class EvidenceReportNotReadyError extends Error {
   constructor(message: string) {
