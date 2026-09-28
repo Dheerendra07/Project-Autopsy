@@ -131,3 +131,10 @@ Dependency history is derived from historical package.json snapshots. Architectu
 Refactor candidates: GET /api/repositories/:repositoryId/refactors?limit=20
 
 Results are evidence-backed heuristic signals from commit subjects and files_changed. They are not proof that a commit was a refactor.
+
+
+## Change coupling
+
+Change-coupling API: GET /api/repositories/:repositoryId/coupling?minCoChanges=2&limit=50
+
+A co-change count means both file paths were changed in the same persisted Git commit. This is a historical co-change signal, not proof of architectural dependency.
