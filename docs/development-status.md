@@ -151,3 +151,20 @@ POST /api/repositories/import now returns `202 Accepted` after validating and pe
 The import job uses the same BullMQ queue as analysis with an explicit `kind` discriminator. Existing analysis jobs without a kind continue to be treated as analysis jobs for backward compatibility.
 
 Import failure marks the analysis run as failed and the clone service removes partial repository storage. Successful import updates tracked branch, default branch, repository head SHA, and analysis target SHA before enqueueing the analysis job.
+
+## Runtime telemetry v1 — feat/runtime-telemetry
+
+Implemented on branch `feat/runtime-telemetry` from baseline `05a99c2718ab23d3dd51b23c8858ba69612a2afa`.
+
+- Migration: `009_runtime_telemetry.sql`
+- Ingestion: POST `/api/repositories/:repositoryId/runtime/telemetry`
+- Query: GET `/api/repositories/:repositoryId/runtime/telemetry`
+- Summary: GET `/api/repositories/:repositoryId/runtime/telemetry/summary`
+- Batch limit: 500 events
+- Idempotency: repository + eventId + SHA-256 payload fingerprint
+- Conflicting event reuse is rejected transactionally; mixed batches never partially commit.
+- Production ingestion requires `RUNTIME_TELEMETRY_INGEST_KEY` with bearer/header support and constant-time comparison.
+- Events carry operation identity, duration, status, optional revision SHA, trace/span IDs, and bounded attributes.
+- Summary exposes min/avg/p50/p95/p99/max duration and error rate with grouping by revision, operation, service, environment, or signal type.
+- Revision groups expose whether the observed revision exists in persisted Git commit evidence.
+- Runtime telemetry remains observational evidence; regression/cause inference is deferred until compatible windows, revision identity, and sample sufficiency are checked.
