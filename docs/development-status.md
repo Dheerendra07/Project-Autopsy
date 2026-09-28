@@ -151,3 +151,67 @@ POST /api/repositories/import now returns `202 Accepted` after validating and pe
 The import job uses the same BullMQ queue as analysis with an explicit `kind` discriminator. Existing analysis jobs without a kind continue to be treated as analysis jobs for backward compatibility.
 
 Import failure marks the analysis run as failed and the clone service removes partial repository storage. Successful import updates tracked branch, default branch, repository head SHA, and analysis target SHA before enqueueing the analysis job.
+
+## Runtime telemetry v1 — feat/runtime-telemetry
+
+Implemented on branch `feat/runtime-telemetry` from baseline `05a99c2718ab23d3dd51b23c8858ba69612a2afa`.
+
+- Migration: `009_runtime_telemetry.sql`
+- Ingestion: POST `/api/repositories/:repositoryId/runtime/telemetry`
+- Query: GET `/api/repositories/:repositoryId/runtime/telemetry`
+- Summary: GET `/api/repositories/:repositoryId/runtime/telemetry/summary`
+- Batch limit: 500 events
+- Idempotency: repository + eventId + SHA-256 payload fingerprint
+- Conflicting event reuse is rejected transactionally; mixed batches never partially commit.
+- Production ingestion requires `RUNTIME_TELEMETRY_INGEST_KEY` with bearer/header support and constant-time comparison.
+- Events carry operation identity, duration, status, optional revision SHA, trace/span IDs, and bounded attributes.
+- Summary exposes min/avg/p50/p95/p99/max duration and error rate with grouping by revision, operation, service, environment, or signal type.
+- Revision groups expose whether the observed revision exists in persisted Git commit evidence.
+- Runtime telemetry remains observational evidence; regression/cause inference is deferred until compatible windows, revision identity, and sample sufficiency are checked.
+
+### Runtime persistence verification
+
+The feature branch includes PostgreSQL-backed integration coverage for idempotent duplicates, conflicting event IDs, transactional mixed-batch rollback, filtered event reads, percentile aggregates, and revision-to-commit correlation. The CI workflow runs database migrations before the test suite so these checks execute against PostgreSQL rather than mocks.
+
+### Database migration / schema evolution evidence v1
+
+The analyzer now reconstructs database-migration history from Git commit evidence without executing the target repository's migrations.
+
+Supported deterministic SQL evidence includes common CREATE/DROP/ALTER TABLE, column rename/type/nullability changes, constraints, indexes, views, schemas, types, sequences, functions, and common data operations. Code-based migrations are retained as evidence with an explicit unsupported-code status rather than receiving fabricated SQL semantics.
+
+Each migration event stores its source commit, migration path, framework hint, analysis status, schema/data/mixed classification, operation counts, statement/content hashes, destructive or lock-sensitive signals, and warnings. SQL statement splitting handles quoted strings, comments, and PostgreSQL dollar-quoted bodies.
+
+API: GET /api/repositories/:repositoryId/database-migrations
+
+Filters: framework, changeType, migrationKind, operationType, with deterministic historical ordering.
+
+Evidence policy: destructive/lock-sensitive signals are heuristics about migration text. They do not establish that a production deployment experienced downtime, blocking, data loss, or a performance regression.
+
+Analyzer version is now 0.3.0.
+
+SQL parser regression coverage now locks comment/string/dollar-quote statement boundaries, deterministic operation classification, and migration-history add/modify/delete behavior.
+
+### Test Evolution v1
+
+Autopsy now reconstructs test-source evolution from Git history. Test events retain commit/path evidence, framework hints, artifact and test-type classification, before/after test/suite/hook/assertion/mock heuristics, deterministic content hashes, and co-changed production files. Source counts do not establish historical execution or pass/fail, and co-change does not establish coverage.
+
+API: GET /api/repositories/:repositoryId/test-evolution
+Summary: GET /api/repositories/:repositoryId/test-evolution/summary
+
+The summary intentionally aggregates changed-test evidence rather than claiming a complete repository-wide test inventory.
+
+
+## Audit hardening checkpoint — 2026-09-29
+
+The runtime telemetry, database migration evidence, and test evolution layers were audited after implementation.
+
+Hardening completed:
+- Analysis/import/refresh job redelivery is now state-aware and will not reset a completed run.
+- Import retries resume from a persisted clone checkpoint instead of deleting/recloning repository storage.
+- Refresh retries resume from a persisted planning checkpoint instead of repeating remote refresh work.
+- Runtime revision identity is required to be a full Git SHA (40 or 64 hex characters) so exact commit correlation remains deterministic.
+- Runtime trace/span persistence constraints match OpenTelemetry identifier lengths.
+- SQL migration classification is case-insensitive for normal SQL keyword syntax.
+- Retry-recovery rules have dedicated unit coverage.
+
+BullMQ job IDs remain deterministic, and the recovery logic treats queue deduplication as an optimization rather than the source of truth; the PostgreSQL analysis-run state is authoritative.

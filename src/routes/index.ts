@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { repositoryRouter } from "../modules/repositories/repository.routes.js";
+import { runtimeRouter } from "../modules/runtime/runtime.routes.js";
 
 export const router = Router();
 
@@ -12,3 +13,4 @@ router.get("/", (_req, res) => {
 });
 
 router.use("/repositories", repositoryRouter);
+router.use("/repositories/:repositoryId/runtime", runtimeRouter);
