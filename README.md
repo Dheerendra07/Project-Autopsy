@@ -138,3 +138,23 @@ The analyzer stores complexity as file-change events rather than pretending ever
 ## Deployment note
 
 TypeScript is a runtime dependency because the background analysis worker performs AST parsing. Production installs must include regular dependencies when starting the worker; do not use a production install mode that omits runtime dependencies.
+
+
+## Re-analysis
+
+Refresh the tracked branch and queue a new analysis:
+
+```http
+POST /api/repositories/:repositoryId/analyze
+```
+
+The service compares the current remote head with the latest completed analysis head.
+
+- unchanged head -> `up_to_date`
+- latest analyzed head is an ancestor of the new head -> `incremental`
+- no prior analyzed head or divergent history -> `full`
+
+Incremental runs persist the new commit range and seed dependency, architecture, and complexity history from the previous analyzed head. Some repository-wide aggregates, such as file churn and co-change coupling, are still recomputed for correctness in this v1 implementation.
+
+Each analysis run records its mode, base head, target head, and analyzer version. An active queued/running analysis is restricted to one per repository by a PostgreSQL partial unique index.
+
