@@ -89,6 +89,7 @@ function baseInput() {
     ],
     dependencyChanges: [
       {
+        sha: "b".repeat(40),
         package_name: "express",
         scope: "runtime",
         change_type: "updated",
@@ -100,6 +101,7 @@ function baseInput() {
     ],
     architectureEvents: [
       {
+        sha: "b".repeat(40),
         root_path: ".",
         event_type: "directory_added",
         path: "src/reports",
