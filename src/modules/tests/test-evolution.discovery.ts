@@ -545,9 +545,5 @@ export async function discoverTestEvolution(
     }
   }
 
-  return events.sort(
-    (a, b) =>
-      a.sha.localeCompare(b.sha) ||
-      a.path.localeCompare(b.path)
-  );
+  return events;
 }
