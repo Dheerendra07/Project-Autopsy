@@ -20,6 +20,7 @@ import {
   enqueueRepositoryAnalysis
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
+import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
 
 const router = Router();
 
@@ -177,6 +178,60 @@ router.get("/:repositoryId/commits", async (req, res, next) => {
         totalPages
       },
       commits: result.commits
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get("/:repositoryId/timeline", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+
+    const query = z.object({
+      page: z.coerce.number().int().min(1).max(10_000).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(50)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const result = await listRepositoryCommits(
+      repositoryId,
+      query.page,
+      query.limit
+    );
+
+    const totalPages =
+      result.total === 0
+        ? 0
+        : Math.ceil(result.total / query.limit);
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "commit_subject_keyword_heuristic",
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total: result.total,
+        totalPages
+      },
+      events: result.commits.map((commit) => ({
+        ...commit,
+        eventType: classifyTimelineEvent(commit.subject)
+      }))
     });
   } catch (error) {
     next(error);
