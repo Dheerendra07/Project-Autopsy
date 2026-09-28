@@ -32,6 +32,20 @@ import type {
 
 export const REPORT_VERSION = "1.0";
 
+export class EvidenceReportNotReadyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EvidenceReportNotReadyError";
+  }
+}
+
+export class EvidenceReportRepositoryNotFoundError extends Error {
+  constructor() {
+    super("Repository not found.");
+    this.name = "EvidenceReportRepositoryNotFoundError";
+  }
+}
+
 function evidenceRef(
   source: string,
   key: string,
@@ -300,7 +314,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
     )
   );
 
-  const testClaims = input.testEvolution.events.slice(0, input.sampleLimit).map((item, index) =>
+  const testClaims = input.testEvolution.events.slice(0, Math.max(input.sampleLimit - 1, 0)).map((item, index) =>
     evidenceClaim(
       "test-" + String(index + 1),
       item.path +
@@ -389,7 +403,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
       "runtime-observations",
       "Runtime observations",
       "observed runtime telemetry",
-      runtimeClaims,
+      runtimeClaims.slice(0, input.sampleLimit),
       "Runtime telemetry is optional and may represent only the instrumented portion of the application."
     )
   );
@@ -439,12 +453,12 @@ export async function generateEvidenceReport(
 ): Promise<EvidenceReport> {
   const repository = await getRepositoryById(repositoryId);
   if (!repository) {
-    throw new Error("Repository not found.");
+    throw new EvidenceReportRepositoryNotFoundError();
   }
 
   const analysis = await getLatestCompletedAnalysisRun(repositoryId);
   if (!analysis) {
-    throw new Error(
+    throw new EvidenceReportNotReadyError(
       "A completed analysis is required before a report can be generated."
     );
   }
