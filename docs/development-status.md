@@ -57,7 +57,7 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Next planned layers
 
-Interview story scaffolding is now implemented on this branch and pending verification/merge.
+The original planned layers through evidence-backed interview stories are complete on main. Further work should be proposed as a new roadmap item and must preserve the existing evidence contracts and verification gates.
 
 ## Verification rule
 
@@ -69,7 +69,17 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked main baseline for this feature: `8cb2f8a0cc0488bb39ae348f4a238225cc08c014`. The runtime hardening and deployment verification changes are now part of main. Preserve all existing API routes, evidence models, migrations, and shutdown behavior when continuing.
+Locked main baseline: `5cc47e70891e37d2a3fdddb947af83bc91edc474`.
+
+The current main baseline includes:
+- runtime telemetry with PostgreSQL-backed integration verification
+- database migration/schema evolution evidence
+- test evolution evidence
+- state-aware import/refresh/analyze retry recovery
+- evidence-backed repository reports
+- evidence-backed interview story scaffolds
+
+Preserve all existing API routes, evidence models, migrations, deterministic analyzer behavior, retry semantics, and shutdown behavior when continuing. Start any new roadmap item from this baseline and add it to this document only after implementation and verification.
 
 ## Evidence semantics
 
@@ -245,3 +255,15 @@ The interview layer composes existing evidence-report sections into bounded stor
 - runtime observability
 
 Every story separates evidence from personal ownership, intent, business/runtime outcome, and other details that must be verified before being stated in an interview. The layer does not invent first-person contributions or causal outcomes.
+
+
+## End-to-end autopsy completion checkpoint — 2026-09-29
+
+The roadmap that was locked for this continuation is complete on main.
+
+Verified merge sequence:
+- Runtime telemetry / database migration evidence / test evolution hardening: merged via PR #20.
+- Evidence-backed repository reports: merged via PR #21.
+- Evidence-backed interview story scaffolds: merged via PR #22.
+
+Current verification policy remains unchanged: feature branches must pass typecheck, build, test, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before merge.
