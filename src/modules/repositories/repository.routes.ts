@@ -34,6 +34,8 @@ import {
   listDependencyChanges
 } from "../evolution/evolution.persistence.js";
 import { listCodeComplexityEvents } from "../complexity/complexity.persistence.js";
+import { listDatabaseMigrationEvents } from "../schema/schema.persistence.js";
+import type { DatabaseMigrationFilters } from "../schema/schema.types.js";
 
 const router = Router();
 
@@ -539,6 +541,116 @@ router.get("/:repositoryId/architecture", async (req, res, next) => {
         "src top-level directories"
       ],
       events
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/database-migrations", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(500).default(100),
+      framework: z
+        .enum([
+          "sql",
+          "prisma",
+          "drizzle",
+          "knex",
+          "sequelize",
+          "typeorm",
+          "rails",
+          "unknown"
+        ])
+        .optional(),
+      changeType: z
+        .enum(["added", "modified", "deleted"])
+        .optional(),
+      migrationKind: z
+        .enum(["schema", "data", "mixed", "unknown"])
+        .optional(),
+      operationType: z
+        .enum([
+          "create_table",
+          "drop_table",
+          "alter_table_add_column",
+          "alter_table_drop_column",
+          "alter_table_rename_column",
+          "alter_column_type",
+          "set_not_null",
+          "drop_not_null",
+          "add_constraint",
+          "drop_constraint",
+          "create_index",
+          "drop_index",
+          "create_view",
+          "drop_view",
+          "create_schema",
+          "drop_schema",
+          "create_type",
+          "alter_type",
+          "drop_type",
+          "create_sequence",
+          "drop_sequence",
+          "create_function",
+          "drop_function",
+          "truncate",
+          "insert",
+          "update",
+          "delete",
+          "merge",
+          "alter_table_other",
+          "unknown"
+        ])
+        .optional()
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const filters: DatabaseMigrationFilters = {};
+    if (query.framework) filters.framework = query.framework;
+    if (query.changeType) filters.changeType = query.changeType;
+    if (query.migrationKind) filters.migrationKind = query.migrationKind;
+    if (query.operationType) filters.operationType = query.operationType;
+
+    const result = await listDatabaseMigrationEvents(
+      repositoryId,
+      query.limit,
+      filters
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "database_migration_file_analysis",
+      ordering: [
+        "committedAt ASC NULLS LAST",
+        "sha ASC",
+        "path ASC"
+      ],
+      filters: {
+        framework: query.framework ?? null,
+        changeType: query.changeType ?? null,
+        migrationKind: query.migrationKind ?? null,
+        operationType: query.operationType ?? null
+      },
+      pagination: {
+        limit: query.limit,
+        total: result.total
+      },
+      events: result.events
     });
   } catch (error) {
     next(error);
