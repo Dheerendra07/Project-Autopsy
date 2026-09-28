@@ -73,18 +73,26 @@ function getRepositoryId(
 }
 
 function getFilters(
-  query: z.infer<typeof querySchema>
+  query: {
+    from?: Date;
+    to?: Date;
+    revisionSha?: string;
+    environment?: string;
+    operationName?: string;
+    signalType?: RuntimeTelemetryFilters["signalType"];
+  }
 ): RuntimeTelemetryFilters {
-  return {
-    from: query.from,
-    to: query.to,
-    revisionSha: query.revisionSha,
-    environment: query.environment,
-    operationName: query.operationName,
-    signalType: query.signalType
-  };
-}
+  const filters: RuntimeTelemetryFilters = {};
 
+  if (query.from) filters.from = query.from;
+  if (query.to) filters.to = query.to;
+  if (query.revisionSha) filters.revisionSha = query.revisionSha;
+  if (query.environment) filters.environment = query.environment;
+  if (query.operationName) filters.operationName = query.operationName;
+  if (query.signalType) filters.signalType = query.signalType;
+
+  return filters;
+}
 runtimeRouter.post("/telemetry", async (req, res, next) => {
   try {
     if (
