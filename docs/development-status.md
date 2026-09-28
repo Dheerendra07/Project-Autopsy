@@ -172,3 +172,19 @@ Implemented on branch `feat/runtime-telemetry` from baseline `05a99c2718ab23d3dd
 ### Runtime persistence verification
 
 The feature branch includes PostgreSQL-backed integration coverage for idempotent duplicates, conflicting event IDs, transactional mixed-batch rollback, filtered event reads, percentile aggregates, and revision-to-commit correlation. The CI workflow runs database migrations before the test suite so these checks execute against PostgreSQL rather than mocks.
+
+### Database migration / schema evolution evidence v1
+
+The analyzer now reconstructs database-migration history from Git commit evidence without executing the target repository's migrations.
+
+Supported deterministic SQL evidence includes common CREATE/DROP/ALTER TABLE, column rename/type/nullability changes, constraints, indexes, views, schemas, types, sequences, functions, and common data operations. Code-based migrations are retained as evidence with an explicit unsupported-code status rather than receiving fabricated SQL semantics.
+
+Each migration event stores its source commit, migration path, framework hint, analysis status, schema/data/mixed classification, operation counts, statement/content hashes, destructive or lock-sensitive signals, and warnings. SQL statement splitting handles quoted strings, comments, and PostgreSQL dollar-quoted bodies.
+
+API: GET /api/repositories/:repositoryId/database-migrations
+
+Filters: framework, changeType, migrationKind, operationType, with deterministic historical ordering.
+
+Evidence policy: destructive/lock-sensitive signals are heuristics about migration text. They do not establish that a production deployment experienced downtime, blocking, data loss, or a performance regression.
+
+Analyzer version is now 0.3.0.
