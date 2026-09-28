@@ -168,3 +168,7 @@ Implemented on branch `feat/runtime-telemetry` from baseline `05a99c2718ab23d3dd
 - Summary exposes min/avg/p50/p95/p99/max duration and error rate with grouping by revision, operation, service, environment, or signal type.
 - Revision groups expose whether the observed revision exists in persisted Git commit evidence.
 - Runtime telemetry remains observational evidence; regression/cause inference is deferred until compatible windows, revision identity, and sample sufficiency are checked.
+
+### Runtime persistence verification
+
+The feature branch includes PostgreSQL-backed integration coverage for idempotent duplicates, conflicting event IDs, transactional mixed-batch rollback, filtered event reads, percentile aggregates, and revision-to-commit correlation. The CI workflow runs database migrations before the test suite so these checks execute against PostgreSQL rather than mocks.
