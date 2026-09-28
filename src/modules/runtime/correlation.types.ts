@@ -19,12 +19,33 @@ export interface RuntimeCorrelationWindow {
   aggregate: RuntimeTelemetryAggregate;
 }
 
+export interface RuntimeCorrelationChangedFile {
+  path: string;
+  status: string;
+  additions: number;
+  deletions: number;
+}
+
+export interface RuntimeCorrelationChangeContext {
+  commitSha: string;
+  subject: string;
+  committedAt: string | null;
+  parentRevisionSha: string | null;
+  filesChanged: number;
+  additions: number | null;
+  deletions: number | null;
+  changedFiles: RuntimeCorrelationChangedFile[];
+  changedFilesTruncated: boolean;
+  changedFilesComplete: boolean;
+}
+
 export interface RuntimeCorrelationEvidence {
   status: RuntimeCorrelationStatus;
   repositoryId: string;
   targetRevisionSha: string;
   parentRevisionSha: string | null;
   targetCommitAt: string | null;
+  changeContext: RuntimeCorrelationChangeContext | null;
   windowMinutes: number;
   minimumSamples: number;
   filters: Omit<RuntimeTelemetryFilters, "from" | "to" | "revisionSha">;
