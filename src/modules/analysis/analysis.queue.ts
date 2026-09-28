@@ -3,7 +3,7 @@ import { redis } from "../../config/redis.js";
 import { ANALYSIS_QUEUE_NAME } from "../../workers/queue.constants.js";
 
 export interface AnalysisJobData {
-  kind?: "import" | "analyze";
+  kind?: "import" | "refresh" | "analyze";
   repositoryId: string;
   analysisRunId: string;
   remoteUrl?: string;
@@ -49,6 +49,30 @@ export async function enqueueRepositoryImport(
   );
 
   return job.id ?? `import-${analysisRunId}`;
+}
+
+export async function enqueueRepositoryRefresh(
+  repositoryId: string,
+  analysisRunId: string
+): Promise<string> {
+  const job = await analysisQueue.add(
+    "refresh-repository",
+    {
+      kind: "refresh",
+      repositoryId,
+      analysisRunId
+    },
+    {
+      jobId: `refresh-${analysisRunId}`,
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 2_000
+      }
+    }
+  );
+
+  return job.id ?? `refresh-${analysisRunId}`;
 }
 
 export async function enqueueRepositoryAnalysis(
