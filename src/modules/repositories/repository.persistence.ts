@@ -377,3 +377,132 @@ export async function listRepositoryCommits(
     total: Number.parseInt(countRow.count, 10)
   };
 }
+
+
+export async function replaceFileChangeMetrics(
+  repositoryId: string,
+  metrics: Array<{
+    path: string;
+    additions: number;
+    deletions: number;
+    binaryChanges: number;
+  }>
+): Promise<void> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      "DELETE FROM file_change_metrics WHERE repository_id = $1",
+      [repositoryId]
+    );
+
+    if (metrics.length > 0) {
+      await client.query(
+        `
+          INSERT INTO file_change_metrics (
+            repository_id,
+            path,
+            commits_touched,
+            additions,
+            deletions,
+            binary_changes,
+            total_churn
+          )
+          SELECT
+            $1,
+            item.path,
+            COALESCE(
+              (
+                SELECT COUNT(*)
+                FROM commit_files cf
+                INNER JOIN commits c ON c.id = cf.commit_id
+                WHERE c.repository_id = $1
+                  AND cf.path = item.path
+              ),
+              0
+            ),
+            item.additions,
+            item.deletions,
+            item.binary_changes,
+            item.additions + item.deletions
+          FROM jsonb_to_recordset($2::jsonb) AS item(
+            path TEXT,
+            additions INTEGER,
+            deletions INTEGER,
+            binary_changes INTEGER
+          )
+          ON CONFLICT (repository_id, path)
+          DO UPDATE SET
+            commits_touched = EXCLUDED.commits_touched,
+            additions = EXCLUDED.additions,
+            deletions = EXCLUDED.deletions,
+            binary_changes = EXCLUDED.binary_changes,
+            total_churn = EXCLUDED.total_churn,
+            updated_at = NOW()
+        `,
+        [repositoryId, JSON.stringify(metrics)]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export interface StoredHotspot {
+  path: string;
+  commits_touched: number;
+  additions: number;
+  deletions: number;
+  binary_changes: number;
+  total_churn: number;
+  first_changed_at: string | null;
+  last_changed_at: string | null;
+}
+
+export async function listRepositoryHotspots(
+  repositoryId: string,
+  limit: number
+): Promise<StoredHotspot[]> {
+  const result = await db.query<StoredHotspot>(
+    `
+      SELECT
+        metrics.path,
+        metrics.commits_touched,
+        metrics.additions,
+        metrics.deletions,
+        metrics.binary_changes,
+        metrics.total_churn,
+        MIN(commits.committed_at) AS first_changed_at,
+        MAX(commits.committed_at) AS last_changed_at
+      FROM file_change_metrics AS metrics
+      LEFT JOIN commit_files AS files
+        ON files.path = metrics.path
+      LEFT JOIN commits
+        ON commits.id = files.commit_id
+       AND commits.repository_id = metrics.repository_id
+      WHERE metrics.repository_id = $1
+      GROUP BY
+        metrics.path,
+        metrics.commits_touched,
+        metrics.additions,
+        metrics.deletions,
+        metrics.binary_changes,
+        metrics.total_churn
+      ORDER BY
+        metrics.commits_touched DESC,
+        metrics.total_churn DESC,
+        metrics.path ASC
+      LIMIT $2
+    `,
+    [repositoryId, limit]
+  );
+
+  return result.rows;
+}
