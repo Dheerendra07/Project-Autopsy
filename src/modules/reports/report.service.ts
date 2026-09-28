@@ -419,7 +419,7 @@ export function buildEvidenceReport(
   const sectionsWithEvidence = sections.filter((item) => item.claims.length > 0).length;
 
   const unsigned = {
-    reportVersion: REPORT_VERSION as const,
+    reportVersion: REPORT_VERSION,
     analyzerVersion: input.analysis.analyzer_version || ANALYZER_VERSION,
     repository: {
       id: input.repository.id,
