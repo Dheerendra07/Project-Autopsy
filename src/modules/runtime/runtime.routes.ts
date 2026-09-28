@@ -20,23 +20,25 @@ import type {
 
 export const runtimeRouter = Router({ mergeParams: true });
 
+const runtimeQueryFields = {
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  revisionSha: z
+    .string()
+    .trim()
+    .regex(/^[0-9a-fA-F]{7,64}$/)
+    .optional(),
+  environment: z.string().trim().min(1).max(64).optional(),
+  operationName: z.string().trim().min(1).max(256).optional(),
+  signalType: z
+    .enum(["http", "job", "db", "external", "custom"])
+    .optional()
+};
+
 const querySchema = z
-  .object({
-    page: z.coerce.number().int().min(1).max(10_000).default(1),
-    limit: z.coerce.number().int().min(1).max(100).default(50),
-    from: z.coerce.date().optional(),
-    to: z.coerce.date().optional(),
-    revisionSha: z
-      .string()
-      .trim()
-      .regex(/^[0-9a-fA-F]{7,64}$/)
-      .optional(),
-    environment: z.string().trim().min(1).max(64).optional(),
-    operationName: z.string().trim().min(1).max(256).optional(),
-    signalType: z
-      .enum(["http", "job", "db", "external", "custom"])
-      .optional()
-  })
+  .object(runtimeQueryFields)
   .superRefine((value, ctx) => {
     if (
       value.from &&
@@ -51,7 +53,21 @@ const querySchema = z
     }
   });
 
-const summaryQuerySchema = querySchema
+const summaryQuerySchema = z
+  .object(runtimeQueryFields)
+  .superRefine((value, ctx) => {
+    if (
+      value.from &&
+      value.to &&
+      value.from.getTime() >= value.to.getTime()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["from"],
+        message: "from must be earlier than to."
+      });
+    }
+  })
   .omit({ page: true, limit: true })
   .extend({
     groupBy: z
@@ -65,7 +81,6 @@ const summaryQuerySchema = querySchema
       .default("revision"),
     groupLimit: z.coerce.number().int().min(1).max(100).default(25)
   });
-
 function getRepositoryId(
   params: Record<string, string | undefined>
 ): string {
