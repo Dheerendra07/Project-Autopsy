@@ -48,7 +48,7 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
   const header = lines.shift() ?? "";
   const fields = header.split(FIELD_SEPARATOR);
 
-  if (fields.length !== 10) {
+  if (fields.length !== 9) {
     throw new Error("Git commit record has an unexpected format.");
   }
 
