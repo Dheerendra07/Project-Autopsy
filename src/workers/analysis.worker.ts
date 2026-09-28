@@ -25,6 +25,10 @@ import {
   replaceDependencyEvolution,
   replaceArchitectureEvolution
 } from "../modules/evolution/evolution.persistence.js";
+import {
+  getAnalysisCache,
+  putAnalysisCache
+} from "../modules/analysis/analysis-cache.persistence.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
