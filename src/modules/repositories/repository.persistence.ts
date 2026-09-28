@@ -241,7 +241,9 @@ export async function persistCommitBatch(
             committer_email,
             committed_at,
             subject,
-            files_changed
+            files_changed,
+            additions,
+            deletions
           )
           VALUES (
             $1,
@@ -254,7 +256,9 @@ export async function persistCommitBatch(
             $8,
             $9,
             $10,
-            $11
+            $11,
+            $12,
+            $13
           )
           ON CONFLICT (repository_id, sha)
           DO UPDATE SET
@@ -266,7 +270,9 @@ export async function persistCommitBatch(
             committer_email = EXCLUDED.committer_email,
             committed_at = EXCLUDED.committed_at,
             subject = EXCLUDED.subject,
-            files_changed = EXCLUDED.files_changed
+            files_changed = EXCLUDED.files_changed,
+            additions = EXCLUDED.additions,
+            deletions = EXCLUDED.deletions
           RETURNING id
         `,
         [
@@ -280,7 +286,9 @@ export async function persistCommitBatch(
           commit.committerEmail,
           commit.committedAt,
           commit.subject,
-          commit.files.length
+          commit.files.length,
+          commit.additions,
+          commit.deletions
         ]
       );
 
@@ -303,11 +311,13 @@ export async function persistCommitBatch(
             INSERT INTO commit_files (
               commit_id,
               path,
-              status
+              status,
+              additions,
+              deletions
             )
-            VALUES ($1, $2, $3)
+            VALUES ($1, $2, $3, $4)
           `,
-          [commitId, file.path, file.status]
+          [commitId, file.path, file.status, file.additions, file.deletions]
         );
       }
 
