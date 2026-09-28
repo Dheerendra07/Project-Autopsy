@@ -112,6 +112,7 @@ export interface ReportBuildInput {
   coupling: Array<{ path_a: string; path_b: string; co_change_count: number }>;
   refactors: Array<{ sha: string; committed_at: string | null; subject: string; files_changed: number }>;
   dependencyChanges: Array<{
+    sha: string;
     package_name: string;
     scope: string;
     change_type: string;
@@ -121,6 +122,7 @@ export interface ReportBuildInput {
     subject: string;
   }>;
   architectureEvents: Array<{
+    sha: string;
     root_path: string;
     event_type: string;
     path: string;
