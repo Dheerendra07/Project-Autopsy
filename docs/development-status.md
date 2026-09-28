@@ -59,10 +59,8 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 1. Runtime telemetry ingestion for observed performance history.
 2. Database/schema evolution.
-3. Runtime telemetry ingestion for observed performance history.
-4. Database/schema evolution.
-5. Test evolution.
-6. Evidence-backed reports and interview stories.
+3. Test evolution.
+4. Evidence-backed reports and interview stories.
 
 ## Verification rule
 
@@ -135,6 +133,14 @@ Planning rules:
 Only one queued/running analysis is permitted per repository at the database level.
 
 For v1, commit history and historical dependency/architecture/complexity evidence can be appended from a new commit range. File churn and co-change coupling continue to rebuild from complete evidence so repeated execution remains idempotent.
+
+## Asynchronous re-analysis hardening
+
+`POST /api/repositories/:repositoryId/analyze` now only creates a queued refresh/check run. Remote Git refresh, ancestry detection, and full/incremental planning execute in the worker.
+
+The temporary `check` mode is a coordination state. If the refreshed target is already the latest completed analyzed head, the check run completes without creating a false analysis event. Otherwise the worker converts the same run into `full` or `incremental` before chaining the analysis job.
+
+Refresh jobs use bounded retries with exponential backoff. The existing PostgreSQL partial unique index keeps one queued/running analysis or refresh per repository.
 
 Repository import is asynchronous in the current branch: the HTTP layer persists a pending repository and queues an import job; the worker clones the repository, records its target head, and then queues the initial analysis job.
 
