@@ -221,8 +221,10 @@ test("builds an evidence report with stable fingerprint independent of generatio
 });
 
 test("keeps exact commit references on evolution evidence", () => {
+  const input = baseInput();
+  input.sampleLimit = 5;
   const report = buildEvidenceReport(
-    baseInput(),
+    input,
     new Date("2026-09-29T00:00:00.000Z")
   );
 
