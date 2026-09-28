@@ -220,6 +220,37 @@ test("builds an evidence report with stable fingerprint independent of generatio
   );
 });
 
+test("keeps exact commit references on evolution evidence", () => {
+  const report = buildEvidenceReport(
+    baseInput(),
+    new Date("2026-09-29T00:00:00.000Z")
+  );
+
+  const evolution = report.sections.find(
+    (section) => section.id === "evolution"
+  );
+
+  const dependencyClaim = evolution?.claims.find(
+    (claim) => claim.id === "dependency-1"
+  );
+  const architectureClaim = evolution?.claims.find(
+    (claim) => claim.id === "architecture-1"
+  );
+
+  assert.equal(
+    dependencyClaim?.evidence[0]?.commitSha,
+    "b".repeat(40)
+  );
+  assert.equal(
+    architectureClaim?.evidence[0]?.commitSha,
+    "b".repeat(40)
+  );
+  assert.equal(
+    architectureClaim?.evidence[0]?.path,
+    "src/reports"
+  );
+});
+
 test("does not turn absent runtime telemetry into a negative performance claim", () => {
   const input = baseInput();
   input.runtimeSummary.overall.sampleCount = 0;
