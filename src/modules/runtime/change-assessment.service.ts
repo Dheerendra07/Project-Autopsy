@@ -70,7 +70,7 @@ function toPercentage(
   numerator: number,
   denominator: number
 ): number | null {
-  return denominator === 0 ? null : (numerator / denominator) * 100;
+  return denominator === 0 ? null : roundMetric((numerator / denominator) * 100);
 }
 
 function buildSampleComparison(
