@@ -2,7 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
-  checkoutRepositoryAtCommit,
   cloneRepository,
   getRepositoryStoragePath,
   isCommitAncestor,
