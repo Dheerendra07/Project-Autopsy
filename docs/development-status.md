@@ -199,3 +199,19 @@ API: GET /api/repositories/:repositoryId/test-evolution
 Summary: GET /api/repositories/:repositoryId/test-evolution/summary
 
 The summary intentionally aggregates changed-test evidence rather than claiming a complete repository-wide test inventory.
+
+
+## Audit hardening checkpoint — 2026-09-29
+
+The runtime telemetry, database migration evidence, and test evolution layers were audited after implementation.
+
+Hardening completed:
+- Analysis/import/refresh job redelivery is now state-aware and will not reset a completed run.
+- Import retries resume from a persisted clone checkpoint instead of deleting/recloning repository storage.
+- Refresh retries resume from a persisted planning checkpoint instead of repeating remote refresh work.
+- Runtime revision identity is required to be a full Git SHA (40 or 64 hex characters) so exact commit correlation remains deterministic.
+- Runtime trace/span persistence constraints match OpenTelemetry identifier lengths.
+- SQL migration classification is case-insensitive for normal SQL keyword syntax.
+- Retry-recovery rules have dedicated unit coverage.
+
+BullMQ job IDs remain deterministic, and the recovery logic treats queue deduplication as an optimization rather than the source of truth; the PostgreSQL analysis-run state is authoritative.
