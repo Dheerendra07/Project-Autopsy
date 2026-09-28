@@ -21,6 +21,7 @@ import {
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
+import { classifyRefactorSignal } from "../refactors/refactor-signals.js";
 import {
   listArchitectureEvents,
   listDependencyChanges
@@ -283,6 +284,57 @@ router.get("/:repositoryId/hotspots", async (req, res, next) => {
   }
 });
 
+
+router.get("/:repositoryId/refactors", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(20)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const result = await listRepositoryCommits(repositoryId, 1, 10000);
+    const signals = result.commits
+      .map((commit) => ({
+        sha: commit.sha,
+        committed_at: commit.committed_at,
+        subject: commit.subject,
+        files_changed: commit.files_changed,
+        signal_type: classifyRefactorSignal(commit.subject)
+      }))
+      .filter((commit) => commit.signal_type !== null)
+      .sort((a, b) => {
+        const fileDelta = b.files_changed - a.files_changed;
+        if (fileDelta !== 0) return fileDelta;
+        const timeA = a.committed_at ?? "";
+        const timeB = b.committed_at ?? "";
+        if (timeA !== timeB) return timeA.localeCompare(timeB);
+        return a.sha.localeCompare(b.sha);
+      })
+      .slice(0, query.limit);
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "commit_subject_keyword_heuristic",
+      ordering: ["files_changed DESC", "committed_at ASC", "sha ASC"],
+      signals
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/:repositoryId/dependencies", async (req, res, next) => {
   try {
