@@ -13,6 +13,16 @@ export interface StoredRepository {
   storage_path: string | null;
 }
 
+export interface StoredAnalysisRun {
+  id: string;
+  repository_id: string;
+  analyzer_version: string;
+  status: AnalysisRunStatus;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+}
+
 export interface CreateRepositoryInput {
   id: string;
   sourceType: string;
@@ -113,6 +123,28 @@ export async function getRepositoryById(
       WHERE id = $1
     `,
     [repositoryId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function getAnalysisRunById(
+  analysisRunId: string
+): Promise<StoredAnalysisRun | null> {
+  const result = await db.query<StoredAnalysisRun>(
+    `
+      SELECT
+        id,
+        repository_id,
+        analyzer_version,
+        status,
+        started_at,
+        completed_at,
+        error_message
+      FROM analysis_runs
+      WHERE id = $1
+    `,
+    [analysisRunId]
   );
 
   return result.rows[0] ?? null;
