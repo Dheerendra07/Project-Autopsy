@@ -7,9 +7,11 @@ import {
 import {
   getRepositoryById,
   persistCommitBatch,
+  replaceFileChangeMetrics,
   updateAnalysisRun
 } from "../modules/repositories/repository.persistence.js";
 import { discoverCommits } from "../modules/commits/commit.discovery.js";
+import { discoverFileChurn } from "../modules/metrics/churn.discovery.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
@@ -38,6 +40,12 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         commits
       );
 
+      const fileChurn = await discoverFileChurn(
+        repository.storage_path
+      );
+
+      await replaceFileChangeMetrics(repositoryId, fileChurn);
+
       await updateAnalysisRun(analysisRunId, "completed");
 
       return {
@@ -45,7 +53,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         repositoryId,
         analyzerVersion: ANALYZER_VERSION,
         commitsDiscovered: commits.length,
-        commitsPersisted: persistedCount
+        commitsPersisted: persistedCount,
+        filesWithChurnEvidence: fileChurn.length
       };
     } catch (error) {
       const message =
