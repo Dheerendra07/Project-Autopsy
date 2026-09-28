@@ -25,14 +25,13 @@ Git history alone must never be used to claim observed runtime performance regre
 
 ## Current work
 
-Refactor signals are implemented on branch `feat/refactor-signals-checkpoint-v1` using commit-subject heuristics and `files_changed` as evidence. The feature must remain a signal, not proof that a particular commit was a refactor.
+Commit-level additions/deletions are being added on branch `feat/commit-change-statistics-v1`. Refactor signals are already merged to `main` and remain evidence-backed heuristics, not proof of intent.
 
 ## Next planned layers
 
-1. Refactor signal API and verification.
-2. Commit-level additions/deletions and richer change statistics.
-3. Repeatedly modified files and change coupling.
-4. Code complexity evolution using AST analysis.
+1. Commit-level additions/deletions and richer change statistics.
+2. Repeatedly modified files and change coupling.
+3. Code complexity evolution using AST analysis.
 5. Incremental analysis keyed by commit SHA and analyzer version.
 6. Runtime telemetry ingestion for observed performance history.
 7. Evidence-backed reports and interview stories.
