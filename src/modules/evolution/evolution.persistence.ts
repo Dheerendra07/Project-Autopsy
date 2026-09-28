@@ -159,7 +159,15 @@ export async function listDependencyChanges(
   committed_at: string | null;
   subject: string;
 }>> {
-  const result = await db.query(
+  const result = await db.query<{
+    package_name: string;
+    scope: string;
+    change_type: string;
+    previous_spec: string | null;
+    current_spec: string | null;
+    committed_at: string | null;
+    subject: string;
+  }>(
     `SELECT
       changes.package_name,
       changes.scope,
@@ -191,7 +199,13 @@ export async function listArchitectureEvents(
   committed_at: string | null;
   subject: string;
 }>> {
-  const result = await db.query(
+  const result = await db.query<{
+    root_path: string;
+    event_type: string;
+    path: string;
+    committed_at: string | null;
+    subject: string;
+  }>(
     `SELECT
       events.root_path,
       events.event_type,
