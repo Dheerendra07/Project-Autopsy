@@ -3,9 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
   getRepositoryNameFromUrl,
-  getRepositoryStoragePath,
-  isCommitAncestor,
-  refreshRepository
+  getRepositoryStoragePath
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
@@ -14,9 +12,7 @@ import {
   createRepositoryWithAnalysis,
   getActiveAnalysisRun,
   getAnalysisRunById,
-  getLatestCompletedAnalysisRun,
   getRepositoryById,
-  updateRepositoryHead,
   listRepositoryCommits,
   listRepositoryHotspots,
   updateAnalysisRun
@@ -24,7 +20,8 @@ import {
 import { listRepeatedBugAreas } from "./bug-area.persistence.js";
 import {
   enqueueRepositoryAnalysis,
-  enqueueRepositoryImport
+  enqueueRepositoryImport,
+  enqueueRepositoryRefresh
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
@@ -36,7 +33,6 @@ import {
   listDependencyChanges
 } from "../evolution/evolution.persistence.js";
 import { listCodeComplexityEvents } from "../complexity/complexity.persistence.js";
-import { planAnalysisRun } from "../analysis/analysis-planner.js";
 
 const router = Router();
 
@@ -161,64 +157,6 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
       return;
     }
 
-    let metadata;
-    try {
-      metadata = await refreshRepository(
-        repository.id,
-        repository.source_url,
-        repository.tracked_branch
-      );
-    } catch {
-      res.status(409).json({
-        success: false,
-        error: {
-          code: "REPOSITORY_REFRESH_FAILED",
-          message: "Unable to refresh the tracked repository branch."
-        }
-      });
-      return;
-    }
-
-    await updateRepositoryHead(repository.id, metadata);
-
-    const latestCompleted = await getLatestCompletedAnalysisRun(
-      repositoryId
-    );
-
-    const latestAnalyzedHead =
-      latestCompleted?.target_head_sha ?? null;
-
-    const isAncestor =
-      latestAnalyzedHead !== null &&
-      await isCommitAncestor(
-        repository.storage_path,
-        latestAnalyzedHead,
-        metadata.headSha
-      );
-
-    const plan = planAnalysisRun(
-      metadata.headSha,
-      latestAnalyzedHead,
-      isAncestor
-    );
-
-    if (plan.kind === "up_to_date") {
-      res.status(200).json({
-        success: true,
-        repositoryId,
-        analysis: {
-          status: "up_to_date",
-          targetHeadSha: plan.targetHeadSha,
-          analysisRunId: latestCompleted?.id ?? null
-        }
-      });
-      return;
-    }
-
-    if (!plan.analysisMode) {
-      throw new Error("Analysis planner returned an invalid run mode.");
-    }
-
     let analysisRunId: string;
 
     try {
@@ -226,9 +164,9 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
         repositoryId,
         {
           analyzerVersion: ANALYZER_VERSION,
-          analysisMode: plan.analysisMode,
-          baseHeadSha: plan.baseHeadSha ?? null,
-          targetHeadSha: plan.targetHeadSha
+          analysisMode: "check",
+          baseHeadSha: null,
+          targetHeadSha: null
         }
       );
     } catch (error) {
@@ -252,7 +190,7 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
     }
 
     try {
-      const jobId = await enqueueRepositoryAnalysis(
+      const jobId = await enqueueRepositoryRefresh(
         repositoryId,
         analysisRunId
       );
@@ -263,15 +201,13 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
         analysis: {
           id: analysisRunId,
           status: "queued",
-          mode: plan.analysisMode,
-          baseHeadSha: plan.baseHeadSha ?? null,
-          targetHeadSha: plan.targetHeadSha,
+          mode: "check",
           jobId
         }
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to queue analysis.";
+        error instanceof Error ? error.message : "Failed to queue repository refresh.";
 
       try {
         await updateAnalysisRun(analysisRunId, "failed", {
@@ -279,7 +215,7 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
         });
       } catch (persistenceError) {
         console.error(
-          `Failed to record queue failure for ${analysisRunId}:`,
+          `Failed to record refresh queue failure for ${analysisRunId}:`,
           persistenceError
         );
       }
