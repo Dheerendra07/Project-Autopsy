@@ -71,6 +71,42 @@ test("splits SQL without breaking semicolons in strings, comments, or dollar-quo
   assert.match(statements[2]?.text ?? "", /^INSERT INTO users/i);
 });
 
+test("classifies PostgreSQL ALTER TABLE ONLY syntax", () => {
+  const operations = [
+    classifySqlStatement({
+      text: "ALTER TABLE ONLY public.users ADD COLUMN email TEXT",
+      line: 1
+    }),
+    classifySqlStatement({
+      text: "ALTER TABLE IF EXISTS ONLY public.users DROP COLUMN legacy_email",
+      line: 2
+    }),
+    classifySqlStatement({
+      text: "ALTER TABLE ONLY public.users ADD CONSTRAINT users_email_key UNIQUE (email)",
+      line: 3
+    }),
+    classifySqlStatement({
+      text: "ALTER TABLE ONLY public.users DROP CONSTRAINT users_email_key",
+      line: 4
+    })
+  ];
+
+  assert.deepEqual(
+    operations.map((operation) => operation.operationType),
+    [
+      "alter_table_add_column",
+      "alter_table_drop_column",
+      "add_constraint",
+      "drop_constraint"
+    ]
+  );
+
+  assert.equal(operations[0]?.tableName, "public.users");
+  assert.equal(operations[1]?.tableName, "public.users");
+  assert.equal(operations[2]?.tableName, "public.users");
+  assert.equal(operations[3]?.tableName, "public.users");
+});
+
 test("classifies lowercase SQL statements case-insensitively", () => {
   const statements = [
     "create table users (id bigint primary key);",
