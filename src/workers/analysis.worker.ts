@@ -17,27 +17,21 @@ export const analysisWorker = new Worker<AnalysisJobData>(
   async (job) => {
     const { repositoryId, analysisRunId } = job.data;
 
-    await updateAnalysisRun(analysisRunId, "running");
-
-    const repository = await getRepositoryById(repositoryId);
-
-    if (!repository) {
-      const message = `Repository not found: ${repositoryId}`;
-      await updateAnalysisRun(analysisRunId, "failed", {
-        errorMessage: message
-      });
-      throw new Error(message);
-    }
-
-    if (!repository.storage_path) {
-      const message = `Repository storage path is missing: ${repositoryId}`;
-      await updateAnalysisRun(analysisRunId, "failed", {
-        errorMessage: message
-      });
-      throw new Error(message);
-    }
-
     try {
+      await updateAnalysisRun(analysisRunId, "running");
+
+      const repository = await getRepositoryById(repositoryId);
+
+      if (!repository) {
+        throw new Error(`Repository not found: ${repositoryId}`);
+      }
+
+      if (!repository.storage_path) {
+        throw new Error(
+          `Repository storage path is missing: ${repositoryId}`
+        );
+      }
+
       const commits = await discoverCommits(repository.storage_path);
       const persistedCount = await persistCommitBatch(
         repositoryId,
@@ -57,9 +51,16 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       const message =
         error instanceof Error ? error.message : "Unknown analysis error";
 
-      await updateAnalysisRun(analysisRunId, "failed", {
-        errorMessage: message
-      });
+      try {
+        await updateAnalysisRun(analysisRunId, "failed", {
+          errorMessage: message
+        });
+      } catch (persistenceError) {
+        console.error(
+          `Failed to record analysis failure for ${analysisRunId}:`,
+          persistenceError
+        );
+      }
 
       throw error;
     }
