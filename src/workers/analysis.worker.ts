@@ -8,6 +8,8 @@ import {
   getAnalysisRunById,
   getRepositoryById,
   persistCommitBatch,
+  setAnalysisRunTargetHead,
+  updateRepositoryImportMetadata,
   replaceFileChangeMetrics,
   replaceRepositoryCommitHistory,
   updateAnalysisRun
@@ -35,8 +37,12 @@ import {
   putAnalysisCache
 } from "../modules/analysis/analysis-cache.persistence.js";
 import {
-  checkoutRepositoryAtCommit
+  checkoutRepositoryAtCommit,
+  cloneRepository
 } from "../modules/repositories/repository.service.js";
+import {
+  enqueueRepositoryAnalysis
+} from "../modules/analysis/analysis.queue.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
@@ -46,6 +52,48 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
     try {
       await updateAnalysisRun(analysisRunId, "running");
+
+      if (job.data.kind === "import") {
+        if (!job.data.remoteUrl) {
+          throw new Error(
+            `Repository import URL is missing: ${analysisRunId}`
+          );
+        }
+
+        const metadata = await cloneRepository(
+          repositoryId,
+          job.data.remoteUrl,
+          job.data.branch
+        );
+
+        const trackedBranch =
+          job.data.branch ?? metadata.defaultBranch;
+
+        await updateRepositoryImportMetadata(
+          repositoryId,
+          metadata,
+          trackedBranch
+        );
+
+        await setAnalysisRunTargetHead(
+          analysisRunId,
+          metadata.headSha
+        );
+
+        const analysisJobId =
+          await enqueueRepositoryAnalysis(
+            repositoryId,
+            analysisRunId
+          );
+
+        return {
+          status: "imported",
+          repositoryId,
+          analysisRunId,
+          targetHeadSha: metadata.headSha,
+          analysisJobId
+        };
+      }
 
       const repository = await getRepositoryById(repositoryId);
 
