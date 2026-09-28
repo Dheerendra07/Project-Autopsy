@@ -109,3 +109,11 @@ GET /api/repositories/:repositoryId/hotspots?limit=20
 ```
 
 Hotspots are ordered by commit frequency, then total line churn, then path. Binary files contribute to `binary_changes`; line additions/deletions are not fabricated for them.
+
+## Development timeline
+
+```http
+GET /api/repositories/:repositoryId/timeline?page=1&limit=50
+```
+
+Timeline event types are derived from commit-subject keyword heuristics and are not proof of intent or causality.
