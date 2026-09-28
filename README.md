@@ -46,6 +46,7 @@ tests/
 ```powershell
 docker compose up -d
 npm install
+npm run db:migrate
 npm run typecheck
 npm run dev
 ```
@@ -59,6 +60,12 @@ npm run dev:worker
 API: http://localhost:5000
 
 Health: http://localhost:5000/health
+
+Run the worker separately:
+
+```powershell
+npm run dev:worker
+```
 
 Repository import endpoint:
 
