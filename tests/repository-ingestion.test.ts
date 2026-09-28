@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
+import { applyNumstat, parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
 import { parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
 import { isBugSignalSubject } from "../src/modules/metrics/bug-signals.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
@@ -105,19 +105,31 @@ test("detects explicit bug-fix subjects", () => {
 });
 
 test("derives commit-level additions and deletions from numstat", () => {
-  const header = [
-    "abc1234",
-    "",
-    "Dev",
-    "dev@example.com",
-    "2026-01-01T10:00:00Z",
-    "Dev",
-    "dev@example.com",
-    "2026-01-01T10:05:00Z",
-    "feat: update app"
-  ].join("\x1f");
+  const commit = parseCommitRecord(
+    [
+      [
+        "abc1234",
+        "",
+        "Dev",
+        "dev@example.com",
+        "2026-01-01T10:00:00Z",
+        "Dev",
+        "dev@example.com",
+        "2026-01-01T10:05:00Z",
+        "feat: update app"
+      ].join("\x1f"),
+      "M\tsrc/app.ts"
+    ].join("\n")
+  );
 
-  const commitRecord = [header, "M\tsrc/app.ts"].join("\n");
+  const stats = new Map([
+    ["src/app.ts", { additions: 12, deletions: 5 }]
+  ]);
 
-  assert.equal(commitRecord.includes("src/app.ts"), true);
+  const withStats = applyNumstat(commit, stats);
+
+  assert.equal(withStats.additions, 12);
+  assert.equal(withStats.deletions, 5);
+  assert.equal(withStats.files[0]?.additions, 12);
+  assert.equal(withStats.files[0]?.deletions, 5);
 });
