@@ -8,7 +8,7 @@ export interface FileChurnEvidence {
 }
 
 const NUMSTAT_LINE =
-  /^(\\d+|-)[\t](\\d+|-)[\t](.+)$/;
+  /^(\d+|-)\t(\d+|-)\t(.+)$/;
 
 export async function discoverFileChurn(
   repositoryPath: string
