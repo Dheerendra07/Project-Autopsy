@@ -188,3 +188,5 @@ Filters: framework, changeType, migrationKind, operationType, with deterministic
 Evidence policy: destructive/lock-sensitive signals are heuristics about migration text. They do not establish that a production deployment experienced downtime, blocking, data loss, or a performance regression.
 
 Analyzer version is now 0.3.0.
+
+SQL parser regression coverage now locks comment/string/dollar-quote statement boundaries, deterministic operation classification, and migration-history add/modify/delete behavior.
