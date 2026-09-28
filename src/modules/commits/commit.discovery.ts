@@ -42,7 +42,7 @@ export async function discoverCommits(
   return records.map(parseCommitRecord);
 }
 
-function parseCommitRecord(record: string): DiscoveredCommit {
+export function parseCommitRecord(record: string): DiscoveredCommit {
   const lines = record.split(/?\n/);
   const header = lines.shift() ?? "";
   const fields = header.split(FIELD_SEPARATOR);
@@ -68,8 +68,8 @@ function parseCommitRecord(record: string): DiscoveredCommit {
   }
 
   const files = lines
-    .map((line) => line.trim())
-    .filter(Boolean)
+    .map((line) => line.replace(/\r$/, ""))
+    .filter((line) => line.length > 0)
     .map((line) => {
       const separatorIndex = line.indexOf("\t");
 
