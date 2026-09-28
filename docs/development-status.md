@@ -57,7 +57,7 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Next planned layers
 
-1. Evidence-backed interview stories.
+Interview story scaffolding is now implemented on this branch and pending verification/merge.
 
 ## Verification rule
 
@@ -229,3 +229,19 @@ Report guarantees:
 - Heuristics remain explicitly labeled as signals and are never upgraded into causal, quality, outage, coverage, or production-impact claims.
 
 The report currently combines commit history, change hotspots, repeated-change/bug signals, co-change coupling, refactor signals, dependency and architecture evolution, code complexity, database migration evidence, test evolution, and observed runtime telemetry.
+
+
+## Evidence-backed interview stories v1
+
+Endpoint:
+GET /api/repositories/:repositoryId/interview-stories?limit=6
+
+The interview layer composes existing evidence-report sections into bounded story scaffolds for:
+- change hotspots
+- recurring quality investigation
+- architecture/refactoring evolution
+- database/schema evolution
+- test evolution
+- runtime observability
+
+Every story separates evidence from personal ownership, intent, business/runtime outcome, and other details that must be verified before being stated in an interview. The layer does not invent first-person contributions or causal outcomes.
