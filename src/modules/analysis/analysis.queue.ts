@@ -39,7 +39,12 @@ export async function enqueueRepositoryImport(
     "import-repository",
     data,
     {
-      jobId: `import-${analysisRunId}`
+      jobId: `import-${analysisRunId}`,
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 2_000
+      }
     }
   );
 
