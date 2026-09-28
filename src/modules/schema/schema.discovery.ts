@@ -455,7 +455,7 @@ export function classifySqlStatement(
     new RegExp(
       "^ALTER\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(?:ONLY\\s+)?(" +
         IDENTIFIER +
-        ")\\s+ADD\\s+(?:COLUMN\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
+        ")\\s+ADD\\s+(?!CONSTRAINT\\b)(?:COLUMN\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
     , "i")
