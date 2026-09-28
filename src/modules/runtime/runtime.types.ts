@@ -50,16 +50,16 @@ export const runtimeTelemetryEventSchema = z
       .string()
       .trim()
       .regex(
-        /^[0-9a-fA-F]{16,32}$/,
-        "traceId must be 16-32 hexadecimal characters."
+        /^[0-9a-fA-F]{32}$/,
+        "traceId must be exactly 32 hexadecimal characters."
       )
       .optional(),
     spanId: z
       .string()
       .trim()
       .regex(
-        /^[0-9a-fA-F]{8,16}$/,
-        "spanId must be 8-16 hexadecimal characters."
+        /^[0-9a-fA-F]{16}$/,
+        "spanId must be exactly 16 hexadecimal characters."
       )
       .optional(),
     durationMs: z.number().finite().min(0).max(86_400_000),
