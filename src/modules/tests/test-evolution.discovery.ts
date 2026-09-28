@@ -119,7 +119,6 @@ export function isTestEvolutionPath(filePath: string): boolean {
 
   if (
     /(?:\.test|\.spec)\.(?:c|m)?(?:j|t)sx?$/.test(name) ||
-    /^test[-_.]/.test(name) ||
     /[-_.]test\.(?:c|m)?(?:j|t)sx?$/.test(name) ||
     /[-_.]spec\.(?:c|m)?(?:j|t)sx?$/.test(name)
   ) {
