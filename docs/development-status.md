@@ -57,10 +57,7 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Next planned layers
 
-1. Runtime telemetry ingestion for observed performance history.
-2. Database/schema evolution.
-3. Test evolution.
-4. Evidence-backed reports and interview stories.
+1. Evidence-backed interview stories.
 
 ## Verification rule
 
