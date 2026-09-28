@@ -98,7 +98,7 @@ export async function insertRuntimeTelemetryBatch(
 
       const placeholders = Array.from(
         { length: 16 },
-        (_, index) => `${base + index + 1}`
+        (_, index) => `$${base + index + 1}`
       ).join(", ");
 
       return `(${placeholders})`;
