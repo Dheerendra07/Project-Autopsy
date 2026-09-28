@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
 import { parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
+import { isBugSignalSubject } from "../src/modules/metrics/bug-signals.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
 
 test("parses commit metadata and changed files", () => {
@@ -92,4 +93,11 @@ test("records binary numstat evidence without inventing line counts", () => {
 
 test("ignores non-numstat lines", () => {
   assert.equal(parseNumstatLine("commit header"), null);
+});
+
+test("detects explicit bug-fix subjects", () => {
+  assert.equal(isBugSignalSubject("fix: handle session timeout"), true);
+  assert.equal(isBugSignalSubject("regression in checkout flow"), true);
+  assert.equal(isBugSignalSubject("refactor: simplify service"), false);
+  assert.equal(isBugSignalSubject("prefix parser cleanup"), false);
 });

@@ -15,6 +15,7 @@ import {
   listRepositoryHotspots,
   updateAnalysisRun
 } from "./repository.persistence.js";
+import { listRepeatedBugAreas } from "./bug-area.persistence.js";
 import {
   enqueueRepositoryAnalysis
 } from "../analysis/analysis.queue.js";
@@ -217,6 +218,47 @@ router.get("/:repositoryId/hotspots", async (req, res, next) => {
         "path ASC"
       ],
       hotspots
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get("/:repositoryId/repeated-bug-areas", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(20)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const areas = await listRepeatedBugAreas(
+      repositoryId,
+      query.limit
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "commit_subject_keyword_heuristic",
+      signalPattern:
+        "fix|fixed|fixes|bug|bugfix|hotfix|regression|regressed|patch",
+      minimumSignalCommits: 2,
+      areas
     });
   } catch (error) {
     next(error);
