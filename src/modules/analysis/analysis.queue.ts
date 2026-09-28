@@ -27,15 +27,17 @@ export async function enqueueRepositoryImport(
   remoteUrl: string,
   branch?: string
 ): Promise<string> {
+  const data: AnalysisJobData = {
+    kind: "import",
+    repositoryId,
+    analysisRunId,
+    remoteUrl,
+    ...(branch ? { branch } : {})
+  };
+
   const job = await analysisQueue.add(
     "import-repository",
-    {
-      kind: "import",
-      repositoryId,
-      analysisRunId,
-      remoteUrl,
-      branch
-    },
+    data,
     {
       jobId: `import-${analysisRunId}`
     }
