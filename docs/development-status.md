@@ -22,18 +22,42 @@ Git history alone must never be used to claim observed runtime performance regre
 6. Development timeline: chronological commit events with evidence-labeled keyword classification.
 7. Architecture evolution: historical repository top-level and `src` top-level directory snapshots/events.
 8. Dependency evolution: historical `package.json` dependency snapshots and added/removed/changed package signals, with dependency scope separation.
+9. Refactor signals: commit-subject refactor candidates with explicit heuristic semantics.
+10. Commit change statistics: per-commit and per-file additions/deletions from Git numstat.
+11. File change coupling: deterministic file co-change counts from persisted commit evidence.
 
 ## Current work
 
-File change coupling is being added on branch `feat/change-coupling-v1`. Commit-level additions/deletions and refactor signals are already merged to `main` and remain evidence-backed heuristics, not proof of intent.
+Code complexity evolution is implemented on branch `feat/code-complexity-v1`. It adds AST-derived file-change evidence for TypeScript/JavaScript-family source files and keeps parse failures or oversized files explicitly marked instead of inventing metrics.
+
+The runtime analyzer dependency is installed as a production dependency because complexity analysis executes inside the background worker.
+
+## Code complexity evidence
+
+API:
+
+GET /api/repositories/:repositoryId/complexity?limit=100
+
+Metrics:
+
+- source line count
+- function count
+- class count
+- cyclomatic complexity
+- maximum control-flow nesting depth
+
+Evidence basis: `typescript_ast_file_change_snapshots`.
+
+The API reports before/after metrics and deltas per changed source file. Deleted files have an explicit deletion event; parse failures and oversized files do not produce fabricated after-metrics.
 
 ## Next planned layers
 
-1. Repeatedly modified files and change coupling.
-3. Code complexity evolution using AST analysis.
-5. Incremental analysis keyed by commit SHA and analyzer version.
-6. Runtime telemetry ingestion for observed performance history.
-7. Evidence-backed reports and interview stories.
+1. Incremental analysis keyed by commit SHA and analyzer version.
+2. Repeatedly modified-file summaries and richer historical change statistics.
+3. Runtime telemetry ingestion for observed performance history.
+4. Database/schema evolution.
+5. Test evolution.
+6. Evidence-backed reports and interview stories.
 
 ## Verification rule
 
@@ -45,8 +69,15 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-At the last locked checkpoint, `main` ended at commit `37b929fea8930b35461f643083f0e1937fa5c3f2` before the current refactor-signal branch work. Preserve all existing API routes and evidence models when continuing.
+The code-complexity branch starts from locked main commit `35cf14bce5d574071df5973450f1d4dc1452ee6e`. Preserve all existing API routes, evidence models, and migration history when continuing.
 
+## Evidence semantics
+
+- Change coupling means files changed together in the same persisted Git commit; it is not proof of architectural dependency.
+- Refactor signals are keyword heuristics, not proof of developer intent.
+- Bug-area signals are correlations, not proof of causality.
+- Architecture history is based on Git tree structure, not runtime architecture.
+- Code complexity is AST-derived from source snapshots; parse failures and size limits remain explicit.
 
 ## Change coupling API
 
