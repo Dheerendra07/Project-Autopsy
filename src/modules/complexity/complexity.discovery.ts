@@ -348,15 +348,97 @@ async function readBlobShas(
 export async function discoverCodeComplexityEvolution(
   repositoryPath: string,
   commits: DiscoveredCommit[],
-  cache?: CodeComplexityCache
+  cache?: CodeComplexityCache,
+  baseHeadSha?: string | null
 ): Promise<CodeComplexityEvolutionResult> {
   const git = simpleGit(repositoryPath);
   const previousByPath = new Map<string, CodeComplexityMetrics>();
+  const existingPaths = new Set<string>();
   const events: CodeComplexityEvent[] = [];
   let cacheHits = 0;
   let cacheMisses = 0;
 
+  if (baseHeadSha && commits.length > 0) {
+    const relevantPaths = new Set(
+      commits.flatMap((commit) =>
+        commit.files
+          .filter((file) => isSupportedSourcePath(file.path))
+          .map((file) => file.path)
+      )
+    );
+
+    let baseBlobShas = new Map<string, string>();
+
+    try {
+      baseBlobShas = await readBlobShas(git, baseHeadSha);
+    } catch {
+      baseBlobShas = new Map();
+    }
+
+    for (const filePath of relevantPaths) {
+      const baseBlobSha = baseBlobShas.get(filePath);
+
+      if (!baseBlobSha) {
+        continue;
+      }
+
+      existingPaths.add(filePath);
+
+      let analysis: CodeComplexityAnalysis | null = null;
+      const cacheKey = `${baseBlobSha}:${extname(filePath).toLowerCase()}`;
+
+      if (cache) {
+        let cachedValue: unknown | null = null;
+
+        try {
+          cachedValue = await cache.get(cacheKey);
+        } catch {
+          cachedValue = null;
+        }
+
+        if (isCodeComplexityAnalysis(cachedValue)) {
+          analysis = cachedValue;
+          cacheHits += 1;
+        } else {
+          cacheMisses += 1;
+        }
+      }
+
+      if (!analysis) {
+        let source: string;
+
+        try {
+          source = await git.raw([
+            "show",
+            "--format=",
+            "--no-ext-diff",
+            "--no-textconv",
+            baseHeadSha + ":" + filePath
+          ]);
+        } catch {
+          continue;
+        }
+
+        analysis = analyzeSourceCode(source, filePath);
+
+        if (cache) {
+          try {
+            await cache.set(cacheKey, analysis);
+          } catch {
+            // Cache is an optimization; analysis correctness does not depend
+            // on a cache write succeeding.
+          }
+        }
+      }
+
+      if (analysis.status === "supported" && analysis.metrics) {
+        previousByPath.set(filePath, analysis.metrics);
+      }
+    }
+  }
+
   for (const commit of commits) {
+
     let blobShas = new Map<string, string>();
 
     if (cache) {
@@ -376,12 +458,12 @@ export async function discoverCodeComplexityEvolution(
       const isDeleted = file.status.startsWith("D");
       const changeType = isDeleted
         ? "deleted"
-        : previous
+        : existingPaths.has(file.path)
           ? "modified"
           : "added";
 
       if (isDeleted) {
-        if (previous) {
+        if (previous || existingPaths.has(file.path)) {
           events.push({
             sha: commit.sha,
             path: file.path,
@@ -390,8 +472,10 @@ export async function discoverCodeComplexityEvolution(
             before: previous,
             after: null
           });
-          previousByPath.delete(file.path);
         }
+
+        previousByPath.delete(file.path);
+        existingPaths.delete(file.path);
         continue;
       }
 
@@ -470,6 +554,7 @@ export async function discoverCodeComplexityEvolution(
       });
 
       previousByPath.set(file.path, analysis.metrics);
+      existingPaths.add(file.path);
     }
   }
 
