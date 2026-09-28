@@ -22,9 +22,9 @@ test("rejects repository URL credentials", () => {
   assert.throws(
     () =>
       validateRemoteRepositoryUrl(
-        "https://token@example.com/owner/repo.git"
+        "https://token@github.com/owner/repo.git"
       ),
-    /Repository host is not supported/
+    /Repository credentials must not be embedded/
   );
 });
 
