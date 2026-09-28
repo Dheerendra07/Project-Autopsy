@@ -184,7 +184,7 @@ async function discoverNumstat(
   return result;
 }
 
-function applyNumstat(
+export function applyNumstat(
   commit: DiscoveredCommit,
   stats: Map<string, { additions: number; deletions: number }> | undefined
 ): DiscoveredCommit {
