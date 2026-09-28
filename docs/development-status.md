@@ -215,3 +215,20 @@ Hardening completed:
 - Retry-recovery rules have dedicated unit coverage.
 
 BullMQ job IDs remain deterministic, and the recovery logic treats queue deduplication as an optimization rather than the source of truth; the PostgreSQL analysis-run state is authoritative.
+
+
+## Evidence-backed reports v1
+
+The reports module now composes persisted repository evidence into an on-demand JSON report.
+
+Endpoint:
+GET /api/repositories/:repositoryId/report?limit=10
+
+Report guarantees:
+- Every claim carries an evidence source/key, with exact commit SHA/path references where the underlying evidence exposes them.
+- The report fingerprint is stable for identical persisted evidence and report inputs; generation time is excluded from the fingerprint.
+- Per-section evidence is bounded by the requested report limit.
+- A report requires a completed analysis run; missing repositories return 404 and incomplete repositories return 409.
+- Heuristics remain explicitly labeled as signals and are never upgraded into causal, quality, outage, coverage, or production-impact claims.
+
+The report currently combines commit history, change hotspots, repeated-change/bug signals, co-change coupling, refactor signals, dependency and architecture evolution, code complexity, database migration evidence, test evolution, and observed runtime telemetry.
