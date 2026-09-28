@@ -25,12 +25,11 @@ Git history alone must never be used to claim observed runtime performance regre
 
 ## Current work
 
-Commit-level additions/deletions are being added on branch `feat/commit-change-statistics-v1`. Refactor signals are already merged to `main` and remain evidence-backed heuristics, not proof of intent.
+File change coupling is being added on branch `feat/change-coupling-v1`. Commit-level additions/deletions and refactor signals are already merged to `main` and remain evidence-backed heuristics, not proof of intent.
 
 ## Next planned layers
 
-1. Commit-level additions/deletions and richer change statistics.
-2. Repeatedly modified files and change coupling.
+1. Repeatedly modified files and change coupling.
 3. Code complexity evolution using AST analysis.
 5. Incremental analysis keyed by commit SHA and analyzer version.
 6. Runtime telemetry ingestion for observed performance history.
@@ -47,3 +46,10 @@ Windows local Docker is not currently available on the development machine (`doc
 ## Continuation checkpoint
 
 At the last locked checkpoint, `main` ended at commit `37b929fea8930b35461f643083f0e1937fa5c3f2` before the current refactor-signal branch work. Preserve all existing API routes and evidence models when continuing.
+
+
+## Change coupling API
+
+GET /api/repositories/:repositoryId/coupling?minCoChanges=2&limit=50
+
+A pair count means the two paths were both changed in the same persisted commit. It is a co-change signal, not proof of architectural dependency.

@@ -14,6 +14,7 @@ import { discoverCommits } from "../modules/commits/commit.discovery.js";
 import { discoverFileChurn } from "../modules/metrics/churn.discovery.js";
 import { discoverDependencyEvolution } from "../modules/dependencies/dependency.discovery.js";
 import { discoverArchitectureEvolution } from "../modules/architecture/architecture.discovery.js";
+import { rebuildFileChangeCoupling } from "../modules/coupling/coupling.persistence.js";
 import { replaceDependencyEvolution, replaceArchitectureEvolution } from "../modules/evolution/evolution.persistence.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
@@ -71,6 +72,10 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         architectureEvolution.events
       );
 
+      const couplingPairs = await rebuildFileChangeCoupling(
+        repositoryId
+      );
+
       await updateAnalysisRun(analysisRunId, "completed");
 
       return {
@@ -83,7 +88,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         dependencySnapshots: dependencyEvolution.snapshots.length,
         dependencyChanges: dependencyEvolution.changes.length,
         architectureSnapshots: architectureEvolution.snapshots.length,
-        architectureEvents: architectureEvolution.events.length
+        architectureEvents: architectureEvolution.events.length,
+        couplingPairs: couplingPairs
       };
     } catch (error) {
       const message =
