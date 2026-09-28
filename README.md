@@ -92,3 +92,12 @@ Project Autopsy separates observed evidence from interpretation.
 Never commit `.env`, API keys, OAuth tokens, database passwords, private repository credentials, or repository source snapshots.
 
 Repository import is restricted to HTTPS and an allowlist of supported Git hosts in the current implementation.
+
+
+Read stored commit evidence:
+
+```http
+GET /api/repositories/:repositoryId/commits?page=1&limit=50
+```
+
+The response is paginated and exposes only persisted engineering evidence; repository storage paths are never returned by this endpoint.
