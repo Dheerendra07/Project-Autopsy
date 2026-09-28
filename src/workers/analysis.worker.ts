@@ -12,6 +12,9 @@ import {
 } from "../modules/repositories/repository.persistence.js";
 import { discoverCommits } from "../modules/commits/commit.discovery.js";
 import { discoverFileChurn } from "../modules/metrics/churn.discovery.js";
+import { discoverDependencyEvolution } from "../modules/dependencies/dependency.discovery.js";
+import { discoverArchitectureEvolution } from "../modules/architecture/architecture.discovery.js";
+import { replaceDependencyEvolution, replaceArchitectureEvolution } from "../modules/evolution/evolution.persistence.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
@@ -46,6 +49,28 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       await replaceFileChangeMetrics(repositoryId, fileChurn);
 
+      const dependencyEvolution = await discoverDependencyEvolution(
+        repository.storage_path,
+        commits.map(({ sha }) => ({ sha }))
+      );
+
+      await replaceDependencyEvolution(
+        repositoryId,
+        dependencyEvolution.snapshots,
+        dependencyEvolution.changes
+      );
+
+      const architectureEvolution = await discoverArchitectureEvolution(
+        repository.storage_path,
+        commits.map(({ sha }) => ({ sha }))
+      );
+
+      await replaceArchitectureEvolution(
+        repositoryId,
+        architectureEvolution.snapshots,
+        architectureEvolution.events
+      );
+
       await updateAnalysisRun(analysisRunId, "completed");
 
       return {
@@ -54,7 +79,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         analyzerVersion: ANALYZER_VERSION,
         commitsDiscovered: commits.length,
         commitsPersisted: persistedCount,
-        filesWithChurnEvidence: fileChurn.length
+        filesWithChurnEvidence: fileChurn.length,
+        dependencySnapshots: dependencyEvolution.snapshots.length,
+        dependencyChanges: dependencyEvolution.changes.length,
+        architectureSnapshots: architectureEvolution.snapshots.length,
+        architectureEvents: architectureEvolution.events.length
       };
     } catch (error) {
       const message =

@@ -21,6 +21,10 @@ import {
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
+import {
+  listArchitectureEvents,
+  listDependencyChanges
+} from "../evolution/evolution.persistence.js";
 
 const router = Router();
 
@@ -279,6 +283,74 @@ router.get("/:repositoryId/hotspots", async (req, res, next) => {
   }
 });
 
+
+router.get("/:repositoryId/dependencies", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(500).default(100)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const changes = await listDependencyChanges(repositoryId, query.limit);
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "package_json_commit_snapshots",
+      changes
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/architecture", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(500).default(100)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const events = await listArchitectureEvents(repositoryId, query.limit);
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "git_tree_directory_snapshots",
+      scope: [
+        "repository top-level directories",
+        "src top-level directories"
+      ],
+      events
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/:repositoryId/repeated-bug-areas", async (req, res, next) => {
   try {
