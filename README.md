@@ -117,3 +117,10 @@ GET /api/repositories/:repositoryId/timeline?page=1&limit=50
 ```
 
 Timeline event types are derived from commit-subject keyword heuristics and are not proof of intent or causality.
+
+## Evolution evidence
+
+Dependency API: GET /api/repositories/:repositoryId/dependencies?limit=100
+Architecture API: GET /api/repositories/:repositoryId/architecture?limit=100
+
+Dependency history is derived from historical package.json snapshots. Architecture history currently tracks repository top-level directories and top-level directories under src. These are structural signals, not claims about runtime architecture.
