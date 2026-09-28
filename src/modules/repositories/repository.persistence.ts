@@ -3,12 +3,15 @@ import { db } from "../../config/database.js";
 import type { AnalysisRunStatus } from "../analysis/analysis.types.js";
 import type { RepositoryMetadata } from "./repository.types.js";
 
+export type AnalysisMode = "full" | "incremental";
+
 export interface StoredRepository {
   id: string;
   source_type: string;
   source_url: string | null;
   name: string;
   default_branch: string | null;
+  tracked_branch: string | null;
   head_sha: string | null;
   storage_path: string | null;
 }
@@ -17,6 +20,9 @@ export interface StoredAnalysisRun {
   id: string;
   repository_id: string;
   analyzer_version: string;
+  analysis_mode: AnalysisMode;
+  base_head_sha: string | null;
+  target_head_sha: string | null;
   status: AnalysisRunStatus;
   started_at: string | null;
   completed_at: string | null;
@@ -43,26 +49,43 @@ export interface CreateRepositoryInput {
   sourceType: string;
   sourceUrl: string;
   name: string;
+  trackedBranch: string;
   metadata: RepositoryMetadata;
   storagePath: string;
+}
+
+export interface CreateAnalysisRunInput {
+  analyzerVersion: string;
+  analysisMode: AnalysisMode;
+  baseHeadSha: string | null;
+  targetHeadSha: string;
 }
 
 async function createAnalysisRun(
   client: PoolClient,
   repositoryId: string,
-  analyzerVersion: string
+  input: CreateAnalysisRunInput
 ): Promise<string> {
   const result = await client.query<{ id: string }>(
     `
       INSERT INTO analysis_runs (
         repository_id,
         analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
         status
       )
-      VALUES ($1, $2, 'queued')
+      VALUES ($1, $2, $3, $4, $5, 'queued')
       RETURNING id
     `,
-    [repositoryId, analyzerVersion]
+    [
+      repositoryId,
+      input.analyzerVersion,
+      input.analysisMode,
+      input.baseHeadSha,
+      input.targetHeadSha
+    ]
   );
 
   const row = result.rows[0];
@@ -91,10 +114,11 @@ export async function createRepositoryWithAnalysis(
           source_url,
           name,
           default_branch,
+          tracked_branch,
           head_sha,
           storage_path
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
         input.id,
@@ -102,16 +126,18 @@ export async function createRepositoryWithAnalysis(
         input.sourceUrl,
         input.name,
         input.metadata.defaultBranch,
+        input.trackedBranch,
         input.metadata.headSha,
         input.storagePath
       ]
     );
 
-    const analysisRunId = await createAnalysisRun(
-      client,
-      input.id,
-      analyzerVersion
-    );
+    const analysisRunId = await createAnalysisRun(client, input.id, {
+      analyzerVersion,
+      analysisMode: "full",
+      baseHeadSha: null,
+      targetHeadSha: input.metadata.headSha
+    });
 
     await client.query("COMMIT");
 
@@ -127,6 +153,40 @@ export async function createRepositoryWithAnalysis(
   }
 }
 
+export async function createAnalysisRunForRepository(
+  repositoryId: string,
+  input: CreateAnalysisRunInput
+): Promise<string> {
+  const client = await db.connect();
+
+  try {
+    return await createAnalysisRun(client, repositoryId, input);
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateRepositoryHead(
+  repositoryId: string,
+  metadata: RepositoryMetadata
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE repositories
+      SET
+        default_branch = $2,
+        head_sha = $3,
+        updated_at = NOW()
+      WHERE id = $1
+    `,
+    [
+      repositoryId,
+      metadata.defaultBranch,
+      metadata.headSha
+    ]
+  );
+}
+
 export async function getRepositoryById(
   repositoryId: string
 ): Promise<StoredRepository | null> {
@@ -138,6 +198,7 @@ export async function getRepositoryById(
         source_url,
         name,
         default_branch,
+        tracked_branch,
         head_sha,
         storage_path
       FROM repositories
@@ -158,6 +219,9 @@ export async function getAnalysisRunById(
         id,
         repository_id,
         analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
         status,
         started_at,
         completed_at,
@@ -166,6 +230,34 @@ export async function getAnalysisRunById(
       WHERE id = $1
     `,
     [analysisRunId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function getLatestCompletedAnalysisRun(
+  repositoryId: string
+): Promise<StoredAnalysisRun | null> {
+  const result = await db.query<StoredAnalysisRun>(
+    `
+      SELECT
+        id,
+        repository_id,
+        analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
+        status,
+        started_at,
+        completed_at,
+        error_message
+      FROM analysis_runs
+      WHERE repository_id = $1
+        AND status = 'completed'
+      ORDER BY completed_at DESC NULLS LAST, created_at DESC
+      LIMIT 1
+    `,
+    [repositoryId]
   );
 
   return result.rows[0] ?? null;
@@ -338,7 +430,6 @@ export async function persistCommitBatch(
   }
 }
 
-
 export async function listRepositoryCommits(
   repositoryId: string,
   page: number,
@@ -391,7 +482,6 @@ export async function listRepositoryCommits(
     total: Number.parseInt(countRow.count, 10)
   };
 }
-
 
 export async function replaceFileChangeMetrics(
   repositoryId: string,
