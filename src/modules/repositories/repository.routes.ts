@@ -6,6 +6,7 @@ import {
   getRepositoryStoragePath,
   removeRepositoryStorage
 } from "./repository.service.js";
+import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
   createRepositoryWithAnalysis,
   getAnalysisRunById,
@@ -33,11 +34,12 @@ const importSchema = z.object({
 router.post("/import", async (req, res, next) => {
   try {
     const input = importSchema.parse(req.body);
+    const safeUrl = validateRemoteRepositoryUrl(input.url);
     const repositoryId = randomUUID();
 
     const metadata = await cloneRepository(
       repositoryId,
-      input.url,
+      safeUrl.toString(),
       input.branch
     );
 
@@ -51,7 +53,7 @@ router.post("/import", async (req, res, next) => {
         {
           id: repositoryId,
           sourceType: getSourceType(input.url),
-          sourceUrl: input.url,
+          sourceUrl: safeUrl.toString(),
           name: metadata.name,
           metadata,
           storagePath: getRepositoryStoragePath(repositoryId)
@@ -73,7 +75,7 @@ router.post("/import", async (req, res, next) => {
         success: true,
         repository: {
           id: analysis.repositoryId,
-          source: input.url,
+          source: safeUrl.toString(),
           metadata
         },
         analysis: {
