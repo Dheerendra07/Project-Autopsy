@@ -72,7 +72,7 @@ export async function generateRuntimeCorrelationEvidence(
       status: "missing_parent_revision",
       repositoryId,
       targetRevisionSha,
-      parentRevisionSha: null,
+      parentRevisionSha: context.parentRevisionSha,
       targetCommitAt: context.committedAt,
       windowMinutes,
       minimumSamples,
