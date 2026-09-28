@@ -144,21 +144,21 @@ TypeScript is a runtime dependency because the background analysis worker perfor
 
 ## Re-analysis
 
-Refresh the tracked branch and queue a new analysis:
+Queue a refresh and analysis:
 
 ```http
 POST /api/repositories/:repositoryId/analyze
 ```
 
-Repository import is asynchronous: the HTTP request validates the source and queues the import job, while the worker performs the clone and then chains the analysis job.
+Re-analysis is asynchronous end-to-end. The HTTP request only validates repository metadata, creates a queued refresh/check run, and enqueues the refresh job. Remote Git fetch/checkout and analysis planning happen in the background worker, so large repositories do not keep the HTTP request open.
 
-The service compares the current remote head with the latest completed analysis head.
+The worker compares the refreshed remote head with the latest completed analysis head.
 
-- unchanged head -> `up_to_date`
-- latest analyzed head is an ancestor of the new head -> `incremental`
-- no prior analyzed head or divergent history -> `full`
+- unchanged head -> the check run completes as `up_to_date`
+- latest analyzed head is an ancestor of the new head -> the same run is converted to `incremental` analysis
+- no prior analyzed head or divergent history -> the same run is converted to `full` analysis
 
-Incremental runs persist the new commit range and seed dependency, architecture, and complexity history from the previous analyzed head. Some repository-wide aggregates, such as file churn and co-change coupling, are still recomputed for correctness in this v1 implementation.
+Refresh jobs use bounded retries with exponential backoff. A PostgreSQL partial unique index prevents more than one queued/running repository analysis or refresh from being created concurrently.
 
-Each analysis run records its mode, base head, target head, and analyzer version. An active queued/running analysis is restricted to one per repository by a PostgreSQL partial unique index.
+Each analysis run records its mode, base head, target head, and analyzer version. Incremental runs append the new commit range and seed dependency, architecture, and complexity history from the previous analyzed head. Some repository-wide aggregates, such as file churn and co-change coupling, are still recomputed for correctness in this v1 implementation.
 
