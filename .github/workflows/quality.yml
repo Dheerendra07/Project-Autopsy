@@ -68,11 +68,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test
-        run: npm test
-
       - name: Run migrations
         run: npm run db:migrate
+
+      - name: Test
+        run: npm test
 
       - name: Verify migrations are idempotent
         run: npm run db:migrate
