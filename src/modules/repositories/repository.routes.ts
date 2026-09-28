@@ -22,6 +22,7 @@ import {
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
 import { classifyRefactorSignal } from "../refactors/refactor-signals.js";
+import { listRefactorSignals } from "../refactors/refactor.persistence.js";
 import {
   listArchitectureEvents,
   listDependencyChanges
@@ -304,25 +305,15 @@ router.get("/:repositoryId/refactors", async (req, res, next) => {
       return;
     }
 
-    const result = await listRepositoryCommits(repositoryId, 1, 10000);
-    const signals = result.commits
-      .map((commit) => ({
-        sha: commit.sha,
-        committed_at: commit.committed_at,
-        subject: commit.subject,
-        files_changed: commit.files_changed,
-        signal_type: classifyRefactorSignal(commit.subject)
-      }))
-      .filter((commit) => commit.signal_type !== null)
-      .sort((a, b) => {
-        const fileDelta = b.files_changed - a.files_changed;
-        if (fileDelta !== 0) return fileDelta;
-        const timeA = a.committed_at ?? "";
-        const timeB = b.committed_at ?? "";
-        if (timeA !== timeB) return timeA.localeCompare(timeB);
-        return a.sha.localeCompare(b.sha);
-      })
-      .slice(0, query.limit);
+    const storedSignals = await listRefactorSignals(
+      repositoryId,
+      query.limit
+    );
+
+    const signals = storedSignals.map((commit) => ({
+      ...commit,
+      signal_type: classifyRefactorSignal(commit.subject)
+    }));
 
     res.json({
       success: true,
