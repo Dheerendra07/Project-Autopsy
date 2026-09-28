@@ -72,6 +72,8 @@ Content-Type: application/json
 }
 ```
 
+The import endpoint returns `202 Accepted`. Clone and initial analysis execute in the background worker, so large repositories do not keep the HTTP request open.
+
 ## Evidence policy
 
 Project Autopsy separates observed evidence from interpretation.
@@ -147,6 +149,8 @@ Refresh the tracked branch and queue a new analysis:
 ```http
 POST /api/repositories/:repositoryId/analyze
 ```
+
+Repository import is asynchronous: the HTTP request validates the source and queues the import job, while the worker performs the clone and then chains the analysis job.
 
 The service compares the current remote head with the latest completed analysis head.
 

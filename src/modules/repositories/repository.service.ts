@@ -240,7 +240,7 @@ export async function readRepositoryMetadata(
   };
 }
 
-function getRepositoryNameFromUrl(url: URL): string {
+export function getRepositoryNameFromUrl(url: URL): string {
   const segments = decodeURIComponent(url.pathname)
     .split("/")
     .filter(Boolean);

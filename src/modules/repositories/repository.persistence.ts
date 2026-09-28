@@ -58,7 +58,16 @@ export interface CreateAnalysisRunInput {
   analyzerVersion: string;
   analysisMode: AnalysisMode;
   baseHeadSha: string | null;
-  targetHeadSha: string;
+  targetHeadSha: string | null;
+}
+
+export interface PendingRepositoryInput {
+  id: string;
+  sourceType: string;
+  sourceUrl: string;
+  name: string;
+  trackedBranch: string | null;
+  storagePath: string;
 }
 
 async function createAnalysisRun(
@@ -151,6 +160,98 @@ export async function createRepositoryWithAnalysis(
   } finally {
     client.release();
   }
+}
+
+export async function createPendingRepositoryWithAnalysis(
+  input: PendingRepositoryInput,
+  analyzerVersion: string
+): Promise<{ repositoryId: string; analysisRunId: string }> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `
+        INSERT INTO repositories (
+          id,
+          source_type,
+          source_url,
+          name,
+          tracked_branch,
+          storage_path
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `,
+      [
+        input.id,
+        input.sourceType,
+        input.sourceUrl,
+        input.name,
+        input.trackedBranch,
+        input.storagePath
+      ]
+    );
+
+    const analysisRunId = await createAnalysisRun(client, input.id, {
+      analyzerVersion,
+      analysisMode: "full",
+      baseHeadSha: null,
+      targetHeadSha: null
+    });
+
+    await client.query("COMMIT");
+
+    return {
+      repositoryId: input.id,
+      analysisRunId
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateRepositoryImportMetadata(
+  repositoryId: string,
+  metadata: RepositoryMetadata,
+  trackedBranch: string
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE repositories
+      SET
+        name = $2,
+        default_branch = $3,
+        tracked_branch = $4,
+        head_sha = $5,
+        updated_at = NOW()
+      WHERE id = $1
+    `,
+    [
+      repositoryId,
+      metadata.name,
+      metadata.defaultBranch,
+      trackedBranch,
+      metadata.headSha
+    ]
+  );
+}
+
+export async function setAnalysisRunTargetHead(
+  analysisRunId: string,
+  targetHeadSha: string
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE analysis_runs
+      SET target_head_sha = $2
+      WHERE id = $1
+    `,
+    [analysisRunId, targetHeadSha]
+  );
 }
 
 export async function createAnalysisRunForRepository(
