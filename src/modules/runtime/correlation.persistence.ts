@@ -14,8 +14,14 @@ interface AggregateRow {
   duration_sample_count: string;
   error_count: string;
   error_rate: number;
+  min_duration_ms: number | null;
   avg_duration_ms: number | null;
+  p50_duration_ms: number | null;
   p95_duration_ms: number | null;
+  p99_duration_ms: number | null;
+  max_duration_ms: number | null;
+  first_observed_at: string | null;
+  last_observed_at: string | null;
 }
 
 function emptyAggregate(): RuntimeTelemetryAggregate {
@@ -39,13 +45,18 @@ function toAggregate(row?: AggregateRow): RuntimeTelemetryAggregate {
   if (!row) return emptyAggregate();
 
   return {
-    ...emptyAggregate(),
     sampleCount: Number(row.sample_count),
     durationSampleCount: Number(row.duration_sample_count),
     errorCount: Number(row.error_count),
     errorRate: Number(row.error_rate),
+    minDurationMs: row.min_duration_ms,
     avgDurationMs: row.avg_duration_ms,
-    p95DurationMs: row.p95_duration_ms
+    p50DurationMs: row.p50_duration_ms,
+    p95DurationMs: row.p95_duration_ms,
+    p99DurationMs: row.p99_duration_ms,
+    maxDurationMs: row.max_duration_ms,
+    firstObservedAt: row.first_observed_at,
+    lastObservedAt: row.last_observed_at
   };
 }
 
@@ -74,6 +85,7 @@ function buildExtraFilters(
 export interface RuntimeRevisionContext {
   targetRevisionSha: string;
   parentRevisionSha: string | null;
+  parentRevisionPersisted: boolean;
   committedAt: string | null;
 }
 
@@ -85,11 +97,24 @@ export async function getRuntimeRevisionContext(
     sha: string;
     parent_shas: string[];
     committed_at: string | null;
+    parent_revision_persisted: boolean;
   }>(
-    `SELECT sha, parent_shas, committed_at
-     FROM commits
-     WHERE repository_id = $1
-       AND sha = $2
+    `SELECT
+       c.sha,
+       c.parent_shas,
+       c.committed_at,
+       CASE
+         WHEN c.parent_shas[1] IS NULL THEN false
+         ELSE EXISTS (
+           SELECT 1
+           FROM commits p
+           WHERE p.repository_id = c.repository_id
+             AND p.sha = c.parent_shas[1]
+         )
+       END AS parent_revision_persisted
+     FROM commits c
+     WHERE c.repository_id = $1
+       AND c.sha = $2
      LIMIT 1`,
     [repositoryId, targetRevisionSha]
   );
@@ -100,6 +125,7 @@ export async function getRuntimeRevisionContext(
   return {
     targetRevisionSha: row.sha,
     parentRevisionSha: row.parent_shas[0] ?? null,
+    parentRevisionPersisted: row.parent_revision_persisted,
     committedAt: row.committed_at
   };
 }
@@ -133,9 +159,17 @@ export async function aggregateRuntimeWindow(
          / NULLIF(COUNT(*)::double precision, 0),
          0
        ) AS error_rate,
+       MIN(e.duration_ms) AS min_duration_ms,
        AVG(e.duration_ms) AS avg_duration_ms,
+       PERCENTILE_CONT(0.50)
+         WITHIN GROUP (ORDER BY e.duration_ms) AS p50_duration_ms,
        PERCENTILE_CONT(0.95)
-         WITHIN GROUP (ORDER BY e.duration_ms) AS p95_duration_ms
+         WITHIN GROUP (ORDER BY e.duration_ms) AS p95_duration_ms,
+       PERCENTILE_CONT(0.99)
+         WITHIN GROUP (ORDER BY e.duration_ms) AS p99_duration_ms,
+       MAX(e.duration_ms) AS max_duration_ms,
+       MIN(e.observed_at) AS first_observed_at,
+       MAX(e.observed_at) AS last_observed_at
      FROM runtime_telemetry_events e
      WHERE e.repository_id = $1
        AND e.observed_at >= $2
