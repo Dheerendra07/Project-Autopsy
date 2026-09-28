@@ -101,15 +101,15 @@ export async function getRuntimeRevisionContext(
   }>(
     `SELECT
        c.sha,
-       c.parent_revision_sha,
+       c.parent_shas ->> 0 AS parent_revision_sha,
        c.committed_at,
        CASE
-         WHEN c.parent_revision_sha IS NULL THEN false
+         WHEN c.parent_shas ->> 0 IS NULL THEN false
          ELSE EXISTS (
            SELECT 1
            FROM commits p
            WHERE p.repository_id = c.repository_id
-             AND p.sha = c.parent_revision_sha
+             AND p.sha = c.parent_shas ->> 0
          )
        END AS parent_revision_persisted
      FROM commits c
