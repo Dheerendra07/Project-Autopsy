@@ -174,6 +174,7 @@ export function splitSqlStatements(source: string): SqlStatement[] {
   const buffer: string[] = [];
   const lineRef = { value: 1 };
   let statementStartLine = 1;
+  let statementHasContent = false;
   let state:
     | "normal"
     | "single"
@@ -182,6 +183,13 @@ export function splitSqlStatements(source: string): SqlStatement[] {
     | "block_comment"
     | "dollar" = "normal";
   let dollarDelimiter = "";
+
+  const markContent = (): void => {
+    if (!statementHasContent) {
+      statementStartLine = lineRef.value;
+      statementHasContent = true;
+    }
+  };
 
   const pushStatement = (): void => {
     const text = buffer.join("").trim();
@@ -194,6 +202,7 @@ export function splitSqlStatements(source: string): SqlStatement[] {
     }
 
     buffer.length = 0;
+    statementHasContent = false;
     statementStartLine = lineRef.value;
   };
 
@@ -313,12 +322,14 @@ export function splitSqlStatements(source: string): SqlStatement[] {
     }
 
     if (current === "'") {
+      markContent();
       buffer.push(current);
       state = "single";
       continue;
     }
 
     if (current === '"') {
+      markContent();
       buffer.push(current);
       state = "double";
       continue;
@@ -330,6 +341,7 @@ export function splitSqlStatements(source: string): SqlStatement[] {
         .match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*|)\$/);
 
       if (match?.[0]) {
+        markContent();
         dollarDelimiter = match[0];
         buffer.push(dollarDelimiter);
         index += dollarDelimiter.length - 1;
@@ -343,6 +355,10 @@ export function splitSqlStatements(source: string): SqlStatement[] {
       continue;
     }
 
+    if (!/\s/.test(current)) {
+      markContent();
+    }
+
     buffer.push(current);
 
     if (current === "\n") {
@@ -353,7 +369,6 @@ export function splitSqlStatements(source: string): SqlStatement[] {
   pushStatement();
   return statements;
 }
-
 function cleanStatement(statement: string): string {
   return statement.replace(/\s+/g, " ").trim();
 }
@@ -592,7 +607,7 @@ export function classifySqlStatement(
     return operation(statement, "create_index", {
       objectName: identifier(match[1]),
       tableName: identifier(match[2]),
-      concurrent: /CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+CONCURRENTLY\\b/i.test(
+      concurrent: /CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\b/i.test(
         cleaned
       )
     });
@@ -610,7 +625,7 @@ export function classifySqlStatement(
   if (match?.[1]) {
     return operation(statement, "drop_index", {
       objectName: identifier(match[1]),
-      concurrent: /DROP\\s+INDEX\\s+CONCURRENTLY\\b/i.test(cleaned)
+      concurrent: /DROP\s+INDEX\s+CONCURRENTLY\b/i.test(cleaned)
     });
   }
 
