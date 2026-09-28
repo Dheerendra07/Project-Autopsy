@@ -9,7 +9,8 @@ const envSchema = z.object({
   PORT: z.coerce
     .number()
     .int()
-    .positive()
+    .min(1)
+    .max(65_535)
     .default(5000),
 
   DATABASE_URL: z
@@ -24,7 +25,8 @@ const envSchema = z.object({
   REDIS_PORT: z.coerce
     .number()
     .int()
-    .positive()
+    .min(1)
+    .max(65_535)
     .default(6379),
 
   REPOSITORY_STORAGE_PATH: z
