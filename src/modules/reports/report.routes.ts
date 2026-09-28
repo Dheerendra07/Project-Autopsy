@@ -15,7 +15,10 @@ const querySchema = z.object({
 
 reportRouter.get("/", async (req, res, next) => {
   try {
-    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const repositoryId = z
+      .string()
+      .uuid()
+      .parse((req.params as { repositoryId?: unknown }).repositoryId);
     const query = querySchema.parse(req.query);
     const report = await generateEvidenceReport(repositoryId, query.limit);
 
