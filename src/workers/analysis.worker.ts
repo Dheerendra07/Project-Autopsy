@@ -15,7 +15,16 @@ import { discoverFileChurn } from "../modules/metrics/churn.discovery.js";
 import { discoverDependencyEvolution } from "../modules/dependencies/dependency.discovery.js";
 import { discoverArchitectureEvolution } from "../modules/architecture/architecture.discovery.js";
 import { rebuildFileChangeCoupling } from "../modules/coupling/coupling.persistence.js";
-import { replaceDependencyEvolution, replaceArchitectureEvolution } from "../modules/evolution/evolution.persistence.js";
+import {
+  discoverCodeComplexityEvolution
+} from "../modules/complexity/complexity.discovery.js";
+import {
+  replaceCodeComplexityEvolution
+} from "../modules/complexity/complexity.persistence.js";
+import {
+  replaceDependencyEvolution,
+  replaceArchitectureEvolution
+} from "../modules/evolution/evolution.persistence.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
@@ -72,6 +81,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         architectureEvolution.events
       );
 
+      const complexityEvolution =
+        await discoverCodeComplexityEvolution(
+          repository.storage_path,
+          commits
+        );
+
+      await replaceCodeComplexityEvolution(
+        repositoryId,
+        complexityEvolution
+      );
+
       const couplingPairs = await rebuildFileChangeCoupling(
         repositoryId
       );
@@ -89,6 +109,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         dependencyChanges: dependencyEvolution.changes.length,
         architectureSnapshots: architectureEvolution.snapshots.length,
         architectureEvents: architectureEvolution.events.length,
+        complexityEvents: complexityEvolution.length,
         couplingPairs: couplingPairs
       };
     } catch (error) {
