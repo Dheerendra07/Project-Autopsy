@@ -45,6 +45,11 @@ import {
   appendDatabaseMigrationEvolution,
   replaceDatabaseMigrationEvolution
 } from "../modules/schema/schema.persistence.js";
+import { discoverTestEvolution } from "../modules/tests/test-evolution.discovery.js";
+import {
+  appendTestEvolution,
+  replaceTestEvolution
+} from "../modules/tests/test-evolution.persistence.js";
 import {
   checkoutRepositoryAtCommit,
   cloneRepository,
@@ -335,6 +340,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      const testEvolution = await discoverTestEvolution(
+        repository.storage_path,
+        commits
+      );
+
+      if (analysis.analysis_mode === "incremental") {
+        await appendTestEvolution(repositoryId, testEvolution);
+      } else {
+        await replaceTestEvolution(repositoryId, testEvolution);
+      }
+
       const complexityCache = {
         get: (cacheKey: string) =>
           getAnalysisCache(
@@ -396,6 +412,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         architectureSnapshots: architectureEvolution.snapshots.length,
         architectureEvents: architectureEvolution.events.length,
         databaseMigrationEvents: databaseMigrationEvolution.length,
+        testEvolutionEvents: testEvolution.length,
         complexityEvents: complexityEvolution.events.length,
         complexityCacheHits: complexityEvolution.cacheHits,
         complexityCacheMisses: complexityEvolution.cacheMisses,

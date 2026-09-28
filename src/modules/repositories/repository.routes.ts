@@ -36,6 +36,14 @@ import {
 import { listCodeComplexityEvents } from "../complexity/complexity.persistence.js";
 import { listDatabaseMigrationEvents } from "../schema/schema.persistence.js";
 import type { DatabaseMigrationFilters } from "../schema/schema.types.js";
+import {
+  listTestEvolutionEvents,
+  summarizeTestEvolution
+} from "../tests/test-evolution.persistence.js";
+import type {
+  TestEvolutionFilters,
+  TestEvolutionGroupBy
+} from "../tests/test-evolution.types.js";
 
 const router = Router();
 
@@ -651,6 +659,200 @@ router.get("/:repositoryId/database-migrations", async (req, res, next) => {
         total: result.total
       },
       events: result.events
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/test-evolution", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(500).default(100),
+      framework: z
+        .enum([
+          "node_test",
+          "jest",
+          "vitest",
+          "mocha",
+          "ava",
+          "tap",
+          "playwright",
+          "cypress",
+          "unknown"
+        ])
+        .optional(),
+      artifactType: z
+        .enum(["test_source", "test_config", "fixture"])
+        .optional(),
+      testType: z
+        .enum([
+          "unit",
+          "integration",
+          "e2e",
+          "contract",
+          "fixture",
+          "config",
+          "unknown"
+        ])
+        .optional(),
+      changeType: z
+        .enum(["added", "modified", "deleted"])
+        .optional(),
+      analysisStatus: z
+        .enum(["supported_source", "deleted", "read_error"])
+        .optional()
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const filters: TestEvolutionFilters = {};
+    if (query.framework) filters.framework = query.framework;
+    if (query.artifactType) filters.artifactType = query.artifactType;
+    if (query.testType) filters.testType = query.testType;
+    if (query.changeType) filters.changeType = query.changeType;
+    if (query.analysisStatus) filters.analysisStatus = query.analysisStatus;
+
+    const result = await listTestEvolutionEvents(
+      repositoryId,
+      query.limit,
+      filters
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "test_source_evolution_heuristic",
+      semantics: {
+        counts: "source-text heuristics",
+        passFail: "not established by this endpoint",
+        coverage: "not inferred from Git co-change"
+      },
+      ordering: [
+        "committedAt ASC NULLS LAST",
+        "sha ASC",
+        "path ASC"
+      ],
+      filters: {
+        framework: query.framework ?? null,
+        artifactType: query.artifactType ?? null,
+        testType: query.testType ?? null,
+        changeType: query.changeType ?? null,
+        analysisStatus: query.analysisStatus ?? null
+      },
+      pagination: {
+        limit: query.limit,
+        total: result.total
+      },
+      events: result.events
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/test-evolution/summary", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      framework: z
+        .enum([
+          "node_test",
+          "jest",
+          "vitest",
+          "mocha",
+          "ava",
+          "tap",
+          "playwright",
+          "cypress",
+          "unknown"
+        ])
+        .optional(),
+      artifactType: z
+        .enum(["test_source", "test_config", "fixture"])
+        .optional(),
+      testType: z
+        .enum([
+          "unit",
+          "integration",
+          "e2e",
+          "contract",
+          "fixture",
+          "config",
+          "unknown"
+        ])
+        .optional(),
+      changeType: z
+        .enum(["added", "modified", "deleted"])
+        .optional(),
+      analysisStatus: z
+        .enum(["supported_source", "deleted", "read_error"])
+        .optional(),
+      groupBy: z
+        .enum(["framework", "artifactType", "testType", "changeType"])
+        .default("testType"),
+      groupLimit: z.coerce.number().int().min(1).max(100).default(25)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const filters: TestEvolutionFilters = {};
+    if (query.framework) filters.framework = query.framework;
+    if (query.artifactType) filters.artifactType = query.artifactType;
+    if (query.testType) filters.testType = query.testType;
+    if (query.changeType) filters.changeType = query.changeType;
+    if (query.analysisStatus) filters.analysisStatus = query.analysisStatus;
+
+    const result = await summarizeTestEvolution(
+      repositoryId,
+      filters,
+      query.groupBy as TestEvolutionGroupBy,
+      query.groupLimit
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "changed_test_evidence_aggregate",
+      semantics: {
+        totals:
+          "aggregates changed-test files recorded by Autopsy, not a repository-wide test inventory",
+        passFail: "not established by source evolution"
+      },
+      query: {
+        framework: query.framework ?? null,
+        artifactType: query.artifactType ?? null,
+        testType: query.testType ?? null,
+        changeType: query.changeType ?? null,
+        analysisStatus: query.analysisStatus ?? null,
+        groupBy: query.groupBy,
+        groupLimit: query.groupLimit
+      },
+      overall: result.overall,
+      groups: result.groups
     });
   } catch (error) {
     next(error);
