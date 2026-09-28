@@ -379,6 +379,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       const message =
         error instanceof Error ? error.message : "Unknown analysis error";
 
+      const maxAttempts = job.opts.attempts ?? 1;
+      const willRetry = job.attemptsMade + 1 < maxAttempts;
+
+      if (willRetry) {
+        console.error(
+          `Analysis job ${job.id ?? "unknown"} failed; retrying:`,
+          error
+        );
+        throw error;
+      }
+
       try {
         await updateAnalysisRun(analysisRunId, "failed", {
           errorMessage: message
