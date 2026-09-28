@@ -87,13 +87,16 @@ jobs:
 
           cleanup() {
             kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
           }
           trap cleanup EXIT
 
+          health_ok=false
+
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:5000/health > health.json; then
-              cat health.json
-              exit 0
+              health_ok=true
+              break
             fi
 
             if ! kill -0 "$server_pid" 2>/dev/null; then
@@ -104,22 +107,53 @@ jobs:
             sleep 1
           done
 
+          if [ "$health_ok" != "true" ]; then
+            cat server-smoke.log
+            exit 1
+          fi
+
+          cat health.json
+
+          kill -TERM "$server_pid"
+
+          if ! wait "$server_pid"; then
+            status=$?
+            cat server-smoke.log
+            exit "$status"
+          fi
+
+          trap - EXIT
           cat server-smoke.log
-          exit 1
 
       - name: Worker startup smoke test
         shell: bash
         run: |
           set -euo pipefail
 
-          set +e
-          timeout --preserve-status 8s node dist/workers/analysis.worker.js > worker-smoke.log 2>&1
-          status=$?
-          set -e
+          node dist/workers/analysis.worker.js > worker-smoke.log 2>&1 &
+          worker_pid=$!
 
-          if [ "$status" -ne 124 ] && [ "$status" -ne 143 ]; then
+          cleanup() {
+            kill "$worker_pid" 2>/dev/null || true
+            wait "$worker_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          for attempt in $(seq 1 8); do
+            if ! kill -0 "$worker_pid" 2>/dev/null; then
+              cat worker-smoke.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          kill -TERM "$worker_pid"
+
+          if ! wait "$worker_pid"; then
+            status=$?
             cat worker-smoke.log
             exit "$status"
           fi
 
+          trap - EXIT
           cat worker-smoke.log
