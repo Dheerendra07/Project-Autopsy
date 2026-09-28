@@ -81,6 +81,7 @@ export async function generateRuntimeCorrelationEvidence(
       parentRevisionSha: context.parentRevisionSha,
       targetCommitAt: context.committedAt,
       changeContext: buildRuntimeChangeContext(context),
+      assessment: null,
       windowMinutes,
       minimumSamples,
       filters,
