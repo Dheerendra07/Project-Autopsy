@@ -127,7 +127,13 @@ export function analyzeSourceCode(
     getScriptKind(filePath)
   );
 
-  const parseErrorCount = sourceFile.parseDiagnostics.length;
+  const parseDiagnostics = (
+    sourceFile as ts.SourceFile & {
+      parseDiagnostics?: readonly unknown[];
+    }
+  ).parseDiagnostics;
+
+  const parseErrorCount = parseDiagnostics?.length ?? 0;
 
   if (parseErrorCount > 0) {
     return {
