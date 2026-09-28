@@ -6,6 +6,7 @@ import {
   buildRuntimeChangeContext,
   deriveRuntimeCorrelationStatus
 } from "../src/modules/runtime/correlation.persistence.js";
+import { buildRuntimeChangeAssessment } from "../src/modules/runtime/change-assessment.service.js";
 
 const aggregate = {
   sampleCount: 10,
@@ -169,5 +170,130 @@ test("builds deterministic Git change context and reports truncation explicitly"
     ],
     changedFilesTruncated: true,
     changedFilesComplete: false
+  });
+});
+
+
+test("builds deterministic runtime change measurements", () => {
+  const baseline = buildCorrelationWindow(
+    "baseline",
+    new Date("2026-09-29T00:00:00.000Z"),
+    new Date("2026-09-29T01:00:00.000Z"),
+    "a".repeat(40),
+    {
+      sampleCount: 100,
+      durationSampleCount: 90,
+      errorCount: 2,
+      errorRate: 0.02,
+      minDurationMs: 10,
+      avgDurationMs: 100,
+      p50DurationMs: 90,
+      p95DurationMs: 180,
+      p99DurationMs: 220,
+      maxDurationMs: 260,
+      firstObservedAt: "2026-09-29T00:00:00.000Z",
+      lastObservedAt: "2026-09-29T00:59:00.000Z"
+    }
+  );
+
+  const target = buildCorrelationWindow(
+    "target",
+    new Date("2026-09-29T01:00:00.000Z"),
+    new Date("2026-09-29T02:00:00.000Z"),
+    "b".repeat(40),
+    {
+      sampleCount: 120,
+      durationSampleCount: 100,
+      errorCount: 6,
+      errorRate: 0.05,
+      minDurationMs: 12,
+      avgDurationMs: 125,
+      p50DurationMs: 110,
+      p95DurationMs: 225,
+      p99DurationMs: 300,
+      maxDurationMs: 360,
+      firstObservedAt: "2026-09-29T01:00:00.000Z",
+      lastObservedAt: "2026-09-29T01:59:00.000Z"
+    }
+  );
+
+  const assessment = buildRuntimeChangeAssessment(
+    baseline,
+    target,
+    {
+      environment: "production",
+      operationName: "GET /items",
+      signalType: "http"
+    }
+  );
+
+  assert.equal(assessment.status, "ready");
+  assert.deepEqual(assessment.scope, {
+    environment: "production",
+    operationName: "GET /items",
+    signalType: "http"
+  });
+  assert.deepEqual(assessment.averageDuration, {
+    delta: 25,
+    relativePercent: 25,
+    direction: "increased"
+  });
+  assert.deepEqual(assessment.p95Duration, {
+    delta: 45,
+    relativePercent: 25,
+    direction: "increased"
+  });
+  assert.deepEqual(assessment.errorRate, {
+    delta: 0.03,
+    percentagePoints: 3,
+    direction: "increased"
+  });
+  assert.deepEqual(assessment.sampleComparison, {
+    baselineSampleCount: 100,
+    targetSampleCount: 120,
+    sampleCountDifference: 20,
+    targetToBaselineRatio: 1.2,
+    absoluteImbalancePercent: (20 / 120) * 100,
+    baselineDurationCoveragePercent: 90,
+    targetDurationCoveragePercent: (100 / 120) * 100
+  });
+});
+
+test("keeps zero-baseline relative duration and unavailable values explicit", () => {
+  const measurementOnly = buildRuntimeChangeAssessment(
+    buildCorrelationWindow(
+      "baseline",
+      new Date("2026-09-29T00:00:00.000Z"),
+      new Date("2026-09-29T01:00:00.000Z"),
+      "a".repeat(40),
+      {
+        ...aggregate,
+        avgDurationMs: 0,
+        p95DurationMs: null
+      }
+    ),
+    buildCorrelationWindow(
+      "target",
+      new Date("2026-09-29T01:00:00.000Z"),
+      new Date("2026-09-29T02:00:00.000Z"),
+      "b".repeat(40),
+      {
+        ...aggregate,
+        avgDurationMs: 10,
+        p95DurationMs: null
+      }
+    ),
+    {}
+  );
+
+  assert.deepEqual(measurementOnly.averageDuration, {
+    delta: 10,
+    relativePercent: null,
+    direction: "increased"
+  });
+  assert.deepEqual(measurementOnly.p95Duration, {
+    delta: null,
+    relativePercent: null,
+    direction: "unavailable"
   });
 });
