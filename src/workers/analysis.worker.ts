@@ -5,6 +5,7 @@ import {
   ANALYZER_VERSION
 } from "./queue.constants.js";
 import {
+  getAnalysisRunById,
   getRepositoryById,
   persistCommitBatch,
   replaceFileChangeMetrics,
@@ -19,9 +20,12 @@ import {
   discoverCodeComplexityEvolution
 } from "../modules/complexity/complexity.discovery.js";
 import {
+  appendCodeComplexityEvolution,
   replaceCodeComplexityEvolution
 } from "../modules/complexity/complexity.persistence.js";
 import {
+  appendDependencyEvolution,
+  appendArchitectureEvolution,
   replaceDependencyEvolution,
   replaceArchitectureEvolution
 } from "../modules/evolution/evolution.persistence.js";
@@ -29,6 +33,9 @@ import {
   getAnalysisCache,
   putAnalysisCache
 } from "../modules/analysis/analysis-cache.persistence.js";
+import {
+  checkoutRepositoryAtCommit
+} from "../modules/repositories/repository.service.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
@@ -51,7 +58,47 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
-      const commits = await discoverCommits(repository.storage_path);
+      const analysis = await getAnalysisRunById(analysisRunId);
+
+      if (!analysis || analysis.repository_id !== repositoryId) {
+        throw new Error(
+          `Analysis run not found: ${analysisRunId}`
+        );
+      }
+
+      if (!analysis.target_head_sha) {
+        throw new Error(
+          `Analysis target head is missing: ${analysisRunId}`
+        );
+      }
+
+      await checkoutRepositoryAtCommit(
+        repository.storage_path,
+        analysis.target_head_sha
+      );
+
+      const commits =
+        analysis.analysis_mode === "incremental" &&
+        analysis.base_head_sha
+          ? await discoverCommits(
+              repository.storage_path,
+              {
+                fromExclusive: analysis.base_head_sha,
+                toInclusive: analysis.target_head_sha
+              }
+            )
+          : await discoverCommits(repository.storage_path);
+
+      if (
+        analysis.analysis_mode === "incremental" &&
+        analysis.base_head_sha &&
+        commits.length === 0
+      ) {
+        throw new Error(
+          "Incremental analysis target contains no new commits."
+        );
+      }
+
       const persistedCount = await persistCommitBatch(
         repositoryId,
         commits
@@ -63,27 +110,57 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       await replaceFileChangeMetrics(repositoryId, fileChurn);
 
-      const dependencyEvolution = await discoverDependencyEvolution(
-        repository.storage_path,
-        commits.map(({ sha }) => ({ sha }))
-      );
+      const dependencyEvolution =
+        await discoverDependencyEvolution(
+          repository.storage_path,
+          commits.map(({ sha }) => ({ sha })),
+          {
+            baseHeadSha:
+              analysis.analysis_mode === "incremental"
+                ? analysis.base_head_sha
+                : null
+          }
+        );
 
-      await replaceDependencyEvolution(
-        repositoryId,
-        dependencyEvolution.snapshots,
-        dependencyEvolution.changes
-      );
+      if (analysis.analysis_mode === "incremental") {
+        await appendDependencyEvolution(
+          repositoryId,
+          dependencyEvolution.snapshots,
+          dependencyEvolution.changes
+        );
+      } else {
+        await replaceDependencyEvolution(
+          repositoryId,
+          dependencyEvolution.snapshots,
+          dependencyEvolution.changes
+        );
+      }
 
-      const architectureEvolution = await discoverArchitectureEvolution(
-        repository.storage_path,
-        commits.map(({ sha }) => ({ sha }))
-      );
+      const architectureEvolution =
+        await discoverArchitectureEvolution(
+          repository.storage_path,
+          commits.map(({ sha }) => ({ sha })),
+          {
+            baseHeadSha:
+              analysis.analysis_mode === "incremental"
+                ? analysis.base_head_sha
+                : null
+          }
+        );
 
-      await replaceArchitectureEvolution(
-        repositoryId,
-        architectureEvolution.snapshots,
-        architectureEvolution.events
-      );
+      if (analysis.analysis_mode === "incremental") {
+        await appendArchitectureEvolution(
+          repositoryId,
+          architectureEvolution.snapshots,
+          architectureEvolution.events
+        );
+      } else {
+        await replaceArchitectureEvolution(
+          repositoryId,
+          architectureEvolution.snapshots,
+          architectureEvolution.events
+        );
+      }
 
       const complexityCache = {
         get: (cacheKey: string) =>
@@ -107,13 +184,23 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         await discoverCodeComplexityEvolution(
           repository.storage_path,
           commits,
-          complexityCache
+          complexityCache,
+          analysis.analysis_mode === "incremental"
+            ? analysis.base_head_sha
+            : null
         );
 
-      await replaceCodeComplexityEvolution(
-        repositoryId,
-        complexityEvolution.events
-      );
+      if (analysis.analysis_mode === "incremental") {
+        await appendCodeComplexityEvolution(
+          repositoryId,
+          complexityEvolution.events
+        );
+      } else {
+        await replaceCodeComplexityEvolution(
+          repositoryId,
+          complexityEvolution.events
+        );
+      }
 
       const couplingPairs = await rebuildFileChangeCoupling(
         repositoryId
@@ -125,6 +212,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         status: "completed",
         repositoryId,
         analyzerVersion: ANALYZER_VERSION,
+        analysisMode: analysis.analysis_mode,
+        baseHeadSha: analysis.base_head_sha,
+        targetHeadSha: analysis.target_head_sha,
         commitsDiscovered: commits.length,
         commitsPersisted: persistedCount,
         filesWithChurnEvidence: fileChurn.length,
@@ -167,7 +257,6 @@ analysisWorker.on("failed", (job, error) => {
     error
   );
 });
-
 
 let shuttingDown = false;
 
