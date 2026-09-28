@@ -415,7 +415,7 @@ export async function replaceFileChangeMetrics(
             item.path,
             COALESCE(
               (
-                SELECT COUNT(*)
+                SELECT COUNT(*)::int
                 FROM commit_files cf
                 INNER JOIN commits c ON c.id = cf.commit_id
                 WHERE c.repository_id = $1
