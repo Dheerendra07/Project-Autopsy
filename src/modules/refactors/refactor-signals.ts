@@ -6,7 +6,6 @@ export type RefactorSignalType =
   | "cleanup"
   | "extract"
   | "split"
-  | "merge"
   | "move"
   | "rename";
 
@@ -21,7 +20,6 @@ const REFACTOR_SIGNAL_RULES: Array<{
   { type: "cleanup", pattern: /\bclean[- ]?up\b/i },
   { type: "extract", pattern: /\bextract\b/i },
   { type: "split", pattern: /\bsplit\b/i },
-  { type: "merge", pattern: /\bmerge\b/i },
   { type: "move", pattern: /\bmove\b/i },
   { type: "rename", pattern: /\brename\b/i }
 ];
