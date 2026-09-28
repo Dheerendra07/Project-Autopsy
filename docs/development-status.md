@@ -69,7 +69,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked main baseline: `5cc47e70891e37d2a3fdddb947af83bc91edc474`.
+Locked main baseline: `75e775daac9b3b2a2c6dc39a79ba51b591424f12`.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -194,7 +194,7 @@ Filters: framework, changeType, migrationKind, operationType, with deterministic
 
 Evidence policy: destructive/lock-sensitive signals are heuristics about migration text. They do not establish that a production deployment experienced downtime, blocking, data loss, or a performance regression.
 
-Analyzer version is now 0.3.0.
+Analyzer version is now 0.4.0.
 
 SQL parser regression coverage now locks comment/string/dollar-quote statement boundaries, deterministic operation classification, and migration-history add/modify/delete behavior.
 
@@ -265,6 +265,8 @@ Verified merge sequence:
 - Runtime telemetry / database migration evidence / test evolution hardening: merged via PR #20.
 - Evidence-backed repository reports: merged via PR #21.
 - Evidence-backed interview story scaffolds: merged via PR #22.
+- Runtime ↔ Git revision correlation evidence v1: merged via PR #23.
+- Runtime correlation hardening: merged via PR #24.
 
 Current verification policy remains unchanged: feature branches must pass typecheck, build, test, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before merge.
 
@@ -285,3 +287,5 @@ Evidence policy:
 - "ready" means revision/time alignment and minimum sample requirements are satisfied; it is not a regression verdict.
 - The comparison is observational and does not establish that a commit caused a runtime change.
 - Workload changes, instrumentation coverage, deployment timing, and environmental factors can affect the comparison.
+- The first parent must itself be persisted; a referenced-but-missing parent is returned as an explicit evidence gap.
+- Correlation windows now expose the complete persisted aggregate shape: min/avg/p50/p95/p99/max duration, duration sample count, error count/rate, and observed time bounds.
