@@ -50,7 +50,13 @@ async function createAnalysisRun(
     [repositoryId, analyzerVersion]
   );
 
-  return result.rows[0].id;
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("Failed to create analysis run.");
+  }
+
+  return row.id;
 }
 
 export async function createRepositoryWithAnalysis(
@@ -263,7 +269,13 @@ export async function persistCommitBatch(
         ]
       );
 
-      const commitId = commitResult.rows[0].id;
+      const commitRow = commitResult.rows[0];
+
+      if (!commitRow) {
+        throw new Error(`Failed to persist commit ${commit.sha}.`);
+      }
+
+      const commitId = commitRow.id;
 
       await client.query(
         "DELETE FROM commit_files WHERE commit_id = $1",
