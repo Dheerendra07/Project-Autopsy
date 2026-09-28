@@ -273,8 +273,8 @@ function isCodeComplexityAnalysis(
     return false;
   }
 
-  if (candidate.metrics === null) {
-    return true;
+  if (candidate.status !== "supported") {
+    return candidate.metrics === null;
   }
 
   if (!candidate.metrics || typeof candidate.metrics !== "object") {
@@ -400,7 +400,13 @@ export async function discoverCodeComplexityEvolution(
 
       if (cache && blobSha) {
         const cacheKey = `${blobSha}:${extname(file.path).toLowerCase()}`;
-        const cachedValue = await cache.get(cacheKey);
+        let cachedValue: unknown | null = null;
+
+        try {
+          cachedValue = await cache.get(cacheKey);
+        } catch {
+          cachedValue = null;
+        }
 
         if (isCodeComplexityAnalysis(cachedValue)) {
           analysis = cachedValue;
