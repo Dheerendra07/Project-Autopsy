@@ -190,3 +190,12 @@ Evidence policy: destructive/lock-sensitive signals are heuristics about migrati
 Analyzer version is now 0.3.0.
 
 SQL parser regression coverage now locks comment/string/dollar-quote statement boundaries, deterministic operation classification, and migration-history add/modify/delete behavior.
+
+### Test Evolution v1
+
+Autopsy now reconstructs test-source evolution from Git history. Test events retain commit/path evidence, framework hints, artifact and test-type classification, before/after test/suite/hook/assertion/mock heuristics, deterministic content hashes, and co-changed production files. Source counts do not establish historical execution or pass/fail, and co-change does not establish coverage.
+
+API: GET /api/repositories/:repositoryId/test-evolution
+Summary: GET /api/repositories/:repositoryId/test-evolution/summary
+
+The summary intentionally aggregates changed-test evidence rather than claiming a complete repository-wide test inventory.
