@@ -162,3 +162,9 @@ Incremental runs persist the new commit range and seed dependency, architecture,
 
 Each analysis run records its mode, base head, target head, and analyzer version. An active queued/running analysis is restricted to one per repository by a PostgreSQL partial unique index.
 
+
+## Repeatedly modified files
+
+Repeated-change API: GET /api/repositories/:repositoryId/repeatedly-modified-files?minTouches=3&limit=20
+
+The endpoint identifies file paths touched by at least the requested number of persisted commits and returns their historical churn, first/last change timestamps, and change span in days. Ordering is deterministic. This is an observed change-frequency signal, not a claim that the file is inherently problematic.
