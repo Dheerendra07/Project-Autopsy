@@ -37,7 +37,7 @@ test(
 
       await db.query(
         "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas) VALUES ($1, $2, $3, $4, $5)",
-        [repositoryId, targetSha, "target", commitAt, [parentSha]]
+        [repositoryId, targetSha, "target", commitAt, JSON.stringify([parentSha])]
       );
 
       const events = prepareRuntimeTelemetryBatch(
