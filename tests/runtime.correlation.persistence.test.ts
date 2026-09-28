@@ -36,8 +36,17 @@ test(
       );
 
       const targetCommitResult = await db.query<{ id: string }>(
-        "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-        [repositoryId, targetSha, "target", commitAt, JSON.stringify([parentSha])]
+        "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas, files_changed, additions, deletions) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+        [
+          repositoryId,
+          targetSha,
+          "target",
+          commitAt,
+          JSON.stringify([parentSha]),
+          2,
+          32,
+          5
+        ]
       );
 
       const targetCommitId = targetCommitResult.rows[0]?.id;
