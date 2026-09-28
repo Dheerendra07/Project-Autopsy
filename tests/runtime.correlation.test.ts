@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildCorrelationWindow,
+  buildRuntimeChangeContext,
   deriveRuntimeCorrelationStatus
 } from "../src/modules/runtime/correlation.persistence.js";
 
@@ -112,5 +113,61 @@ test("builds deterministic correlation windows", () => {
     to: "2026-09-29T01:00:00.000Z",
     revisionSha: "a".repeat(40),
     aggregate
+  });
+});
+
+
+test("builds deterministic Git change context and reports truncation explicitly", () => {
+  const context = buildRuntimeChangeContext({
+    targetRevisionSha: "c".repeat(40),
+    parentRevisionSha: "d".repeat(40),
+    parentRevisionPersisted: true,
+    committedAt: "2026-09-29T01:00:00.000Z",
+    subject: "refactor: harden runtime path",
+    filesChanged: 101,
+    additions: 250,
+    deletions: 90,
+    changedFiles: [
+      {
+        path: "src/a.ts",
+        status: "modified",
+        additions: 10,
+        deletions: 2
+      },
+      {
+        path: "src/b.ts",
+        status: "added",
+        additions: 20,
+        deletions: 0
+      }
+    ],
+    changedFilesTruncated: true,
+    changedFilesComplete: false
+  });
+
+  assert.deepEqual(context, {
+    commitSha: "c".repeat(40),
+    subject: "refactor: harden runtime path",
+    committedAt: "2026-09-29T01:00:00.000Z",
+    parentRevisionSha: "d".repeat(40),
+    filesChanged: 101,
+    additions: 250,
+    deletions: 90,
+    changedFiles: [
+      {
+        path: "src/a.ts",
+        status: "modified",
+        additions: 10,
+        deletions: 2
+      },
+      {
+        path: "src/b.ts",
+        status: "added",
+        additions: 20,
+        deletions: 0
+      }
+    ],
+    changedFilesTruncated: true,
+    changedFilesComplete: false
   });
 });

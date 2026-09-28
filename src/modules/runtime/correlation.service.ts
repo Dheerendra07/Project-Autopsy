@@ -1,6 +1,7 @@
 import {
   aggregateRuntimeWindow,
   buildCorrelationWindow,
+  buildRuntimeChangeContext,
   deriveRuntimeCorrelationStatus,
   getRuntimeRevisionContext
 } from "./correlation.persistence.js";
@@ -26,6 +27,7 @@ export async function generateRuntimeCorrelationEvidence(
       targetRevisionSha,
       parentRevisionSha: null,
       targetCommitAt: null,
+      changeContext: null,
       windowMinutes,
       minimumSamples,
       filters,
@@ -50,6 +52,7 @@ export async function generateRuntimeCorrelationEvidence(
       targetRevisionSha,
       parentRevisionSha: context.parentRevisionSha,
       targetCommitAt: null,
+      changeContext: buildRuntimeChangeContext(context),
       windowMinutes,
       minimumSamples,
       filters,
@@ -74,6 +77,7 @@ export async function generateRuntimeCorrelationEvidence(
       targetRevisionSha,
       parentRevisionSha: context.parentRevisionSha,
       targetCommitAt: context.committedAt,
+      changeContext: buildRuntimeChangeContext(context),
       windowMinutes,
       minimumSamples,
       filters,
@@ -144,6 +148,7 @@ export async function generateRuntimeCorrelationEvidence(
     targetRevisionSha,
     parentRevisionSha: context.parentRevisionSha,
     targetCommitAt: context.committedAt,
+    changeContext: buildRuntimeChangeContext(context),
     windowMinutes,
     minimumSamples,
     filters,

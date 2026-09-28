@@ -35,9 +35,36 @@ test(
         [repositoryId, parentSha, "parent", new Date(commitAt.getTime() - 60_000)]
       );
 
+      const targetCommitResult = await db.query<{ id: string }>(
+        "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas, files_changed, additions, deletions) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+        [
+          repositoryId,
+          targetSha,
+          "target",
+          commitAt,
+          JSON.stringify([parentSha]),
+          2,
+          32,
+          5
+        ]
+      );
+
+      const targetCommitId = targetCommitResult.rows[0]?.id;
+      assert.ok(targetCommitId);
+
       await db.query(
-        "INSERT INTO commits (repository_id, sha, subject, committed_at, parent_shas) VALUES ($1, $2, $3, $4, $5)",
-        [repositoryId, targetSha, "target", commitAt, JSON.stringify([parentSha])]
+        "INSERT INTO commit_files (commit_id, path, status, additions, deletions) VALUES ($1, $2, $3, $4, $5), ($1, $6, $7, $8, $9)",
+        [
+          targetCommitId,
+          "src/runtime/handler.ts",
+          "modified",
+          20,
+          5,
+          "src/runtime/types.ts",
+          "added",
+          12,
+          0
+        ]
       );
 
       const events = prepareRuntimeTelemetryBatch(
@@ -90,6 +117,31 @@ test(
 
       assert.equal(evidence.status, "ready");
       assert.equal(evidence.parentRevisionSha, parentSha);
+      assert.deepEqual(evidence.changeContext, {
+        commitSha: targetSha,
+        subject: "target",
+        committedAt: commitAt.toISOString(),
+        parentRevisionSha: parentSha,
+        filesChanged: 2,
+        additions: 32,
+        deletions: 5,
+        changedFiles: [
+          {
+            path: "src/runtime/handler.ts",
+            status: "modified",
+            additions: 20,
+            deletions: 5
+          },
+          {
+            path: "src/runtime/types.ts",
+            status: "added",
+            additions: 12,
+            deletions: 0
+          }
+        ],
+        changedFilesTruncated: false,
+        changedFilesComplete: true
+      });
       assert.equal(evidence.baseline?.aggregate.sampleCount, 1);
       assert.equal(evidence.target?.aggregate.sampleCount, 1);
       assert.equal(evidence.baseline?.aggregate.p50DurationMs, 100);
