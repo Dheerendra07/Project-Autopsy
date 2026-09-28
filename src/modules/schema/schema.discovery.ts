@@ -426,7 +426,7 @@ export function classifySqlStatement(
       "^CREATE\\s+(?:TEMP(?:ORARY)?\\s+)?TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    ),
+    , "i"),
   );
 
   if (match?.[1]) {
@@ -441,7 +441,7 @@ export function classifySqlStatement(
       "^DROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -458,7 +458,7 @@ export function classifySqlStatement(
         ")\\s+ADD\\s+(?:COLUMN\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2]) {
@@ -475,7 +475,7 @@ export function classifySqlStatement(
         ")\\s+DROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2]) {
@@ -494,7 +494,7 @@ export function classifySqlStatement(
         ")\\s+TO\\s+(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2] && match?.[3]) {
@@ -531,7 +531,7 @@ export function classifySqlStatement(
         ")\\s+ALTER\\s+COLUMN\\s+(" +
         IDENTIFIER +
         ")\\s+SET\\s+NOT\\s+NULL"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2]) {
@@ -548,7 +548,7 @@ export function classifySqlStatement(
         ")\\s+ALTER\\s+COLUMN\\s+(" +
         IDENTIFIER +
         ")\\s+DROP\\s+NOT\\s+NULL"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2]) {
@@ -565,7 +565,7 @@ export function classifySqlStatement(
         ")\\s+ADD\\s+CONSTRAINT\\s+(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2]) {
@@ -582,7 +582,7 @@ export function classifySqlStatement(
         ")\\s+DROP\\s+CONSTRAINT\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1] && match?.[2]) {
@@ -634,7 +634,7 @@ export function classifySqlStatement(
       "^CREATE\\s+(?:OR\\s+REPLACE\\s+)?VIEW\\s+(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -648,7 +648,7 @@ export function classifySqlStatement(
       "^DROP\\s+VIEW\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -662,7 +662,7 @@ export function classifySqlStatement(
       "^CREATE\\s+SCHEMA\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -676,7 +676,7 @@ export function classifySqlStatement(
       "^DROP\\s+SCHEMA\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -690,7 +690,7 @@ export function classifySqlStatement(
       "^CREATE\\s+(?:OR\\s+REPLACE\\s+)?TYPE\\s+(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -704,7 +704,7 @@ export function classifySqlStatement(
       "^ALTER\\s+TYPE\\s+(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -718,7 +718,7 @@ export function classifySqlStatement(
       "^DROP\\s+TYPE\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -732,7 +732,7 @@ export function classifySqlStatement(
       "^CREATE\\s+(?:OR\\s+REPLACE\\s+)?FUNCTION\\s+(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -746,7 +746,7 @@ export function classifySqlStatement(
       "^DROP\\s+FUNCTION\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -760,7 +760,7 @@ export function classifySqlStatement(
       "^CREATE\\s+(?:TEMP(?:ORARY)?\\s+)?SEQUENCE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
@@ -774,7 +774,7 @@ export function classifySqlStatement(
       "^DROP\\s+SEQUENCE\\s+(?:IF\\s+EXISTS\\s+)?(" +
         IDENTIFIER +
         ")"
-    )
+    , "i")
   );
 
   if (match?.[1]) {
