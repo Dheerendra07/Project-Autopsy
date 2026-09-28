@@ -92,6 +92,10 @@ test(
       assert.equal(evidence.parentRevisionSha, parentSha);
       assert.equal(evidence.baseline?.aggregate.sampleCount, 1);
       assert.equal(evidence.target?.aggregate.sampleCount, 1);
+      assert.equal(evidence.baseline?.aggregate.p50DurationMs, 100);
+      assert.equal(evidence.baseline?.aggregate.p95DurationMs, 100);
+      assert.equal(evidence.target?.aggregate.p50DurationMs, 140);
+      assert.equal(evidence.target?.aggregate.p95DurationMs, 140);
       assert.equal(evidence.observedDelta.avgDurationMs, 40);
       assert.equal(evidence.observedDelta.errorRate, 0);
       assert.equal(
