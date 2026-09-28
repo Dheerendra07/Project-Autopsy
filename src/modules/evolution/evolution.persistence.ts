@@ -147,6 +147,161 @@ export async function replaceArchitectureEvolution(
   }
 }
 
+
+export async function appendDependencyEvolution(
+  repositoryId: string,
+  snapshots: Array<{
+    sha: string;
+    manifestPath: string;
+    packageManager: string;
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+  }>,
+  changes: Array<{
+    sha: string;
+    manifestPath: string;
+    packageName: string;
+    scope: string;
+    changeType: string;
+    previousSpec: string | null;
+    currentSpec: string | null;
+  }>
+): Promise<void> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    for (const snapshot of snapshots) {
+      const commitId = await getCommitId(client, repositoryId, snapshot.sha);
+      if (!commitId) continue;
+
+      await client.query(
+        `INSERT INTO dependency_snapshots (
+          repository_id, commit_id, manifest_path, package_manager,
+          dependencies, dev_dependencies
+        ) VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
+        ON CONFLICT (repository_id, commit_id, manifest_path)
+        DO UPDATE SET
+          package_manager = EXCLUDED.package_manager,
+          dependencies = EXCLUDED.dependencies,
+          dev_dependencies = EXCLUDED.dev_dependencies`,
+        [
+          repositoryId,
+          commitId,
+          snapshot.manifestPath,
+          snapshot.packageManager,
+          JSON.stringify(snapshot.dependencies),
+          JSON.stringify(snapshot.devDependencies)
+        ]
+      );
+    }
+
+    for (const change of changes) {
+      const commitId = await getCommitId(client, repositoryId, change.sha);
+      if (!commitId) continue;
+
+      await client.query(
+        `INSERT INTO dependency_changes (
+          repository_id, commit_id, manifest_path, package_name, scope,
+          change_type, previous_spec, current_spec
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (
+          repository_id, commit_id, manifest_path, package_name, scope
+        ) DO UPDATE SET
+          change_type = EXCLUDED.change_type,
+          previous_spec = EXCLUDED.previous_spec,
+          current_spec = EXCLUDED.current_spec`,
+        [
+          repositoryId,
+          commitId,
+          change.manifestPath,
+          change.packageName,
+          change.scope,
+          change.changeType,
+          change.previousSpec,
+          change.currentSpec
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function appendArchitectureEvolution(
+  repositoryId: string,
+  snapshots: Array<{
+    sha: string;
+    rootPath: string;
+    directories: string[];
+  }>,
+  events: Array<{
+    sha: string;
+    rootPath: string;
+    eventType: string;
+    path: string;
+  }>
+): Promise<void> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    for (const snapshot of snapshots) {
+      const commitId = await getCommitId(client, repositoryId, snapshot.sha);
+      if (!commitId) continue;
+
+      await client.query(
+        `INSERT INTO architecture_snapshots (
+          repository_id, commit_id, root_path, directories
+        ) VALUES ($1, $2, $3, $4::jsonb)
+        ON CONFLICT (repository_id, commit_id, root_path)
+        DO UPDATE SET directories = EXCLUDED.directories`,
+        [
+          repositoryId,
+          commitId,
+          snapshot.rootPath,
+          JSON.stringify(snapshot.directories)
+        ]
+      );
+    }
+
+    for (const event of events) {
+      const commitId = await getCommitId(client, repositoryId, event.sha);
+      if (!commitId) continue;
+
+      await client.query(
+        `INSERT INTO architecture_events (
+          repository_id, commit_id, root_path, event_type, path
+        ) VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (
+          repository_id, commit_id, root_path, event_type, path
+        ) DO NOTHING`,
+        [
+          repositoryId,
+          commitId,
+          event.rootPath,
+          event.eventType,
+          event.path
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function listDependencyChanges(
   repositoryId: string,
   limit: number

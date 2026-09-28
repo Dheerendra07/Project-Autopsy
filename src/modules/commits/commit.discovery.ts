@@ -26,13 +26,22 @@ const RECORD_SEPARATOR = "\x1e";
 const FIELD_SEPARATOR = "\x1f";
 
 export async function discoverCommits(
-  repositoryPath: string
+  repositoryPath: string,
+  range?: {
+    fromExclusive?: string;
+    toInclusive?: string;
+  }
 ): Promise<DiscoveredCommit[]> {
   const git = simpleGit(repositoryPath);
 
+  const rangeArguments =
+    range?.fromExclusive && range.toInclusive
+      ? [`${range.fromExclusive}..${range.toInclusive}`]
+      : ["--all"];
+
   const output = await git.raw([
     "log",
-    "--all",
+    ...rangeArguments,
     "--full-history",
     "--reverse",
     "--date=iso-strict",
@@ -41,7 +50,7 @@ export async function discoverCommits(
     "--no-renames"
   ]);
 
-  const numstat = await discoverNumstat(git);
+  const numstat = await discoverNumstat(git, range);
 
   return output
     .split(RECORD_SEPARATOR)
@@ -119,11 +128,20 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
 }
 
 async function discoverNumstat(
-  git: ReturnType<typeof simpleGit>
+  git: ReturnType<typeof simpleGit>,
+  range?: {
+    fromExclusive?: string;
+    toInclusive?: string;
+  }
 ): Promise<Map<string, Map<string, { additions: number; deletions: number }>>> {
+  const rangeArguments =
+    range?.fromExclusive && range.toInclusive
+      ? [`${range.fromExclusive}..${range.toInclusive}`]
+      : ["--all"];
+
   const output = await git.raw([
     "log",
-    "--all",
+    ...rangeArguments,
     "--full-history",
     "--reverse",
     "--format=%x1e%H",

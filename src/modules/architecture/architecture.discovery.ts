@@ -11,9 +11,14 @@ export interface ArchitectureEvent {
   path: string;
 }
 
+export interface ArchitectureEvolutionOptions {
+  baseHeadSha?: string | null;
+}
+
 export async function discoverArchitectureEvolution(
   repositoryPath: string,
-  commits: Array<{ sha: string }>
+  commits: Array<{ sha: string }>,
+  options: ArchitectureEvolutionOptions = {}
 ): Promise<{
   snapshots: Array<ArchitectureSnapshot & { sha: string }>;
   events: Array<ArchitectureEvent & { sha: string }>;
@@ -24,11 +29,22 @@ export async function discoverArchitectureEvolution(
 
   let previousRoot = new Set<string>();
   let previousSrc = new Set<string>();
-  let hasPrevious = false;
+  if (options.baseHeadSha) {
+    previousRoot = new Set(
+      await listDirectoriesAtCommit(git, options.baseHeadSha, "")
+    );
+    previousSrc = new Set(
+      await listDirectoriesAtCommit(git, options.baseHeadSha, "src")
+    );
+  }
 
   for (const commit of commits) {
-    const root = new Set(await listDirectoriesAtCommit(git, commit.sha, ""));
-    const src = new Set(await listDirectoriesAtCommit(git, commit.sha, "src"));
+    const root = new Set(
+      await listDirectoriesAtCommit(git, commit.sha, "")
+    );
+    const src = new Set(
+      await listDirectoriesAtCommit(git, commit.sha, "src")
+    );
 
     snapshots.push({
       sha: commit.sha,
@@ -41,39 +57,21 @@ export async function discoverArchitectureEvolution(
       directories: [...src].sort((a, b) => a.localeCompare(b))
     });
 
-    if (hasPrevious) {
-      events.push(
-        ...diffDirectorySets(previousRoot, root).map((event) => ({
-          sha: commit.sha,
-          rootPath: "root" as const,
-          ...event
-        })),
-        ...diffDirectorySets(previousSrc, src).map((event) => ({
-          sha: commit.sha,
-          rootPath: "src" as const,
-          ...event
-        }))
-      );
-    } else {
-      events.push(
-        ...[...root].sort().map((path) => ({
-          sha: commit.sha,
-          rootPath: "root" as const,
-          eventType: "added" as const,
-          path
-        })),
-        ...[...src].sort().map((path) => ({
-          sha: commit.sha,
-          rootPath: "src" as const,
-          eventType: "added" as const,
-          path
-        }))
-      );
-    }
+    events.push(
+      ...diffDirectorySets(previousRoot, root).map((event) => ({
+        sha: commit.sha,
+        rootPath: "root" as const,
+        ...event
+      })),
+      ...diffDirectorySets(previousSrc, src).map((event) => ({
+        sha: commit.sha,
+        rootPath: "src" as const,
+        ...event
+      }))
+    );
 
     previousRoot = root;
     previousSrc = src;
-    hasPrevious = true;
   }
 
   return { snapshots, events };
@@ -89,24 +87,23 @@ async function listDirectoriesAtCommit(
     const prefix = rootPath ? `${rootPath}/` : "";
     const directories = new Set<string>();
 
-    for (const rawPath of output.split(/\r?\n/)) {
+    for (const rawPath of output.split(new RegExp("\\r?\\n"))) {
       const filePath = rawPath.trim();
+
       if (!filePath || (prefix && !filePath.startsWith(prefix))) {
         continue;
       }
 
-      const relative = prefix ? filePath.slice(prefix.length) : filePath;
+      const relative = prefix
+        ? filePath.slice(prefix.length)
+        : filePath;
       const segments = relative.split("/").filter(Boolean);
 
       if (segments.length < 2) {
         continue;
       }
 
-      if (rootPath === "src") {
-        directories.add(segments[0]!);
-      } else {
-        directories.add(segments[0]!);
-      }
+      directories.add(segments[0]!);
     }
 
     return [...directories].sort((a, b) => a.localeCompare(b));

@@ -20,14 +20,30 @@ export interface DependencyChange {
   currentSpec: string | null;
 }
 
+export interface DependencyEvolutionOptions {
+  baseHeadSha?: string | null;
+}
+
 interface PackageManifest {
   dependencies?: Record<string, unknown>;
   devDependencies?: Record<string, unknown>;
 }
 
+function toDependencySnapshot(
+  manifest: PackageManifest
+): DependencySnapshot {
+  return {
+    manifestPath: "package.json",
+    packageManager: "npm",
+    dependencies: normalizeDependencyMap(manifest.dependencies),
+    devDependencies: normalizeDependencyMap(manifest.devDependencies)
+  };
+}
+
 export async function discoverDependencyEvolution(
   repositoryPath: string,
-  commits: Array<{ sha: string }>
+  commits: Array<{ sha: string }>,
+  options: DependencyEvolutionOptions = {}
 ): Promise<{
   snapshots: Array<DependencySnapshot & { sha: string }>;
   changes: Array<DependencyChange & { sha: string }>;
@@ -37,22 +53,54 @@ export async function discoverDependencyEvolution(
   const changes: Array<DependencyChange & { sha: string }> = [];
   let previous: DependencySnapshot | null = null;
 
+  if (options.baseHeadSha) {
+    const baseManifest = await readPackageJsonAtCommit(
+      git,
+      options.baseHeadSha
+    );
+
+    previous = baseManifest
+      ? toDependencySnapshot(baseManifest)
+      : null;
+  }
+
   for (const commit of commits) {
     const manifest = await readPackageJsonAtCommit(git, commit.sha);
 
     if (!manifest) {
+      if (previous) {
+        changes.push(
+          ...mapChanges(
+            diffDependencyMaps(
+              previous.dependencies,
+              {}
+            ),
+            previous,
+            commit.sha,
+            "dependencies"
+          ),
+          ...mapChanges(
+            diffDependencyMaps(
+              previous.devDependencies,
+              {}
+            ),
+            previous,
+            commit.sha,
+            "devDependencies"
+          )
+        );
+      }
+
       previous = null;
       continue;
     }
 
-    const current: DependencySnapshot = {
-      manifestPath: "package.json",
-      packageManager: "npm",
-      dependencies: normalizeDependencyMap(manifest.dependencies),
-      devDependencies: normalizeDependencyMap(manifest.devDependencies)
-    };
+    const current = toDependencySnapshot(manifest);
 
-    snapshots.push({ sha: commit.sha, ...current });
+    snapshots.push({
+      sha: commit.sha,
+      ...current
+    });
 
     if (previous) {
       changes.push(

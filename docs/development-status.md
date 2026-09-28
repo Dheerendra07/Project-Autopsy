@@ -32,7 +32,9 @@ Code complexity evolution is merged on main and runs as analyzer version `0.2.1`
 
 Runtime hardening is also merged: API and worker graceful shutdown, public-response redaction of internal paths/errors, TCP port validation, and a deployment-path CI gate using PostgreSQL and Redis service containers.
 
-The current branch `feat/analysis-cache-v1` adds deterministic analyzer caching by Git blob SHA and analyzer version. This is computation caching, not yet full repository re-analysis from only new commits. Existing derived evidence tables still rebuild from the complete history until the later full incremental-run layer.
+The deterministic analyzer cache is merged on main. It reuses complexity analysis by Git blob SHA and analyzer version.
+
+The current branch `feat/full-incremental-analysis-v1` adds explicit full vs incremental analysis runs. Incremental runs are anchored to a previously completed target head and process only the new commit range for commit/dependency/architecture/complexity evidence. File-churn and coupling aggregates still rebuild from persisted/full Git evidence in v1 so their results remain idempotent and correct on retries.
 
 ## Code complexity evidence
 
@@ -102,3 +104,27 @@ The cache stores deterministic analysis results only. It does not store reposito
 
 The current code-complexity worker exposes cache hit/miss counts in the BullMQ job result. First-pass source parsing remains unchanged; repeated analysis of identical blobs can reuse the cached AST metrics.
 
+
+## Incremental analysis v1
+
+Migration: `008_incremental_analysis.sql`.
+
+Analysis runs now record:
+- `analysis_mode`: full or incremental
+- `base_head_sha`
+- `target_head_sha`
+
+Repositories record `tracked_branch`, which is the branch selected during import and refreshed during re-analysis.
+
+Re-analysis API:
+
+POST /api/repositories/:repositoryId/analyze
+
+Planning rules:
+- target == latest completed head -> up to date
+- latest completed head is an ancestor -> incremental
+- no valid previous head or divergent history -> full
+
+Only one queued/running analysis is permitted per repository at the database level.
+
+For v1, commit history and historical dependency/architecture/complexity evidence can be appended from a new commit range. File churn and co-change coupling continue to rebuild from complete evidence so repeated execution remains idempotent.

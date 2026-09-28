@@ -3,12 +3,15 @@ import { db } from "../../config/database.js";
 import type { AnalysisRunStatus } from "../analysis/analysis.types.js";
 import type { RepositoryMetadata } from "./repository.types.js";
 
+export type AnalysisMode = "full" | "incremental";
+
 export interface StoredRepository {
   id: string;
   source_type: string;
   source_url: string | null;
   name: string;
   default_branch: string | null;
+  tracked_branch: string | null;
   head_sha: string | null;
   storage_path: string | null;
 }
@@ -17,6 +20,9 @@ export interface StoredAnalysisRun {
   id: string;
   repository_id: string;
   analyzer_version: string;
+  analysis_mode: AnalysisMode;
+  base_head_sha: string | null;
+  target_head_sha: string | null;
   status: AnalysisRunStatus;
   started_at: string | null;
   completed_at: string | null;
@@ -43,26 +49,43 @@ export interface CreateRepositoryInput {
   sourceType: string;
   sourceUrl: string;
   name: string;
+  trackedBranch: string;
   metadata: RepositoryMetadata;
   storagePath: string;
+}
+
+export interface CreateAnalysisRunInput {
+  analyzerVersion: string;
+  analysisMode: AnalysisMode;
+  baseHeadSha: string | null;
+  targetHeadSha: string;
 }
 
 async function createAnalysisRun(
   client: PoolClient,
   repositoryId: string,
-  analyzerVersion: string
+  input: CreateAnalysisRunInput
 ): Promise<string> {
   const result = await client.query<{ id: string }>(
     `
       INSERT INTO analysis_runs (
         repository_id,
         analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
         status
       )
-      VALUES ($1, $2, 'queued')
+      VALUES ($1, $2, $3, $4, $5, 'queued')
       RETURNING id
     `,
-    [repositoryId, analyzerVersion]
+    [
+      repositoryId,
+      input.analyzerVersion,
+      input.analysisMode,
+      input.baseHeadSha,
+      input.targetHeadSha
+    ]
   );
 
   const row = result.rows[0];
@@ -91,10 +114,11 @@ export async function createRepositoryWithAnalysis(
           source_url,
           name,
           default_branch,
+          tracked_branch,
           head_sha,
           storage_path
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
       [
         input.id,
@@ -102,16 +126,18 @@ export async function createRepositoryWithAnalysis(
         input.sourceUrl,
         input.name,
         input.metadata.defaultBranch,
+        input.trackedBranch,
         input.metadata.headSha,
         input.storagePath
       ]
     );
 
-    const analysisRunId = await createAnalysisRun(
-      client,
-      input.id,
-      analyzerVersion
-    );
+    const analysisRunId = await createAnalysisRun(client, input.id, {
+      analyzerVersion,
+      analysisMode: "full",
+      baseHeadSha: null,
+      targetHeadSha: input.metadata.headSha
+    });
 
     await client.query("COMMIT");
 
@@ -127,6 +153,40 @@ export async function createRepositoryWithAnalysis(
   }
 }
 
+export async function createAnalysisRunForRepository(
+  repositoryId: string,
+  input: CreateAnalysisRunInput
+): Promise<string> {
+  const client = await db.connect();
+
+  try {
+    return await createAnalysisRun(client, repositoryId, input);
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateRepositoryHead(
+  repositoryId: string,
+  metadata: RepositoryMetadata
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE repositories
+      SET
+        default_branch = $2,
+        head_sha = $3,
+        updated_at = NOW()
+      WHERE id = $1
+    `,
+    [
+      repositoryId,
+      metadata.defaultBranch,
+      metadata.headSha
+    ]
+  );
+}
+
 export async function getRepositoryById(
   repositoryId: string
 ): Promise<StoredRepository | null> {
@@ -138,6 +198,7 @@ export async function getRepositoryById(
         source_url,
         name,
         default_branch,
+        tracked_branch,
         head_sha,
         storage_path
       FROM repositories
@@ -158,6 +219,9 @@ export async function getAnalysisRunById(
         id,
         repository_id,
         analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
         status,
         started_at,
         completed_at,
@@ -166,6 +230,62 @@ export async function getAnalysisRunById(
       WHERE id = $1
     `,
     [analysisRunId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function getActiveAnalysisRun(
+  repositoryId: string
+): Promise<StoredAnalysisRun | null> {
+  const result = await db.query<StoredAnalysisRun>(
+    `
+      SELECT
+        id,
+        repository_id,
+        analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
+        status,
+        started_at,
+        completed_at,
+        error_message
+      FROM analysis_runs
+      WHERE repository_id = $1
+        AND status IN ('queued', 'running')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [repositoryId]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function getLatestCompletedAnalysisRun(
+  repositoryId: string
+): Promise<StoredAnalysisRun | null> {
+  const result = await db.query<StoredAnalysisRun>(
+    `
+      SELECT
+        id,
+        repository_id,
+        analyzer_version,
+        analysis_mode,
+        base_head_sha,
+        target_head_sha,
+        status,
+        started_at,
+        completed_at,
+        error_message
+      FROM analysis_runs
+      WHERE repository_id = $1
+        AND status = 'completed'
+      ORDER BY completed_at DESC NULLS LAST, created_at DESC
+      LIMIT 1
+    `,
+    [repositoryId]
   );
 
   return result.rows[0] ?? null;
@@ -198,6 +318,131 @@ export async function updateAnalysisRun(
   );
 }
 
+async function writeCommitBatch(
+  client: PoolClient,
+  repositoryId: string,
+  commits: Array<{
+    sha: string;
+    parentShas: string[];
+    authorName: string;
+    authorEmail: string;
+    authoredAt: string;
+    committerName: string;
+    committerEmail: string;
+    committedAt: string;
+    subject: string;
+    additions: number;
+    deletions: number;
+    files: Array<{
+      path: string;
+      status: string;
+      additions: number;
+      deletions: number;
+    }>;
+  }>
+): Promise<number> {
+  let persisted = 0;
+
+  for (const commit of commits) {
+    const commitResult = await client.query<{ id: string }>(
+      `
+        INSERT INTO commits (
+          repository_id,
+          sha,
+          parent_shas,
+          author_name,
+          author_email,
+          authored_at,
+          committer_name,
+          committer_email,
+          committed_at,
+          subject,
+          files_changed,
+          additions,
+          deletions
+        )
+        VALUES (
+          $1,
+          $2,
+          $3::jsonb,
+          $4,
+          $5,
+          $6,
+          $7,
+          $8,
+          $9,
+          $10,
+          $11,
+          $12,
+          $13
+        )
+        ON CONFLICT (repository_id, sha)
+        DO UPDATE SET
+          parent_shas = EXCLUDED.parent_shas,
+          author_name = EXCLUDED.author_name,
+          author_email = EXCLUDED.author_email,
+          authored_at = EXCLUDED.authored_at,
+          committer_name = EXCLUDED.committer_name,
+          committer_email = EXCLUDED.committer_email,
+          committed_at = EXCLUDED.committed_at,
+          subject = EXCLUDED.subject,
+          files_changed = EXCLUDED.files_changed,
+          additions = EXCLUDED.additions,
+          deletions = EXCLUDED.deletions
+        RETURNING id
+      `,
+      [
+        repositoryId,
+        commit.sha,
+        JSON.stringify(commit.parentShas),
+        commit.authorName,
+        commit.authorEmail,
+        commit.authoredAt,
+        commit.committerName,
+        commit.committerEmail,
+        commit.committedAt,
+        commit.subject,
+        commit.files.length,
+        commit.additions,
+        commit.deletions
+      ]
+    );
+
+    const commitRow = commitResult.rows[0];
+
+    if (!commitRow) {
+      throw new Error(`Failed to persist commit ${commit.sha}.`);
+    }
+
+    const commitId = commitRow.id;
+
+    await client.query(
+      "DELETE FROM commit_files WHERE commit_id = $1",
+      [commitId]
+    );
+
+    for (const file of commit.files) {
+      await client.query(
+        `
+          INSERT INTO commit_files (
+            commit_id,
+            path,
+            status,
+            additions,
+            deletions
+          )
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        [commitId, file.path, file.status, file.additions, file.deletions]
+      );
+    }
+
+    persisted += 1;
+  }
+
+  return persisted;
+}
+
 export async function persistCommitBatch(
   repositoryId: string,
   commits: Array<{
@@ -228,106 +473,7 @@ export async function persistCommitBatch(
 
   try {
     await client.query("BEGIN");
-
-    let persisted = 0;
-
-    for (const commit of commits) {
-      const commitResult = await client.query<{ id: string }>(
-        `
-          INSERT INTO commits (
-            repository_id,
-            sha,
-            parent_shas,
-            author_name,
-            author_email,
-            authored_at,
-            committer_name,
-            committer_email,
-            committed_at,
-            subject,
-            files_changed,
-            additions,
-            deletions
-          )
-          VALUES (
-            $1,
-            $2,
-            $3::jsonb,
-            $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            $9,
-            $10,
-            $11,
-            $12,
-            $13
-          )
-          ON CONFLICT (repository_id, sha)
-          DO UPDATE SET
-            parent_shas = EXCLUDED.parent_shas,
-            author_name = EXCLUDED.author_name,
-            author_email = EXCLUDED.author_email,
-            authored_at = EXCLUDED.authored_at,
-            committer_name = EXCLUDED.committer_name,
-            committer_email = EXCLUDED.committer_email,
-            committed_at = EXCLUDED.committed_at,
-            subject = EXCLUDED.subject,
-            files_changed = EXCLUDED.files_changed,
-            additions = EXCLUDED.additions,
-            deletions = EXCLUDED.deletions
-          RETURNING id
-        `,
-        [
-          repositoryId,
-          commit.sha,
-          JSON.stringify(commit.parentShas),
-          commit.authorName,
-          commit.authorEmail,
-          commit.authoredAt,
-          commit.committerName,
-          commit.committerEmail,
-          commit.committedAt,
-          commit.subject,
-          commit.files.length,
-          commit.additions,
-          commit.deletions
-        ]
-      );
-
-      const commitRow = commitResult.rows[0];
-
-      if (!commitRow) {
-        throw new Error(`Failed to persist commit ${commit.sha}.`);
-      }
-
-      const commitId = commitRow.id;
-
-      await client.query(
-        "DELETE FROM commit_files WHERE commit_id = $1",
-        [commitId]
-      );
-
-      for (const file of commit.files) {
-        await client.query(
-          `
-            INSERT INTO commit_files (
-              commit_id,
-              path,
-              status,
-              additions,
-              deletions
-            )
-            VALUES ($1, $2, $3, $4, $5)
-          `,
-          [commitId, file.path, file.status, file.additions, file.deletions]
-        );
-      }
-
-      persisted += 1;
-    }
-
+    const persisted = await writeCommitBatch(client, repositoryId, commits);
     await client.query("COMMIT");
     return persisted;
   } catch (error) {
@@ -338,6 +484,53 @@ export async function persistCommitBatch(
   }
 }
 
+export async function replaceRepositoryCommitHistory(
+  repositoryId: string,
+  commits: Array<{
+    sha: string;
+    parentShas: string[];
+    authorName: string;
+    authorEmail: string;
+    authoredAt: string;
+    committerName: string;
+    committerEmail: string;
+    committedAt: string;
+    subject: string;
+    additions: number;
+    deletions: number;
+    files: Array<{
+      path: string;
+      status: string;
+      additions: number;
+      deletions: number;
+    }>;
+  }>
+): Promise<number> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      "DELETE FROM commits WHERE repository_id = $1",
+      [repositoryId]
+    );
+
+    const persisted = await writeCommitBatch(
+      client,
+      repositoryId,
+      commits
+    );
+
+    await client.query("COMMIT");
+    return persisted;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
 export async function listRepositoryCommits(
   repositoryId: string,
@@ -391,7 +584,6 @@ export async function listRepositoryCommits(
     total: Number.parseInt(countRow.count, 10)
   };
 }
-
 
 export async function replaceFileChangeMetrics(
   repositoryId: string,

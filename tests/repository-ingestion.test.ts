@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { simpleGit } from "simple-git";
 import test from "node:test";
-import { applyNumstat, parseCommitRecord } from "../src/modules/commits/commit.discovery.js";
+import {
+  applyNumstat,
+  discoverCommits,
+  parseCommitRecord
+} from "../src/modules/commits/commit.discovery.js";
 import { parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
 import { isBugSignalSubject } from "../src/modules/metrics/bug-signals.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
@@ -132,4 +140,44 @@ test("derives commit-level additions and deletions from numstat", () => {
   assert.equal(withStats.deletions, 5);
   assert.equal(withStats.files[0]?.additions, 12);
   assert.equal(withStats.files[0]?.deletions, 5);
+});
+
+
+test("discovers only commits after the supplied base head", async () => {
+  const repositoryPath = await mkdtemp(
+    path.join(tmpdir(), "project-autopsy-range-")
+  );
+
+  try {
+    const git = simpleGit(repositoryPath);
+
+    await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    const filePath = path.join(repositoryPath, "app.ts");
+
+    await writeFile(filePath, "export const value = 1;\n", "utf8");
+    await git.add("app.ts");
+    await git.commit("add app");
+
+    const baseHead = (await git.revparse(["HEAD"])).trim();
+
+    await writeFile(filePath, "export const value = 2;\n", "utf8");
+    await git.add("app.ts");
+    await git.commit("update app");
+
+    const targetHead = (await git.revparse(["HEAD"])).trim();
+
+    const rangeCommits = await discoverCommits(repositoryPath, {
+      fromExclusive: baseHead,
+      toInclusive: targetHead
+    });
+
+    assert.equal(rangeCommits.length, 1);
+    assert.equal(rangeCommits[0]?.subject, "update app");
+    assert.equal(rangeCommits[0]?.sha, targetHead);
+  } finally {
+    await rm(repositoryPath, { recursive: true, force: true });
+  }
 });
