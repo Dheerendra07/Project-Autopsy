@@ -1,6 +1,8 @@
 import { db } from "../../config/database.js";
 
 import type {
+  RuntimeCorrelationChangedFile,
+  RuntimeCorrelationChangeContext,
   RuntimeCorrelationStatus,
   RuntimeCorrelationWindow
 } from "./correlation.types.js";
@@ -8,6 +10,8 @@ import type {
   RuntimeTelemetryAggregate,
   RuntimeTelemetryFilters
 } from "./runtime.types.js";
+
+export const RUNTIME_CORRELATION_CHANGED_FILES_LIMIT = 100;
 
 interface AggregateRow {
   sample_count: string;
@@ -87,6 +91,13 @@ export interface RuntimeRevisionContext {
   parentRevisionSha: string | null;
   parentRevisionPersisted: boolean;
   committedAt: string | null;
+  subject: string;
+  filesChanged: number;
+  additions: number | null;
+  deletions: number | null;
+  changedFiles: RuntimeCorrelationChangedFile[];
+  changedFilesTruncated: boolean;
+  changedFilesComplete: boolean;
 }
 
 export async function getRuntimeRevisionContext(
@@ -97,12 +108,20 @@ export async function getRuntimeRevisionContext(
     sha: string;
     parent_revision_sha: string | null;
     committed_at: string | null;
+    subject: string;
+    files_changed: number;
+    additions: number | null;
+    deletions: number | null;
     parent_revision_persisted: boolean;
   }>(
     `SELECT
        c.sha,
        c.parent_shas ->> 0 AS parent_revision_sha,
        c.committed_at,
+       c.subject,
+       c.files_changed,
+       c.additions,
+       c.deletions,
        CASE
          WHEN c.parent_shas ->> 0 IS NULL THEN false
          ELSE EXISTS (
@@ -122,11 +141,43 @@ export async function getRuntimeRevisionContext(
   const row = result.rows[0];
   if (!row) return null;
 
+  const changedFilesResult = await db.query<RuntimeCorrelationChangedFile>(
+    `SELECT
+       cf.path,
+       cf.status,
+       cf.additions,
+       cf.deletions
+     FROM commit_files cf
+     INNER JOIN commits c ON c.id = cf.commit_id
+     WHERE c.repository_id = $1
+       AND c.sha = $2
+     ORDER BY cf.path ASC, cf.status ASC, cf.additions ASC, cf.deletions ASC
+     LIMIT $3`,
+    [
+      repositoryId,
+      targetRevisionSha,
+      RUNTIME_CORRELATION_CHANGED_FILES_LIMIT
+    ]
+  );
+
+  const changedFiles = changedFilesResult.rows;
+  const changedFilesTruncated =
+    row.files_changed > RUNTIME_CORRELATION_CHANGED_FILES_LIMIT;
+  const changedFilesComplete =
+    !changedFilesTruncated && changedFiles.length === row.files_changed;
+
   return {
     targetRevisionSha: row.sha,
     parentRevisionSha: row.parent_revision_sha,
     parentRevisionPersisted: row.parent_revision_persisted,
-    committedAt: row.committed_at
+    committedAt: row.committed_at,
+    subject: row.subject,
+    filesChanged: row.files_changed,
+    additions: row.additions,
+    deletions: row.deletions,
+    changedFiles,
+    changedFilesTruncated,
+    changedFilesComplete
   };
 }
 
@@ -211,5 +262,23 @@ export function buildCorrelationWindow(
     to: to.toISOString(),
     revisionSha,
     aggregate
+  };
+}
+
+
+export function buildRuntimeChangeContext(
+  context: RuntimeRevisionContext
+): RuntimeCorrelationChangeContext {
+  return {
+    commitSha: context.targetRevisionSha,
+    subject: context.subject,
+    committedAt: context.committedAt,
+    parentRevisionSha: context.parentRevisionSha,
+    filesChanged: context.filesChanged,
+    additions: context.additions,
+    deletions: context.deletions,
+    changedFiles: context.changedFiles,
+    changedFilesTruncated: context.changedFilesTruncated,
+    changedFilesComplete: context.changedFilesComplete
   };
 }
