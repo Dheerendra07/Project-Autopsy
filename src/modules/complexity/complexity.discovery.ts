@@ -1,6 +1,6 @@
 import { extname } from "node:path";
 import { simpleGit } from "simple-git";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 import type { DiscoveredCommit } from "../commits/commit.discovery.js";
 
