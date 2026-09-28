@@ -18,7 +18,9 @@ const SOURCE_EXTENSIONS = new Set([
   ".mjs",
   ".ts",
   ".tsx",
-  ".jsx"
+  ".jsx",
+  ".mts",
+  ".cts"
 ]);
 
 const TEST_CONFIG_BASENAMES = new Set([
@@ -410,6 +412,14 @@ export async function discoverTestEvolution(
   const events: TestEvolutionEvent[] = [];
 
   for (const commit of commits) {
+    const testFiles = commit.files.filter((file) =>
+      isTestEvolutionPath(file.path)
+    );
+
+    if (testFiles.length === 0) {
+      continue;
+    }
+
     const coChangedProductionFiles =
       productionFilesFromCommit(commit);
 
@@ -419,10 +429,7 @@ export async function discoverTestEvolution(
       packageCache
     );
 
-    for (const file of commit.files) {
-      if (!isTestEvolutionPath(file.path)) {
-        continue;
-      }
+    for (const file of testFiles) {
 
       const changeType: TestChangeType =
         file.status === "A"
