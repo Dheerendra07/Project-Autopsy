@@ -21,6 +21,8 @@ import {
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
+import { classifyRefactorSignal } from "../refactors/refactor-signals.js";
+import { listRefactorSignals } from "../refactors/refactor.persistence.js";
 import {
   listArchitectureEvents,
   listDependencyChanges
@@ -283,6 +285,47 @@ router.get("/:repositoryId/hotspots", async (req, res, next) => {
   }
 });
 
+
+router.get("/:repositoryId/refactors", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(20)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const storedSignals = await listRefactorSignals(
+      repositoryId,
+      query.limit
+    );
+
+    const signals = storedSignals.map((commit) => ({
+      ...commit,
+      signal_type: classifyRefactorSignal(commit.subject)
+    }));
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "commit_subject_keyword_heuristic",
+      ordering: ["files_changed DESC", "committed_at ASC", "sha ASC"],
+      signals
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/:repositoryId/dependencies", async (req, res, next) => {
   try {
