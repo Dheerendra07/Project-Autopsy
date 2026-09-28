@@ -134,9 +134,11 @@ router.get("/:repositoryId", async (req, res, next) => {
       return;
     }
 
+    const { storage_path: _storagePath, ...publicRepository } = repository;
+
     res.json({
       success: true,
-      repository
+      repository: publicRepository
     });
   } catch (error) {
     next(error);
@@ -596,7 +598,16 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
 
     res.json({
       success: true,
-      analysis
+      analysis: {
+        id: analysis.id,
+        repository_id: analysis.repository_id,
+        analyzer_version: analysis.analyzer_version,
+        status: analysis.status,
+        started_at: analysis.started_at,
+        completed_at: analysis.completed_at,
+        error_message:
+          analysis.status === "failed" ? "Analysis failed." : null
+      }
     });
   } catch (error) {
     next(error);
