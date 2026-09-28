@@ -28,17 +28,20 @@ export async function listRepeatedlyModifiedFiles(
         metrics.total_churn,
         MIN(commits.committed_at) AS first_changed_at,
         MAX(commits.committed_at) AS last_changed_at,
-        GREATEST(
-          FLOOR(
-            EXTRACT(
-              EPOCH FROM (
-                MAX(commits.committed_at) -
-                MIN(commits.committed_at)
-              )
-            ) / 86400
-          ),
+        COALESCE(
+          GREATEST(
+            FLOOR(
+              EXTRACT(
+                EPOCH FROM (
+                  MAX(commits.committed_at) -
+                  MIN(commits.committed_at)
+                )
+              ) / 86400
+            ),
+            0
+          )::int,
           0
-        )::int AS change_span_days
+        ) AS change_span_days
       FROM file_change_metrics AS metrics
       INNER JOIN commit_files AS files
         ON files.path = metrics.path
