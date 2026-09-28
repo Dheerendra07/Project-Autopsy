@@ -11,6 +11,7 @@ import {
   createRepositoryWithAnalysis,
   getAnalysisRunById,
   getRepositoryById,
+  listRepositoryCommits,
   updateAnalysisRun
 } from "./repository.persistence.js";
 import {
@@ -125,6 +126,56 @@ router.get("/:repositoryId", async (req, res, next) => {
     res.json({
       success: true,
       repository
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get("/:repositoryId/commits", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+
+    const query = z.object({
+      page: z.coerce.number().int().min(1).max(10_000).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(50)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const result = await listRepositoryCommits(
+      repositoryId,
+      query.page,
+      query.limit
+    );
+
+    const totalPages =
+      result.total === 0
+        ? 0
+        : Math.ceil(result.total / query.limit);
+
+    res.json({
+      success: true,
+      repositoryId,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total: result.total,
+        totalPages
+      },
+      commits: result.commits
     });
   } catch (error) {
     next(error);
