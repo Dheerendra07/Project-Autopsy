@@ -7,7 +7,7 @@ import type {
   InterpretationResult
 } from "./interpretation.types.js";
 import { INTERPRETATION_VERSION } from "./interpretation.types.js";
-import { INTERPRETATION_PROMPT_VERSION } from "./interpretation.service.js";
+import { INTERPRETATION_PROMPT_VERSION } from "./interpretation.types.js";
 
 const CACHE_PREFIX = "project-autopsy:ai-interpretation:v1:";
 const DEFAULT_TTL_SECONDS = 86_400;
