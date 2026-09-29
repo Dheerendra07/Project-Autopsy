@@ -1,7 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
 
-import { env } from "../../config/env.js";
-
 function safeEqual(expected: string, received: string): boolean {
   const expectedBuffer = Buffer.from(expected, "utf8");
   const receivedBuffer = Buffer.from(received, "utf8");
@@ -16,16 +14,17 @@ function safeEqual(expected: string, received: string): boolean {
 export function isAiInterpretationAuthorized(
   authorizationHeader: string | undefined,
   headerKey: string | undefined,
-  configuredKey: string | undefined = env.AI_INTERPRETATION_ACCESS_KEY
+  configuredKey: string | undefined = process.env.AI_INTERPRETATION_ACCESS_KEY,
+  nodeEnvironment: string | undefined = process.env.NODE_ENV
 ): boolean {
   if (!configuredKey) {
-    return env.NODE_ENV !== "production";
+    return nodeEnvironment !== "production";
   }
 
   let receivedKey = headerKey?.trim();
 
   if (!receivedKey && authorizationHeader) {
-    const match = authorizationHeader.match(/^Bearer\s+(.+)$/i);
+    const match = authorizationHeader.match(/^Bearer\\s+(.+)$/i);
     receivedKey = match?.[1]?.trim();
   }
 
