@@ -332,6 +332,7 @@ It exposes:
 - the same runtime assessment measurements already established by runtime correlation v1
 - optional environment, operationName, and signalType filters applied identically to every commit comparison
 - bounded pagination so large histories are reconstructed incrementally
+- deterministic temporal context showing adjacent commit spacing and whether the selected runtime windows overlap
 
 Evidence semantics:
 - each commit is measured independently; the endpoint does not infer a causal chain between adjacent commits
