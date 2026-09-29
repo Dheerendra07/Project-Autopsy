@@ -9,7 +9,7 @@ import type {
 
 type StoryDefinition = {
   type: InterviewStoryType;
-  sectionId: string;
+  sectionIds: string[];
   question: string;
   focus: string;
   framing: string;
@@ -20,7 +20,7 @@ type StoryDefinition = {
 const STORY_DEFINITIONS: StoryDefinition[] = [
   {
     type: "change-hotspot",
-    sectionId: "change-hotspots",
+    sectionIds: ["change-hotspots"],
     question: "Tell me about an area of the codebase that required repeated engineering attention.",
     focus: "change frequency, churn, file boundaries, and how the change was investigated",
     framing: "Use the historical hotspot as the starting signal, then add the real technical context and decision made.",
@@ -29,7 +29,7 @@ const STORY_DEFINITIONS: StoryDefinition[] = [
   },
   {
     type: "quality-signal",
-    sectionId: "quality-signals",
+    sectionIds: ["quality-signals"],
     question: "Describe a recurring quality problem you investigated.",
     focus: "bug/fix signals, repeated modifications, evidence gathering, and root-cause verification",
     framing: "Treat the repository signal as an investigation lead, not as proof that a bug or root cause existed.",
@@ -38,7 +38,7 @@ const STORY_DEFINITIONS: StoryDefinition[] = [
   },
   {
     type: "architecture-evolution",
-    sectionId: "evolution",
+    sectionIds: ["evolution"],
     question: "Tell me about an architectural or refactoring change you worked on.",
     focus: "co-change patterns, refactors, dependency changes, directory evolution, and complexity deltas",
     framing: "Explain the before/after structure, the trade-off, and why the change was made using the repository evidence as an anchor.",
@@ -47,7 +47,7 @@ const STORY_DEFINITIONS: StoryDefinition[] = [
   },
   {
     type: "database-evolution",
-    sectionId: "database-evolution",
+    sectionIds: ["database-evolution"],
     question: "Describe a database or schema change and how you handled its risk.",
     focus: "migration operations, destructive markers, ordering, rollback considerations, and verification",
     framing: "Use the parsed migration evidence to explain what changed; add deployment and rollback details only from verified records.",
@@ -56,7 +56,7 @@ const STORY_DEFINITIONS: StoryDefinition[] = [
   },
   {
     type: "test-evolution",
-    sectionId: "test-evolution",
+    sectionIds: ["test-evolution"],
     question: "How did testing evolve around a significant change?",
     focus: "test-source changes, test-case deltas, assertions, mocks, and test-type coverage",
     framing: "Explain what test behavior was added or changed and why; distinguish source evolution from actual execution results.",
@@ -65,7 +65,7 @@ const STORY_DEFINITIONS: StoryDefinition[] = [
   },
   {
     type: "runtime-observability",
-    sectionId: "runtime-observations",
+    sectionIds: ["historical-runtime", "runtime-observations"],
     question: "How would you investigate a performance or reliability issue using runtime evidence?",
     focus: "observed duration, error rate, revisions, operation groups, and instrumentation limits",
     framing: "Use runtime observations to frame an investigation and correlate them with compatible revision and time-window evidence before drawing conclusions.",
@@ -74,11 +74,13 @@ const STORY_DEFINITIONS: StoryDefinition[] = [
   }
 ];
 
-function selectSection(
+function selectSections(
   sections: EvidenceReportSection[],
-  sectionId: string
-): EvidenceReportSection | null {
-  return sections.find((section) => section.id === sectionId) ?? null;
+  sectionIds: string[]
+): EvidenceReportSection[] {
+  return sectionIds
+    .map((sectionId) => sections.find((section) => section.id === sectionId) ?? null)
+    .filter((section): section is EvidenceReportSection => section !== null);
 }
 
 function selectEvidence(claims: EvidenceClaim[]): EvidenceRef[] {
@@ -87,9 +89,11 @@ function selectEvidence(claims: EvidenceClaim[]): EvidenceRef[] {
 
 function buildStory(
   definition: StoryDefinition,
-  section: EvidenceReportSection
+  storySections: EvidenceReportSection[]
 ): InterviewStory {
-  const claims = section.claims.slice(0, 3);
+  const claims = storySections
+    .flatMap((section) => section.claims)
+    .slice(0, 3);
   const evidence = selectEvidence(claims);
   const evidenceSummary = claims.map((claim) => claim.statement);
   const anchor = claims[0]?.statement ?? "No evidence statement is available.";
@@ -116,7 +120,10 @@ function buildStory(
       evidenceBackedResult:
         "The repository evidence establishes the historical change or observation described above. " +
         "Add the actual engineering, user, or business result only after verification.",
-      limitation: section.limitation
+      limitation: storySections
+        .map((section) => section.limitation)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .join(" ")
     },
     verification: {
       ownership: definition.ownership,
@@ -140,13 +147,16 @@ export function buildInterviewStoriesFromReport(
       break;
     }
 
-    const section = selectSection(report.sections, definition.sectionId);
+    const storySections = selectSections(report.sections, definition.sectionIds);
 
-    if (!section || section.claims.length === 0) {
+    if (
+      storySections.length === 0 ||
+      storySections.every((section) => section.claims.length === 0)
+    ) {
       continue;
     }
 
-    selected.push(buildStory(definition, section));
+    selected.push(buildStory(definition, storySections));
   }
 
   return {
