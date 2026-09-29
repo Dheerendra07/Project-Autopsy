@@ -89,11 +89,11 @@ jobs:
           }
           trap cleanup EXIT
 
-          health_ok=false
+          ready_ok=false
 
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:5000/health > health.json; then
-              health_ok=true
+            if curl --fail --silent http://127.0.0.1:5000/ready > readiness.json; then
+              ready_ok=true
               break
             fi
 
@@ -105,12 +105,12 @@ jobs:
             sleep 1
           done
 
-          if [ "$health_ok" != "true" ]; then
+          if [ "$ready_ok" != "true" ]; then
             cat server-smoke.log
             exit 1
           fi
 
-          cat health.json
+          cat readiness.json
 
           kill -TERM "$server_pid"
 

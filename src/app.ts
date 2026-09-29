@@ -7,6 +7,8 @@ import { router } from "./routes/index.js";
 import { notFoundMiddleware } from "./middleware/notFound.middleware.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { isApiAccessAuthorized } from "./middleware/apiAccess.middleware.js";
+import { checkDatabaseConnection } from "./config/database.js";
+import { checkRedisConnection } from "./config/redis.js";
 
 export const app = express();
 
@@ -37,6 +39,26 @@ app.get("/health", (_req, res) => {
     success: true,
     service: "project-autopsy-api",
     status: "healthy",
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/ready", async (_req, res) => {
+  const [database, redis] = await Promise.allSettled([
+    checkDatabaseConnection(),
+    checkRedisConnection()
+  ]);
+
+  const ready = database.status === "fulfilled" && redis.status === "fulfilled";
+
+  res.status(ready ? 200 : 503).json({
+    success: ready,
+    service: "project-autopsy-api",
+    status: ready ? "ready" : "not_ready",
+    checks: {
+      database: database.status === "fulfilled" ? "ready" : "unavailable",
+      redis: redis.status === "fulfilled" ? "ready" : "unavailable"
+    },
     timestamp: new Date().toISOString()
   });
 });
