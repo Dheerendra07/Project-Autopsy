@@ -164,6 +164,19 @@ function baseInput() {
       assertionCount: 4,
       assertionDelta: 4
     },
+    historicalRuntime: {
+      events: [
+        {
+          commit: { sha: "b".repeat(40) },
+          sourceContext: {
+            status: "available",
+            filesReported: 1,
+            changedFiles: [{ path: "src/report.ts" }]
+          },
+          runtimeEvidence: { status: "ready" }
+        }
+      ]
+    },
     runtimeSummary: {
       overall: {
         sampleCount: 10,
@@ -216,6 +229,13 @@ test("builds an evidence report with stable fingerprint independent of generatio
       (section) =>
         section.id === "runtime-observations" &&
         section.claims[0]?.statement.includes("10 runtime telemetry")
+    )
+  );
+  assert.ok(
+    first.sections.some(
+      (section) =>
+        section.id === "historical-runtime" &&
+        section.claims[0]?.evidence.some((ref) => ref.path === "src/report.ts")
     )
   );
 });
