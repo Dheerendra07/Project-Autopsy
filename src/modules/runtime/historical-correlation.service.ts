@@ -87,7 +87,14 @@ export function buildHistoricalRuntimeReconstruction(
   minimumSamples: number,
   filters: Omit<RuntimeTelemetryFilters, "from" | "to" | "revisionSha">,
   commits: StoredCommit[],
-  correlations: RuntimeCorrelationEvidence[]
+  correlations: RuntimeCorrelationEvidence[],
+  boundaries: {
+    previousCommit: StoredCommit | null;
+    nextCommit: StoredCommit | null;
+  } = {
+    previousCommit: null,
+    nextCommit: null
+  }
 ): HistoricalRuntimeReconstruction {
   if (commits.length !== correlations.length) {
     throw new Error(
@@ -99,8 +106,14 @@ export function buildHistoricalRuntimeReconstruction(
 
   const events = commits.map((commit, index) => {
     const correlation = correlations[index];
-    const previousCommit = index > 0 ? commits[index - 1] : null;
-    const nextCommit = index + 1 < commits.length ? commits[index + 1] : null;
+    const previousCommit =
+      index > 0
+        ? commits[index - 1]
+        : boundaries.previousCommit;
+    const nextCommit =
+      index + 1 < commits.length
+        ? commits[index + 1]
+        : boundaries.nextCommit;
     const committedAt = commit.committed_at
       ? new Date(commit.committed_at).getTime()
       : Number.NaN;
@@ -196,6 +209,25 @@ export async function generateHistoricalRuntimeReconstruction(
     limit
   );
 
+  const [previousPage, nextPage] = await Promise.all([
+    page > 1
+      ? listRepositoryCommits(repositoryId, page - 1, limit)
+      : Promise.resolve(null),
+    result.commits.length > 0 && page * limit < result.total
+      ? listRepositoryCommits(repositoryId, page + 1, limit)
+      : Promise.resolve(null)
+  ]);
+
+  const boundaries: {
+    previousCommit: StoredCommit | null;
+    nextCommit: StoredCommit | null;
+  } = {
+    previousCommit:
+      previousPage?.commits.at(-1) ?? null,
+    nextCommit:
+      nextPage?.commits[0] ?? null
+  };
+
   const correlations: RuntimeCorrelationEvidence[] = [];
 
   for (const commit of result.commits) {
@@ -219,6 +251,7 @@ export async function generateHistoricalRuntimeReconstruction(
     minimumSamples,
     filters,
     result.commits,
-    correlations
+    correlations,
+    boundaries
   );
 }
