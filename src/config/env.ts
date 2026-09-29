@@ -63,6 +63,10 @@ export const envSchema = z
       .number()
       .refine(Number.isFinite, "MAX_ANALYSIS_TIME_MINUTES must be finite.")
       .positive()
+      .max(
+        24 * 60,
+        "MAX_ANALYSIS_TIME_MINUTES must not exceed 1440 minutes."
+      )
       .default(30),
 
     RUNTIME_TELEMETRY_INGEST_KEY: z
