@@ -63,6 +63,9 @@ export function hashRuntimeTelemetryEvent(
     serviceName: event.serviceName,
     operationName: event.operationName,
     environment: event.environment ?? null,
+    ...(event.deploymentId !== undefined
+      ? { deploymentId: event.deploymentId }
+      : {}),
     revisionSha: event.revisionSha ?? null,
     traceId: event.traceId ?? null,
     spanId: event.spanId ?? null,
