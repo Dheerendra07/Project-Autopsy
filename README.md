@@ -223,6 +223,14 @@ Incremental runs persist the new commit range and seed dependency, architecture,
 Each analysis run records its mode, base head, target head, and analyzer version. An active queued/running analysis is restricted to one per repository by a PostgreSQL partial unique index.
 
 
+## Contributor activity evidence
+
+Contributor activity: GET /api/repositories/:repositoryId/contributors?limit=25
+
+The endpoint reconstructs descriptive historical activity from persisted Git author metadata: exact author name/email tuples, commit count, additions, deletions, total churn, distinct changed paths, and first/last persisted commit timestamps. Author aliases are not automatically merged, and the data does not establish ownership, effort, intent, seniority, or business impact.
+
+Contributor activity is also included in generated evidence-backed reports and therefore participates in the deterministic report fingerprint.
+
 ## Evidence-backed reports
 
 Generate a bounded evidence-backed engineering report:

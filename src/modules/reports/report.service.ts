@@ -22,6 +22,7 @@ import {
 } from "../tests/test-evolution.persistence.js";
 import { summarizeRuntimeTelemetry } from "../runtime/runtime.persistence.js";
 import { listDeploymentEvidence } from "../deployments/deployment.persistence.js";
+import { listContributorActivity } from "../contributors/contributor-evolution.persistence.js";
 import { generateHistoricalRuntimeReconstruction } from "../runtime/historical-correlation.service.js";
 import { buildHistoricalRuntimeSourceContextEvidence } from "../runtime/historical-runtime-source-context.service.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
@@ -132,6 +133,47 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
         )
       ],
       "Overview describes stored state only."
+    )
+  );
+
+  sections.push(
+    evidenceSection(
+      "contributor-evolution",
+      "Contributor activity",
+      "persisted Git author metadata and changed-file evidence",
+      input.contributors.length > 0
+        ? input.contributors.map((item, index) =>
+            evidenceClaim(
+              "contributor-" + String(index + 1),
+              (item.authorName ?? "Unknown author") +
+                (item.authorEmail ? " <" + item.authorEmail + ">" : "") +
+                " is associated with " +
+                String(item.commitCount) +
+                " persisted commits, " +
+                String(item.totalChurn) +
+                " lines of recorded churn, and " +
+                String(item.pathsTouched) +
+                " distinct changed paths.",
+              [
+                evidenceRef(
+                  "contributor_activity",
+                  item.authorEmail ??
+                    item.authorName ??
+                    "unknown-author"
+                )
+              ],
+              "Contributor activity is descriptive Git evidence; it does not establish ownership, effort, intent, seniority, or business impact."
+            )
+          )
+        : [
+            evidenceClaim(
+              "contributor-none",
+              "No persisted contributor activity records are available for this repository.",
+              [evidenceRef("contributor_activity", "repository:" + input.repository.id)],
+              "Missing contributor metadata is not evidence that no people contributed to the repository."
+            )
+          ],
+      "Contributor identities use exact persisted Git author name/email tuples; aliases are not automatically merged."
     )
   );
 
@@ -606,6 +648,7 @@ export async function generateEvidenceReport(
     dependencyChanges,
     architectureEvents,
     complexityEvents,
+    contributors,
     migrationResult,
     testResult,
     testSummary,
@@ -621,6 +664,7 @@ export async function generateEvidenceReport(
     listDependencyChanges(repositoryId, sampleLimit),
     listArchitectureEvents(repositoryId, sampleLimit),
     listCodeComplexityEvents(repositoryId, sampleLimit),
+    listContributorActivity(repositoryId, sampleLimit),
     listDatabaseMigrationEvents(repositoryId, sampleLimit),
     listTestEvolutionEvents(repositoryId, sampleLimit),
     summarizeTestEvolution(repositoryId, {}, "testType", sampleLimit),
@@ -656,6 +700,18 @@ export async function generateEvidenceReport(
     dependencyChanges,
     architectureEvents,
     complexityEvents,
+    contributors: contributors.contributors.map((item) => ({
+      authorName: item.author_name,
+      authorEmail: item.author_email,
+      commitCount: item.commit_count,
+      additions: item.additions,
+      deletions: item.deletions,
+      totalChurn: item.total_churn,
+      pathsTouched: item.paths_touched,
+      firstCommittedAt: item.first_committed_at,
+      lastCommittedAt: item.last_committed_at
+    })),
+    contributorCount: contributors.total,
     migrationEvents: migrationResult.events,
     testEvolution: testResult,
     deploymentEvidence: deploymentEvidence.map((event) => ({

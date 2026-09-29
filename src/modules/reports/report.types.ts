@@ -110,6 +110,18 @@ export interface ReportBuildInput {
     change_span_days: number;
   }>;
   coupling: Array<{ path_a: string; path_b: string; co_change_count: number }>;
+  contributors: Array<{
+    authorName: string | null;
+    authorEmail: string | null;
+    commitCount: number;
+    additions: number;
+    deletions: number;
+    totalChurn: number;
+    pathsTouched: number;
+    firstCommittedAt: string | null;
+    lastCommittedAt: string | null;
+  }>;
+  contributorCount: number;
   refactors: Array<{ sha: string; committed_at: string | null; subject: string; files_changed: number }>;
   dependencyChanges: Array<{
     sha: string;

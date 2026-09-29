@@ -128,3 +128,40 @@ test("authenticated unknown API routes reach the API not-found contract", async 
     }
   });
 });
+
+test("contributor endpoint remains behind application access control", async () => {
+  const repositoryId = "00000000-0000-4000-8000-000000000999";
+  const response = await fetch(
+    `${baseUrl}/api/repositories/${repositoryId}/contributors`
+  );
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "API_ACCESS_UNAUTHORIZED",
+      message: "API access credentials are invalid."
+    }
+  });
+});
+
+test("contributor endpoint returns the repository-not-found contract", async () => {
+  const repositoryId = "00000000-0000-4000-8000-000000000999";
+  const response = await fetch(
+    `${baseUrl}/api/repositories/${repositoryId}/contributors`,
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "REPOSITORY_NOT_FOUND",
+      message: "Repository not found."
+    }
+  });
+});
