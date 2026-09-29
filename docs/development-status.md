@@ -77,6 +77,10 @@ Verified hardening merged after the end-to-end acceptance checkpoint:
 - Each BullMQ import/refresh/analyze job now receives one shared cooperative deadline. The remaining budget is propagated through `AsyncLocalStorage`, active Git work receives an `AbortSignal`, and stage boundaries refuse to continue after expiry.
 - Repository clone/refresh/recovery Git operations and recursive repository-size accounting use the same deadline context.
 - `MAX_ANALYSIS_TIME_MINUTES` is bounded to a maximum of 1440 minutes.
+- PostgreSQL statement and client query execution are bounded to 120 seconds.
+- API HTTP request, header, and keep-alive lifetimes are explicitly bounded.
+- The analysis worker uses an explicit 120-second lock duration and 30-second stall check interval to reduce false redelivery during CPU-heavy source analysis.
+- AI interpretation Redis cache reads and writes are bounded to a 2-second cache-operation timeout; cache failures remain fail-open.
 
 The worker deadline is cooperative for non-Git asynchronous work: a deadline cannot forcibly interrupt an arbitrary JavaScript or database operation that does not accept cancellation. Git operations use simple-git's abort support so an expired shared deadline can terminate in-flight Git work.
 
@@ -107,7 +111,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 07bd0fb4acef3101c079052cb396cb6bb81a8974.
+Current verified main baseline: 2424c5c47e541dfe76453a641c001494a30df233.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -173,6 +177,8 @@ Recent verified merge sequence for this continuation:
 - PR #83 — bounded Git discovery operations by analysis timeout
 - PR #84 — post-hardening development checkpoint synchronization
 - PR #85 — cooperative analysis worker deadline
+- PR #86 — post-deadline hardening checkpoint synchronization
+- PR #87 — final production execution-time bounds
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
