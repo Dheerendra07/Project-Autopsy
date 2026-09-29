@@ -62,15 +62,21 @@ import {
   enqueueRepositoryAnalysis
 } from "../modules/analysis/analysis.queue.js";
 import { planAnalysisRun } from "../modules/analysis/analysis-planner.js";
+import {
+  runWithAnalysisDeadline
+} from "../modules/analysis/analysis-deadline.js";
 import { prepareRepositoryStorageForAnalysis } from "../modules/analysis/storage-recovery.js";
 import { classifyAnalysisJobRecovery } from "../modules/analysis/job-recovery.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
 export const analysisWorker = new Worker<AnalysisJobData>(
   ANALYSIS_QUEUE_NAME,
-  async (job) => {
-    const { repositoryId, analysisRunId } = job.data;
-    const jobKind = job.data.kind ?? "analyze";
+  async (job) =>
+    runWithAnalysisDeadline(async (deadline) => {
+      const { repositoryId, analysisRunId } = job.data;
+
+      deadline.assertNotExpired();
+      const jobKind = job.data.kind ?? "analyze";
 
     try {
       const initialAnalysis = await getAnalysisRunById(analysisRunId);
@@ -121,6 +127,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       }
 
       if (recovery.action === "resume_refresh_check") {
+        deadline.assertNotExpired();
+
         await updateAnalysisRun(analysisRunId, "completed");
 
         return {
@@ -173,6 +181,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           metadata,
           trackedBranch
         );
+
+        deadline.assertNotExpired();
 
         await setAnalysisRunTargetHead(
           analysisRunId,
@@ -249,6 +259,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           metadata,
           repository.tracked_branch
         );
+
+        deadline.assertNotExpired();
 
         const latestCompleted =
           await getLatestCompletedAnalysisRun(repositoryId);
@@ -327,6 +339,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         analysis.target_head_sha
       );
 
+      deadline.assertNotExpired();
+
       const commits =
         analysis.analysis_mode === "incremental" &&
         analysis.base_head_sha
@@ -349,6 +363,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      deadline.assertNotExpired();
+
       const persistedCount =
         analysis.analysis_mode === "incremental"
           ? await persistCommitBatch(repositoryId, commits)
@@ -357,11 +373,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
               commits
             );
 
+      deadline.assertNotExpired();
+
       const fileChurn = await discoverFileChurn(
         repository.storage_path
       );
 
+      deadline.assertNotExpired();
+
       await replaceFileChangeMetrics(repositoryId, fileChurn);
+
+      deadline.assertNotExpired();
 
       const dependencyEvolution =
         await discoverDependencyEvolution(
@@ -374,6 +396,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
                 : null
           }
         );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendDependencyEvolution(
@@ -389,6 +413,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      deadline.assertNotExpired();
+
       const architectureEvolution =
         await discoverArchitectureEvolution(
           repository.storage_path,
@@ -400,6 +426,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
                 : null
           }
         );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendArchitectureEvolution(
@@ -415,11 +443,15 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      deadline.assertNotExpired();
+
       const databaseMigrationEvolution =
         await discoverDatabaseMigrationEvolution(
           repository.storage_path,
           commits
         );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendDatabaseMigrationEvolution(
@@ -433,16 +465,22 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      deadline.assertNotExpired();
+
       const testEvolution = await discoverTestEvolution(
         repository.storage_path,
         commits
       );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendTestEvolution(repositoryId, testEvolution);
       } else {
         await replaceTestEvolution(repositoryId, testEvolution);
       }
+
+      deadline.assertNotExpired();
 
       const complexityCache = {
         get: (cacheKey: string) =>
@@ -462,6 +500,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           )
       };
 
+      deadline.assertNotExpired();
+
       const complexityEvolution =
         await discoverCodeComplexityEvolution(
           repository.storage_path,
@@ -471,6 +511,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
             ? analysis.base_head_sha
             : null
         );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendCodeComplexityEvolution(
@@ -484,9 +526,13 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      deadline.assertNotExpired();
+
       const couplingPairs = await rebuildFileChangeCoupling(
         repositoryId
       );
+
+      deadline.assertNotExpired();
 
       await updateAnalysisRun(analysisRunId, "completed");
 
@@ -511,9 +557,12 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         complexityCacheMisses: complexityEvolution.cacheMisses,
         couplingPairs: couplingPairs
       };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown analysis error";
+      } catch (error) {
+        const message = deadline.expired
+          ? "Analysis exceeded the configured time limit."
+          : error instanceof Error
+            ? error.message
+            : "Unknown analysis error";
 
       const maxAttempts = job.opts.attempts ?? 1;
       const willRetry = job.attemptsMade + 1 < maxAttempts;
@@ -537,9 +586,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
-      throw error;
-    }
-  },
+        throw error;
+      }
+    }),
   {
     connection: redis,
     concurrency: 1
