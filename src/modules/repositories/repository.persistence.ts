@@ -429,13 +429,13 @@ export async function updateAnalysisRun(
     `
       UPDATE analysis_runs
       SET
-        status = $2,
+        status = $2::varchar,
         started_at = CASE
-          WHEN $2 = 'running' AND started_at IS NULL THEN NOW()
+          WHEN $2::varchar = 'running' AND started_at IS NULL THEN NOW()
           ELSE started_at
         END,
         completed_at = CASE
-          WHEN $2 IN ('completed', 'failed') THEN NOW()
+          WHEN $2::varchar IN ('completed', 'failed') THEN NOW()
           ELSE completed_at
         END,
         error_message = $3
