@@ -536,8 +536,7 @@ export async function generateEvidenceReport(
     migrationResult,
     testResult,
     testSummary,
-    runtimeSummary,
-    historicalRuntime
+    runtimeSummary
   ] = await Promise.all([
     listRepositoryCommits(repositoryId, 1, sampleLimit),
     listRepositoryHotspots(repositoryId, sampleLimit),
@@ -551,16 +550,22 @@ export async function generateEvidenceReport(
     listDatabaseMigrationEvents(repositoryId, sampleLimit),
     listTestEvolutionEvents(repositoryId, sampleLimit),
     summarizeTestEvolution(repositoryId, {}, "testType", sampleLimit),
-    summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit),
-    generateHistoricalRuntimeReconstruction(
-      repositoryId,
-      1,
-      Math.min(sampleLimit, 10),
-      60,
-      10,
-      {}
-    ).then(buildHistoricalRuntimeSourceContextEvidence)
+    summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit)
   ]);
+
+  const historicalRuntime =
+    runtimeSummary.overall.sampleCount > 0
+      ? buildHistoricalRuntimeSourceContextEvidence(
+          await generateHistoricalRuntimeReconstruction(
+            repositoryId,
+            1,
+            Math.min(sampleLimit, 10),
+            60,
+            10,
+            {}
+          )
+        )
+      : undefined;
 
   return buildEvidenceReport({
     repository,
