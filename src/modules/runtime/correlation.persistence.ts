@@ -76,6 +76,7 @@ function buildExtraFilters(
     clauses.push("AND " + column + " = $" + String(startIndex + values.length));
   };
 
+  if (filters.deploymentId) add("e.deployment_id", filters.deploymentId);
   if (filters.environment) add("e.environment", filters.environment);
   if (filters.operationName) add("e.operation_name", filters.operationName);
   if (filters.signalType) add("e.signal_type", filters.signalType);
