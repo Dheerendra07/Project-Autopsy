@@ -8,6 +8,14 @@ import type { RuntimeTelemetryFilters } from "./runtime.types.js";
 
 export interface HistoricalRuntimeReconstructionEvent {
   sequence: number;
+  temporalContext: {
+    previousCommitSha: string | null;
+    nextCommitSha: string | null;
+    previousCommitGapMinutes: number | null;
+    nextCommitGapMinutes: number | null;
+    runtimeWindowOverlapsPrevious: boolean | null;
+    runtimeWindowOverlapsNext: boolean | null;
+  };
   commit: {
     sha: string;
     parentRevisionSha: string | null;
@@ -91,6 +99,26 @@ export function buildHistoricalRuntimeReconstruction(
 
   const events = commits.map((commit, index) => {
     const correlation = correlations[index];
+    const previousCommit = index > 0 ? commits[index - 1] : null;
+    const nextCommit = index + 1 < commits.length ? commits[index + 1] : null;
+    const committedAt = commit.committed_at
+      ? new Date(commit.committed_at).getTime()
+      : Number.NaN;
+    const previousCommittedAt = previousCommit?.committed_at
+      ? new Date(previousCommit.committed_at).getTime()
+      : Number.NaN;
+    const nextCommittedAt = nextCommit?.committed_at
+      ? new Date(nextCommit.committed_at).getTime()
+      : Number.NaN;
+    const previousGapMinutes = Number.isFinite(committedAt) &&
+      Number.isFinite(previousCommittedAt)
+      ? Number(((committedAt - previousCommittedAt) / 60_000).toFixed(6))
+      : null;
+    const nextGapMinutes = Number.isFinite(committedAt) &&
+      Number.isFinite(nextCommittedAt)
+      ? Number(((nextCommittedAt - committedAt) / 60_000).toFixed(6))
+      : null;
+    const overlapThresholdMinutes = windowMinutes * 2;
 
     if (!correlation) {
       throw new Error(
@@ -102,6 +130,20 @@ export function buildHistoricalRuntimeReconstruction(
 
     return {
       sequence: (page - 1) * limit + index + 1,
+      temporalContext: {
+        previousCommitSha: previousCommit?.sha ?? null,
+        nextCommitSha: nextCommit?.sha ?? null,
+        previousCommitGapMinutes: previousGapMinutes,
+        nextCommitGapMinutes: nextGapMinutes,
+        runtimeWindowOverlapsPrevious:
+          previousGapMinutes === null
+            ? null
+            : previousGapMinutes < overlapThresholdMinutes,
+        runtimeWindowOverlapsNext:
+          nextGapMinutes === null
+            ? null
+            : nextGapMinutes < overlapThresholdMinutes
+      },
       commit: commitMetadata(commit),
       correlation
     };
