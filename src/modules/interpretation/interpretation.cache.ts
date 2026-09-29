@@ -1,7 +1,5 @@
 import { createHash } from "node:crypto";
 
-import type { Redis } from "ioredis";
-
 import type {
   AiInterpretationCache,
   InterpretationResult
@@ -11,6 +9,16 @@ import { INTERPRETATION_PROMPT_VERSION } from "./interpretation.types.js";
 
 const CACHE_PREFIX = "project-autopsy:ai-interpretation:v1:";
 const DEFAULT_TTL_SECONDS = 86_400;
+
+export interface AiInterpretationRedisClient {
+  get(key: string): Promise<string | null>;
+  set(
+    key: string,
+    value: string,
+    mode: "EX",
+    ttlSeconds: number
+  ): Promise<unknown>;
+}
 
 function cacheKeyDigest(
   reportFingerprint: string,
@@ -38,7 +46,7 @@ export function buildAiInterpretationCacheKey(
 
 export class RedisAiInterpretationCache implements AiInterpretationCache {
   constructor(
-    private readonly client: Redis,
+    private readonly client: AiInterpretationRedisClient,
     private readonly ttlSeconds = DEFAULT_TTL_SECONDS
   ) {}
 
