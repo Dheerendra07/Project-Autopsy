@@ -1,7 +1,59 @@
+test("enforces configured access keys with constant-time credential comparison", () => {
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      "wrong-key",
+      "correct-access-key",
+      "production"
+    ),
+    false
+  );
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      "correct-access-key",
+      "correct-access-key",
+      "production"
+    ),
+    true
+  );
+  assert.equal(
+    isAiInterpretationAuthorized(
+      "Bearer correct-access-key",
+      undefined,
+      "correct-access-key",
+      "production"
+    ),
+    true
+  );
+});
+
+test("keeps development unprotected when no AI access key is configured", () => {
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      undefined,
+      undefined,
+      "development"
+    ),
+    true
+  );
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      undefined,
+      undefined,
+      "production"
+    ),
+    false
+  );
+});
+
 import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { EvidenceReport } from "../src/modules/reports/report.types.js";
+import { isAiInterpretationAuthorized } from "../src/modules/interpretation/interpretation.auth.js";
 import {
   AiInterpretationProviderError,
   AiInterpretationValidationError,

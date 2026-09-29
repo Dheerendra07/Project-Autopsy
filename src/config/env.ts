@@ -48,6 +48,16 @@ const envSchema = z
     RUNTIME_TELEMETRY_INGEST_KEY: z
       .string()
       .min(32)
+      .optional(),
+
+    AI_API_KEY: z
+      .string()
+      .min(1)
+      .optional(),
+
+    AI_INTERPRETATION_ACCESS_KEY: z
+      .string()
+      .min(32)
       .optional()
   })
   .superRefine((value, ctx) => {
@@ -60,6 +70,19 @@ const envSchema = z
         path: ["RUNTIME_TELEMETRY_INGEST_KEY"],
         message:
           "RUNTIME_TELEMETRY_INGEST_KEY is required in production."
+      });
+    }
+
+    if (
+      value.NODE_ENV === "production" &&
+      value.AI_API_KEY &&
+      !value.AI_INTERPRETATION_ACCESS_KEY
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["AI_INTERPRETATION_ACCESS_KEY"],
+        message:
+          "AI_INTERPRETATION_ACCESS_KEY is required in production when AI_API_KEY is configured."
       });
     }
   });
