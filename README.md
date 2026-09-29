@@ -94,6 +94,8 @@ Never commit `.env`, API keys, OAuth tokens, database passwords, private reposit
 
 Repository import is restricted to HTTPS and an allowlist of supported Git hosts in the current implementation.
 
+Production API access requires AUTOPSY_API_ACCESS_KEY. The key is accepted through x-autopsy-api-key or a Bearer authorization header. The /health endpoint remains public for hosting health checks. Runtime telemetry and deployment evidence ingestion additionally require their dedicated production ingestion keys.
+
 ## Stored commit evidence
 
 GET /api/repositories/:repositoryId/commits?page=1&limit=50
@@ -154,6 +156,7 @@ Optional deployment-system evidence can be ingested without deriving deployment 
 ```http
 POST /api/repositories/:repositoryId/deployments
 Content-Type: application/json
+x-autopsy-api-key: <configured application key>
 x-autopsy-deployment-key: <configured key>
 
 {

@@ -55,6 +55,11 @@ export const envSchema = z
       .min(32)
       .optional(),
 
+    AUTOPSY_API_ACCESS_KEY: z
+      .string()
+      .min(32)
+      .optional(),
+
     AI_API_KEY: z
       .string()
       .min(1)
@@ -112,6 +117,18 @@ export const envSchema = z
         path: ["DEPLOYMENT_EVIDENCE_INGEST_KEY"],
         message:
           "DEPLOYMENT_EVIDENCE_INGEST_KEY is required in production."
+      });
+    }
+
+    if (
+      value.NODE_ENV === "production" &&
+      !value.AUTOPSY_API_ACCESS_KEY
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["AUTOPSY_API_ACCESS_KEY"],
+        message:
+          "AUTOPSY_API_ACCESS_KEY is required in production."
       });
     }
 

@@ -37,6 +37,8 @@ services:
         sync: false
       - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
         sync: false
+      - key: AUTOPSY_API_ACCESS_KEY
+        sync: false
       - key: AI_API_KEY
         sync: false
       - key: AI_INTERPRETATION_ACCESS_KEY
@@ -82,6 +84,8 @@ services:
       - key: RUNTIME_TELEMETRY_INGEST_KEY
         sync: false
       - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
+        sync: false
+      - key: AUTOPSY_API_ACCESS_KEY
         sync: false
       - key: AI_API_KEY
         sync: false

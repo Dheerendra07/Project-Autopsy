@@ -36,12 +36,27 @@ test("requires deployment ingestion credentials in production", () => {
   );
 });
 
-test("requires runtime and deployment ingestion credentials in production", () => {
+test("requires the API access key in production", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          NODE_ENV: "production",
+          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
+          DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32)
+        })
+      ),
+    /AUTOPSY_API_ACCESS_KEY/
+  );
+});
+
+test("accepts the required production access credentials", () => {
   const config = parseEnvironment(
     baseEnvironment({
       NODE_ENV: "production",
       RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
-      DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32)
+      DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32),
+      AUTOPSY_API_ACCESS_KEY: "a".repeat(32)
     })
   );
 
@@ -56,6 +71,7 @@ test("requires the AI access key when AI is enabled in production", () => {
           NODE_ENV: "production",
           RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
           DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32),
+          AUTOPSY_API_ACCESS_KEY: "a".repeat(32),
           AI_API_KEY: "test-ai-key"
         })
       ),
