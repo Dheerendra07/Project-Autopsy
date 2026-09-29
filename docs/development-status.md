@@ -72,6 +72,23 @@ Active hardening areas:
 
 Every new change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, and explicit evidence-gap behavior.
 
+## End-to-end acceptance v1
+
+The CI quality gate now includes a dedicated real-pipeline acceptance flow:
+
+- starts the built API and BullMQ analysis worker against CI PostgreSQL and Redis services
+- imports a fresh public HTTPS Git repository through the HTTP API
+- polls the exact persisted analysis run until terminal state
+- verifies successful analysis target identity
+- generates the evidence report from the completed snapshot
+- verifies report fingerprint shape, run identity, target identity, and non-empty evidence sections
+
+The acceptance run exposed and locked two PostgreSQL persistence contract bugs that unit-level module coverage had not exercised:
+- analysis status parameter type inference in `updateAnalysisRun`
+- file churn `binaryChanges` camelCase to `binary_changes` persistence mapping
+
+Both were fixed and covered by database-backed regression tests.
+
 ## Verification rule
 
 Every feature branch must pass GitHub Actions `typecheck`, `build`, `test`, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before squash-merging to `main`. Do not merge based on code inspection alone.
@@ -82,7 +99,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 2656244c4b5273e131703f19aab582a8980dbd93.
+Current verified main baseline: 7eeaad5c2bf4333e760a535f2108b8d1a464023e.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -139,6 +156,9 @@ Recent verified merge sequence for this continuation:
 - PR #74 — analysis job retry policy
 - PR #75 — persisted analysis-status invariants
 - PR #76 — production secret boundary / service-role split
+- PR #77 — duplicate analysis-status route cleanup and checkpoint sync
+- PR #78 — finite resource-limit configuration hardening
+- PR #79 — end-to-end import -> analysis -> report acceptance and persistence-boundary hardening
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
