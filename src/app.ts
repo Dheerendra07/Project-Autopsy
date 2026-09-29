@@ -14,6 +14,7 @@ import {
   isCorsOriginAllowed,
   parseCorsOrigins
 } from "./config/cors.js";
+import { requestIdMiddleware } from "./middleware/request-id.middleware.js";
 
 export const app = express();
 
@@ -48,6 +49,14 @@ app.use(
     credentials: true
   })
 );
+
+app.use(requestIdMiddleware);
+
+morgan.token("request-id", (_req, res) =>
+  String(res.getHeader("x-request-id") ?? "-")
+);
+
+app.use(morgan(":method :url :status :response-time ms request_id=:request-id"));
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
