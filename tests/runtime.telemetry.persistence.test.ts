@@ -47,6 +47,7 @@ test(
               serviceName: "api",
               operationName: "GET /health",
               environment: "test",
+              deploymentId: "deployment-123",
               revisionSha,
               traceId: "0123456789abcdef0123456789abcdef",
               spanId: "0123456789abcdef",
@@ -183,9 +184,20 @@ test(
 
       assert.equal(listed.total, 2);
       assert.equal(listed.events.length, 2);
+      assert.equal(listed.events[0]?.deployment_id, "deployment-123");
       assert.ok(
         listed.events.every((event) => event.operation_name === "GET /health")
       );
+
+      const deploymentRows = await listRuntimeTelemetryEvents(
+        repositoryId,
+        1,
+        10,
+        { deploymentId: "deployment-123" }
+      );
+
+      assert.equal(deploymentRows.total, 1);
+      assert.equal(deploymentRows.events[0]?.deployment_id, "deployment-123");
 
       const summary = await summarizeRuntimeTelemetry(
         repositoryId,
