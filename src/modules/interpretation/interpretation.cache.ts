@@ -12,6 +12,7 @@ import { interpretationOutputSchema } from "./interpretation.schema.js";
 
 const CACHE_PREFIX = "project-autopsy:ai-interpretation:v1:";
 const DEFAULT_TTL_SECONDS = 86_400;
+export const DEFAULT_OPERATION_TIMEOUT_MS = 2_000;
 
 export interface AiInterpretationRedisClient {
   get(key: string): Promise<string | null>;
@@ -21,6 +22,29 @@ export interface AiInterpretationRedisClient {
     mode: "EX",
     ttlSeconds: number
   ): Promise<unknown>;
+}
+
+async function withTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number
+): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(new Error("Redis cache operation timed out."));
+        }, timeoutMs);
+        timeoutHandle.unref?.();
+      })
+    ]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 }
 
 function cacheKeyDigest(
@@ -50,12 +74,22 @@ export function buildAiInterpretationCacheKey(
 export class RedisAiInterpretationCache implements AiInterpretationCache {
   constructor(
     private readonly client: AiInterpretationRedisClient,
-    private readonly ttlSeconds = DEFAULT_TTL_SECONDS
-  ) {}
+    private readonly ttlSeconds = DEFAULT_TTL_SECONDS,
+    private readonly operationTimeoutMs = DEFAULT_OPERATION_TIMEOUT_MS
+  ) {
+    if (!Number.isInteger(operationTimeoutMs) || operationTimeoutMs < 1) {
+      throw new Error(
+        "Redis cache operation timeout must be a positive integer."
+      );
+    }
+  }
 
   async get(key: string): Promise<InterpretationResult | null> {
     try {
-      const value = await this.client.get(key);
+      const value = await withTimeout(
+        this.client.get(key),
+        this.operationTimeoutMs
+      );
 
       if (!value) {
         return null;
@@ -108,14 +142,17 @@ export class RedisAiInterpretationCache implements AiInterpretationCache {
 
   async set(key: string, value: InterpretationResult): Promise<void> {
     try {
-      await this.client.set(
-        key,
-        JSON.stringify({
-          ...value,
-          cacheHit: false
-        }),
-        "EX",
-        this.ttlSeconds
+      await withTimeout(
+        this.client.set(
+          key,
+          JSON.stringify({
+            ...value,
+            cacheHit: false
+          }),
+          "EX",
+          this.ttlSeconds
+        ),
+        this.operationTimeoutMs
       );
     } catch {
       // Cache is an optimization. Provider results must remain available
