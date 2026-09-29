@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getRepositoryById } from "../repositories/repository.persistence.js";
 import { isRuntimeTelemetryAuthorized } from "./runtime.auth.js";
 import { generateRuntimeCorrelationEvidence } from "./correlation.service.js";
+import { generateHistoricalRuntimeReconstruction } from "./historical-correlation.service.js";
 import {
   insertRuntimeTelemetryBatch,
   listRuntimeTelemetryEvents,
@@ -273,6 +274,58 @@ runtimeRouter.get("/correlation", async (req, res, next) => {
     const result = await generateRuntimeCorrelationEvidence(
       repositoryId,
       query.revisionSha,
+      query.windowMinutes,
+      query.minSamples,
+      {
+        ...(query.environment ? { environment: query.environment } : {}),
+        ...(query.operationName ? { operationName: query.operationName } : {}),
+        ...(query.signalType ? { signalType: query.signalType } : {})
+      }
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+runtimeRouter.get("/historical-correlation", async (req, res, next) => {
+  try {
+    const repositoryId = getRepositoryId(
+      req.params as Record<string, string | undefined>
+    );
+
+    const query = z.object({
+      page: z.coerce.number().int().min(1).max(10_000).default(1),
+      limit: z.coerce.number().int().min(1).max(100).default(25),
+      windowMinutes: z.coerce.number().int().min(5).max(1_440).default(60),
+      minSamples: z.coerce.number().int().min(1).max(10_000).default(10),
+      environment: runtimeQueryFields.environment,
+      operationName: runtimeQueryFields.operationName,
+      signalType: runtimeQueryFields.signalType
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const result = await generateHistoricalRuntimeReconstruction(
+      repositoryId,
+      query.page,
+      query.limit,
       query.windowMinutes,
       query.minSamples,
       {
