@@ -12,9 +12,10 @@ import type {
   InterpretationGroundingClaim,
   InterpretationResult
 } from "./interpretation.types.js";
-import { INTERPRETATION_VERSION } from "./interpretation.types.js";
-
-export const INTERPRETATION_PROMPT_VERSION = "1.0" as const;
+import {
+  INTERPRETATION_PROMPT_VERSION,
+  INTERPRETATION_VERSION
+} from "./interpretation.types.js";
 
 export class AiInterpretationNotConfiguredError extends Error {
   constructor(message = "AI interpretation is not configured.") {
@@ -310,7 +311,8 @@ function parseProviderResponse(body: unknown): string {
 export async function generateAiInterpretation(
   report: EvidenceReport,
   config: AiProviderConfig = readAiProviderConfig(),
-  fetchFn: typeof fetch = fetch
+  fetchFn: typeof fetch = fetch,
+  cache?: AiInterpretationCache
 ): Promise<InterpretationResult> {
   const { system, user, grounding } = buildInterpretationPrompt(report);
 
@@ -318,6 +320,21 @@ export async function generateAiInterpretation(
     throw new AiInterpretationValidationError(
       "The report contains no evidence claims available for interpretation."
     );
+  }
+
+  const cacheKey = cache
+    ? buildAiInterpretationCacheKey(report.fingerprint, config.model)
+    : null;
+
+  if (cache && cacheKey) {
+    const cached = await cache.get(cacheKey);
+
+    if (cached) {
+      return {
+        ...cached,
+        cacheHit: true
+      };
+    }
   }
 
   const controller = new AbortController();
@@ -400,15 +417,22 @@ export async function generateAiInterpretation(
 
     validateEvidenceKeys(interpretation.data, grounding);
 
-    return {
+    const result: InterpretationResult = {
       interpretationVersion: INTERPRETATION_VERSION,
       provider: "openai",
       model: config.model,
       reportFingerprint: report.fingerprint,
       groundingClaimCount: grounding.length,
       generatedAt: new Date().toISOString(),
+      cacheHit: false,
       interpretation: interpretation.data
     };
+
+    if (cache && cacheKey) {
+      await cache.set(cacheKey, result);
+    }
+
+    return result;
   } finally {
     clearTimeout(timeout);
   }
