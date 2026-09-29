@@ -1,9 +1,10 @@
 import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
-import { simpleGit } from "simple-git";
 import { env } from "../../config/env.js";
 import type { RepositoryMetadata } from "./repository.types.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
+import { assertAnalysisDeadline } from "../analysis/analysis-deadline.js";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 export function getRepositoryStoragePath(repositoryId: string): string {
   return path.resolve(env.REPOSITORY_STORAGE_PATH, repositoryId);
@@ -48,13 +49,7 @@ export async function cloneRepository(
   const repositoryPath = await prepareRepositoryStorage(repositoryId);
   const parentPath = path.dirname(repositoryPath);
 
-  const git = simpleGit({
-    baseDir: parentPath,
-    maxConcurrentProcesses: 1,
-    timeout: {
-      block: env.MAX_ANALYSIS_TIME_MINUTES * 60 * 1000
-    }
-  });
+  const git = createAnalysisGit(parentPath);
 
   const cloneArgs = ["--no-tags", "--filter=blob:none"];
 
@@ -109,12 +104,7 @@ export async function refreshRepository(
   assertSafeBranchName(branch);
 
   const repositoryPath = getRepositoryStoragePath(repositoryId);
-  const git = simpleGit(repositoryPath, {
-    maxConcurrentProcesses: 1,
-    timeout: {
-      block: env.MAX_ANALYSIS_TIME_MINUTES * 60 * 1000
-    }
-  });
+  const git = createAnalysisGit(repositoryPath);
 
   try {
     await git.raw([
@@ -169,7 +159,7 @@ export async function checkoutRepositoryAtCommit(
 ): Promise<void> {
   assertValidSha(commitSha);
 
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
 
   await git.raw([
     "checkout",
@@ -186,7 +176,7 @@ export async function isCommitAncestor(
   assertValidSha(ancestorSha);
   assertValidSha(descendantSha);
 
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
 
   try {
     const mergeBase = await git.raw([
@@ -204,7 +194,7 @@ export async function isCommitAncestor(
 export async function readRepositoryMetadata(
   repositoryPath: string
 ): Promise<RepositoryMetadata> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
 
   const [currentBranch, head, count, shallow] = await Promise.all([
     git.revparse(["--abbrev-ref", "HEAD"]),
@@ -268,6 +258,8 @@ export function getRepositoryNameFromUrl(url: URL): string {
 async function calculateDirectorySize(
   directoryPath: string
 ): Promise<number> {
+  assertAnalysisDeadline();
+
   const entries = await readdir(directoryPath, {
     withFileTypes: true
   });
@@ -275,6 +267,8 @@ async function calculateDirectorySize(
   let total = 0;
 
   for (const entry of entries) {
+    assertAnalysisDeadline();
+
     const entryPath = path.join(directoryPath, entry.name);
 
     if (entry.isDirectory()) {
