@@ -28,6 +28,17 @@ export async function removeRepositoryStorage(
   });
 }
 
+export async function isRepositoryStorageReady(
+  repositoryPath: string
+): Promise<boolean> {
+  try {
+    await stat(path.join(repositoryPath, ".git"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function cloneRepository(
   repositoryId: string,
   remoteUrl: string,

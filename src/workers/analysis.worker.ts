@@ -54,6 +54,7 @@ import {
   checkoutRepositoryAtCommit,
   cloneRepository,
   isCommitAncestor,
+  isRepositoryStorageReady,
   refreshRepository,
   removeRepositoryStorage
 } from "../modules/repositories/repository.service.js";
@@ -222,11 +223,25 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           );
         }
 
-        const metadata = await refreshRepository(
-          repository.id,
-          repository.source_url,
-          repository.tracked_branch
+        const storageReady = await isRepositoryStorageReady(
+          repository.storage_path
         );
+
+        if (!storageReady) {
+          await removeRepositoryStorage(repository.id);
+        }
+
+        const metadata = storageReady
+          ? await refreshRepository(
+              repository.id,
+              repository.source_url,
+              repository.tracked_branch
+            )
+          : await cloneRepository(
+              repository.id,
+              repository.source_url,
+              repository.tracked_branch
+            );
 
         await updateRepositoryImportMetadata(
           repository.id,
