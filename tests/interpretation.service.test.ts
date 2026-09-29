@@ -403,6 +403,247 @@ test("maps upstream provider failures without exposing response bodies", async (
   );
 });
 
+test("retries temporary rate limits and overloads with bounded backoff", async () => {
+  let fetchCalls = 0;
+  const retryDelays: number[] = [];
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+
+    if (fetchCalls === 1) {
+      return new Response(
+        JSON.stringify({
+          error: { code: "slow_down" }
+        }),
+        {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": "0" }
+        }
+      );
+    }
+
+    if (fetchCalls === 2) {
+      return new Response(
+        JSON.stringify({
+          error: { code: "server_is_overloaded" }
+        }),
+        {
+          status: 503,
+          headers: { "content-type": "application/json", "retry-after": "0" }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        status: "completed",
+        output_text: JSON.stringify(validAiOutput)
+      }),
+      { status: 200 }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-5.6-luna",
+      timeoutMs: 5_000
+    },
+    fakeFetch,
+    undefined,
+    {
+      sleep: async (milliseconds) => {
+        retryDelays.push(milliseconds);
+      },
+      random: () => 0
+    }
+  );
+
+  assert.equal(result.cacheHit, false);
+  assert.equal(fetchCalls, 3);
+  assert.deepEqual(retryDelays, [0, 0]);
+});
+
+test("does not retry exhausted-credit 429 responses", async () => {
+  let fetchCalls = 0;
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+    return new Response(
+      JSON.stringify({
+        error: { code: "credit_balance_exhausted" }
+      }),
+      {
+        status: 429,
+        headers: { "content-type": "application/json" }
+      }
+    );
+  };
+
+  await assert.rejects(
+    () =>
+      generateAiInterpretation(
+        reportFixture(),
+        {
+          apiKey: "test-key",
+          baseUrl: "https://api.openai.com/v1",
+          model: "gpt-5.6-luna",
+          timeoutMs: 5_000
+        },
+        fakeFetch,
+        undefined,
+        {
+          sleep: async () => undefined,
+          random: () => 0
+        }
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof AiInterpretationProviderError);
+      assert.match((error as Error).message, /HTTP 429/);
+      return true;
+    }
+  );
+
+  assert.equal(fetchCalls, 1);
+});
+
+test("honors Retry-After before a temporary retry", async () => {
+  let fetchCalls = 0;
+  const retryDelays: number[] = [];
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+
+    if (fetchCalls === 1) {
+      return new Response(
+        JSON.stringify({
+          error: { code: "slow_down" }
+        }),
+        {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": "2" }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        status: "completed",
+        output_text: JSON.stringify(validAiOutput)
+      }),
+      { status: 200 }
+    );
+  };
+
+  await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-5.6-luna",
+      timeoutMs: 5_000
+    },
+    fakeFetch,
+    undefined,
+    {
+      sleep: async (milliseconds) => {
+        retryDelays.push(milliseconds);
+      },
+      random: () => 0
+    }
+  );
+
+  assert.equal(fetchCalls, 2);
+  assert.deepEqual(retryDelays, [2_000]);
+});
+
+test("retries transient network failures without leaking error details", async () => {
+  let fetchCalls = 0;
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+
+    if (fetchCalls === 1) {
+      throw new Error("network secret should not escape");
+    }
+
+    return new Response(
+      JSON.stringify({
+        status: "completed",
+        output_text: JSON.stringify(validAiOutput)
+      }),
+      { status: 200 }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-5.6-luna",
+      timeoutMs: 5_000
+    },
+    fakeFetch,
+    undefined,
+    {
+      sleep: async () => undefined,
+      random: () => 0
+    }
+  );
+
+  assert.equal(fetchCalls, 2);
+  assert.equal(result.interpretation.themes.length, 1);
+});
+
+test("stops retrying when the provider asks for an excessive delay", async () => {
+  let fetchCalls = 0;
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+    return new Response(
+      JSON.stringify({
+        error: { code: "slow_down" }
+      }),
+      {
+        status: 429,
+        headers: { "content-type": "application/json", "retry-after": "60" }
+      }
+    );
+  };
+
+  await assert.rejects(
+    () =>
+      generateAiInterpretation(
+        reportFixture(),
+        {
+          apiKey: "test-key",
+          baseUrl: "https://api.openai.com/v1",
+          model: "gpt-5.6-luna",
+          timeoutMs: 5_000
+        },
+        fakeFetch,
+        undefined,
+        {
+          sleep: async () => undefined,
+          random: () => 0
+        }
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof AiInterpretationProviderError);
+      assert.match(
+        (error as Error).message,
+        /retry delay is outside the configured limit/
+      );
+      return true;
+    }
+  );
+
+  assert.equal(fetchCalls, 1);
+});
+
 test("requires an AI API key", () => {
   assert.throws(
     () =>

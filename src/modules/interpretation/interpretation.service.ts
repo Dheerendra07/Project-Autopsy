@@ -48,6 +48,153 @@ const MAX_CLAIMS_PER_SECTION = 6;
 const MAX_GROUNDING_CLAIMS = 60;
 const MAX_STATEMENT_LENGTH = 1_000;
 
+const AI_PROVIDER_MAX_ATTEMPTS = 3;
+const AI_PROVIDER_MAX_RETRY_DELAY_MS = 10_000;
+const AI_PROVIDER_MAX_TOTAL_TIME_MS = 45_000;
+const AI_PROVIDER_INITIAL_RETRY_DELAY_MS = 500;
+const AI_PROVIDER_JITTER_MS = 250;
+const NON_RETRYABLE_429_CODES = new Set([
+  "credit_balance_exhausted",
+  "organization_spend_limit_exceeded",
+  "project_spend_limit_exceeded",
+  "organization_usage_limit_exceeded"
+]);
+
+export interface AiInterpretationRetryRuntime {
+  sleep?: (milliseconds: number) => Promise<void>;
+  random?: () => number;
+  now?: () => number;
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+async function readProviderErrorCode(
+  response: Response
+): Promise<string | undefined> {
+  try {
+    const body = (await response.clone().json()) as {
+      error?: { code?: unknown };
+    };
+
+    return typeof body.error?.code === "string"
+      ? body.error.code
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isRetryableProviderResponse(
+  response: Response,
+  errorCode: string | undefined
+): boolean {
+  if (response.status === 429) {
+    return !(
+      errorCode &&
+      NON_RETRYABLE_429_CODES.has(errorCode)
+    );
+  }
+
+  return (
+    response.status === 408 ||
+    response.status === 500 ||
+    response.status === 502 ||
+    response.status === 503 ||
+    response.status === 504
+  );
+}
+
+function parseRetryAfterMs(
+  value: string | null,
+  nowMs: number
+): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const seconds = Number(value.trim());
+
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.ceil(seconds * 1_000);
+  }
+
+  const timestamp = Date.parse(value);
+
+  if (!Number.isNaN(timestamp)) {
+    return Math.max(0, timestamp - nowMs);
+  }
+
+  return null;
+}
+
+function calculateRetryDelayMs(
+  response: null,
+  attemptNumber: number,
+  nowMs: number,
+  randomFn: () => number
+): number;
+function calculateRetryDelayMs(
+  response: Response,
+  attemptNumber: number,
+  nowMs: number,
+  randomFn: () => number
+): number | null;
+function calculateRetryDelayMs(
+  response: Response | null,
+  attemptNumber: number,
+  nowMs: number,
+  randomFn: () => number
+): number | null {
+  const retryAfterMs = response
+    ? parseRetryAfterMs(
+        response.headers.get("retry-after"),
+        nowMs
+      )
+    : null;
+
+  if (
+    retryAfterMs !== null &&
+    retryAfterMs > AI_PROVIDER_MAX_RETRY_DELAY_MS
+  ) {
+    return null;
+  }
+
+  const fallbackDelayMs = Math.min(
+    AI_PROVIDER_MAX_RETRY_DELAY_MS,
+    AI_PROVIDER_INITIAL_RETRY_DELAY_MS *
+      2 ** (attemptNumber - 1)
+  );
+
+  const baseDelayMs = retryAfterMs ?? fallbackDelayMs;
+  const normalizedRandom = Math.min(
+    1,
+    Math.max(0, randomFn())
+  );
+  const jitterMs = Math.round(
+    normalizedRandom * AI_PROVIDER_JITTER_MS
+  );
+
+  return baseDelayMs + jitterMs;
+}
+
+function ensureRetryTimeAvailable(
+  retryDelayMs: number,
+  deadlineMs: number,
+  nowFn: () => number
+): void {
+  const remainingMs = deadlineMs - nowFn();
+
+  if (remainingMs <= retryDelayMs) {
+    throw new AiInterpretationProviderError(
+      "AI provider retry deadline exceeded."
+    );
+  }
+}
+
 
 
 function normalizeBaseUrl(value: string): string {
@@ -247,7 +394,8 @@ export async function generateAiInterpretation(
   report: EvidenceReport,
   config: AiProviderConfig = readAiProviderConfig(),
   fetchFn: typeof fetch = fetch,
-  cache?: AiInterpretationCache
+  cache?: AiInterpretationCache,
+  runtime?: AiInterpretationRetryRuntime
 ): Promise<InterpretationResult> {
   const { system, user, grounding } = buildInterpretationPrompt(report);
 
@@ -276,107 +424,206 @@ export async function generateAiInterpretation(
     }
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+  const sleepFn = runtime?.sleep ?? sleep;
+  const randomFn = runtime?.random ?? Math.random;
+  const nowFn = runtime?.now ?? Date.now;
+  const deadlineMs = nowFn() + AI_PROVIDER_MAX_TOTAL_TIME_MS;
 
-  try {
-    let response: Response;
+  for (
+    let attempt = 1;
+    attempt <= AI_PROVIDER_MAX_ATTEMPTS;
+    attempt += 1
+  ) {
+    const remainingMs = deadlineMs - nowFn();
+
+    if (remainingMs <= 0) {
+      throw new AiInterpretationProviderError(
+        "AI provider retry deadline exceeded."
+      );
+    }
+
+    const controller = new AbortController();
+    const timeoutMs = Math.min(config.timeoutMs, remainingMs);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      response = await fetchFn(config.baseUrl + "/responses", {
-        method: "POST",
-        headers: {
-          authorization: "Bearer " + config.apiKey,
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          model: config.model,
-          input: [
-            { role: "system", content: system },
-            { role: "user", content: user }
-          ],
-          max_output_tokens: 1_600,
-          text: {
-            format: {
-              type: "json_schema",
-              name: "project_autopsy_interpretation",
-              strict: true,
-              schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+      let response: Response;
+
+      try {
+        response = await fetchFn(config.baseUrl + "/responses", {
+          method: "POST",
+          headers: {
+            authorization: "Bearer " + config.apiKey,
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            model: config.model,
+            input: [
+              { role: "system", content: system },
+              { role: "user", content: user }
+            ],
+            max_output_tokens: 1_600,
+            text: {
+              format: {
+                type: "json_schema",
+                name: "project_autopsy_interpretation",
+                strict: true,
+                schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+              }
             }
+          }),
+          signal: controller.signal
+        });
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.name === "AbortError"
+        ) {
+          if (attempt === AI_PROVIDER_MAX_ATTEMPTS) {
+            throw new AiInterpretationProviderError(
+              "AI provider request timed out."
+            );
           }
-        }),
-        signal: controller.signal
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new AiInterpretationProviderError(
-          "AI provider request timed out."
+
+          const retryDelayMs = calculateRetryDelayMs(
+            null,
+            attempt,
+            nowFn(),
+            randomFn
+          );
+
+          if (retryDelayMs === null) {
+            throw new AiInterpretationProviderError(
+              "AI provider retry delay is outside the configured limit."
+            );
+          }
+
+          ensureRetryTimeAvailable(
+            retryDelayMs,
+            deadlineMs,
+            nowFn
+          );
+          await sleepFn(retryDelayMs);
+          continue;
+        }
+
+        if (attempt === AI_PROVIDER_MAX_ATTEMPTS) {
+          throw new AiInterpretationProviderError(
+            "AI provider request failed."
+          );
+        }
+
+        const retryDelayMs = calculateRetryDelayMs(
+          null,
+          attempt,
+          nowFn(),
+          randomFn
         );
+
+        ensureRetryTimeAvailable(
+          retryDelayMs,
+          deadlineMs,
+          nowFn
+        );
+        await sleepFn(retryDelayMs);
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorCode = await readProviderErrorCode(response);
+
+        if (
+          attempt < AI_PROVIDER_MAX_ATTEMPTS &&
+          isRetryableProviderResponse(response, errorCode)
+        ) {
+          const retryDelayMs = calculateRetryDelayMs(
+            response,
+            attempt,
+            nowFn(),
+            randomFn
+          );
+
+          if (retryDelayMs === null) {
+            throw new AiInterpretationProviderError(
+              "AI provider retry delay is outside the configured limit."
+            );
+          }
+
+          ensureRetryTimeAvailable(
+            retryDelayMs,
+            deadlineMs,
+            nowFn
+          );
+          await sleepFn(retryDelayMs);
+          continue;
+        }
+
+        throw new AiInterpretationProviderError(
+          "AI provider request failed with HTTP " +
+            String(response.status) +
+            "."
+        );
+      }
+
+      const body: unknown = await response.json();
+      const rawText = parseProviderResponse(body);
+      let parsed: unknown;
+
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        throw new AiInterpretationProviderError(
+          "AI provider returned non-JSON structured output."
+        );
+      }
+
+      const interpretation = interpretationOutputSchema.safeParse(parsed);
+
+      if (!interpretation.success) {
+        throw new AiInterpretationValidationError(
+          "AI provider output did not satisfy the interpretation contract."
+        );
+      }
+
+      validateEvidenceKeys(interpretation.data, grounding);
+
+      const result: InterpretationResult = {
+        interpretationVersion: INTERPRETATION_VERSION,
+        provider: "openai",
+        model: config.model,
+        reportFingerprint: report.fingerprint,
+        groundingClaimCount: grounding.length,
+        generatedAt: new Date().toISOString(),
+        cacheHit: false,
+        interpretation: interpretation.data
+      };
+
+      if (cache && cacheKey) {
+        try {
+          await cache.set(cacheKey, result);
+        } catch {
+          // Cache is an optimization. A cache write failure must not fail a valid provider result.
+        }
+      }
+
+      return result;
+    } catch (error) {
+      if (
+        error instanceof AiInterpretationProviderError ||
+        error instanceof AiInterpretationValidationError
+      ) {
+        throw error;
       }
 
       throw new AiInterpretationProviderError(
         "AI provider request failed."
       );
+    } finally {
+      clearTimeout(timeout);
     }
-
-    if (!response.ok) {
-      throw new AiInterpretationProviderError(
-        "AI provider request failed with HTTP " + String(response.status) + "."
-      );
-    }
-
-    let body: unknown;
-
-    try {
-      body = await response.json();
-    } catch {
-      throw new AiInterpretationProviderError(
-        "AI provider returned invalid JSON."
-      );
-    }
-
-    const rawText = parseProviderResponse(body);
-    let parsed: unknown;
-
-    try {
-      parsed = JSON.parse(rawText);
-    } catch {
-      throw new AiInterpretationProviderError(
-        "AI provider returned non-JSON structured output."
-      );
-    }
-
-    const interpretation = interpretationOutputSchema.safeParse(parsed);
-
-    if (!interpretation.success) {
-      throw new AiInterpretationValidationError(
-        "AI provider output did not satisfy the interpretation contract."
-      );
-    }
-
-    validateEvidenceKeys(interpretation.data, grounding);
-
-    const result: InterpretationResult = {
-      interpretationVersion: INTERPRETATION_VERSION,
-      provider: "openai",
-      model: config.model,
-      reportFingerprint: report.fingerprint,
-      groundingClaimCount: grounding.length,
-      generatedAt: new Date().toISOString(),
-      cacheHit: false,
-      interpretation: interpretation.data
-    };
-
-    if (cache && cacheKey) {
-      try {
-        await cache.set(cacheKey, result);
-      } catch {
-        // Cache is an optimization. A cache write failure must not fail a valid provider result.
-      }
-    }
-
-    return result;
-  } finally {
-    clearTimeout(timeout);
   }
+
+  throw new AiInterpretationProviderError(
+    "AI provider request failed."
+  );
 }
