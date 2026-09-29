@@ -100,6 +100,7 @@ function getFilters(
   query: {
     from?: Date | undefined;
     to?: Date | undefined;
+    deploymentId?: string | undefined;
     revisionSha?: string | undefined;
     environment?: string | undefined;
     operationName?: string | undefined;
@@ -110,6 +111,7 @@ function getFilters(
 
   if (query.from) filters.from = query.from;
   if (query.to) filters.to = query.to;
+  if (query.deploymentId) filters.deploymentId = query.deploymentId;
   if (query.revisionSha) filters.revisionSha = query.revisionSha;
   if (query.environment) filters.environment = query.environment;
   if (query.operationName) filters.operationName = query.operationName;
@@ -249,6 +251,7 @@ runtimeRouter.get("/telemetry", async (req, res, next) => {
         serviceName: event.service_name,
         operationName: event.operation_name,
         environment: event.environment,
+        deploymentId: event.deployment_id,
         revisionSha: event.revision_sha,
         traceId: event.trace_id,
         spanId: event.span_id,
@@ -270,6 +273,7 @@ runtimeRouter.get("/correlation", async (req, res, next) => {
       revisionSha: z.string().trim().regex(/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/),
       windowMinutes: z.coerce.number().int().min(5).max(1_440).default(60),
       minSamples: z.coerce.number().int().min(1).max(10_000).default(10),
+      deploymentId: runtimeQueryFields.deploymentId,
       environment: runtimeQueryFields.environment,
       operationName: runtimeQueryFields.operationName,
       signalType: runtimeQueryFields.signalType
@@ -309,6 +313,7 @@ runtimeRouter.get("/historical-correlation", async (req, res, next) => {
       limit: z.coerce.number().int().min(1).max(100).default(25),
       windowMinutes: z.coerce.number().int().min(5).max(1_440).default(60),
       minSamples: z.coerce.number().int().min(1).max(10_000).default(10),
+      deploymentId: runtimeQueryFields.deploymentId,
       environment: runtimeQueryFields.environment,
       operationName: runtimeQueryFields.operationName,
       signalType: runtimeQueryFields.signalType
@@ -334,6 +339,7 @@ runtimeRouter.get("/historical-correlation", async (req, res, next) => {
       query.windowMinutes,
       query.minSamples,
       {
+        ...(query.deploymentId ? { deploymentId: query.deploymentId } : {}),
         ...(query.environment ? { environment: query.environment } : {}),
         ...(query.operationName ? { operationName: query.operationName } : {}),
         ...(query.signalType ? { signalType: query.signalType } : {})
@@ -361,6 +367,7 @@ runtimeRouter.get("/historical-correlation/summary", async (req, res, next) => {
       limit: z.coerce.number().int().min(1).max(100).default(25),
       windowMinutes: z.coerce.number().int().min(5).max(1_440).default(60),
       minSamples: z.coerce.number().int().min(1).max(10_000).default(10),
+      deploymentId: runtimeQueryFields.deploymentId,
       environment: runtimeQueryFields.environment,
       operationName: runtimeQueryFields.operationName,
       signalType: runtimeQueryFields.signalType
@@ -386,6 +393,7 @@ runtimeRouter.get("/historical-correlation/summary", async (req, res, next) => {
       query.windowMinutes,
       query.minSamples,
       {
+        ...(query.deploymentId ? { deploymentId: query.deploymentId } : {}),
         ...(query.environment ? { environment: query.environment } : {}),
         ...(query.operationName ? { operationName: query.operationName } : {}),
         ...(query.signalType ? { signalType: query.signalType } : {})
@@ -413,6 +421,7 @@ runtimeRouter.get("/historical-correlation/source-context", async (req, res, nex
       limit: z.coerce.number().int().min(1).max(100).default(25),
       windowMinutes: z.coerce.number().int().min(5).max(1_440).default(60),
       minSamples: z.coerce.number().int().min(1).max(10_000).default(10),
+      deploymentId: runtimeQueryFields.deploymentId,
       environment: runtimeQueryFields.environment,
       operationName: runtimeQueryFields.operationName,
       signalType: runtimeQueryFields.signalType
@@ -438,6 +447,7 @@ runtimeRouter.get("/historical-correlation/source-context", async (req, res, nex
       query.windowMinutes,
       query.minSamples,
       {
+        ...(query.deploymentId ? { deploymentId: query.deploymentId } : {}),
         ...(query.environment ? { environment: query.environment } : {}),
         ...(query.operationName ? { operationName: query.operationName } : {}),
         ...(query.signalType ? { signalType: query.signalType } : {})
@@ -486,6 +496,7 @@ runtimeRouter.get("/telemetry/summary", async (req, res, next) => {
         from: query.from?.toISOString() ?? null,
         to: query.to?.toISOString() ?? null,
         revisionSha: query.revisionSha ?? null,
+        deploymentId: query.deploymentId ?? null,
         environment: query.environment ?? null,
         operationName: query.operationName ?? null,
         signalType: query.signalType ?? null,
