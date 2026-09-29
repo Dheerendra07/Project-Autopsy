@@ -699,6 +699,20 @@ export async function generateEvidenceReport(
     listDeploymentEvidence(repositoryId, sampleLimit)
   ]);
 
+  const historicalRuntime =
+    runtimeSummary.overall.sampleCount > 0
+      ? buildHistoricalRuntimeSourceContextEvidence(
+          await generateHistoricalRuntimeReconstruction(
+            repositoryId,
+            1,
+            Math.min(sampleLimit, 10),
+            60,
+            10,
+            {}
+          )
+        )
+      : undefined;
+
   const currentRepository = await getRepositoryById(repositoryId);
   const currentAnalysis = await getLatestCompletedAnalysisRun(repositoryId);
 
@@ -718,20 +732,6 @@ export async function generateEvidenceReport(
       "Repository evidence changed while the report was being generated; retry against a stable completed analysis."
     );
   }
-
-  const historicalRuntime =
-    runtimeSummary.overall.sampleCount > 0
-      ? buildHistoricalRuntimeSourceContextEvidence(
-          await generateHistoricalRuntimeReconstruction(
-            repositoryId,
-            1,
-            Math.min(sampleLimit, 10),
-            60,
-            10,
-            {}
-          )
-        )
-      : undefined;
 
   return buildEvidenceReport({
     repository,
