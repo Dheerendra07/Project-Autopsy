@@ -275,6 +275,27 @@ test("builds an evidence report with stable fingerprint independent of generatio
   );
 });
 
+test("treats a completed analysis as current only when it matches repository HEAD", async () => {
+  const { isCompletedAnalysisCurrent } = await import("../src/modules/reports/report.service.js");
+
+  assert.equal(
+    isCompletedAnalysisCurrent("a".repeat(40), "a".repeat(40)),
+    true
+  );
+  assert.equal(
+    isCompletedAnalysisCurrent("a".repeat(40), "b".repeat(40)),
+    false
+  );
+  assert.equal(
+    isCompletedAnalysisCurrent("a".repeat(40), null),
+    false
+  );
+  assert.equal(
+    isCompletedAnalysisCurrent(null, "a".repeat(40)),
+    false
+  );
+});
+
 test("keeps exact commit references on evolution evidence", () => {
   const input = baseInput();
   input.sampleLimit = 5;
