@@ -1,6 +1,7 @@
 import type { EvidenceRef } from "../reports/report.types.js";
 
 export const INTERPRETATION_VERSION = "1.0" as const;
+export const INTERPRETATION_PROMPT_VERSION = "1.0" as const;
 
 export interface InterpretationGroundingClaim {
   evidenceKey: string;
