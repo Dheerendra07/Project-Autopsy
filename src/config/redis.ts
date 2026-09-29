@@ -1,12 +1,21 @@
 import { Redis } from "ioredis";
 import { env } from "./env.js";
 
-export const redis = new Redis({
-  host: env.REDIS_HOST,
-  port: env.REDIS_PORT,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: true
-});
+const redisConnection = env.REDIS_URL
+  ? new URL(env.REDIS_URL)
+  : null;
+
+export const redis = redisConnection
+  ? new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: true
+    })
+  : new Redis({
+      host: env.REDIS_HOST,
+      port: env.REDIS_PORT,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: true
+    });
 
 redis.on("error", (error) => {
   console.error("Redis error:", error);
