@@ -41,6 +41,26 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.get("/ready", async (_req, res) => {
+  const [database, redis] = await Promise.allSettled([
+    checkDatabaseConnection(),
+    checkRedisConnection()
+  ]);
+
+  const ready = database.status === "fulfilled" && redis.status === "fulfilled";
+
+  res.status(ready ? 200 : 503).json({
+    success: ready,
+    service: "project-autopsy-api",
+    status: ready ? "ready" : "not_ready",
+    checks: {
+      database: database.status === "fulfilled" ? "ready" : "unavailable",
+      redis: redis.status === "fulfilled" ? "ready" : "unavailable"
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use("/api", (req, res, next) => {
   if (
     !isApiAccessAuthorized(
