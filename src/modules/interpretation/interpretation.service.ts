@@ -12,6 +12,8 @@ import type {
   InterpretationGroundingClaim,
   InterpretationResult
 } from "./interpretation.types.js";
+import { buildAiInterpretationCacheKey } from "./interpretation.cache.js";
+import type { AiInterpretationCache } from "./interpretation.types.js";
 import {
   INTERPRETATION_PROMPT_VERSION,
   INTERPRETATION_VERSION
