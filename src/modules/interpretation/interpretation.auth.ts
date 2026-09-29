@@ -24,7 +24,7 @@ export function isAiInterpretationAuthorized(
   let receivedKey = headerKey?.trim();
 
   if (!receivedKey && authorizationHeader) {
-    const match = authorizationHeader.match(/^Bearer\\s+(.+)$/i);
+    const match = authorizationHeader.match(/^Bearer\s+(.+)$/i);
     receivedKey = match?.[1]?.trim();
   }
 
