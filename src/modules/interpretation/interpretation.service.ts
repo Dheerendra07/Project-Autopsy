@@ -216,7 +216,8 @@ export function buildInterpretationPrompt(
         coverage: report.coverage
       },
       grounding
-    })
+    }),
+    grounding
   };
 }
 
