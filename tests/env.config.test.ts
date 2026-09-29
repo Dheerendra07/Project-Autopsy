@@ -15,6 +15,18 @@ function baseEnvironment(
   };
 }
 
+test("rejects non-Redis connection string schemes", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          REDIS_URL: "https://example.internal:6379"
+        })
+      ),
+    /REDIS_URL/
+  );
+});
+
 test("accepts an optional Redis connection string", () => {
   const config = parseEnvironment(
     baseEnvironment({
