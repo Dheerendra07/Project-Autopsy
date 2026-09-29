@@ -1,6 +1,7 @@
 import { Queue } from "bullmq";
 import { redis } from "../../config/redis.js";
 import { ANALYSIS_QUEUE_NAME } from "../../workers/queue.constants.js";
+import { ANALYSIS_JOB_RETRY_POLICY } from "./queue-policy.js";
 
 export interface AnalysisJobData {
   kind?: "import" | "refresh" | "analyze";
@@ -87,7 +88,8 @@ export async function enqueueRepositoryAnalysis(
       analysisRunId
     },
     {
-      jobId: analysisRunId
+      jobId: analysisRunId,
+      ...ANALYSIS_JOB_RETRY_POLICY
     }
   );
 
