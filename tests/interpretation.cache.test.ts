@@ -80,6 +80,28 @@ test("treats malformed cache JSON as a miss", async () => {
   assert.equal(await cache.get("cache-key"), null);
 });
 
+test("treats a cache entry with invalid nested interpretation data as a miss", async () => {
+  const client: AiInterpretationRedisClient = {
+    async get() {
+      return JSON.stringify({
+        ...value,
+        interpretation: {
+          executiveSummary: "",
+          themes: [],
+          investigationQuestions: [],
+          uncertainties: []
+        }
+      });
+    },
+    async set() {
+      return "OK";
+    }
+  };
+
+  const cache = new RedisAiInterpretationCache(client, 60);
+  assert.equal(await cache.get("cache-key"), null);
+});
+
 test("swallows Redis cache failures", async () => {
   const client: AiInterpretationRedisClient = {
     async get() {
