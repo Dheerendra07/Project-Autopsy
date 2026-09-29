@@ -4,8 +4,11 @@ import type {
   AiInterpretationCache,
   InterpretationResult
 } from "./interpretation.types.js";
-import { INTERPRETATION_VERSION } from "./interpretation.types.js";
-import { INTERPRETATION_PROMPT_VERSION } from "./interpretation.types.js";
+import {
+  INTERPRETATION_PROMPT_VERSION,
+  INTERPRETATION_VERSION
+} from "./interpretation.types.js";
+import { interpretationOutputSchema } from "./interpretation.schema.js";
 
 const CACHE_PREFIX = "project-autopsy:ai-interpretation:v1:";
 const DEFAULT_TTL_SECONDS = 86_400;
@@ -72,18 +75,32 @@ export class RedisAiInterpretationCache implements AiInterpretationCache {
         typeof result.model !== "string" ||
         typeof result.reportFingerprint !== "string" ||
         typeof result.groundingClaimCount !== "number" ||
+        !Number.isInteger(result.groundingClaimCount) ||
+        result.groundingClaimCount < 1 ||
         typeof result.generatedAt !== "string" ||
-        result.cacheHit !== false ||
-        !result.interpretation ||
-        typeof result.interpretation !== "object"
+        result.cacheHit !== false
       ) {
         return null;
       }
 
+      const interpretation = interpretationOutputSchema.safeParse(
+        result.interpretation
+      );
+
+      if (!interpretation.success) {
+        return null;
+      }
+
       return {
-        ...result,
-        cacheHit: false
-      } as InterpretationResult;
+        interpretationVersion: INTERPRETATION_VERSION,
+        provider: "openai",
+        model: result.model,
+        reportFingerprint: result.reportFingerprint,
+        groundingClaimCount: result.groundingClaimCount,
+        generatedAt: result.generatedAt,
+        cacheHit: false,
+        interpretation: interpretation.data
+      };
     } catch {
       return null;
     }
