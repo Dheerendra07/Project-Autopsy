@@ -611,7 +611,11 @@ analysisWorker.on("failed", (job, error) => {
 
 let shuttingDown = false;
 
-async function shutdownWorker(signal: string): Promise<void> {
+export export async function closeAnalysisWorker(): Promise<void> {
+  await analysisWorker.close();
+}
+
+export async function shutdownWorker(signal: string): Promise<void> {
   if (shuttingDown) {
     return;
   }
@@ -641,8 +645,10 @@ async function shutdownWorker(signal: string): Promise<void> {
   }
 }
 
-for (const signal of ["SIGTERM", "SIGINT"] as const) {
-  process.once(signal, () => {
-    void shutdownWorker(signal);
-  });
+if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {
+  for (const signal of ["SIGTERM", "SIGINT"] as const) {
+    process.once(signal, () => {
+      void shutdownWorker(signal);
+    });
+  }
 }
