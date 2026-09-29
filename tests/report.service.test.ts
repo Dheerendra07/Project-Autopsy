@@ -304,6 +304,27 @@ test("builds an evidence report with stable fingerprint independent of generatio
   );
 });
 
+test("revalidates the exact report evidence snapshot", async () => {
+  const { isReportEvidenceSnapshotCurrent } = await import("../src/modules/reports/report.service.js");
+
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "a".repeat(40), "run-1", "a".repeat(40)),
+    true
+  );
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "a".repeat(40), "run-2", "a".repeat(40)),
+    false
+  );
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "b".repeat(40), "run-1", "b".repeat(40)),
+    false
+  );
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "a".repeat(40), "run-1", "b".repeat(40)),
+    false
+  );
+});
+
 test("treats a completed analysis as current only when it matches repository HEAD", async () => {
   const { isCompletedAnalysisCurrent } = await import("../src/modules/reports/report.service.js");
 
