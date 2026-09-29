@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { after } from "node:test";
 
 process.env.NODE_ENV = "test";
 process.env.DATABASE_URL =
   process.env.DATABASE_URL ??
   "postgresql://autopsy:autopsy_dev_password@127.0.0.1:5432/project_autopsy";
+
+let redisClient: { disconnect(): void } | undefined;
+
+after(async () => {
+  const module = await import("../src/config/redis.js");
+  redisClient = module.redis;
+  redisClient.disconnect();
+});
 
 test("Redis readiness succeeds for a PONG response", async () => {
   const { checkRedisConnection } = await import("../src/config/redis.js");
