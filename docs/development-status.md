@@ -57,16 +57,15 @@ Evidence basis: `typescript_ast_file_change_snapshots`.
 
 The API reports before/after metrics and deltas per changed source file. Deleted files have an explicit deletion event; parse failures and oversized files do not produce fabricated after-metrics.
 
-## Current hardening focus
+## Release readiness
 
-The original product layers through evidence-backed reports, interview story scaffolds, and grounded AI interpretation are implemented. Current work is production hardening rather than rebuilding the evidence foundation.
+The product layers through evidence-backed reports, interview story scaffolds, grounded AI interpretation, runtime correlation, deployment provenance, historical reconstruction, and bounded asynchronous analysis are implemented on main.
 
-Active hardening areas:
-- final production observability and failure-path audit
-- production-limit verification across repository size, analysis duration, queue retries, request bodies, and AI/runtime ingestion
-- local PostgreSQL/Redis end-to-end verification once Docker is available
+The production-hardening pass is complete for code and CI. The remaining verification items are operational rather than product-code gaps:
+- provision PostgreSQL and Redis locally when Docker is available, then repeat the already-green integration path locally
+- perform the first hosted Render deployment and verify real credentials, DNS/origin configuration, resource sizing, and external ingestion sources in that environment
 
-Every new change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, and explicit evidence-gap behavior.
+Every future change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, explicit evidence-gap behavior, and bounded execution contracts.
 
 ## Production hardening continuation — 2026-09-30
 
@@ -111,7 +110,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 2424c5c47e541dfe76453a641c001494a30df233.
+Current verified main baseline: 4bae2df511ce741580a6781c8f01385cd05c63b7.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
