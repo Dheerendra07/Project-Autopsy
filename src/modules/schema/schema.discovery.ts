@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 import type { DiscoveredCommit } from "../commits/commit.discovery.js";
 import type {
@@ -1012,7 +1013,7 @@ export async function discoverDatabaseMigrationEvolution(
   repositoryPath: string,
   commits: DiscoveredCommit[]
 ): Promise<DatabaseMigrationEvent[]> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
   const events: DatabaseMigrationEvent[] = [];
 
   for (const commit of commits) {
