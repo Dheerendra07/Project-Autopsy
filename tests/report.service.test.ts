@@ -79,6 +79,20 @@ function baseInput() {
     coupling: [
       { path_a: "src/report.ts", path_b: "src/routes.ts", co_change_count: 3 }
     ],
+    contributors: [
+      {
+        authorName: "Ada Example",
+        authorEmail: "ada@example.com",
+        commitCount: 4,
+        additions: 40,
+        deletions: 10,
+        totalChurn: 50,
+        pathsTouched: 3,
+        firstCommittedAt: "2026-09-01T00:00:00.000Z",
+        lastCommittedAt: "2026-09-04T00:00:00.000Z"
+      }
+    ],
+    contributorCount: 1,
     refactors: [
       {
         sha: "b".repeat(40),
@@ -244,6 +258,13 @@ test("builds an evidence report with stable fingerprint independent of generatio
     true
   );
   assert.equal(first.fingerprint, second.fingerprint);
+  const changedContributorInput = baseInput();
+  changedContributorInput.contributors[0].commitCount = 5;
+  const changedReport = buildEvidenceReport(
+    changedContributorInput,
+    new Date("2026-09-29T00:00:00.000Z")
+  );
+  assert.notEqual(first.fingerprint, changedReport.fingerprint);
   assert.notEqual(first.generatedAt, second.generatedAt);
   assert.ok(
     first.sections.some(
@@ -264,6 +285,14 @@ test("builds an evidence report with stable fingerprint independent of generatio
       (section) =>
         section.id === "deployment-evidence" &&
         section.claims[0]?.evidence[0]?.source === "deployment_evidence"
+    )
+  );
+  assert.ok(
+    first.sections.some(
+      (section) =>
+        section.id === "contributor-evolution" &&
+        section.claims[0]?.statement.includes("Ada Example") &&
+        section.claims[0]?.evidence[0]?.source === "contributor_activity"
     )
   );
   const historicalRuntime = first.sections.find(
