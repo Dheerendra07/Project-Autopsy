@@ -127,6 +127,83 @@ export async function insertDeploymentEvidenceBatch(
   }
 }
 
+export interface DeploymentEvidenceSummary {
+  eventCount: number;
+  firstOccurredAt: string | null;
+  lastOccurredAt: string | null;
+  states: string[];
+  environments: string[];
+  revisionShas: string[];
+  artifactDigests: string[];
+  buildIds: string[];
+  releaseIds: string[];
+}
+
+export async function summarizeDeploymentEvidence(
+  repositoryId: string,
+  deploymentId: string
+): Promise<DeploymentEvidenceSummary> {
+  const result = await db.query<{
+    event_count: string;
+    first_occurred_at: string | null;
+    last_occurred_at: string | null;
+    states: string[];
+    environments: string[];
+    revision_shas: string[];
+    artifact_digests: string[];
+    build_ids: string[];
+    release_ids: string[];
+  }>(
+    `SELECT
+       COUNT(*)::bigint AS event_count,
+       MIN(occurred_at) AS first_occurred_at,
+       MAX(occurred_at) AS last_occurred_at,
+       COALESCE(ARRAY_AGG(DISTINCT state ORDER BY state), ARRAY[]::text[]) AS states,
+       COALESCE(
+         ARRAY_AGG(DISTINCT environment ORDER BY environment),
+         ARRAY[]::text[]
+       ) AS environments,
+       COALESCE(
+         ARRAY_AGG(DISTINCT revision_sha ORDER BY revision_sha)
+           FILTER (WHERE revision_sha IS NOT NULL),
+         ARRAY[]::text[]
+       ) AS revision_shas,
+       COALESCE(
+         ARRAY_AGG(DISTINCT artifact_digest ORDER BY artifact_digest)
+           FILTER (WHERE artifact_digest IS NOT NULL),
+         ARRAY[]::text[]
+       ) AS artifact_digests,
+       COALESCE(
+         ARRAY_AGG(DISTINCT build_id ORDER BY build_id)
+           FILTER (WHERE build_id IS NOT NULL),
+         ARRAY[]::text[]
+       ) AS build_ids,
+       COALESCE(
+         ARRAY_AGG(DISTINCT release_id ORDER BY release_id)
+           FILTER (WHERE release_id IS NOT NULL),
+         ARRAY[]::text[]
+       ) AS release_ids
+     FROM deployment_evidence_events
+     WHERE repository_id = $1
+       AND deployment_id = $2`,
+    [repositoryId, deploymentId]
+  );
+
+  const row = result.rows[0];
+
+  return {
+    eventCount: Number(row?.event_count ?? "0"),
+    firstOccurredAt: row?.first_occurred_at ?? null,
+    lastOccurredAt: row?.last_occurred_at ?? null,
+    states: row?.states ?? [],
+    environments: row?.environments ?? [],
+    revisionShas: row?.revision_shas ?? [],
+    artifactDigests: row?.artifact_digests ?? [],
+    buildIds: row?.build_ids ?? [],
+    releaseIds: row?.release_ids ?? []
+  };
+}
+
 export async function listDeploymentEvidence(
   repositoryId: string,
   limit: number
