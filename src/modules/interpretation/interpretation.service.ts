@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import type {
   EvidenceClaim,
   EvidenceRef,
@@ -22,6 +20,8 @@ import {
   INTERPRETATION_OUTPUT_JSON_SCHEMA,
   interpretationOutputSchema
 } from "./interpretation.schema.js";
+
+export { INTERPRETATION_OUTPUT_JSON_SCHEMA } from "./interpretation.schema.js";
 
 export class AiInterpretationNotConfiguredError extends Error {
   constructor(message = "AI interpretation is not configured.") {
