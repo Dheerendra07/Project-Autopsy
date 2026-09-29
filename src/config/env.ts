@@ -7,6 +7,10 @@ export const envSchema = z
       .enum(["development", "test", "production"])
       .default("development"),
 
+    AUTOPSY_SERVICE_ROLE: z
+      .enum(["web", "worker"])
+      .default("web"),
+
     PORT: z.coerce
       .number()
       .int()
@@ -107,6 +111,7 @@ export const envSchema = z
   .superRefine((value, ctx) => {
     if (
       value.NODE_ENV === "production" &&
+      value.AUTOPSY_SERVICE_ROLE === "web" &&
       !value.RUNTIME_TELEMETRY_INGEST_KEY
     ) {
       ctx.addIssue({
@@ -119,6 +124,7 @@ export const envSchema = z
 
     if (
       value.NODE_ENV === "production" &&
+      value.AUTOPSY_SERVICE_ROLE === "web" &&
       !value.DEPLOYMENT_EVIDENCE_INGEST_KEY
     ) {
       ctx.addIssue({
@@ -131,6 +137,7 @@ export const envSchema = z
 
     if (
       value.NODE_ENV === "production" &&
+      value.AUTOPSY_SERVICE_ROLE === "web" &&
       !value.AUTOPSY_API_ACCESS_KEY
     ) {
       ctx.addIssue({
@@ -143,6 +150,7 @@ export const envSchema = z
 
     if (
       value.NODE_ENV === "production" &&
+      value.AUTOPSY_SERVICE_ROLE === "web" &&
       value.AI_API_KEY &&
       !value.AI_INTERPRETATION_ACCESS_KEY
     ) {
