@@ -57,6 +57,47 @@ test("hash is deterministic across object-key ordering", () => {
   );
 });
 
+test("supports optional deployment identity without weakening revision validation", () => {
+  assert.doesNotThrow(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          deploymentId: "deployment-123"
+        })
+      ]
+    })
+  );
+
+  assert.throws(() =>
+    runtimeTelemetryBatchSchema.parse({
+      events: [
+        validEvent({
+          deploymentId: ""
+        })
+      ]
+    })
+  );
+});
+
+test("deployment identity participates in new telemetry payload hashes", () => {
+  const base = runtimeTelemetryBatchSchema.parse({
+    events: [validEvent()]
+  }).events[0];
+
+  const linked = runtimeTelemetryBatchSchema.parse({
+    events: [
+      validEvent({
+        deploymentId: "deployment-123"
+      })
+    ]
+  }).events[0];
+
+  assert.notEqual(
+    hashRuntimeTelemetryEvent(base),
+    hashRuntimeTelemetryEvent(linked)
+  );
+});
+
 test("requires full Git revision identity for telemetry", () => {
   assert.throws(() =>
     runtimeTelemetryBatchSchema.parse({
@@ -263,6 +304,22 @@ test("negative or non-finite duration is rejected", () => {
     runtimeTelemetryBatchSchema.parse({
       events: [validEvent({ durationMs: Number.NaN })]
     })
+  );
+});
+
+test("invalid JSON telemetry attributes are reported as validation errors", () => {
+  assert.throws(
+    () =>
+      runtimeTelemetryBatchSchema.parse({
+        events: [
+          validEvent({
+            attributes: {
+              value: BigInt(1)
+            }
+          })
+        ]
+      }),
+    (error) => error instanceof z.ZodError
   );
 });
 
