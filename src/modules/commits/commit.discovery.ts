@@ -1,4 +1,5 @@
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 export interface DiscoveredCommitFile {
   path: string;
@@ -32,7 +33,7 @@ export async function discoverCommits(
     toInclusive?: string;
   }
 ): Promise<DiscoveredCommit[]> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
 
   const rangeArguments =
     range?.fromExclusive && range.toInclusive
