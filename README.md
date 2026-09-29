@@ -25,6 +25,7 @@ src/
 │   ├── complexity/         # AST-derived complexity evolution
 │   ├── reports/
 │   └── interview/
+│   ├── interpretation/  # grounded AI interpretation
 ├── workers/                # background analysis workers
 ├── routes/                 # API routing
 ├── app.ts
