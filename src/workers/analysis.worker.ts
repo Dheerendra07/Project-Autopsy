@@ -611,7 +611,7 @@ analysisWorker.on("failed", (job, error) => {
 
 let shuttingDown = false;
 
-export export async function closeAnalysisWorker(): Promise<void> {
+export async function closeAnalysisWorker(): Promise<void> {
   await analysisWorker.close();
 }
 
@@ -633,7 +633,7 @@ export async function shutdownWorker(signal: string): Promise<void> {
   forceExitTimer.unref();
 
   try {
-    await analysisWorker.close();
+    await closeAnalysisWorker();
     await redis.quit();
     clearTimeout(forceExitTimer);
     process.exit(0);
