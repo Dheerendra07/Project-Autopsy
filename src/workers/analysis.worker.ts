@@ -76,7 +76,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       const { repositoryId, analysisRunId } = job.data;
 
       deadline.assertNotExpired();
-    const jobKind = job.data.kind ?? "analyze";
+      const jobKind = job.data.kind ?? "analyze";
 
     try {
       const initialAnalysis = await getAnalysisRunById(analysisRunId);
@@ -129,7 +129,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       if (recovery.action === "resume_refresh_check") {
         deadline.assertNotExpired();
 
-      await updateAnalysisRun(analysisRunId, "completed");
+        await updateAnalysisRun(analysisRunId, "completed");
 
         return {
           status: "up-to-date",
@@ -379,9 +379,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         repository.storage_path
       );
 
-      await replaceFileChangeMetrics(repositoryId, fileChurn);
-
       deadline.assertNotExpired();
+
+      await replaceFileChangeMetrics(repositoryId, fileChurn);
 
       deadline.assertNotExpired();
 
@@ -396,6 +396,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
                 : null
           }
         );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendDependencyEvolution(
@@ -425,6 +427,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           }
         );
 
+      deadline.assertNotExpired();
+
       if (analysis.analysis_mode === "incremental") {
         await appendArchitectureEvolution(
           repositoryId,
@@ -447,6 +451,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           commits
         );
 
+      deadline.assertNotExpired();
+
       if (analysis.analysis_mode === "incremental") {
         await appendDatabaseMigrationEvolution(
           repositoryId,
@@ -465,6 +471,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         repository.storage_path,
         commits
       );
+
+      deadline.assertNotExpired();
 
       if (analysis.analysis_mode === "incremental") {
         await appendTestEvolution(repositoryId, testEvolution);
@@ -504,6 +512,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
             : null
         );
 
+      deadline.assertNotExpired();
+
       if (analysis.analysis_mode === "incremental") {
         await appendCodeComplexityEvolution(
           repositoryId,
@@ -521,6 +531,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       const couplingPairs = await rebuildFileChangeCoupling(
         repositoryId
       );
+
+      deadline.assertNotExpired();
 
       await updateAnalysisRun(analysisRunId, "completed");
 
