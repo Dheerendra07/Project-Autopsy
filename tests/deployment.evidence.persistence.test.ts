@@ -92,7 +92,19 @@ test(
               revisionSha,
               metadata: {}
             },
-            { ...conflicting[0] }
+            {
+              eventId: "deploy-001",
+              occurredAt: now.toISOString(),
+              provider: "github-actions",
+              deploymentId: "deployment-123",
+              environment: "production",
+              state: "failed",
+              revisionSha,
+              artifactDigest: "sha256:" + "a".repeat(64),
+              buildId: "run-123",
+              releaseId: "release-123",
+              metadata: {}
+            }
           ]
         },
         now
