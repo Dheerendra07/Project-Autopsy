@@ -163,6 +163,29 @@ Incremental runs persist the new commit range and seed dependency, architecture,
 Each analysis run records its mode, base head, target head, and analyzer version. An active queued/running analysis is restricted to one per repository by a PostgreSQL partial unique index.
 
 
+## Evidence-backed reports
+
+Generate a bounded evidence-backed engineering report:
+
+GET /api/repositories/:repositoryId/report?limit=10
+
+A report is generated only from a completed analysis run. Each claim carries evidence references, and report fingerprints are deterministic for the same persisted evidence and report inputs.
+
+The report includes historical runtime evidence when persisted runtime telemetry is available. Historical runtime events are aligned to persisted commit revisions and joined to bounded changed-file source context.
+
+Runtime evidence remains observational. Changed files are evidence for the commit as a whole; runtime measurements are not attributed to individual files, and historical overlap does not establish deployment order, causality, or regression.
+
+## Evidence-backed interview stories
+
+Generate bounded interview story scaffolds from the evidence-backed report:
+
+GET /api/repositories/:repositoryId/interview-stories?limit=6
+
+Stories are evidence anchors for interview preparation rather than claims of personal ownership. Ownership, intent, business impact, and actual engineering outcomes must be verified before they are stated as facts.
+
+The runtime-observability story can combine historical runtime/source-change evidence with current runtime observations when both sections contain evidence. When historical runtime evidence is unavailable, the story falls back to the runtime-observations section without fabricating historical context.
+
+
 ## Repeatedly modified files
 
 Repeated-change API: GET /api/repositories/:repositoryId/repeatedly-modified-files?minTouches=3&limit=20
