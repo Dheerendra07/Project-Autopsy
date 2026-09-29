@@ -181,6 +181,16 @@ List recent deployment evidence:
 GET /api/repositories/:repositoryId/deployments?limit=50
 ```
 
+List recent deployment evidence:
+
+```http
+GET /api/repositories/:repositoryId/deployments?limit=50
+```
+
+`runtime telemetry` may optionally include the same external `deploymentId`. This creates an exact runtime-to-deployment identifier link when the deployment system and application instrumentation agree on the identifier. Existing telemetry without `deploymentId` remains valid and unchanged.
+
+Telemetry APIs accept `deploymentId` as a filter, including runtime summaries and correlation endpoints. The field is observational identity only; Autopsy does not infer deployment membership from timestamps.
+
 In production, `DEPLOYMENT_EVIDENCE_INGEST_KEY` must be configured. Credential-like fields inside deployment metadata are rejected.
 
 ## Re-analysis

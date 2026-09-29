@@ -16,9 +16,21 @@ const attributesSchema = z
   .record(z.string(), z.unknown())
   .default({})
   .superRefine((value, ctx) => {
-    const serialized = JSON.stringify(value);
+    let serialized: string;
 
-    if (serialized === undefined) {
+    try {
+      const result = JSON.stringify(value);
+
+      if (result === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "attributes must be JSON serializable."
+        });
+        return;
+      }
+
+      serialized = result;
+    } catch {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "attributes must be JSON serializable."
@@ -45,6 +57,7 @@ export const runtimeTelemetryEventSchema = z
     serviceName: boundedLabel("serviceName", 128),
     operationName: boundedLabel("operationName", 256),
     environment: boundedLabel("environment", 64).optional(),
+    deploymentId: boundedLabel("deploymentId", 256).optional(),
     revisionSha: gitShaSchema.optional(),
     traceId: z
       .string()
@@ -131,6 +144,7 @@ export interface RuntimeTelemetryFilters {
   to?: Date;
   revisionSha?: string;
   environment?: string;
+  deploymentId?: string;
   operationName?: string;
   signalType?: RuntimeTelemetryEventInput["signalType"];
 }
