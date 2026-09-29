@@ -50,6 +50,11 @@ const envSchema = z
       .min(32)
       .optional(),
 
+    DEPLOYMENT_EVIDENCE_INGEST_KEY: z
+      .string()
+      .min(32)
+      .optional(),
+
     AI_API_KEY: z
       .string()
       .min(1)
@@ -77,6 +82,18 @@ const envSchema = z
         path: ["RUNTIME_TELEMETRY_INGEST_KEY"],
         message:
           "RUNTIME_TELEMETRY_INGEST_KEY is required in production."
+      });
+    }
+
+    if (
+      value.NODE_ENV === "production" &&
+      !value.DEPLOYMENT_EVIDENCE_INGEST_KEY
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["DEPLOYMENT_EVIDENCE_INGEST_KEY"],
+        message:
+          "DEPLOYMENT_EVIDENCE_INGEST_KEY is required in production."
       });
     }
 
