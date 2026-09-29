@@ -315,3 +315,27 @@ Ready runtime correlations now include deterministic measurement structure for:
 Derived metrics are normalized to six decimal places to avoid floating-point representation noise. Assessment output is emitted only when correlation status is ready; insufficient-sample and other evidence-gap states remain explicit without interpretation.
 
 The assessment is observational measurement only. Direction labels do not establish regressions, quality impact, or causality.
+
+
+### Runtime historical reconstruction v1
+
+Endpoint:
+
+GET /api/repositories/:repositoryId/runtime/historical-correlation?page=1&limit=25&windowMinutes=60&minSamples=10
+
+The historical runtime reconstruction layer walks persisted commits in deterministic chronological order and independently aligns each commit with the existing parent/target runtime-correlation logic.
+
+It exposes:
+- one runtime correlation result per persisted commit in the requested page
+- deterministic sequence numbers based on chronological commit ordering
+- ready versus explicit evidence-gap counts and per-status counts
+- the same runtime assessment measurements already established by runtime correlation v1
+- optional environment, operationName, and signalType filters applied identically to every commit comparison
+- bounded pagination so large histories are reconstructed incrementally
+- deterministic temporal context showing adjacent commit spacing and whether the selected runtime windows overlap
+
+Evidence semantics:
+- each commit is measured independently; the endpoint does not infer a causal chain between adjacent commits
+- a ready correlation means only that the revision/time/parent/sample evidence requirements were satisfied
+- missing revision, commit time, parent, or sample evidence remains an explicit status
+- the resulting timeline is a historical evidence reconstruction, not a deployment history or proof that a commit produced an observed runtime change
