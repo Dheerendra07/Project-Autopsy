@@ -46,6 +46,7 @@ jobs:
       REPOSITORY_STORAGE_PATH: ./storage/repositories
       MAX_REPOSITORY_SIZE_MB: 500
       MAX_ANALYSIS_TIME_MINUTES: 30
+      AUTOPSY_E2E: 1
 
     steps:
       - name: Checkout
