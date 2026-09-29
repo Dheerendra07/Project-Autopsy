@@ -49,12 +49,27 @@ test("health endpoint stays public", async () => {
   const response = await fetch(`${baseUrl}/health`);
 
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
-    success: true,
-    service: "project-autopsy-api",
-    status: "healthy",
-    timestamp: assert.any
-  });
+
+  const body = await response.json() as {
+    success: boolean;
+    service: string;
+    status: string;
+    timestamp: string;
+  };
+
+  assert.deepEqual(
+    {
+      success: body.success,
+      service: body.service,
+      status: body.status
+    },
+    {
+      success: true,
+      service: "project-autopsy-api",
+      status: "healthy"
+    }
+  );
+  assert.match(body.timestamp, /^\d{4}-\d{2}-\d{2}T.*Z$/);
 });
 
 test("API routes reject requests without application credentials", async () => {
