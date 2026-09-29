@@ -153,13 +153,17 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
                 String(item.totalChurn) +
                 " lines of recorded churn, and " +
                 String(item.pathsTouched) +
-                " distinct changed paths.",
+                " distinct changed paths, first observed at " +
+                (item.firstCommittedAt ?? "an unavailable timestamp") +
+                " and last observed at " +
+                (item.lastCommittedAt ?? "an unavailable timestamp") +
+                ".",
               [
                 evidenceRef(
                   "contributor_activity",
-                  item.authorEmail ??
-                    item.authorName ??
-                    "unknown-author"
+                  (item.authorName ?? "unknown-author") +
+                    "::" +
+                    (item.authorEmail ?? "unknown-email")
                 )
               ],
               "Contributor activity is descriptive Git evidence; it does not establish ownership, effort, intent, seniority, or business impact."
@@ -173,7 +177,12 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
               "Missing contributor metadata is not evidence that no people contributed to the repository."
             )
           ],
-      "Contributor identities use exact persisted Git author name/email tuples; aliases are not automatically merged."
+      "Contributor identities use exact persisted Git author name/email tuples; aliases are not automatically merged. " +
+        "Showing " +
+        String(input.contributors.length) +
+        " contributor records out of " +
+        String(input.contributorCount) +
+        " persisted contributor tuples in this bounded report."
     )
   );
 
