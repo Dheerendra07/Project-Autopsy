@@ -263,6 +263,26 @@ The interview layer composes existing evidence-report sections into bounded stor
 Every story separates evidence from personal ownership, intent, business/runtime outcome, and other details that must be verified before being stated in an interview. The layer does not invent first-person contributions or causal outcomes.
 
 
+## AI evidence interpretation v1
+
+Endpoint:
+
+GET /api/repositories/:repositoryId/interpretation?limit=10
+
+The interpretation layer is an optional provider-backed interpretation step over the existing evidence report. It builds deterministic grounding from report claims, limits claims per section and total grounding size, and excludes repository source URLs from the provider payload.
+
+Provider output is constrained to a strict structured schema and then validated server-side. Every theme and investigation question must reference evidence keys that were supplied in the grounding payload. Unknown evidence keys are rejected.
+
+The interpretation contract permits:
+- an executive summary grounded in supplied claims
+- up to six evidence-linked themes
+- up to six evidence-linked investigation questions
+- explicit uncertainties
+
+The contract forbids the model from becoming a source of truth for ownership, intent, business impact, deployment timing, incidents, root cause, regressions, or production outcomes. Missing evidence remains a verification task.
+
+The default provider configuration uses the OpenAI Responses API structured-output path with `AI_MODEL=gpt-5.6-luna`. The provider key is optional at startup; requests return an explicit not-configured response when `AI_API_KEY` is absent.
+
 ## End-to-end autopsy completion checkpoint — 2026-09-29
 
 The roadmap that was locked for this continuation is complete on main.
