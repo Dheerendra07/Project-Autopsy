@@ -12,7 +12,7 @@ export const envSchema = z
       .int()
       .min(1)
       .max(65_535)
-      .default(5000),
+      .default(5100),
 
     DATABASE_URL: z
       .string()
