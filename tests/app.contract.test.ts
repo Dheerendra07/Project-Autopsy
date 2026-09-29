@@ -33,6 +33,8 @@ before(async () => {
 });
 
 after(async () => {
+  server.closeAllConnections();
+
   await new Promise<void>((resolve, reject) => {
     server.close((error) => {
       if (error) {
@@ -43,6 +45,16 @@ after(async () => {
       resolve();
     });
   });
+
+  const [{ db }, { redis }] = await Promise.all([
+    import("../src/config/database.js"),
+    import("../src/config/redis.js")
+  ]);
+
+  await Promise.allSettled([
+    db.end(),
+    redis.quit()
+  ]);
 });
 
 test("health endpoint stays public", async () => {
