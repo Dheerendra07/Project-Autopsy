@@ -1,3 +1,41 @@
+test("rejects an invalid configured access key in production", async () => {
+  const { isAiInterpretationAuthorized } =
+    await import("../src/modules/interpretation/interpretation.auth.js");
+
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+
+  try {
+    assert.equal(
+      isAiInterpretationAuthorized(
+        undefined,
+        "wrong-key",
+        "correct-access-key"
+      ),
+      false
+    );
+    assert.equal(
+      isAiInterpretationAuthorized(
+        undefined,
+        "correct-access-key",
+        "correct-access-key"
+      ),
+      true
+    );
+    assert.equal(
+      isAiInterpretationAuthorized(
+        "Bearer correct-access-key",
+        undefined,
+        "correct-access-key"
+      ),
+      true
+    );
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
+});
+
 import assert from "node:assert/strict";
 import test from "node:test";
 
