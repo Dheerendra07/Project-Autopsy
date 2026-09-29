@@ -71,7 +71,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked functional main baseline: `06ac7d59b40f135786e2f8e99411f2a4cc215b6c`.
+Current verified main baseline: d8421a22219af4730a974000a76541630d80c721.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -80,12 +80,40 @@ The current main baseline includes:
 - state-aware import/refresh/analyze retry recovery
 - evidence-backed repository reports
 - evidence-backed interview story scaffolds
-- runtime correlation evidence v1
-- deterministic Git change context attached to runtime correlation
+- runtime↔Git revision correlation and deployment-aware filtering
 - deterministic runtime change assessment
 - historical runtime reconstruction with bounded pagination and temporal overlap context
+- deployment evidence ingestion with idempotency/conflict protection and credential-like metadata rejection
+- exact deployment↔runtime identity reconciliation
+- deployment provenance completeness/partial/conflict assessment
+- production configuration validation for runtime/deployment/API/AI access boundaries
+- Render production Blueprint for web API, BullMQ worker, Render Key Value, and Render Postgres
+- explicit 0.0.0.0 API binding for hosted traffic
+- worker repository-storage rehydration after restart/redeploy
+- local Autopsy development default isolated to port 5100; CI continues to use its own isolated test port 5000
 
-Preserve all existing API routes, evidence models, migrations, deterministic analyzer behavior, retry semantics, and shutdown behavior when continuing. Start any new roadmap item from this baseline and add it to this document only after implementation and verification.
+Recent verified merge sequence for this continuation:
+- PR #42 — AI provider retry hardening
+- PR #43 — deployment evidence foundation
+- PR #44 — runtime deployment identity link
+- PR #46 — deployment-aware runtime correlation
+- PR #51 — production deployment-ingestion configuration validation
+- PR #52 — deployment provenance reconciliation
+- PR #53 — centralized production configuration validation
+- PR #54 — worker repository-storage rehydration
+- PR #55 — Render production deployment preparation
+- PR #56 — production API access gate
+
+Final integrated verification on main:
+- GitHub Actions typecheck: passed
+- build: passed
+- PostgreSQL migrations: passed
+- full test suite: passed
+- migration idempotency: passed
+- server startup/health smoke: passed
+- worker startup/shutdown smoke: passed
+
+Preserve all existing API routes, evidence models, migrations, deterministic analyzer behavior, retry semantics, security boundaries, and shutdown behavior when continuing. New roadmap work must start from this verified baseline rather than reworking completed layers.
 
 ## Evidence semantics
 
