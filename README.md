@@ -143,6 +143,46 @@ The analyzer stores complexity as file-change events rather than pretending ever
 TypeScript is a runtime dependency because the background analysis worker performs AST parsing. Production installs must include regular dependencies when starting the worker; do not use a production install mode that omits runtime dependencies.
 
 
+## Deployment evidence
+
+Optional deployment-system evidence can be ingested without deriving deployment events from Git timestamps:
+
+```http
+POST /api/repositories/:repositoryId/deployments
+Content-Type: application/json
+x-autopsy-deployment-key: <configured key>
+
+{
+  "events": [
+    {
+      "eventId": "deploy-123-succeeded",
+      "occurredAt": "2026-09-29T08:15:00.000Z",
+      "provider": "github-actions",
+      "deploymentId": "deployment-123",
+      "environment": "production",
+      "state": "succeeded",
+      "revisionSha": "<full commit sha>",
+      "artifactDigest": "sha256:<64 hex characters>",
+      "buildId": "run-123",
+      "releaseId": "release-123",
+      "metadata": {
+        "workflow": "deploy.yml"
+      }
+    }
+  ]
+}
+```
+
+The ingestion contract is idempotent by repository plus event ID. A repeated identical event is accepted as a duplicate; the same event ID with a different payload is rejected. Deployment records are stored as observed external evidence and do not by themselves prove what currently serves traffic or establish runtime causality.
+
+List recent deployment evidence:
+
+```http
+GET /api/repositories/:repositoryId/deployments?limit=50
+```
+
+In production, `DEPLOYMENT_EVIDENCE_INGEST_KEY` must be configured. Credential-like fields inside deployment metadata are rejected.
+
 ## Re-analysis
 
 Refresh the tracked branch and queue a new analysis:
