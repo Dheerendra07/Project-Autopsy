@@ -187,6 +187,10 @@ List recent deployment evidence:
 GET /api/repositories/:repositoryId/deployments?limit=50
 ```
 
+GET /api/repositories/:repositoryId/runtime/deployment-correlation?deploymentId=<deployment-id>&recentEventLimit=25
+
+This endpoint reconciles exact deployment identity against runtime telemetry. It reports whether deployment evidence or runtime evidence is missing, whether observed revision/environment identities are consistent, partial, or conflicting, and preserves the distinction between observed evidence and causal inference.
+
 `runtime telemetry` may optionally include the same external `deploymentId`. This creates an exact runtime-to-deployment identifier link when the deployment system and application instrumentation agree on the identifier. Existing telemetry without `deploymentId` remains valid and unchanged.
 
 Telemetry APIs accept `deploymentId` as a filter, including runtime summaries and correlation endpoints. The field is observational identity only; Autopsy does not infer deployment membership from timestamps.
