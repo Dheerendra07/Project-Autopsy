@@ -72,6 +72,15 @@ Active hardening areas:
 
 Every new change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, and explicit evidence-gap behavior.
 
+## Production hardening continuation — 2026-09-30
+
+Verified hardening merged after the end-to-end acceptance checkpoint:
+- Production CORS is now restricted to explicitly configured origins while development/test behavior remains compatible.
+- API responses expose `X-Request-Id`; valid UUID request IDs can be propagated, invalid IDs are replaced, and Morgan/error logs carry the same correlation ID.
+- Analysis Git operations across all seven discovery modules use a centralized timeout derived from `MAX_ANALYSIS_TIME_MINUTES`.
+
+`MAX_ANALYSIS_TIME_MINUTES` still represents a bounded-operation/cooperative analysis budget rather than an asynchronous process-kill deadline; a whole-worker deadline remains a separate hardening item.
+
 ## End-to-end acceptance v1
 
 The CI quality gate now includes a dedicated real-pipeline acceptance flow:
@@ -99,7 +108,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 7eeaad5c2bf4333e760a535f2108b8d1a464023e.
+Current verified main baseline: 9ae678a9f47dc687c54847c75730370099488b94.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -159,6 +168,10 @@ Recent verified merge sequence for this continuation:
 - PR #77 — duplicate analysis-status route cleanup and checkpoint sync
 - PR #78 — finite resource-limit configuration hardening
 - PR #79 — end-to-end import -> analysis -> report acceptance and persistence-boundary hardening
+- PR #80 — end-to-end acceptance checkpoint documentation
+- PR #81 — production CORS allowlist hardening
+- PR #82 — request correlation IDs
+- PR #83 — bounded Git discovery operations by analysis timeout
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
