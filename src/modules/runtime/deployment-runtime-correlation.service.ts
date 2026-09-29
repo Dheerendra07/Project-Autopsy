@@ -1,8 +1,9 @@
-import type {
-  DeploymentEvidenceSummary,
-  DeploymentEvidenceRow
-} from "./deployment.persistence.js";
-import { listDeploymentEvidence, summarizeDeploymentEvidence } from "./deployment.persistence.js";
+import {
+  listDeploymentEvidenceForDeployment,
+  summarizeDeploymentEvidence,
+  type DeploymentEvidenceSummary,
+  type DeploymentEvidenceRow
+} from "../deployments/deployment.persistence.js";
 import { summarizeRuntimeTelemetry } from "../runtime/runtime.persistence.js";
 import type { RuntimeTelemetryFilters } from "../runtime/runtime.types.js";
 
@@ -154,7 +155,11 @@ export async function generateDeploymentRuntimeCorrelation(
   const [summary, recentEvents, revisionSummary, environmentSummary] =
     await Promise.all([
       summarizeDeploymentEvidence(repositoryId, deploymentId),
-      listDeploymentEvidence(repositoryId, recentEventLimit),
+      listDeploymentEvidenceForDeployment(
+        repositoryId,
+        deploymentId,
+        recentEventLimit
+      ),
       summarizeRuntimeTelemetry(repositoryId, filters, "revision", 100),
       summarizeRuntimeTelemetry(repositoryId, filters, "environment", 100)
     ]);
