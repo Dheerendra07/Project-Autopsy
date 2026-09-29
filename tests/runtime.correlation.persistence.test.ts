@@ -71,12 +71,27 @@ test(
         {
           events: [
             {
+              eventId: "correlation-target-other-deployment",
+              observedAt: new Date(commitAt.getTime() + 45_000).toISOString(),
+              signalType: "http",
+              serviceName: "api",
+              operationName: "GET /items",
+              environment: "test",
+              deploymentId: "deployment-other",
+              revisionSha: targetSha,
+              durationMs: 900,
+              status: "ok",
+              httpStatusCode: 200,
+              attributes: {}
+            },
+            {
               eventId: "correlation-baseline-1",
               observedAt: new Date(commitAt.getTime() - 30_000).toISOString(),
               signalType: "http",
               serviceName: "api",
               operationName: "GET /items",
               environment: "test",
+              deploymentId: "deployment-123",
               revisionSha: parentSha,
               durationMs: 100,
               status: "ok",
@@ -90,6 +105,7 @@ test(
               serviceName: "api",
               operationName: "GET /items",
               environment: "test",
+              deploymentId: "deployment-123",
               revisionSha: targetSha,
               durationMs: 140,
               status: "ok",
@@ -113,6 +129,34 @@ test(
           operationName: "GET /items",
           signalType: "http"
         }
+      );
+
+      const deploymentScopedEvidence =
+        await generateRuntimeCorrelationEvidence(
+          repositoryId,
+          targetSha,
+          5,
+          1,
+          {
+            deploymentId: "deployment-123",
+            environment: "test",
+            operationName: "GET /items",
+            signalType: "http"
+          }
+        );
+
+      assert.equal(deploymentScopedEvidence.status, "ready");
+      assert.equal(
+        deploymentScopedEvidence.baseline?.aggregate.sampleCount,
+        1
+      );
+      assert.equal(
+        deploymentScopedEvidence.target?.aggregate.sampleCount,
+        1
+      );
+      assert.equal(
+        deploymentScopedEvidence.target?.aggregate.avgDurationMs,
+        140
       );
 
       assert.equal(evidence.status, "ready");
