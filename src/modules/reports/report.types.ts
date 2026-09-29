@@ -178,6 +178,18 @@ export interface ReportBuildInput {
     assertionCount: number;
     assertionDelta: number;
   };
+  deploymentEvidence?: Array<{
+    eventId: string;
+    occurredAt: string;
+    provider: string;
+    deploymentId: string;
+    environment: string;
+    state: "started" | "succeeded" | "failed" | "cancelled" | "unknown";
+    revisionSha: string | null;
+    artifactDigest: string | null;
+    buildId: string | null;
+    releaseId: string | null;
+  }>;
   historicalRuntime?: {
     events: Array<{
       commit: { sha: string };
