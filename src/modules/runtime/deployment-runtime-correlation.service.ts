@@ -63,8 +63,16 @@ function compareIdentitySets(
     return "partial";
   }
 
+  const allRuntimeValuesKnown = runtime.every((value) =>
+    deployment.includes(value)
+  );
+
+  if (allRuntimeValuesKnown) {
+    return "consistent";
+  }
+
   return runtime.some((value) => deployment.includes(value))
-    ? "consistent"
+    ? "partial"
     : "conflicting";
 }
 
