@@ -141,3 +141,38 @@ test("writes cache entries with an expiration", async () => {
     ttl: 900
   });
 });
+
+
+test("bounds a hung Redis cache read", async () => {
+  const client: AiInterpretationRedisClient = {
+    get() {
+      return new Promise<string | null>(() => undefined);
+    },
+    async set() {
+      return "OK";
+    }
+  };
+
+  const cache = new RedisAiInterpretationCache(client, 60, 20);
+
+  const startedAt = Date.now();
+  assert.equal(await cache.get("cache-key"), null);
+  assert.ok(Date.now() - startedAt < 1_000);
+});
+
+test("bounds a hung Redis cache write", async () => {
+  const client: AiInterpretationRedisClient = {
+    async get() {
+      return null;
+    },
+    set() {
+      return new Promise<unknown>(() => undefined);
+    }
+  };
+
+  const cache = new RedisAiInterpretationCache(client, 60, 20);
+
+  const startedAt = Date.now();
+  await assert.doesNotReject(() => cache.set("cache-key", value));
+  assert.ok(Date.now() - startedAt < 1_000);
+});

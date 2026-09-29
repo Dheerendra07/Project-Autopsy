@@ -69,6 +69,10 @@ import { prepareRepositoryStorageForAnalysis } from "../modules/analysis/storage
 import { classifyAnalysisJobRecovery } from "../modules/analysis/job-recovery.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
+export const ANALYSIS_WORKER_LOCK_DURATION_MS = 120_000;
+export const ANALYSIS_WORKER_STALLED_INTERVAL_MS = 30_000;
+export const ANALYSIS_WORKER_MAX_STALLED_COUNT = 1;
+
 export const analysisWorker = new Worker<AnalysisJobData>(
   ANALYSIS_QUEUE_NAME,
   async (job) =>
@@ -591,7 +595,10 @@ export const analysisWorker = new Worker<AnalysisJobData>(
     }),
   {
     connection: redis,
-    concurrency: 1
+    concurrency: 1,
+    lockDuration: ANALYSIS_WORKER_LOCK_DURATION_MS,
+    stalledInterval: ANALYSIS_WORKER_STALLED_INTERVAL_MS,
+    maxStalledCount: ANALYSIS_WORKER_MAX_STALLED_COUNT
   }
 );
 
