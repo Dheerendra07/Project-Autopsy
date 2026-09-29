@@ -7,6 +7,8 @@ import { router } from "./routes/index.js";
 import { notFoundMiddleware } from "./middleware/notFound.middleware.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { isApiAccessAuthorized } from "./middleware/apiAccess.middleware.js";
+import { checkDatabaseConnection } from "./config/database.js";
+import { checkRedisConnection } from "./config/redis.js";
 
 export const app = express();
 
