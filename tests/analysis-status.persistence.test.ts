@@ -10,7 +10,8 @@ test(
     const {
       createAnalysisRunForRepository,
       getAnalysisRunById,
-      updateAnalysisRun
+      updateAnalysisRun,
+      replaceFileChangeMetrics
     } = await import("../src/modules/repositories/repository.persistence.js");
 
     const repositoryId = randomUUID();
@@ -31,6 +32,34 @@ test(
       const stored = await getAnalysisRunById(runId);
 
       assert.ok(stored);
+
+      await replaceFileChangeMetrics(repositoryId, [
+        {
+          path: "assets/logo.png",
+          additions: 10,
+          deletions: 2,
+          binaryChanges: 1
+        },
+        {
+          path: "README.md",
+          additions: 20,
+          deletions: 5,
+          binaryChanges: 0
+        }
+      ]);
+
+      const fileMetrics = await db.query<{
+        path: string;
+        binary_changes: number;
+      }>(
+        "SELECT path, binary_changes FROM file_change_metrics WHERE repository_id = $1 ORDER BY path ASC",
+        [repositoryId]
+      );
+
+      assert.deepEqual(fileMetrics.rows, [
+        { path: "README.md", binary_changes: 0 },
+        { path: "assets/logo.png", binary_changes: 1 }
+      ]);
       assert.deepEqual(
         {
           id: stored.id,
