@@ -1,6 +1,5 @@
 import type {
-  HistoricalRuntimeReconstruction,
-  HistoricalRuntimeReconstructionEvent
+  HistoricalRuntimeReconstruction
 } from "./historical-correlation.service.js";
 
 export interface HistoricalRuntimeEvidenceSummary {
