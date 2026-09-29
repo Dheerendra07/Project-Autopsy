@@ -218,15 +218,14 @@ export async function generateHistoricalRuntimeReconstruction(
       : Promise.resolve(null)
   ]);
 
-  const boundaries = {
+  const boundaries: {
+    previousCommit: StoredCommit | null;
+    nextCommit: StoredCommit | null;
+  } = {
     previousCommit:
-      previousPage && previousPage.commits.length > 0
-        ? previousPage.commits[previousPage.commits.length - 1]
-        : null,
+      previousPage?.commits.at(-1) ?? null,
     nextCommit:
-      nextPage && nextPage.commits.length > 0
-        ? nextPage.commits[0]
-        : null
+      nextPage?.commits[0] ?? null
   };
 
   const correlations: RuntimeCorrelationEvidence[] = [];
