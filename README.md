@@ -187,7 +187,7 @@ GET /api/repositories/:repositoryId/deployments?limit=50
 
 GET /api/repositories/:repositoryId/runtime/deployment-correlation?deploymentId=<deployment-id>&recentEventLimit=25
 
-GET /api/repositories/:repositoryId/deployments/:deploymentId/provenance
+GET /api/repositories/:repositoryId/deployments/provenance?deploymentId=<deployment-id>
 
 The deployment provenance endpoint reconciles the observed evidence for one exact deployment ID. It reports whether the deployment evidence is complete, partial, or conflicting based on the presence and consistency of environment, revision SHA, artifact digest, build ID, and release ID, and it does not infer missing provenance from timestamps.
 
