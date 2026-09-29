@@ -50,11 +50,13 @@ export const envSchema = z
 
     MAX_REPOSITORY_SIZE_MB: z.coerce
       .number()
+      .refine(Number.isFinite, "MAX_REPOSITORY_SIZE_MB must be finite.")
       .positive()
       .default(500),
 
     MAX_ANALYSIS_TIME_MINUTES: z.coerce
       .number()
+      .refine(Number.isFinite, "MAX_ANALYSIS_TIME_MINUTES must be finite.")
       .positive()
       .default(30),
 
