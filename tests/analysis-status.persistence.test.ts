@@ -9,7 +9,8 @@ test(
     const { db } = await import("../src/config/database.js");
     const {
       createAnalysisRunForRepository,
-      getAnalysisRunById
+      getAnalysisRunById,
+      updateAnalysisRun
     } = await import("../src/modules/repositories/repository.persistence.js");
 
     const repositoryId = randomUUID();
@@ -30,6 +31,38 @@ test(
       const stored = await getAnalysisRunById(runId);
 
       assert.ok(stored);
+
+      await updateAnalysisRun(runId, "running");
+
+      const running = await getAnalysisRunById(runId);
+      assert.ok(running);
+      assert.equal(running.status, "running");
+      assert.ok(running.started_at);
+      assert.equal(running.completed_at, null);
+
+      await updateAnalysisRun(runId, "completed");
+
+      const completedAfterUpdate = await getAnalysisRunById(runId);
+      assert.ok(completedAfterUpdate);
+      assert.equal(completedAfterUpdate.status, "completed");
+      assert.ok(completedAfterUpdate.completed_at);
+
+      const failedRunId = await createAnalysisRunForRepository(repositoryId, {
+        analyzerVersion: "0.2.1",
+        analysisMode: "full",
+        baseHeadSha: null,
+        targetHeadSha: "c".repeat(40)
+      });
+
+      await updateAnalysisRun(failedRunId, "failed", {
+        errorMessage: "e2e persistence failure"
+      });
+
+      const failed = await getAnalysisRunById(failedRunId);
+      assert.ok(failed);
+      assert.equal(failed.status, "failed");
+      assert.equal(failed.error_message, "e2e persistence failure");
+      assert.ok(failed.completed_at);
       assert.deepEqual(
         {
           id: stored.id,
