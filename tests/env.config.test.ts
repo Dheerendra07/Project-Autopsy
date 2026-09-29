@@ -1,0 +1,85 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { parseEnvironment } from "../src/config/env.js";
+
+function baseEnvironment(
+  overrides: Record<string, string | undefined> = {}
+): NodeJS.ProcessEnv {
+  return {
+    NODE_ENV: "test",
+    DATABASE_URL: "postgresql://autopsy:test@localhost:5432/project_autopsy",
+    REDIS_HOST: "localhost",
+    REDIS_PORT: "6379",
+    ...overrides
+  };
+}
+
+test("uses documented defaults for AI provider configuration", () => {
+  const config = parseEnvironment(baseEnvironment());
+
+  assert.equal(config.AI_BASE_URL, "https://api.openai.com/v1");
+  assert.equal(config.AI_MODEL, "gpt-5.6-luna");
+  assert.equal(config.AI_TIMEOUT_MS, 30_000);
+});
+
+test("requires deployment ingestion credentials in production", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          NODE_ENV: "production",
+          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32)
+        })
+      ),
+    /DEPLOYMENT_EVIDENCE_INGEST_KEY/
+  );
+});
+
+test("requires runtime and deployment ingestion credentials in production", () => {
+  const config = parseEnvironment(
+    baseEnvironment({
+      NODE_ENV: "production",
+      RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
+      DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32)
+    })
+  );
+
+  assert.equal(config.NODE_ENV, "production");
+});
+
+test("requires the AI access key when AI is enabled in production", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          NODE_ENV: "production",
+          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
+          DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32),
+          AI_API_KEY: "test-ai-key"
+        })
+      ),
+    /AI_INTERPRETATION_ACCESS_KEY/
+  );
+});
+
+test("validates the documented AI timeout bounds", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          AI_TIMEOUT_MS: "999"
+        })
+      ),
+    /AI_TIMEOUT_MS/
+  );
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          AI_TIMEOUT_MS: "120001"
+        })
+      ),
+    /AI_TIMEOUT_MS/
+  );
+});

@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { z } from "zod";
 
-const envSchema = z
+export const envSchema = z
   .object({
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -60,6 +60,24 @@ const envSchema = z
       .min(1)
       .optional(),
 
+    AI_BASE_URL: z
+      .string()
+      .url()
+      .default("https://api.openai.com/v1"),
+
+    AI_MODEL: z
+      .string()
+      .trim()
+      .min(1)
+      .default("gpt-5.6-luna"),
+
+    AI_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .max(120_000)
+      .default(30_000),
+
     AI_INTERPRETATION_ACCESS_KEY: z
       .string()
       .min(32)
@@ -111,4 +129,10 @@ const envSchema = z
     }
   });
 
-export const env = envSchema.parse(process.env);
+export function parseEnvironment(
+  source: NodeJS.ProcessEnv
+): z.infer<typeof envSchema> {
+  return envSchema.parse(source);
+}
+
+export const env = parseEnvironment(process.env);
