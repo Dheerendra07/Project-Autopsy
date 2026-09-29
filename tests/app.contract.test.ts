@@ -57,6 +57,42 @@ after(async () => {
   ]);
 });
 
+test("readiness endpoint reports dependency readiness", async () => {
+  const response = await fetch(baseUrl + "/ready");
+
+  assert.equal(response.status, 200);
+
+  const body = await response.json() as {
+    success: boolean;
+    service: string;
+    status: string;
+    checks: {
+      database: string;
+      redis: string;
+    };
+    timestamp: string;
+  };
+
+  assert.deepEqual(
+    {
+      success: body.success,
+      service: body.service,
+      status: body.status,
+      checks: body.checks
+    },
+    {
+      success: true,
+      service: "project-autopsy-api",
+      status: "ready",
+      checks: {
+        database: "ready",
+        redis: "ready"
+      }
+    }
+  );
+  assert.match(body.timestamp, /^\\d{4}-\\d{2}-\\d{2}T.*Z$/);
+});
+
 test("health endpoint stays public", async () => {
   const response = await fetch(`${baseUrl}/health`);
 
