@@ -95,13 +95,16 @@ export async function startServer(): Promise<void> {
       console.error("HTTP server error:", error);
 
       if (process.env.AUTOPSY_COMBINED_RUNTIME === "1") {
+        process.kill(process.pid, "SIGTERM");
         return;
       }
 
       void shutdownServer("HTTP server error");
     });
 
-    if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {\n      registerShutdownHandlers();\n    }
+    if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {
+      registerShutdownHandlers();
+    }
   } catch (error) {
     console.error("Failed to start Project Autopsy:", error);
     await closeResources();
@@ -109,4 +112,6 @@ export async function startServer(): Promise<void> {
   }
 }
 
-if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {\n  void startServer();\n}
+if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {
+  void startServer();
+}
