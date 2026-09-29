@@ -1082,47 +1082,6 @@ router.get("/:repositoryId/repeated-bug-areas", async (req, res, next) => {
   }
 });
 
-router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
-  try {
-    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
-    const analysisRunId = z.string().uuid().parse(req.params.analysisRunId);
-    const analysis = await getAnalysisRunById(analysisRunId);
-
-    if (
-      !analysis ||
-      analysis.repository_id !== repositoryId
-    ) {
-      res.status(404).json({
-        success: false,
-        error: {
-          code: "ANALYSIS_RUN_NOT_FOUND",
-          message: "Analysis run not found."
-        }
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      analysis: {
-        id: analysis.id,
-        repository_id: analysis.repository_id,
-        analyzer_version: analysis.analyzer_version,
-        mode: analysis.analysis_mode,
-        base_head_sha: analysis.base_head_sha,
-        target_head_sha: analysis.target_head_sha,
-        status: analysis.status,
-        started_at: analysis.started_at,
-        completed_at: analysis.completed_at,
-        error_message:
-          analysis.status === "failed" ? "Analysis failed." : null
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
 function getSourceType(url: string): "github" | "gitlab" | "bitbucket" {
   const hostname = new URL(url).hostname.toLowerCase();
 

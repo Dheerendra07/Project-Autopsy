@@ -82,7 +82,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 697ff8deb0cb2243f7bfcb482df7b49bc9145b28.
+Current verified main baseline: 2656244c4b5273e131703f19aab582a8980dbd93.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -135,6 +135,10 @@ Recent verified merge sequence for this continuation:
 - PR #70 — analysis job recovery state-machine regression coverage
 - PR #71 — Git revision identity normalization
 - PR #72 — asynchronous analysis status endpoint
+- PR #73 — development-status continuation checkpoint
+- PR #74 — analysis job retry policy
+- PR #75 — persisted analysis-status invariants
+- PR #76 — production secret boundary / service-role split
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
