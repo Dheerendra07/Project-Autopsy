@@ -1,5 +1,6 @@
 import { extname } from "node:path";
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 import ts from "@typescript/typescript6";
 
 import type { DiscoveredCommit } from "../commits/commit.discovery.js";
@@ -351,7 +352,7 @@ export async function discoverCodeComplexityEvolution(
   cache?: CodeComplexityCache,
   baseHeadSha?: string | null
 ): Promise<CodeComplexityEvolutionResult> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
   const previousByPath = new Map<string, CodeComplexityMetrics>();
   const existingPaths = new Set<string>();
   const events: CodeComplexityEvent[] = [];

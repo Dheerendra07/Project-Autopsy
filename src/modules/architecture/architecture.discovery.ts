@@ -1,4 +1,5 @@
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 export interface ArchitectureSnapshot {
   rootPath: "root" | "src";
@@ -23,7 +24,7 @@ export async function discoverArchitectureEvolution(
   snapshots: Array<ArchitectureSnapshot & { sha: string }>;
   events: Array<ArchitectureEvent & { sha: string }>;
 }> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
   const snapshots: Array<ArchitectureSnapshot & { sha: string }> = [];
   const events: Array<ArchitectureEvent & { sha: string }> = [];
 

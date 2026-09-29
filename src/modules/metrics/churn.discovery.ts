@@ -1,4 +1,5 @@
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 export interface FileChurnEvidence {
   path: string;
@@ -13,7 +14,7 @@ const NUMSTAT_LINE =
 export async function discoverFileChurn(
   repositoryPath: string
 ): Promise<FileChurnEvidence[]> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
 
   const output = await git.raw([
     "log",

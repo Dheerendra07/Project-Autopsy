@@ -1,4 +1,5 @@
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 export type DependencyScope = "dependencies" | "devDependencies";
 export type DependencyChangeType = "added" | "removed" | "changed";
@@ -48,7 +49,7 @@ export async function discoverDependencyEvolution(
   snapshots: Array<DependencySnapshot & { sha: string }>;
   changes: Array<DependencyChange & { sha: string }>;
 }> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
   const snapshots: Array<DependencySnapshot & { sha: string }> = [];
   const changes: Array<DependencyChange & { sha: string }> = [];
   let previous: DependencySnapshot | null = null;
