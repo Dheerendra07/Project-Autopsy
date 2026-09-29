@@ -109,6 +109,23 @@ test("builds a deterministic chronological runtime reconstruction", () => {
     ]
   );
 
+  assert.deepEqual(result.events[0]!.temporalContext, {
+    previousCommitSha: null,
+    nextCommitSha: "b".repeat(40),
+    previousCommitGapMinutes: null,
+    nextCommitGapMinutes: 60,
+    runtimeWindowOverlapsPrevious: null,
+    runtimeWindowOverlapsNext: true
+  });
+  assert.deepEqual(result.events[1]!.temporalContext, {
+    previousCommitSha: "a".repeat(40),
+    nextCommitSha: null,
+    previousCommitGapMinutes: 60,
+    nextCommitGapMinutes: null,
+    runtimeWindowOverlapsPrevious: true,
+    runtimeWindowOverlapsNext: null
+  });
+
   assert.equal(result.coverage.commitsInPage, 2);
   assert.equal(result.coverage.readyCorrelations, 1);
   assert.equal(result.coverage.evidenceGaps, 1);
