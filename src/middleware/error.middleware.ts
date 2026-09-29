@@ -11,7 +11,8 @@ export function errorMiddleware(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error(error);
+  const requestId = String(_req.header("x-request-id") ?? "-");
+  console.error(`Request ${requestId} failed:`, error);
 
   if (res.headersSent) {
     return;
