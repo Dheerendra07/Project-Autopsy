@@ -154,3 +154,15 @@ test("rejects non-finite resource limits", () => {
     /MAX_ANALYSIS_TIME_MINUTES/
   );
 });
+
+test("rejects an analysis timeout larger than the supported deadline range", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          MAX_ANALYSIS_TIME_MINUTES: "1441"
+        })
+      ),
+    /MAX_ANALYSIS_TIME_MINUTES/
+  );
+});
