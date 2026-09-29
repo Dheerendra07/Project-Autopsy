@@ -17,6 +17,7 @@ export interface RuntimeTelemetryRow {
   service_name: string;
   operation_name: string;
   environment: string | null;
+  deployment_id: string | null;
   revision_sha: string | null;
   trace_id: string | null;
   span_id: string | null;
@@ -53,6 +54,7 @@ function buildWhereClause(
 
   if (filters.from) add("e.observed_at >= $N", filters.from.toISOString());
   if (filters.to) add("e.observed_at < $N", filters.to.toISOString());
+  if (filters.deploymentId) add("e.deployment_id = $N", filters.deploymentId);
   if (filters.revisionSha) add("e.revision_sha = $N", filters.revisionSha);
   if (filters.environment) add("e.environment = $N", filters.environment);
   if (filters.operationName) add("e.operation_name = $N", filters.operationName);
@@ -75,7 +77,7 @@ export async function insertRuntimeTelemetryBatch(
 
     const values: unknown[] = [];
     const rows = events.map((event, eventIndex) => {
-      const base = eventIndex * 16;
+      const base = eventIndex * 17;
 
       values.push(
         repositoryId,
@@ -85,6 +87,7 @@ export async function insertRuntimeTelemetryBatch(
         event.serviceName,
         event.operationName,
         event.environment ?? null,
+        event.deploymentId ?? null,
         event.revisionSha ?? null,
         event.traceId ?? null,
         event.spanId ?? null,
@@ -97,7 +100,7 @@ export async function insertRuntimeTelemetryBatch(
       );
 
       const placeholders = Array.from(
-        { length: 16 },
+        { length: 17 },
         (_, index) => `$${base + index + 1}`
       ).join(", ");
 
@@ -113,6 +116,7 @@ export async function insertRuntimeTelemetryBatch(
         service_name,
         operation_name,
         environment,
+        deployment_id,
         revision_sha,
         trace_id,
         span_id,
@@ -202,6 +206,7 @@ export async function listRuntimeTelemetryEvents(
        e.service_name,
        e.operation_name,
        e.environment,
+       e.deployment_id,
        e.revision_sha,
        e.trace_id,
        e.span_id,
