@@ -184,6 +184,20 @@ function baseInput() {
         }
       ]
     },
+    deploymentEvidence: [
+      {
+        eventId: "deploy-001",
+        occurredAt: "2026-09-02T01:00:00.000Z",
+        provider: "github-actions",
+        deploymentId: "deployment-123",
+        environment: "production",
+        state: "succeeded",
+        revisionSha: "b".repeat(40),
+        artifactDigest: "sha256:" + "a".repeat(64),
+        buildId: "run-123",
+        releaseId: "release-123"
+      }
+    ],
     runtimeSummary: {
       overall: {
         sampleCount: 10,
@@ -243,6 +257,13 @@ test("builds an evidence report with stable fingerprint independent of generatio
       (section) =>
         section.id === "historical-runtime" &&
         section.claims[0]?.evidence.some((ref) => ref.path === "src/report.ts")
+    )
+  );
+  assert.ok(
+    first.sections.some(
+      (section) =>
+        section.id === "deployment-evidence" &&
+        section.claims[0]?.evidence[0]?.source === "deployment_evidence"
     )
   );
   const historicalRuntime = first.sections.find(
