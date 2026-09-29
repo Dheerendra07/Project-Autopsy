@@ -56,6 +56,7 @@ test("requires the AI access key when AI is enabled in production", () => {
           NODE_ENV: "production",
           RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
           DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32),
+          AUTOPSY_API_ACCESS_KEY: "a".repeat(32),
           AI_API_KEY: "test-ai-key"
         })
       ),
