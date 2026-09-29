@@ -62,13 +62,9 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 The original product layers through evidence-backed reports, interview story scaffolds, and grounded AI interpretation are implemented. Current work is production hardening rather than rebuilding the evidence foundation.
 
 Active hardening areas:
-- asynchronous analysis status and recovery behavior
-- worker-local repository storage recovery on ephemeral infrastructure
-- report snapshot consistency under concurrent re-analysis
-- dependency-backed readiness and bounded dependency checks
-- canonical Git revision identity handling for cross-source correlation
-- end-to-end acceptance coverage for import -> analysis -> report flows
-- final production observability, limits, and failure-path audit
+- final production observability and failure-path audit
+- production-limit verification across repository size, analysis duration, queue retries, request bodies, and AI/runtime ingestion
+- local PostgreSQL/Redis end-to-end verification once Docker is available
 
 Every new change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, and explicit evidence-gap behavior.
 
@@ -78,8 +74,11 @@ Verified hardening merged after the end-to-end acceptance checkpoint:
 - Production CORS is now restricted to explicitly configured origins while development/test behavior remains compatible.
 - API responses expose `X-Request-Id`; valid UUID request IDs can be propagated, invalid IDs are replaced, and Morgan/error logs carry the same correlation ID.
 - Analysis Git operations across all seven discovery modules use a centralized timeout derived from `MAX_ANALYSIS_TIME_MINUTES`.
+- Each BullMQ import/refresh/analyze job now receives one shared cooperative deadline. The remaining budget is propagated through `AsyncLocalStorage`, active Git work receives an `AbortSignal`, and stage boundaries refuse to continue after expiry.
+- Repository clone/refresh/recovery Git operations and recursive repository-size accounting use the same deadline context.
+- `MAX_ANALYSIS_TIME_MINUTES` is bounded to a maximum of 1440 minutes.
 
-`MAX_ANALYSIS_TIME_MINUTES` still represents a bounded-operation/cooperative analysis budget rather than an asynchronous process-kill deadline; a whole-worker deadline remains a separate hardening item.
+The worker deadline is cooperative for non-Git asynchronous work: a deadline cannot forcibly interrupt an arbitrary JavaScript or database operation that does not accept cancellation. Git operations use simple-git's abort support so an expired shared deadline can terminate in-flight Git work.
 
 ## End-to-end acceptance v1
 
@@ -108,7 +107,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 9ae678a9f47dc687c54847c75730370099488b94.
+Current verified main baseline: 07bd0fb4acef3101c079052cb396cb6bb81a8974.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -172,6 +171,8 @@ Recent verified merge sequence for this continuation:
 - PR #81 — production CORS allowlist hardening
 - PR #82 — request correlation IDs
 - PR #83 — bounded Git discovery operations by analysis timeout
+- PR #84 — post-hardening development checkpoint synchronization
+- PR #85 — cooperative analysis worker deadline
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
