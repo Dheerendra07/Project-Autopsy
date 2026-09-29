@@ -9,7 +9,9 @@ test(
     const { db } = await import("../src/config/database.js");
     const {
       createAnalysisRunForRepository,
-      getAnalysisRunById
+      getAnalysisRunById,
+      updateAnalysisRun,
+      replaceFileChangeMetrics
     } = await import("../src/modules/repositories/repository.persistence.js");
 
     const repositoryId = randomUUID();
@@ -30,6 +32,34 @@ test(
       const stored = await getAnalysisRunById(runId);
 
       assert.ok(stored);
+
+      await replaceFileChangeMetrics(repositoryId, [
+        {
+          path: "assets/logo.png",
+          additions: 10,
+          deletions: 2,
+          binaryChanges: 1
+        },
+        {
+          path: "README.md",
+          additions: 20,
+          deletions: 5,
+          binaryChanges: 0
+        }
+      ]);
+
+      const fileMetrics = await db.query<{
+        path: string;
+        binary_changes: number;
+      }>(
+        "SELECT path, binary_changes FROM file_change_metrics WHERE repository_id = $1 ORDER BY path ASC",
+        [repositoryId]
+      );
+
+      assert.deepEqual(fileMetrics.rows, [
+        { path: "assets/logo.png", binary_changes: 1 },
+        { path: "README.md", binary_changes: 0 }
+      ]);
       assert.deepEqual(
         {
           id: stored.id,
@@ -66,10 +96,37 @@ test(
           error.code === "23505"
       );
 
-      await db.query(
-        "UPDATE analysis_runs SET status = 'completed', completed_at = NOW() WHERE id = $1",
-        [runId]
-      );
+      await updateAnalysisRun(runId, "running");
+
+      const running = await getAnalysisRunById(runId);
+      assert.ok(running);
+      assert.equal(running.status, "running");
+      assert.ok(running.started_at);
+      assert.equal(running.completed_at, null);
+
+      await updateAnalysisRun(runId, "completed");
+
+      const completedAfterUpdate = await getAnalysisRunById(runId);
+      assert.ok(completedAfterUpdate);
+      assert.equal(completedAfterUpdate.status, "completed");
+      assert.ok(completedAfterUpdate.completed_at);
+
+      const failedRunId = await createAnalysisRunForRepository(repositoryId, {
+        analyzerVersion: "0.2.1",
+        analysisMode: "full",
+        baseHeadSha: null,
+        targetHeadSha: "c".repeat(40)
+      });
+
+      await updateAnalysisRun(failedRunId, "failed", {
+        errorMessage: "analysis persistence failure"
+      });
+
+      const failed = await getAnalysisRunById(failedRunId);
+      assert.ok(failed);
+      assert.equal(failed.status, "failed");
+      assert.equal(failed.error_message, "analysis persistence failure");
+      assert.ok(failed.completed_at);
 
       const completedRunId = await createAnalysisRunForRepository(repositoryId, {
         analyzerVersion: "0.2.1",
