@@ -1,6 +1,7 @@
 import type { EvidenceRef } from "../reports/report.types.js";
 
 export const INTERPRETATION_VERSION = "1.0" as const;
+export const INTERPRETATION_PROMPT_VERSION = "1.0" as const;
 
 export interface InterpretationGroundingClaim {
   evidenceKey: string;
@@ -38,6 +39,7 @@ export interface InterpretationResult {
   reportFingerprint: string;
   groundingClaimCount: number;
   generatedAt: string;
+  cacheHit: boolean;
   interpretation: AiInterpretation;
 }
 
@@ -46,4 +48,9 @@ export interface AiProviderConfig {
   baseUrl: string;
   model: string;
   timeoutMs: number;
+}
+
+export interface AiInterpretationCache {
+  get(key: string): Promise<InterpretationResult | null>;
+  set(key: string, value: InterpretationResult): Promise<void>;
 }

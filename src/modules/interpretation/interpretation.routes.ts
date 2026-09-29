@@ -8,6 +8,9 @@ import {
   generateAiInterpretation
 } from "./interpretation.service.js";
 import { isAiInterpretationAuthorized } from "./interpretation.auth.js";
+import { RedisAiInterpretationCache } from "./interpretation.cache.js";
+import { redis } from "../../config/redis.js";
+import { env } from "../../config/env.js";
 import {
   EvidenceReportNotReadyError,
   EvidenceReportRepositoryNotFoundError,
@@ -15,6 +18,11 @@ import {
 } from "../reports/report.service.js";
 
 export const interpretationRouter = Router({ mergeParams: true });
+
+const interpretationCache = new RedisAiInterpretationCache(
+  redis,
+  env.AI_INTERPRETATION_CACHE_TTL_SECONDS
+);
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10)
@@ -45,7 +53,12 @@ interpretationRouter.get("/", async (req, res, next) => {
     const query = querySchema.parse(req.query);
 
     const report = await generateEvidenceReport(repositoryId, query.limit);
-    const result = await generateAiInterpretation(report);
+    const result = await generateAiInterpretation(
+      report,
+      undefined,
+      fetch,
+      interpretationCache
+    );
 
     res.json({
       success: true,

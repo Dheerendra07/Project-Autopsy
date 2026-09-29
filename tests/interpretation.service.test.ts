@@ -28,6 +28,130 @@ test("enforces configured access keys with constant-time credential comparison",
   );
 });
 
+test("uses a cached interpretation without calling the provider", async () => {
+  const report = reportFixture();
+  const cachedResult = {
+    interpretationVersion: "1.0" as const,
+    provider: "openai" as const,
+    model: "gpt-5.6-luna",
+    reportFingerprint: report.fingerprint,
+    groundingClaimCount: 2,
+    generatedAt: "2026-09-29T00:00:00.000Z",
+    cacheHit: false,
+    interpretation: validAiOutput
+  };
+
+  let fetchCalls = 0;
+  let requestedKey = "";
+  const cache = {
+    async get(key: string) {
+      requestedKey = key;
+      return cachedResult;
+    },
+    async set() {
+      throw new Error("cache write should not happen on cache hit");
+    }
+  };
+
+  const result = await generateAiInterpretation(
+    report,
+    {
+      apiKey: "test-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-5.6-luna",
+      timeoutMs: 5_000
+    },
+    async () => {
+      fetchCalls += 1;
+      throw new Error("provider should not be called");
+    },
+    cache
+  );
+
+  assert.equal(fetchCalls, 0);
+  assert.match(requestedKey, /^project-autopsy:ai-interpretation:v1:/);
+  assert.equal(result.cacheHit, true);
+});
+
+test("persists a fresh provider result after a cache miss", async () => {
+  const report = reportFixture();
+  let setKey = "";
+  let setValue: unknown = null;
+
+  const cache = {
+    async get() {
+      return null;
+    },
+    async set(key: string, value: unknown) {
+      setKey = key;
+      setValue = value;
+    }
+  };
+
+  const fakeFetch: typeof fetch = async () =>
+    new Response(
+      JSON.stringify({
+        status: "completed",
+        output_text: JSON.stringify(validAiOutput)
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+
+  const result = await generateAiInterpretation(
+    report,
+    {
+      apiKey: "test-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-5.6-luna",
+      timeoutMs: 5_000
+    },
+    fakeFetch,
+    cache
+  );
+
+  assert.equal(result.cacheHit, false);
+  assert.match(setKey, /^project-autopsy:ai-interpretation:v1:/);
+  assert.deepEqual(setValue, result);
+});
+
+test("continues provider flow when cache read or write fails", async () => {
+  let fetchCalls = 0;
+  const cache = {
+    async get() {
+      throw new Error("redis unavailable");
+    },
+    async set() {
+      throw new Error("redis unavailable");
+    }
+  };
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+    return new Response(
+      JSON.stringify({
+        status: "completed",
+        output_text: JSON.stringify(validAiOutput)
+      }),
+      { status: 200 }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-5.6-luna",
+      timeoutMs: 5_000
+    },
+    fakeFetch,
+    cache
+  );
+
+  assert.equal(fetchCalls, 1);
+  assert.equal(result.cacheHit, false);
+});
+
 test("keeps development unprotected when no AI access key is configured", () => {
   assert.equal(
     isAiInterpretationAuthorized(

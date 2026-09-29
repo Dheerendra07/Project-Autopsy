@@ -269,7 +269,7 @@ Endpoint:
 
 GET /api/repositories/:repositoryId/interpretation?limit=10
 
-The interpretation layer is an optional provider-backed interpretation step over the existing evidence report. It builds deterministic grounding from report claims, limits claims per section and total grounding size, and excludes repository source URLs from the provider payload.
+The interpretation layer is an optional provider-backed interpretation step over the existing evidence report. A Redis-backed result cache is used for repeated requests keyed by report fingerprint, prompt version, and model; cache failures are fail-open and never replace persisted evidence. It builds deterministic grounding from report claims, limits claims per section and total grounding size, and excludes repository source URLs from the provider payload.
 
 Provider output is constrained to a strict structured schema and then validated server-side. Every theme and investigation question must reference evidence keys that were supplied in the grounding payload. Unknown evidence keys are rejected.
 
