@@ -591,6 +591,6 @@ export async function generateEvidenceReport(
       assertionDelta: testSummary.overall.assertionDelta
     },
     runtimeSummary,
-    historicalRuntime
+    ...(historicalRuntime ? { historicalRuntime } : {})
   });
 }
