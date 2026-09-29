@@ -283,11 +283,11 @@ The endpoint identifies file paths touched by at least the requested number of p
 
 ## Render deployment
 
-The repository includes a render.yaml Blueprint for the API web service, BullMQ analysis worker, Render Key Value queue, and Render Postgres database. The API runs migrations in the paid web service pre-deploy step and exposes /health for Render health checks.
+The repository includes a render.yaml Blueprint for a zero-cost deployment shape: one Render Free web service runs the HTTP API and BullMQ analysis worker together in the same Node.js process. PostgreSQL and Redis are supplied through DATABASE_URL and REDIS_URL, so no paid Render database, Key Value store, or worker is required. The compiled database migration entrypoint runs before the combined runtime starts, and /health is used for the hosting health check.
 
-Secrets are declared with sync: false and must be supplied in the Render dashboard. The Blueprint uses paid compute/datastore plans so production data and queue state are not dependent on Free-instance limitations.
+Secrets and external connection strings are declared with sync: false and must be supplied in the Render dashboard. Free-tier PostgreSQL/Redis providers retain their own storage, sleep, retention, and usage limits; those limits are environment-specific and must be verified during deployment.
 
-Render web services must listen on 0.0.0.0; Project Autopsy binds explicitly to all interfaces. The worker treats repository storage as ephemeral and can re-clone a tracked repository from its persisted source URL when its local Git checkout is missing after a worker restart or redeploy.
+Render web services must listen on 0.0.0.0; Project Autopsy binds explicitly to all interfaces. Repository storage remains ephemeral and the worker can re-clone a tracked repository from its persisted source URL when local Git storage is missing after a restart or redeploy.
 
 ## Release readiness
 
