@@ -65,6 +65,9 @@ npm run dev:worker
 API: http://localhost:5100
 
 Health: http://localhost:5100/health
+Readiness: http://localhost:5100/ready
+
+`/ready` checks PostgreSQL and Redis and returns `503` when a required dependency is unavailable. `/health` remains a dependency-independent liveness endpoint.
 
 Repository import endpoint:
 
