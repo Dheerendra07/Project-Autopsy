@@ -45,6 +45,7 @@ export const runtimeTelemetryEventSchema = z
     serviceName: boundedLabel("serviceName", 128),
     operationName: boundedLabel("operationName", 256),
     environment: boundedLabel("environment", 64).optional(),
+    deploymentId: boundedLabel("deploymentId", 256).optional(),
     revisionSha: gitShaSchema.optional(),
     traceId: z
       .string()
@@ -131,6 +132,7 @@ export interface RuntimeTelemetryFilters {
   to?: Date;
   revisionSha?: string;
   environment?: string;
+  deploymentId?: string;
   operationName?: string;
   signalType?: RuntimeTelemetryEventInput["signalType"];
 }
