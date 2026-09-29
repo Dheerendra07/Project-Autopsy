@@ -93,6 +93,16 @@ test("readiness endpoint reports dependency readiness", async () => {
   assert.match(body.timestamp, /^\d{4}-\d{2}-\d{2}T.*Z$/);
 });
 
+test("health responses expose a correlation request id", async () => {
+  const response = await fetch(baseUrl + "/health");
+
+  assert.equal(response.status, 200);
+  assert.match(
+    response.headers.get("x-request-id") ?? "",
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  );
+});
+
 test("health endpoint stays public", async () => {
   const response = await fetch(`${baseUrl}/health`);
 
