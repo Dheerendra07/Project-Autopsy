@@ -1,45 +1,59 @@
-test("rejects an invalid configured access key in production", async () => {
-  const { isAiInterpretationAuthorized } =
-    await import("../src/modules/interpretation/interpretation.auth.js");
+test("enforces configured access keys with constant-time credential comparison", () => {
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      "wrong-key",
+      "correct-access-key",
+      "production"
+    ),
+    false
+  );
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      "correct-access-key",
+      "correct-access-key",
+      "production"
+    ),
+    true
+  );
+  assert.equal(
+    isAiInterpretationAuthorized(
+      "Bearer correct-access-key",
+      undefined,
+      "correct-access-key",
+      "production"
+    ),
+    true
+  );
+});
 
-  const previousNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = "production";
-
-  try {
-    assert.equal(
-      isAiInterpretationAuthorized(
-        undefined,
-        "wrong-key",
-        "correct-access-key"
-      ),
-      false
-    );
-    assert.equal(
-      isAiInterpretationAuthorized(
-        undefined,
-        "correct-access-key",
-        "correct-access-key"
-      ),
-      true
-    );
-    assert.equal(
-      isAiInterpretationAuthorized(
-        "Bearer correct-access-key",
-        undefined,
-        "correct-access-key"
-      ),
-      true
-    );
-  } finally {
-    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
-    else process.env.NODE_ENV = previousNodeEnv;
-  }
+test("keeps development unprotected when no AI access key is configured", () => {
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      undefined,
+      undefined,
+      "development"
+    ),
+    true
+  );
+  assert.equal(
+    isAiInterpretationAuthorized(
+      undefined,
+      undefined,
+      undefined,
+      "production"
+    ),
+    false
+  );
 });
 
 import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { EvidenceReport } from "../src/modules/reports/report.types.js";
+import { isAiInterpretationAuthorized } from "../src/modules/interpretation/interpretation.auth.js";
 import {
   AiInterpretationProviderError,
   AiInterpretationValidationError,
