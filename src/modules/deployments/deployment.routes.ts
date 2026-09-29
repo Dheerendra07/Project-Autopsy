@@ -12,6 +12,7 @@ import {
   DeploymentEvidenceValidationError,
   prepareDeploymentEvidenceBatch
 } from "./deployment.service.js";
+import { generateDeploymentProvenanceAssessment } from "./deployment-provenance.service.js";
 
 export const deploymentRouter = Router({ mergeParams: true });
 
@@ -97,6 +98,43 @@ deploymentRouter.post("/", async (req, res, next) => {
       return;
     }
 
+    next(error);
+  }
+});
+
+deploymentRouter.get("/:deploymentId/provenance", async (req, res, next) => {
+  try {
+    const repositoryId = getRepositoryId(req.params);
+    const deploymentId = z
+      .string()
+      .trim()
+      .min(1)
+      .max(256)
+      .parse(req.params.deploymentId);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const assessment = await generateDeploymentProvenanceAssessment(
+      repositoryId,
+      deploymentId
+    );
+
+    res.json({
+      success: true,
+      ...assessment
+    });
+  } catch (error) {
     next(error);
   }
 });
