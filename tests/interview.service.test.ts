@@ -136,6 +136,24 @@ test("builds bounded story scaffolds from report evidence", () => {
   );
 });
 
+test("falls back to runtime observations when historical runtime evidence is absent", () => {
+  const report = reportWithSections();
+  report.sections = report.sections.filter(
+    (section) => section.id !== "historical-runtime"
+  );
+
+  const result = buildInterviewStoriesFromReport(report, "repo", 6);
+  const runtimeStory = result.stories.find(
+    (story) => story.type === "runtime-observability"
+  );
+
+  assert.ok(runtimeStory);
+  assert.match(
+    runtimeStory?.evidenceSummary.join(" ") ?? "",
+    /10 runtime telemetry observations/i
+  );
+});
+
 test("never fabricates missing sections and clamps story limit", () => {
   const result = buildInterviewStoriesFromReport(
     reportWithSections(),
