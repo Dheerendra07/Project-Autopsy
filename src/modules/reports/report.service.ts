@@ -559,6 +559,24 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
   return sections;
 }
 
+export function isReportEvidenceSnapshotCurrent(
+  initialRepositoryHeadSha: string | null,
+  initialAnalysisRunId: string | null,
+  initialAnalysisTargetHeadSha: string | null,
+  currentRepositoryHeadSha: string | null,
+  currentAnalysisRunId: string | null,
+  currentAnalysisTargetHeadSha: string | null
+): boolean {
+  return Boolean(
+    initialRepositoryHeadSha &&
+      initialAnalysisRunId &&
+      initialAnalysisTargetHeadSha &&
+      currentRepositoryHeadSha === initialRepositoryHeadSha &&
+      currentAnalysisRunId === initialAnalysisRunId &&
+      currentAnalysisTargetHeadSha === initialAnalysisTargetHeadSha
+  );
+}
+
 export function buildEvidenceReport(
   input: ReportBuildInput,
   generatedAt: Date = new Date()
@@ -671,6 +689,26 @@ export async function generateEvidenceReport(
     summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit),
     listDeploymentEvidence(repositoryId, sampleLimit)
   ]);
+
+  const currentRepository = await getRepositoryById(repositoryId);
+  const currentAnalysis = await getLatestCompletedAnalysisRun(repositoryId);
+
+  if (
+    !currentRepository ||
+    !currentAnalysis ||
+    !isReportEvidenceSnapshotCurrent(
+      repository.head_sha,
+      analysis.id,
+      analysis.target_head_sha,
+      currentRepository.head_sha,
+      currentAnalysis.id,
+      currentAnalysis.target_head_sha
+    )
+  ) {
+    throw new EvidenceReportNotReadyError(
+      "Repository evidence changed while the report was being generated; retry against a stable completed analysis."
+    );
+  }
 
   const historicalRuntime =
     runtimeSummary.overall.sampleCount > 0
