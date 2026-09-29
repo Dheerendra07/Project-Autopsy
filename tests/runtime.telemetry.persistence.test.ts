@@ -184,7 +184,10 @@ test(
 
       assert.equal(listed.total, 2);
       assert.equal(listed.events.length, 2);
-      assert.equal(listed.events[0]?.deployment_id, "deployment-123");
+      const deploymentEvent = listed.events.find(
+        (event) => event.event_id === "integration-001"
+      );
+      assert.equal(deploymentEvent?.deployment_id, "deployment-123");
       assert.ok(
         listed.events.every((event) => event.operation_name === "GET /health")
       );
