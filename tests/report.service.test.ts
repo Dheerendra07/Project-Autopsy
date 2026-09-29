@@ -173,7 +173,14 @@ function baseInput() {
             filesReported: 1,
             changedFiles: [{ path: "src/report.ts" }]
           },
-          runtimeEvidence: { status: "ready" }
+          runtimeEvidence: {
+            status: "ready",
+            observedDelta: {
+              avgDurationMs: 5,
+              p95DurationMs: 8,
+              errorRate: 0.01
+            }
+          }
         }
       ]
     },
@@ -237,6 +244,13 @@ test("builds an evidence report with stable fingerprint independent of generatio
         section.id === "historical-runtime" &&
         section.claims[0]?.evidence.some((ref) => ref.path === "src/report.ts")
     )
+  );
+  const historicalRuntime = first.sections.find(
+    (section) => section.id === "historical-runtime"
+  );
+  assert.match(
+    historicalRuntime?.claims[0]?.statement ?? "",
+    /avg=5 ms, p95=8 ms, errorRate=0\.01/
   );
 });
 
