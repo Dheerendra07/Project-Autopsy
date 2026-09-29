@@ -21,6 +21,7 @@ import {
   summarizeTestEvolution
 } from "../tests/test-evolution.persistence.js";
 import { summarizeRuntimeTelemetry } from "../runtime/runtime.persistence.js";
+import { listDeploymentEvidence } from "../deployments/deployment.persistence.js";
 import { generateHistoricalRuntimeReconstruction } from "../runtime/historical-correlation.service.js";
 import { buildHistoricalRuntimeSourceContextEvidence } from "../runtime/historical-runtime-source-context.service.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
@@ -361,6 +362,50 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
     )
   );
 
+  if (input.deploymentEvidence && input.deploymentEvidence.length > 0) {
+    sections.push(
+      evidenceSection(
+        "deployment-evidence",
+        "Deployment evidence",
+        "observed deployment evidence supplied by an external deployment system",
+        input.deploymentEvidence
+          .slice(0, input.sampleLimit)
+          .map((event, index) =>
+            evidenceClaim(
+              "deployment-" + String(index + 1),
+              event.provider +
+                " reported deployment " +
+                event.deploymentId +
+                " as " +
+                event.state +
+                " in " +
+                event.environment +
+                " at " +
+                event.occurredAt +
+                (event.revisionSha
+                  ? " for revision " + event.revisionSha
+                  : "") +
+                (event.artifactDigest
+                  ? " with artifact " + event.artifactDigest
+                  : "") +
+                ".",
+              [
+                evidenceRef(
+                  "deployment_evidence",
+                  event.eventId,
+                  event.revisionSha
+                    ? { commitSha: event.revisionSha }
+                    : {}
+                )
+              ],
+              "Deployment records are externally observed evidence; they do not prove what is currently serving traffic or that a deployment caused a runtime change."
+            )
+          ),
+        "Deployment evidence records are preserved as observed external facts. Missing deployment records must not be interpreted as proof that no deployment occurred."
+      )
+    );
+  }
+
   const historicalRuntimeClaims = input.historicalRuntime
     ? input.historicalRuntime.events.map((event, index) =>
         evidenceClaim(
@@ -542,7 +587,8 @@ export async function generateEvidenceReport(
     migrationResult,
     testResult,
     testSummary,
-    runtimeSummary
+    runtimeSummary,
+    deploymentEvidence
   ] = await Promise.all([
     listRepositoryCommits(repositoryId, 1, sampleLimit),
     listRepositoryHotspots(repositoryId, sampleLimit),
@@ -556,7 +602,8 @@ export async function generateEvidenceReport(
     listDatabaseMigrationEvents(repositoryId, sampleLimit),
     listTestEvolutionEvents(repositoryId, sampleLimit),
     summarizeTestEvolution(repositoryId, {}, "testType", sampleLimit),
-    summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit)
+    summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit),
+    listDeploymentEvidence(repositoryId, sampleLimit)
   ]);
 
   const historicalRuntime =
@@ -589,6 +636,18 @@ export async function generateEvidenceReport(
     complexityEvents,
     migrationEvents: migrationResult.events,
     testEvolution: testResult,
+    deploymentEvidence: deploymentEvidence.map((event) => ({
+      eventId: event.event_id,
+      occurredAt: event.occurred_at,
+      provider: event.provider,
+      deploymentId: event.deployment_id,
+      environment: event.environment,
+      state: event.state,
+      revisionSha: event.revision_sha,
+      artifactDigest: event.artifact_digest,
+      buildId: event.build_id,
+      releaseId: event.release_id
+    })),
     testSummary: {
       eventCount: testSummary.overall.eventCount,
       testCaseCount: testSummary.overall.testCaseCount,
