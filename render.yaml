@@ -17,16 +17,11 @@ services:
         fromDatabase:
           name: project-autopsy-db
           property: connectionString
-      - key: REDIS_HOST
+      - key: REDIS_URL
         fromService:
           name: project-autopsy-queue
           type: keyvalue
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: project-autopsy-queue
-          type: keyvalue
-          property: port
+          property: connectionString
       - key: REPOSITORY_STORAGE_PATH
         value: ./storage/repositories
       - key: MAX_REPOSITORY_SIZE_MB
@@ -65,16 +60,11 @@ services:
         fromDatabase:
           name: project-autopsy-db
           property: connectionString
-      - key: REDIS_HOST
+      - key: REDIS_URL
         fromService:
           name: project-autopsy-queue
           type: keyvalue
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          name: project-autopsy-queue
-          type: keyvalue
-          property: port
+          property: connectionString
       - key: REPOSITORY_STORAGE_PATH
         value: ./storage/repositories
       - key: MAX_REPOSITORY_SIZE_MB
