@@ -36,6 +36,20 @@ test("requires deployment ingestion credentials in production", () => {
   );
 });
 
+test("requires the API access key in production", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          NODE_ENV: "production",
+          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
+          DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32)
+        })
+      ),
+    /AUTOPSY_API_ACCESS_KEY/
+  );
+});
+
 test("requires runtime and deployment ingestion credentials in production", () => {
   const config = parseEnvironment(
     baseEnvironment({
