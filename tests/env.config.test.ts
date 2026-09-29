@@ -15,6 +15,16 @@ function baseEnvironment(
   };
 }
 
+test("accepts an optional Redis connection string", () => {
+  const config = parseEnvironment(
+    baseEnvironment({
+      REDIS_URL: "redis://example.internal:6379"
+    })
+  );
+
+  assert.equal(config.REDIS_URL, "redis://example.internal:6379");
+});
+
 test("uses documented defaults for AI provider configuration", () => {
   const config = parseEnvironment(baseEnvironment());
 
