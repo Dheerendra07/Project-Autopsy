@@ -90,7 +90,7 @@ test("readiness endpoint reports dependency readiness", async () => {
       }
     }
   );
-  assert.match(body.timestamp, /^\\d{4}-\\d{2}-\\d{2}T.*Z$/);
+  assert.match(body.timestamp, /^\d{4}-\d{2}-\d{2}T.*Z$/);
 });
 
 test("health endpoint stays public", async () => {
