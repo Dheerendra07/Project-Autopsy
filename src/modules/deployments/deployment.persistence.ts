@@ -204,6 +204,38 @@ export async function summarizeDeploymentEvidence(
   };
 }
 
+export async function listDeploymentEvidenceForDeployment(
+  repositoryId: string,
+  deploymentId: string,
+  limit: number
+): Promise<DeploymentEvidenceRow[]> {
+  const result = await db.query<DeploymentEvidenceRow>(
+    `SELECT
+       id,
+       event_id,
+       occurred_at,
+       provider,
+       deployment_id,
+       environment,
+       state,
+       revision_sha,
+       artifact_digest,
+       build_id,
+       release_id,
+       metadata,
+       payload_hash,
+       received_at
+     FROM deployment_evidence_events
+     WHERE repository_id = $1
+       AND deployment_id = $2
+     ORDER BY occurred_at DESC, id DESC
+     LIMIT $3`,
+    [repositoryId, deploymentId, limit]
+  );
+
+  return result.rows;
+}
+
 export async function listDeploymentEvidence(
   repositoryId: string,
   limit: number
