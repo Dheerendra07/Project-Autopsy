@@ -102,15 +102,17 @@ deploymentRouter.post("/", async (req, res, next) => {
   }
 });
 
-deploymentRouter.get("/:deploymentId/provenance", async (req, res, next) => {
+deploymentRouter.get("/provenance", async (req, res, next) => {
   try {
     const repositoryId = getRepositoryId(req.params);
-    const deploymentId = z
-      .string()
-      .trim()
-      .min(1)
-      .max(256)
-      .parse(req.params.deploymentId);
+    const query = z.object({
+      deploymentId: z
+        .string()
+        .trim()
+        .min(1)
+        .max(256)
+    }).parse(req.query);
+    const deploymentId = query.deploymentId;
 
     const repository = await getRepositoryById(repositoryId);
 
