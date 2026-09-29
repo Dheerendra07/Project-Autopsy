@@ -165,6 +165,29 @@ test("authenticated unknown API routes reach the API not-found contract", async 
   });
 });
 
+test("analysis status endpoint returns a scoped not-found contract", async () => {
+  const repositoryId = "00000000-0000-4000-8000-000000000999";
+  const analysisRunId = "00000000-0000-4000-8000-000000000998";
+
+  const response = await fetch(
+    `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "ANALYSIS_NOT_FOUND",
+      message: "Analysis run not found."
+    }
+  });
+});
+
 test("contributor endpoint remains behind application access control", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const response = await fetch(

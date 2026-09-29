@@ -82,6 +82,8 @@ Content-Type: application/json
 
 The import endpoint returns `202 Accepted`. Clone and initial analysis execute in the background worker, so large repositories do not keep the HTTP request open.
 
+Poll a specific asynchronous analysis run with `GET /api/repositories/:repositoryId/analysis/:analysisRunId`. The response exposes the persisted run status, mode, analyzer version, base head, target head, and lifecycle timestamps without exposing worker-local storage paths.
+
 ## Evidence policy
 
 Project Autopsy separates observed evidence from interpretation.
