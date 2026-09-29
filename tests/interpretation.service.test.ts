@@ -163,6 +163,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
   assert.equal(result.reportFingerprint, "f".repeat(64));
   assert.equal(result.groundingClaimCount, 2);
   assert.match(capturedBody, /project_autopsy_interpretation/);
+  assert.doesNotMatch(capturedBody, /test-key/);
 });
 
 test("rejects provider output that references unknown evidence", async () => {
