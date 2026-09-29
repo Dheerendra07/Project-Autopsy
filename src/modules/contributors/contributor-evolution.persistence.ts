@@ -10,8 +10,8 @@ export async function listContributorActivity(
       " SELECT c.author_name, c.author_email, COUNT(*)::int AS commit_count," +
       " COALESCE(SUM(COALESCE(c.additions, 0)), 0)::int AS additions," +
       " COALESCE(SUM(COALESCE(c.deletions, 0)), 0)::int AS deletions," +
-      " MIN(c.committed_at)::text AS first_committed_at," +
-      " MAX(c.committed_at)::text AS last_committed_at" +
+      " to_char(MIN(c.committed_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS first_committed_at," +
+      " to_char(MAX(c.committed_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS last_committed_at" +
       " FROM commits AS c WHERE c.repository_id = $1" +
       " GROUP BY c.author_name, c.author_email" +
       "), contributor_paths AS (" +
