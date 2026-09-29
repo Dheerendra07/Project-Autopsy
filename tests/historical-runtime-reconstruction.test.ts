@@ -159,41 +159,20 @@ test("rejects correlation arrays that do not preserve one-to-one ordering", () =
 });
 
 
+
 test("preserves adjacent commits across paginated reconstruction boundaries", () => {
-  const commit = (sha: string, subject: string, committedAt: string) => ({
-    sha,
-    parent_shas: [],
-    subject,
-    committed_at: committedAt,
-    files_changed: 1,
-    additions: 1,
-    deletions: 0
-  });
-
-  const first = commit("a".repeat(40), "first", "2026-09-01T00:00:00.000Z");
-  const middle = commit("b".repeat(40), "middle", "2026-09-01T01:00:00.000Z");
-  const last = commit("c".repeat(40), "last", "2026-09-01T02:00:00.000Z");
-
-  const correlation = (sha: string) => ({
-    status: "insufficient_target_samples" as const,
-    repositoryId: "repo",
-    targetRevisionSha: sha,
-    parentRevisionSha: null,
-    targetCommitAt: null,
-    changeContext: null,
-    assessment: null,
-    windowMinutes: 60,
-    minimumSamples: 10,
-    filters: {},
-    baseline: null,
-    target: null,
-    observedDelta: {
-      avgDurationMs: null,
-      p95DurationMs: null,
-      errorRate: null
-    },
-    evidencePolicy: []
-  });
+  const first = commit(
+    "a".repeat(40),
+    "2026-09-01T00:00:00.000Z"
+  );
+  const middle = commit(
+    "b".repeat(40),
+    "2026-09-01T01:00:00.000Z"
+  );
+  const last = commit(
+    "c".repeat(40),
+    "2026-09-01T02:00:00.000Z"
+  );
 
   const result = buildHistoricalRuntimeReconstruction(
     "repo",
@@ -204,7 +183,7 @@ test("preserves adjacent commits across paginated reconstruction boundaries", ()
     10,
     {},
     [middle],
-    [correlation(middle.sha)],
+    [evidence("repo", middle.sha, "insufficient_target_samples")],
     {
       previousCommit: first,
       nextCommit: last
