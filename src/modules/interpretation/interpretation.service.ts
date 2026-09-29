@@ -480,6 +480,12 @@ export async function generateAiInterpretation(
             randomFn
           );
 
+          if (retryDelayMs === null) {
+            throw new AiInterpretationProviderError(
+              "AI provider retry delay is outside the configured limit."
+            );
+          }
+
           ensureRetryTimeAvailable(
             retryDelayMs,
             deadlineMs,
