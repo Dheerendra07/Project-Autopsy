@@ -62,6 +62,7 @@ import {
   enqueueRepositoryAnalysis
 } from "../modules/analysis/analysis.queue.js";
 import { planAnalysisRun } from "../modules/analysis/analysis-planner.js";
+import { prepareRepositoryStorageForAnalysis } from "../modules/analysis/storage-recovery.js";
 import { classifyAnalysisJobRecovery } from "../modules/analysis/job-recovery.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 
@@ -321,8 +322,8 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
-      await checkoutRepositoryAtCommit(
-        repository.storage_path,
+      await prepareRepositoryStorageForAnalysis(
+        repository,
         analysis.target_head_sha
       );
 
