@@ -28,6 +28,7 @@ const runtimeQueryFields = {
   limit: z.coerce.number().int().min(1).max(100).default(50),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
+  deploymentId: z.string().trim().min(1).max(256).optional(),
   revisionSha: z
     .string()
     .trim()
@@ -43,6 +44,7 @@ const runtimeQueryFields = {
 const runtimeFilterFields = {
   from: runtimeQueryFields.from,
   to: runtimeQueryFields.to,
+  deploymentId: runtimeQueryFields.deploymentId,
   revisionSha: runtimeQueryFields.revisionSha,
   environment: runtimeQueryFields.environment,
   operationName: runtimeQueryFields.operationName,
@@ -279,6 +281,7 @@ runtimeRouter.get("/correlation", async (req, res, next) => {
       query.windowMinutes,
       query.minSamples,
       {
+        ...(query.deploymentId ? { deploymentId: query.deploymentId } : {}),
         ...(query.environment ? { environment: query.environment } : {}),
         ...(query.operationName ? { operationName: query.operationName } : {}),
         ...(query.signalType ? { signalType: query.signalType } : {})
