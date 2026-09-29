@@ -71,20 +71,6 @@ test(
         {
           events: [
             {
-              eventId: "correlation-target-other-deployment",
-              observedAt: new Date(commitAt.getTime() + 45_000).toISOString(),
-              signalType: "http",
-              serviceName: "api",
-              operationName: "GET /items",
-              environment: "test",
-              deploymentId: "deployment-other",
-              revisionSha: targetSha,
-              durationMs: 900,
-              status: "ok",
-              httpStatusCode: 200,
-              attributes: {}
-            },
-            {
               eventId: "correlation-baseline-1",
               observedAt: new Date(commitAt.getTime() - 30_000).toISOString(),
               signalType: "http",
@@ -161,6 +147,31 @@ test(
 
       assert.equal(evidence.status, "ready");
       assert.equal(evidence.parentRevisionSha, parentSha);
+
+      const otherDeploymentEvent = prepareRuntimeTelemetryBatch(
+        {
+          events: [
+            {
+              eventId: "correlation-target-other-deployment",
+              observedAt: new Date(commitAt.getTime() + 45_000).toISOString(),
+              signalType: "http",
+              serviceName: "api",
+              operationName: "GET /items",
+              environment: "test",
+              deploymentId: "deployment-other",
+              revisionSha: targetSha,
+              durationMs: 900,
+              status: "ok",
+              httpStatusCode: 200,
+              attributes: {}
+            }
+          ]
+        },
+        new Date(commitAt.getTime() + 120_000)
+      );
+
+      await insertRuntimeTelemetryBatch(repositoryId, otherDeploymentEvent);
+
       assert.deepEqual(evidence.changeContext, {
         commitSha: targetSha,
         subject: "target",
