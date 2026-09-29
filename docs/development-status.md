@@ -71,7 +71,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 6bbe70f506ead07c7189cf5f90c55d1b622d944a.
+Current verified main baseline: 1f35c9ce27cd8cf840badee5074eec94a3840f8d.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -93,6 +93,7 @@ The current main baseline includes:
 - local Autopsy development default isolated to port 5100; CI continues to use its own isolated test port 5000
 - Render Key Value production wiring uses the service connection string through `REDIS_URL`, while local host/port configuration remains supported
 - HTTP-level API access, health, and authenticated not-found contract coverage in CI
+- Report generation is fenced to the latest completed analysis target so partial re-analysis evidence is not surfaced
 
 Recent verified merge sequence for this continuation:
 - PR #42 — AI provider retry hardening
@@ -107,6 +108,7 @@ Recent verified merge sequence for this continuation:
 - PR #56 — production API access gate
 - PR #58 — Render Redis connection-string hardening
 - PR #60 — API HTTP security contract coverage
+- PR #62 — report/current-analysis consistency fence
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed

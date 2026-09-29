@@ -49,6 +49,17 @@ export class EvidenceReportRepositoryNotFoundError extends Error {
   }
 }
 
+export function isCompletedAnalysisCurrent(
+  repositoryHeadSha: string | null,
+  analysisTargetHeadSha: string | null
+): boolean {
+  return Boolean(
+    repositoryHeadSha &&
+    analysisTargetHeadSha &&
+    repositoryHeadSha === analysisTargetHeadSha
+  );
+}
+
 function evidenceRef(
   source: string,
   key: string,
@@ -571,6 +582,17 @@ export async function generateEvidenceReport(
   if (!analysis) {
     throw new EvidenceReportNotReadyError(
       "A completed analysis is required before a report can be generated."
+    );
+  }
+
+  if (
+    !isCompletedAnalysisCurrent(
+      repository.head_sha,
+      analysis.target_head_sha
+    )
+  ) {
+    throw new EvidenceReportNotReadyError(
+      "A completed analysis for the current repository head is required before a report can be generated."
     );
   }
 
