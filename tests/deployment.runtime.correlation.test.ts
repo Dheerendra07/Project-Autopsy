@@ -116,6 +116,33 @@ test("distinguishes partial identity evidence from a hard conflict", () => {
   assert.equal(conflict.consistency.revision, "conflicting");
 });
 
+test("rejects invalid recent event limits and empty deployment IDs", async () => {
+  await assert.rejects(
+    () =>
+      import("../src/modules/runtime/deployment-runtime-correlation.service.js")
+        .then(({ generateDeploymentRuntimeCorrelation }) =>
+          generateDeploymentRuntimeCorrelation(
+            "repo-1",
+            "deployment-1",
+            0
+          )
+        ),
+    /recentEventLimit/
+  );
+
+  await assert.rejects(
+    () =>
+      import("../src/modules/runtime/deployment-runtime-correlation.service.js")
+        .then(({ generateDeploymentRuntimeCorrelation }) =>
+          generateDeploymentRuntimeCorrelation(
+            "repo-1",
+            "   "
+          )
+        ),
+    /deploymentId must not be empty/
+  );
+});
+
 test("reports combined identity conflicts explicitly", () => {
   const result = buildDeploymentRuntimeCorrelation(
     "repo-1",
