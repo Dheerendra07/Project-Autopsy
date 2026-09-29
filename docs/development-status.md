@@ -35,6 +35,8 @@ Runtime hardening is also merged: API and worker graceful shutdown, public-respo
 
 The deterministic analyzer cache is merged on main. It reuses complexity analysis by Git blob SHA and analyzer version.
 
+Historical runtime reconstruction v1 is merged on main via PR #30. It walks persisted commits chronologically, reuses the existing runtime correlation and assessment evidence for each commit, exposes explicit evidence-gap coverage, and records deterministic adjacent-commit/window overlap context.
+
 Full incremental repository analysis is merged on main. Incremental runs are anchored to a previously completed target head and process only the new commit range for commit/dependency/architecture/complexity evidence. File-churn and coupling aggregates still rebuild from persisted/full Git evidence in v1 so their results remain idempotent and correct on retries.
 
 ## Code complexity evidence
@@ -57,7 +59,7 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Next planned layers
 
-The original planned layers through evidence-backed interview stories are complete on main. Further work should be proposed as a new roadmap item and must preserve the existing evidence contracts and verification gates.
+The original planned layers through evidence-backed interview stories are complete on main, and historical runtime reconstruction v1 is now also merged. Further work should be proposed as a new roadmap item and must preserve the existing evidence contracts and verification gates.
 
 ## Verification rule
 
@@ -69,7 +71,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Locked functional main baseline: `f9c8ed7e02363491c71fd68e6273176acfab2e1c`.
+Locked functional main baseline: `06ac7d59b40f135786e2f8e99411f2a4cc215b6c`.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -80,6 +82,8 @@ The current main baseline includes:
 - evidence-backed interview story scaffolds
 - runtime correlation evidence v1
 - deterministic Git change context attached to runtime correlation
+- deterministic runtime change assessment
+- historical runtime reconstruction with bounded pagination and temporal overlap context
 
 Preserve all existing API routes, evidence models, migrations, deterministic analyzer behavior, retry semantics, and shutdown behavior when continuing. Start any new roadmap item from this baseline and add it to this document only after implementation and verification.
 
@@ -269,6 +273,9 @@ Verified merge sequence:
 - Evidence-backed interview story scaffolds: merged via PR #22.
 - Runtime ↔ Git revision correlation evidence v1: merged via PR #23.
 - Runtime correlation hardening: merged via PR #24.
+- Deterministic runtime change assessment: merged via PR #28.
+- Runtime assessment checkpoint: merged via PR #29.
+- Historical runtime reconstruction: merged via PR #30.
 - Deterministic runtime change assessment: merged via PR #28.
 
 Current verification policy remains unchanged: feature branches must pass typecheck, build, test, PostgreSQL migrations, migration idempotency, API startup/health, and worker startup/shutdown smoke checks before merge.
