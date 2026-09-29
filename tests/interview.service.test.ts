@@ -57,6 +57,32 @@ function reportWithSections() {
         limitation: "Historical only."
       },
       {
+        id: "historical-runtime",
+        title: "Historical runtime and source context",
+        evidenceBasis: "historical runtime reconstruction",
+        claims: [
+          {
+            ...claim,
+            id: "historical-runtime-1",
+            statement: "bbbbbbbbbbbb has runtime status ready with source context available (1 changed files reported).",
+            evidence: [
+              {
+                source: "historical_runtime_commit",
+                key: "b".repeat(40),
+                commitSha: "b".repeat(40)
+              },
+              {
+                source: "historical_runtime_source_file",
+                key: "b".repeat(40) + ":src/report.ts",
+                commitSha: "b".repeat(40),
+                path: "src/report.ts"
+              }
+            ]
+          }
+        ],
+        limitation: "Historical runtime evidence is observational and does not establish causality."
+      },
+      {
         id: "runtime-observations",
         title: "Runtime observations",
         evidenceBasis: "telemetry",
@@ -87,6 +113,19 @@ test("builds bounded story scaffolds from report evidence", () => {
   assert.equal(result.stories.length, 2);
   assert.equal(result.stories[0]?.type, "change-hotspot");
   assert.equal(result.stories[1]?.type, "runtime-observability");
+  assert.equal(
+    result.stories[1]?.evidence.some(
+      (item) =>
+        item.source === "historical_runtime_source_file" &&
+        item.path === "src/report.ts" &&
+        item.commitSha === "b".repeat(40)
+    ),
+    true
+  );
+  assert.match(
+    result.stories[1]?.evidenceSummary.join(" ") ?? "",
+    /runtime status ready/i
+  );
   assert.match(
     result.stories[0]?.verification.ownership ?? "",
     /Verify/
@@ -94,6 +133,24 @@ test("builds bounded story scaffolds from report evidence", () => {
   assert.match(
     result.stories[1]?.draftAnswer.evidenceBackedResult ?? "",
     /actual.*result/i
+  );
+});
+
+test("falls back to runtime observations when historical runtime evidence is absent", () => {
+  const report = reportWithSections();
+  report.sections = report.sections.filter(
+    (section) => section.id !== "historical-runtime"
+  );
+
+  const result = buildInterviewStoriesFromReport(report, "repo", 6);
+  const runtimeStory = result.stories.find(
+    (story) => story.type === "runtime-observability"
+  );
+
+  assert.ok(runtimeStory);
+  assert.match(
+    runtimeStory?.evidenceSummary.join(" ") ?? "",
+    /10 runtime telemetry observations/i
   );
 });
 

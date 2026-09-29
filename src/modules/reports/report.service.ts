@@ -21,6 +21,8 @@ import {
   summarizeTestEvolution
 } from "../tests/test-evolution.persistence.js";
 import { summarizeRuntimeTelemetry } from "../runtime/runtime.persistence.js";
+import { generateHistoricalRuntimeReconstruction } from "../runtime/historical-correlation.service.js";
+import { buildHistoricalRuntimeSourceContextEvidence } from "../runtime/historical-runtime-source-context.service.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
 import type {
   EvidenceClaim,
@@ -359,6 +361,48 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
     )
   );
 
+  const historicalRuntimeClaims = input.historicalRuntime
+    ? input.historicalRuntime.events.map((event, index) =>
+        evidenceClaim(
+          "historical-runtime-" + String(index + 1),
+          event.commit.sha.slice(0, 12) +
+            " has runtime status " +
+            event.runtimeEvidence.status +
+            " with source context " +
+            event.sourceContext.status +
+            " (" +
+            String(event.sourceContext.filesReported) +
+            " changed files reported).",
+          [
+            evidenceRef("historical_runtime_commit", event.commit.sha, {
+              commitSha: event.commit.sha
+            }),
+            ...event.sourceContext.changedFiles.slice(0, 3).map((file) =>
+              evidenceRef("historical_runtime_source_file", event.commit.sha + ":" + file.path, {
+                commitSha: event.commit.sha,
+                path: file.path
+              })
+            )
+          ],
+          event.sourceContext.status === "truncated"
+            ? "Changed-file context is truncated; runtime evidence remains commit-level and is not attributed to individual files."
+            : "Historical runtime evidence is observational and does not establish that this commit caused the observed runtime measurement."
+        )
+      )
+    : [];
+
+  sections.push(
+    evidenceSection(
+      "historical-runtime",
+      "Historical runtime and source context",
+      "historical runtime reconstruction joined to persisted commit source-change context",
+      historicalRuntimeClaims.slice(0, input.sampleLimit),
+      input.historicalRuntime
+        ? "Runtime observations are aligned to commit revisions and bounded source context. They do not establish causality, regression, or file-level runtime impact."
+        : "Historical runtime reconstruction was unavailable for this report generation."
+    )
+  );
+
   const runtime = input.runtimeSummary.overall;
   const runtimeClaims =
     runtime.sampleCount > 0
@@ -509,6 +553,20 @@ export async function generateEvidenceReport(
     summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit)
   ]);
 
+  const historicalRuntime =
+    runtimeSummary.overall.sampleCount > 0
+      ? buildHistoricalRuntimeSourceContextEvidence(
+          await generateHistoricalRuntimeReconstruction(
+            repositoryId,
+            1,
+            Math.min(sampleLimit, 10),
+            60,
+            10,
+            {}
+          )
+        )
+      : undefined;
+
   return buildEvidenceReport({
     repository,
     analysis,
@@ -532,6 +590,7 @@ export async function generateEvidenceReport(
       assertionCount: testSummary.overall.assertionCount,
       assertionDelta: testSummary.overall.assertionDelta
     },
-    runtimeSummary
+    runtimeSummary,
+    ...(historicalRuntime ? { historicalRuntime } : {})
   });
 }
