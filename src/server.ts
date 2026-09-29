@@ -39,7 +39,7 @@ export async function closeServer(): Promise<void> {
 function registerShutdownHandlers(): void {
   for (const signal of ["SIGTERM", "SIGINT"] as const) {
     process.once(signal, () => {
-      void shutdown(signal);
+      void shutdownServer(signal);
     });
   }
 }
