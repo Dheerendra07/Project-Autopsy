@@ -188,6 +188,11 @@ export interface ReportBuildInput {
       };
       runtimeEvidence: {
         status: string;
+        observedDelta: {
+          avgDurationMs: number | null;
+          p95DurationMs: number | null;
+          errorRate: number | null;
+        };
       };
     }>;
   };
