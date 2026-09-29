@@ -1,0 +1,182 @@
+import { listRepositoryCommits, type StoredCommit } from "../repositories/repository.persistence.js";
+import { generateRuntimeCorrelationEvidence } from "./correlation.service.js";
+import type {
+  RuntimeCorrelationEvidence,
+  RuntimeCorrelationStatus
+} from "./correlation.types.js";
+import type { RuntimeTelemetryFilters } from "./runtime.types.js";
+
+export interface HistoricalRuntimeReconstructionEvent {
+  sequence: number;
+  commit: {
+    sha: string;
+    parentRevisionSha: string | null;
+    subject: string;
+    committedAt: string | null;
+    filesChanged: number;
+    additions: number | null;
+    deletions: number | null;
+  };
+  correlation: RuntimeCorrelationEvidence;
+}
+
+export interface HistoricalRuntimeReconstruction {
+  repositoryId: string;
+  page: number;
+  limit: number;
+  totalCommits: number;
+  windowMinutes: number;
+  minimumSamples: number;
+  filters: Omit<RuntimeTelemetryFilters, "from" | "to" | "revisionSha">;
+  ordering: string[];
+  semantics: {
+    timeline: string;
+    causality: string;
+    evidenceGaps: string;
+  };
+  coverage: {
+    commitsInPage: number;
+    readyCorrelations: number;
+    evidenceGaps: number;
+    statusCounts: Record<RuntimeCorrelationStatus, number>;
+  };
+  events: HistoricalRuntimeReconstructionEvent[];
+}
+
+const STATUS_VALUES: RuntimeCorrelationStatus[] = [
+  "ready",
+  "repository_revision_not_found",
+  "commit_time_unavailable",
+  "missing_parent_revision",
+  "insufficient_baseline_samples",
+  "insufficient_target_samples"
+];
+
+function emptyStatusCounts(): Record<RuntimeCorrelationStatus, number> {
+  return Object.fromEntries(
+    STATUS_VALUES.map((status) => [status, 0])
+  ) as Record<RuntimeCorrelationStatus, number>;
+}
+
+function commitMetadata(commit: StoredCommit) {
+  return {
+    sha: commit.sha,
+    parentRevisionSha: commit.parent_shas[0] ?? null,
+    subject: commit.subject,
+    committedAt: commit.committed_at,
+    filesChanged: commit.files_changed,
+    additions: commit.additions,
+    deletions: commit.deletions
+  };
+}
+
+export function buildHistoricalRuntimeReconstruction(
+  repositoryId: string,
+  page: number,
+  limit: number,
+  totalCommits: number,
+  windowMinutes: number,
+  minimumSamples: number,
+  filters: Omit<RuntimeTelemetryFilters, "from" | "to" | "revisionSha">,
+  commits: StoredCommit[],
+  correlations: RuntimeCorrelationEvidence[]
+): HistoricalRuntimeReconstruction {
+  if (commits.length !== correlations.length) {
+    throw new Error(
+      "Historical runtime reconstruction requires one correlation result per commit."
+    );
+  }
+
+  const statusCounts = emptyStatusCounts();
+
+  const events = commits.map((commit, index) => {
+    const correlation = correlations[index];
+
+    if (!correlation) {
+      throw new Error(
+        "Historical runtime reconstruction correlation ordering is incomplete."
+      );
+    }
+
+    statusCounts[correlation.status] += 1;
+
+    return {
+      sequence: (page - 1) * limit + index + 1,
+      commit: commitMetadata(commit),
+      correlation
+    };
+  });
+
+  const readyCorrelations = statusCounts.ready;
+  const commitsInPage = events.length;
+
+  return {
+    repositoryId,
+    page,
+    limit,
+    totalCommits,
+    windowMinutes,
+    minimumSamples,
+    filters,
+    ordering: [
+      "committed_at ASC NULLS LAST",
+      "sha ASC"
+    ],
+    semantics: {
+      timeline:
+        "Chronological persisted Git commits aligned independently with their observable runtime windows.",
+      causality:
+        "Runtime measurements and readiness states do not establish that a commit caused an observed change.",
+      evidenceGaps:
+        "Missing revision, time, parent, or sample evidence remains explicit and is never replaced with inferred measurements."
+    },
+    coverage: {
+      commitsInPage,
+      readyCorrelations,
+      evidenceGaps: commitsInPage - readyCorrelations,
+      statusCounts
+    },
+    events
+  };
+}
+
+export async function generateHistoricalRuntimeReconstruction(
+  repositoryId: string,
+  page: number,
+  limit: number,
+  windowMinutes: number,
+  minimumSamples: number,
+  filters: Omit<RuntimeTelemetryFilters, "from" | "to" | "revisionSha"> = {}
+): Promise<HistoricalRuntimeReconstruction> {
+  const result = await listRepositoryCommits(
+    repositoryId,
+    page,
+    limit
+  );
+
+  const correlations: RuntimeCorrelationEvidence[] = [];
+
+  for (const commit of result.commits) {
+    correlations.push(
+      await generateRuntimeCorrelationEvidence(
+        repositoryId,
+        commit.sha,
+        windowMinutes,
+        minimumSamples,
+        filters
+      )
+    );
+  }
+
+  return buildHistoricalRuntimeReconstruction(
+    repositoryId,
+    page,
+    limit,
+    result.total,
+    windowMinutes,
+    minimumSamples,
+    filters,
+    result.commits,
+    correlations
+  );
+}
