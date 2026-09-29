@@ -5,6 +5,7 @@ import { reportRouter } from "../modules/reports/report.routes.js";
 import { interviewRouter } from "../modules/interview/interview.routes.js";
 import { interpretationRouter } from "../modules/interpretation/interpretation.routes.js";
 import { deploymentRouter } from "../modules/deployments/deployment.routes.js";
+import contributorEvolutionRouter from "../modules/contributors/contributor-evolution.routes.js";
 
 export const router = Router();
 
@@ -22,3 +23,4 @@ router.use("/repositories/:repositoryId/deployments", deploymentRouter);
 router.use("/repositories/:repositoryId/report", reportRouter);
 router.use("/repositories/:repositoryId/interview-stories", interviewRouter);
 router.use("/repositories/:repositoryId/interpretation", interpretationRouter);
+router.use("/repositories/:repositoryId/contributors", contributorEvolutionRouter);
