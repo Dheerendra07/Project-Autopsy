@@ -775,7 +775,17 @@ export async function replaceFileChangeMetrics(
             total_churn = EXCLUDED.total_churn,
             updated_at = NOW()
         `,
-        [repositoryId, JSON.stringify(metrics)]
+        [
+          repositoryId,
+          JSON.stringify(
+            metrics.map((item) => ({
+              path: item.path,
+              additions: item.additions,
+              deletions: item.deletions,
+              binary_changes: item.binaryChanges
+            }))
+          )
+        ]
       );
     }
 
