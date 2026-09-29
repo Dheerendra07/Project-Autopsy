@@ -57,8 +57,8 @@ test(
       );
 
       assert.deepEqual(fileMetrics.rows, [
-        { path: "README.md", binary_changes: 0 },
-        { path: "assets/logo.png", binary_changes: 1 }
+        { path: "assets/logo.png", binary_changes: 1 },
+        { path: "README.md", binary_changes: 0 }
       ]);
       assert.deepEqual(
         {
