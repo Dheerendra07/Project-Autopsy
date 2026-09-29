@@ -1,11 +1,7 @@
 import { Redis } from "ioredis";
 import { env } from "./env.js";
 
-const redisConnection = env.REDIS_URL
-  ? new URL(env.REDIS_URL)
-  : null;
-
-export const redis = redisConnection
+export const redis = env.REDIS_URL
   ? new Redis(env.REDIS_URL, {
       maxRetriesPerRequest: null,
       enableReadyCheck: true
