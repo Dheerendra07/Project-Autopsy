@@ -7,6 +7,7 @@ import {
   AiInterpretationValidationError,
   generateAiInterpretation
 } from "./interpretation.service.js";
+import { isAiInterpretationAuthorized } from "./interpretation.auth.js";
 import {
   EvidenceReportNotReadyError,
   EvidenceReportRepositoryNotFoundError,
