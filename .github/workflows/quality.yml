@@ -3,9 +3,7 @@ name: quality
 on:
   push:
     branches:
-      - main
-      - "feat/**"
-      - "chore/**"
+      - "**"
   pull_request:
     branches:
       - main
