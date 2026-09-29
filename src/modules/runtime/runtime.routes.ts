@@ -7,6 +7,7 @@ import { generateRuntimeCorrelationEvidence } from "./correlation.service.js";
 import { generateHistoricalRuntimeReconstruction } from "./historical-correlation.service.js";
 import { summarizeHistoricalRuntimeEvidence } from "./historical-runtime-summary.service.js";
 import { buildHistoricalRuntimeSourceContextEvidence } from "./historical-runtime-source-context.service.js";
+import { generateDeploymentRuntimeCorrelation } from "./deployment-runtime-correlation.service.js";
 import {
   insertRuntimeTelemetryBatch,
   listRuntimeTelemetryEvents,
@@ -260,6 +261,45 @@ runtimeRouter.get("/telemetry", async (req, res, next) => {
         httpStatusCode: event.http_status_code,
         errorType: event.error_type
       }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+runtimeRouter.get("/deployment-correlation", async (req, res, next) => {
+  try {
+    const repositoryId = getRepositoryId(
+      req.params as Record<string, string | undefined>
+    );
+    const query = z.object({
+      deploymentId: z.string().trim().min(1).max(256),
+      recentEventLimit: z.coerce.number().int().min(1).max(100).default(25)
+    }).parse(req.query);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const result = await generateDeploymentRuntimeCorrelation(
+      repositoryId,
+      query.deploymentId,
+      query.recentEventLimit
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      evidenceBasis: "observed_deployment_runtime_reconciliation",
+      result
     });
   } catch (error) {
     next(error);
