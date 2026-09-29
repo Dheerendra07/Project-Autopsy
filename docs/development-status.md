@@ -361,3 +361,18 @@ This page-level summary derives descriptive aggregates from the deterministic hi
 - adjacent-commit runtime-window overlap coverage
 
 The summary is intentionally descriptive. Direction counts do not identify regressions or preferred revisions, sample-count differences do not establish workload changes, and window overlap does not establish deployment order or causality.
+
+
+### Runtime historical source-change context v1
+
+Endpoint:
+
+GET /api/repositories/:repositoryId/runtime/historical-correlation/source-context?page=1&limit=25&windowMinutes=60&minSamples=10
+
+This projection connects each historical runtime comparison to the exact persisted commit-level source-change context already established by runtime correlation. It exposes:
+- commit SHA, subject, parent, timestamp, and change statistics
+- bounded changed-file evidence with complete/truncated state
+- runtime status, observed deltas, and ready assessment measurements
+- page-level coverage for source-context completeness and runtime/source-context combinations
+
+The projection validates that source-context commit identity matches the historical commit before returning the event. Changed files remain evidence for the commit as a whole; runtime measurements are not attributed to individual files, and no causal or regression conclusion is inferred.
