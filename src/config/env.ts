@@ -18,6 +18,11 @@ export const envSchema = z
       .string()
       .min(1),
 
+    REDIS_URL: z
+      .string()
+      .url()
+      .optional(),
+
     REDIS_HOST: z
       .string()
       .min(1)
