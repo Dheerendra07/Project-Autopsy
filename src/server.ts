@@ -9,7 +9,7 @@ export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
 export const HTTP_KEEP_ALIVE_TIMEOUT_MS = 5_000;
 
-let httpServer: Server | undefined;
+export let httpServer: Server | undefined;
 let shuttingDown = false;
 
 async function closeResources(): Promise<void> {
@@ -19,15 +19,32 @@ async function closeResources(): Promise<void> {
   ]);
 }
 
+export async function closeServer(): Promise<void> {
+  if (!httpServer) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    httpServer?.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
 function registerShutdownHandlers(): void {
   for (const signal of ["SIGTERM", "SIGINT"] as const) {
     process.once(signal, () => {
-      void shutdown(signal);
+      void shutdownServer(signal);
     });
   }
 }
 
-async function shutdown(signal: string): Promise<void> {
+export async function shutdownServer(signal: string): Promise<void> {
   if (shuttingDown) {
     return;
   }
@@ -43,18 +60,7 @@ async function shutdown(signal: string): Promise<void> {
   forceExitTimer.unref();
 
   try {
-    if (httpServer) {
-      await new Promise<void>((resolve, reject) => {
-        httpServer?.close((error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          resolve();
-        });
-      });
-    }
+    await closeServer();
 
     await closeResources();
     clearTimeout(forceExitTimer);
@@ -67,7 +73,7 @@ async function shutdown(signal: string): Promise<void> {
   }
 }
 
-async function startServer(): Promise<void> {
+export async function startServer(): Promise<void> {
   try {
     await checkDatabaseConnection();
     console.log("✓ PostgreSQL connected");
@@ -87,10 +93,18 @@ async function startServer(): Promise<void> {
 
     httpServer.on("error", (error) => {
       console.error("HTTP server error:", error);
-      void shutdown("HTTP server error");
+
+      if (process.env.AUTOPSY_COMBINED_RUNTIME === "1") {
+        process.kill(process.pid, "SIGTERM");
+        return;
+      }
+
+      void shutdownServer("HTTP server error");
     });
 
-    registerShutdownHandlers();
+    if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {
+      registerShutdownHandlers();
+    }
   } catch (error) {
     console.error("Failed to start Project Autopsy:", error);
     await closeResources();
@@ -98,4 +112,6 @@ async function startServer(): Promise<void> {
   }
 }
 
-void startServer();
+if (process.env.AUTOPSY_COMBINED_RUNTIME !== "1") {
+  void startServer();
+}

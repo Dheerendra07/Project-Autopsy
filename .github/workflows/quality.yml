@@ -126,6 +126,54 @@ jobs:
           trap - EXIT
           cat server-smoke.log
 
+      - name: Combined API and worker startup smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node dist/free-runtime.js > combined-runtime-smoke.log 2>&1 &
+          runtime_pid=$!
+
+          cleanup() {
+            kill "$runtime_pid" 2>/dev/null || true
+            wait "$runtime_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          ready_ok=false
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5000/health > health.json; then
+              ready_ok=true
+              break
+            fi
+
+            if ! kill -0 "$runtime_pid" 2>/dev/null; then
+              cat combined-runtime-smoke.log
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          if [ "$ready_ok" != "true" ]; then
+            cat combined-runtime-smoke.log
+            exit 1
+          fi
+
+          cat health.json
+
+          kill -TERM "$runtime_pid"
+
+          wait "$runtime_pid" || {
+            status=$?
+            cat combined-runtime-smoke.log
+            exit "$status"
+          }
+
+          trap - EXIT
+          cat combined-runtime-smoke.log
+
       - name: Worker startup smoke test
         shell: bash
         run: |
