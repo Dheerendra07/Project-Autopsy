@@ -4,6 +4,7 @@ import { runtimeRouter } from "../modules/runtime/runtime.routes.js";
 import { reportRouter } from "../modules/reports/report.routes.js";
 import { interviewRouter } from "../modules/interview/interview.routes.js";
 import { interpretationRouter } from "../modules/interpretation/interpretation.routes.js";
+import { deploymentRouter } from "../modules/deployments/deployment.routes.js";
 
 export const router = Router();
 
@@ -17,6 +18,7 @@ router.get("/", (_req, res) => {
 
 router.use("/repositories", repositoryRouter);
 router.use("/repositories/:repositoryId/runtime", runtimeRouter);
+router.use("/repositories/:repositoryId/deployments", deploymentRouter);
 router.use("/repositories/:repositoryId/report", reportRouter);
 router.use("/repositories/:repositoryId/interview-stories", interviewRouter);
 router.use("/repositories/:repositoryId/interpretation", interpretationRouter);
