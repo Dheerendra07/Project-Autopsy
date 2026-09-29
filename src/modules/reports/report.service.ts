@@ -368,7 +368,13 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
           event.commit.sha.slice(0, 12) +
             " has runtime status " +
             event.runtimeEvidence.status +
-            " with source context " +
+            " with observed delta avg=" +
+            String(event.runtimeEvidence.observedDelta.avgDurationMs ?? "n/a") +
+            " ms, p95=" +
+            String(event.runtimeEvidence.observedDelta.p95DurationMs ?? "n/a") +
+            " ms, errorRate=" +
+            String(event.runtimeEvidence.observedDelta.errorRate ?? "n/a") +
+            "; source context " +
             event.sourceContext.status +
             " (" +
             String(event.sourceContext.filesReported) +
