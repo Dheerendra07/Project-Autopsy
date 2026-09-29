@@ -45,6 +45,17 @@ test("uses documented defaults for AI provider configuration", () => {
   assert.equal(config.AI_TIMEOUT_MS, 30_000);
 });
 
+test("worker production role does not require web ingestion, API, or AI access secrets", () => {
+  const config = parseEnvironment(
+    baseEnvironment({
+      NODE_ENV: "production",
+      AUTOPSY_SERVICE_ROLE: "worker"
+    })
+  );
+
+  assert.equal(config.AUTOPSY_SERVICE_ROLE, "worker");
+});
+
 test("requires deployment ingestion credentials in production", () => {
   assert.throws(
     () =>
