@@ -7,6 +7,8 @@ import {
 import { summarizeRuntimeTelemetry } from "../runtime/runtime.persistence.js";
 import type { RuntimeTelemetryFilters } from "../runtime/runtime.types.js";
 
+export const DEPLOYMENT_RUNTIME_CORRELATION_MAX_RECENT_EVENTS = 100;
+
 export type DeploymentRuntimeCorrelationStatus =
   | "deployment_evidence_not_found"
   | "runtime_evidence_not_found"
@@ -158,6 +160,22 @@ export async function generateDeploymentRuntimeCorrelation(
   deploymentId: string,
   recentEventLimit = 25
 ): Promise<DeploymentRuntimeCorrelation> {
+  if (
+    !Number.isInteger(recentEventLimit) ||
+    recentEventLimit < 1 ||
+    recentEventLimit > DEPLOYMENT_RUNTIME_CORRELATION_MAX_RECENT_EVENTS
+  ) {
+    throw new RangeError(
+      "recentEventLimit must be an integer between 1 and " +
+        String(DEPLOYMENT_RUNTIME_CORRELATION_MAX_RECENT_EVENTS) +
+        "."
+    );
+  }
+
+  if (!deploymentId.trim()) {
+    throw new RangeError("deploymentId must not be empty.");
+  }
+
   const filters: RuntimeTelemetryFilters = { deploymentId };
 
   const [summary, recentEvents, revisionSummary, environmentSummary] =
