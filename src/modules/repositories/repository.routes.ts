@@ -238,6 +238,42 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
   }
 });
 
+router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const analysisRunId = z.string().uuid().parse(req.params.analysisRunId);
+    const analysis = await getAnalysisRunById(analysisRunId);
+
+    if (!analysis || analysis.repository_id !== repositoryId) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "ANALYSIS_NOT_FOUND",
+          message: "Analysis run not found."
+        }
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      repositoryId,
+      analysis: {
+        id: analysis.id,
+        status: analysis.status,
+        mode: analysis.analysis_mode,
+        analyzerVersion: analysis.analyzer_version,
+        baseHeadSha: analysis.base_head_sha,
+        targetHeadSha: analysis.target_head_sha,
+        startedAt: analysis.started_at,
+        completedAt: analysis.completed_at
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/:repositoryId", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
