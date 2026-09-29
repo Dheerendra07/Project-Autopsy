@@ -178,6 +178,19 @@ export interface ReportBuildInput {
     assertionCount: number;
     assertionDelta: number;
   };
+  historicalRuntime?: {
+    events: Array<{
+      commit: { sha: string };
+      sourceContext: {
+        status: "available" | "truncated" | "unavailable";
+        filesReported: number;
+        changedFiles: Array<{ path: string }>;
+      };
+      runtimeEvidence: {
+        status: string;
+      };
+    }>;
+  };
   runtimeSummary: {
     overall: {
       sampleCount: number;
