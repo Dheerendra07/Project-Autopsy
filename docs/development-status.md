@@ -281,7 +281,7 @@ The interpretation contract permits:
 
 The contract forbids the model from becoming a source of truth for ownership, intent, business impact, deployment timing, incidents, root cause, regressions, or production outcomes. Missing evidence remains a verification task.
 
-The default provider configuration uses the OpenAI Responses API structured-output path with `AI_MODEL=gpt-5.6-luna`. The provider key is optional at startup; requests return an explicit not-configured response when `AI_API_KEY` is absent.
+The default provider configuration uses the OpenAI Responses API structured-output path with `AI_MODEL=gpt-5.6-luna`. The provider key is optional at startup; requests return an explicit not-configured response when `AI_API_KEY` is absent. In production, configuring `AI_API_KEY` also requires `AI_INTERPRETATION_ACCESS_KEY`, and the interpretation endpoint validates that access credential before generating the report or calling the provider.
 
 ## End-to-end autopsy completion checkpoint — 2026-09-29
 
