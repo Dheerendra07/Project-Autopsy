@@ -88,6 +88,34 @@ test("preparation produces canonical timestamp and payload hash", () => {
   assert.match(event.payloadHash, /^[0-9a-f]{64}$/);
 });
 
+test("rejects credential-like keys even when nested", () => {
+  assert.throws(() =>
+    deploymentEvidenceBatchSchema.parse({
+      events: [
+        validEvent({
+          metadata: {
+            workflow: {
+              token: "should-not-be-stored"
+            }
+          }
+        })
+      ]
+    })
+  );
+});
+
+test("rejects unknown event fields", () => {
+  assert.throws(() =>
+    deploymentEvidenceBatchSchema.parse({
+      events: [
+        validEvent({
+          unexpected: "value"
+        })
+      ]
+    })
+  );
+});
+
 test("metadata is bounded and JSON serializable", () => {
   assert.throws(() => deploymentEvidenceBatchSchema.parse({
     events: [validEvent({ metadata: { payload: "x".repeat(9_000) } })]
