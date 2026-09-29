@@ -157,3 +157,65 @@ test("rejects correlation arrays that do not preserve one-to-one ordering", () =
     /one correlation result per commit/i
   );
 });
+
+
+test("preserves adjacent commits across paginated reconstruction boundaries", () => {
+  const commit = (sha: string, subject: string, committedAt: string) => ({
+    sha,
+    parent_shas: [],
+    subject,
+    committed_at: committedAt,
+    files_changed: 1,
+    additions: 1,
+    deletions: 0
+  });
+
+  const first = commit("a".repeat(40), "first", "2026-09-01T00:00:00.000Z");
+  const middle = commit("b".repeat(40), "middle", "2026-09-01T01:00:00.000Z");
+  const last = commit("c".repeat(40), "last", "2026-09-01T02:00:00.000Z");
+
+  const correlation = (sha: string) => ({
+    status: "insufficient_target_samples" as const,
+    repositoryId: "repo",
+    targetRevisionSha: sha,
+    parentRevisionSha: null,
+    targetCommitAt: null,
+    changeContext: null,
+    assessment: null,
+    windowMinutes: 60,
+    minimumSamples: 10,
+    filters: {},
+    baseline: null,
+    target: null,
+    observedDelta: {
+      avgDurationMs: null,
+      p95DurationMs: null,
+      errorRate: null
+    },
+    evidencePolicy: []
+  });
+
+  const result = buildHistoricalRuntimeReconstruction(
+    "repo",
+    2,
+    1,
+    3,
+    60,
+    10,
+    {},
+    [middle],
+    [correlation(middle.sha)],
+    {
+      previousCommit: first,
+      nextCommit: last
+    }
+  );
+
+  assert.equal(result.events.length, 1);
+  assert.equal(result.events[0]?.temporalContext.previousCommitSha, first.sha);
+  assert.equal(result.events[0]?.temporalContext.nextCommitSha, last.sha);
+  assert.equal(result.events[0]?.temporalContext.previousCommitGapMinutes, 60);
+  assert.equal(result.events[0]?.temporalContext.nextCommitGapMinutes, 60);
+  assert.equal(result.events[0]?.temporalContext.runtimeWindowOverlapsPrevious, true);
+  assert.equal(result.events[0]?.temporalContext.runtimeWindowOverlapsNext, true);
+});
