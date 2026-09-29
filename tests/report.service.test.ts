@@ -292,7 +292,9 @@ test("builds an evidence report with stable fingerprint independent of generatio
       (section) =>
         section.id === "contributor-evolution" &&
         section.claims[0]?.statement.includes("Ada Example") &&
-        section.claims[0]?.evidence[0]?.source === "contributor_activity"
+        section.claims[0]?.statement.includes("2026-09-04T00:00:00.000Z") &&
+        section.claims[0]?.evidence[0]?.source === "contributor_activity" &&
+        section.claims[0]?.evidence[0]?.key === "Ada Example::ada@example.com"
     )
   );
   const historicalRuntime = first.sections.find(
@@ -301,6 +303,27 @@ test("builds an evidence report with stable fingerprint independent of generatio
   assert.match(
     historicalRuntime?.claims[0]?.statement ?? "",
     /avg=5 ms, p95=8 ms, errorRate=0\.01/
+  );
+});
+
+test("revalidates the exact report evidence snapshot", async () => {
+  const { isReportEvidenceSnapshotCurrent } = await import("../src/modules/reports/report.service.js");
+
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "a".repeat(40), "run-1", "a".repeat(40)),
+    true
+  );
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "a".repeat(40), "run-2", "a".repeat(40)),
+    false
+  );
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "b".repeat(40), "run-1", "b".repeat(40)),
+    false
+  );
+  assert.equal(
+    isReportEvidenceSnapshotCurrent("a".repeat(40), "run-1", "a".repeat(40), "a".repeat(40), "run-1", "b".repeat(40)),
+    false
   );
 });
 

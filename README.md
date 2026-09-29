@@ -238,6 +238,7 @@ Generate a bounded evidence-backed engineering report:
 GET /api/repositories/:repositoryId/report?limit=10
 
 A report is generated only from a completed analysis run. Each claim carries evidence references, and report fingerprints are deterministic for the same persisted evidence and report inputs.
+Report generation revalidates the repository HEAD and exact completed analysis run after evidence collection; if the evidence snapshot changes during generation, the report is rejected rather than mixing analysis states.
 
 The report includes historical runtime evidence when persisted runtime telemetry is available. Historical runtime events are aligned to persisted commit revisions and joined to bounded changed-file source context.
 

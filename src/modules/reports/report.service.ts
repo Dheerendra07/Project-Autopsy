@@ -153,13 +153,17 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
                 String(item.totalChurn) +
                 " lines of recorded churn, and " +
                 String(item.pathsTouched) +
-                " distinct changed paths.",
+                " distinct changed paths, first observed at " +
+                (item.firstCommittedAt ?? "an unavailable timestamp") +
+                " and last observed at " +
+                (item.lastCommittedAt ?? "an unavailable timestamp") +
+                ".",
               [
                 evidenceRef(
                   "contributor_activity",
-                  item.authorEmail ??
-                    item.authorName ??
-                    "unknown-author"
+                  (item.authorName ?? "unknown-author") +
+                    "::" +
+                    (item.authorEmail ?? "unknown-email")
                 )
               ],
               "Contributor activity is descriptive Git evidence; it does not establish ownership, effort, intent, seniority, or business impact."
@@ -173,7 +177,12 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
               "Missing contributor metadata is not evidence that no people contributed to the repository."
             )
           ],
-      "Contributor identities use exact persisted Git author name/email tuples; aliases are not automatically merged."
+      "Contributor identities use exact persisted Git author name/email tuples; aliases are not automatically merged. " +
+        "Showing " +
+        String(input.contributors.length) +
+        " contributor records out of " +
+        String(input.contributorCount) +
+        " persisted contributor tuples in this bounded report."
     )
   );
 
@@ -559,6 +568,24 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
   return sections;
 }
 
+export function isReportEvidenceSnapshotCurrent(
+  initialRepositoryHeadSha: string | null,
+  initialAnalysisRunId: string | null,
+  initialAnalysisTargetHeadSha: string | null,
+  currentRepositoryHeadSha: string | null,
+  currentAnalysisRunId: string | null,
+  currentAnalysisTargetHeadSha: string | null
+): boolean {
+  return Boolean(
+    initialRepositoryHeadSha &&
+      initialAnalysisRunId &&
+      initialAnalysisTargetHeadSha &&
+      currentRepositoryHeadSha === initialRepositoryHeadSha &&
+      currentAnalysisRunId === initialAnalysisRunId &&
+      currentAnalysisTargetHeadSha === initialAnalysisTargetHeadSha
+  );
+}
+
 export function buildEvidenceReport(
   input: ReportBuildInput,
   generatedAt: Date = new Date()
@@ -671,6 +698,26 @@ export async function generateEvidenceReport(
     summarizeRuntimeTelemetry(repositoryId, {}, "revision", sampleLimit),
     listDeploymentEvidence(repositoryId, sampleLimit)
   ]);
+
+  const currentRepository = await getRepositoryById(repositoryId);
+  const currentAnalysis = await getLatestCompletedAnalysisRun(repositoryId);
+
+  if (
+    !currentRepository ||
+    !currentAnalysis ||
+    !isReportEvidenceSnapshotCurrent(
+      repository.head_sha,
+      analysis.id,
+      analysis.target_head_sha,
+      currentRepository.head_sha,
+      currentAnalysis.id,
+      currentAnalysis.target_head_sha
+    )
+  ) {
+    throw new EvidenceReportNotReadyError(
+      "Repository evidence changed while the report was being generated; retry against a stable completed analysis."
+    );
+  }
 
   const historicalRuntime =
     runtimeSummary.overall.sampleCount > 0
