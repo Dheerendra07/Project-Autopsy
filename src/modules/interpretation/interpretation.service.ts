@@ -17,8 +17,8 @@ import { INTERPRETATION_VERSION } from "./interpretation.types.js";
 export const INTERPRETATION_PROMPT_VERSION = "1.0" as const;
 
 export class AiInterpretationNotConfiguredError extends Error {
-  constructor() {
-    super("AI interpretation is not configured.");
+  constructor(message = "AI interpretation is not configured.") {
+    super(message);
     this.name = "AiInterpretationNotConfiguredError";
   }
 }
@@ -68,26 +68,19 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
-    executiveSummary: {
-      type: "string",
-      minLength: 1,
-      maxLength: 2_000
-    },
+    executiveSummary: { type: "string" },
     themes: {
       type: "array",
-      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,
         properties: {
-          id: { type: "string", minLength: 1, maxLength: 64 },
-          title: { type: "string", minLength: 1, maxLength: 160 },
-          analysis: { type: "string", minLength: 1, maxLength: 1_200 },
+          id: { type: "string" },
+          title: { type: "string" },
+          analysis: { type: "string" },
           evidenceKeys: {
             type: "array",
-            minItems: 1,
-            maxItems: 5,
-            items: { type: "string", minLength: 1, maxLength: 256 }
+            items: { type: "string" }
           }
         },
         required: ["id", "title", "analysis", "evidenceKeys"]
@@ -95,17 +88,14 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
     },
     investigationQuestions: {
       type: "array",
-      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,
         properties: {
-          question: { type: "string", minLength: 1, maxLength: 500 },
+          question: { type: "string" },
           evidenceKeys: {
             type: "array",
-            minItems: 1,
-            maxItems: 3,
-            items: { type: "string", minLength: 1, maxLength: 256 }
+            items: { type: "string" }
           }
         },
         required: ["question", "evidenceKeys"]
@@ -113,8 +103,7 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
     },
     uncertainties: {
       type: "array",
-      maxItems: 8,
-      items: { type: "string", minLength: 1, maxLength: 500 }
+      items: { type: "string" }
     }
   },
   required: [
@@ -333,91 +322,93 @@ export async function generateAiInterpretation(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
-  let response: Response;
-
   try {
-    response = await fetchFn(config.baseUrl + "/responses", {
-      method: "POST",
-      headers: {
-        authorization: "Bearer " + config.apiKey,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: config.model,
-        input: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ],
-        max_output_tokens: 1_600,
-        text: {
-          format: {
-            type: "json_schema",
-            name: "project_autopsy_interpretation",
-            strict: true,
-            schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+    let response: Response;
+
+    try {
+      response = await fetchFn(config.baseUrl + "/responses", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + config.apiKey,
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          model: config.model,
+          input: [
+            { role: "system", content: system },
+            { role: "user", content: user }
+          ],
+          max_output_tokens: 1_600,
+          text: {
+            format: {
+              type: "json_schema",
+              name: "project_autopsy_interpretation",
+              strict: true,
+              schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+            }
           }
-        }
-      }),
-      signal: controller.signal
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
+        }),
+        signal: controller.signal
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new AiInterpretationProviderError(
+          "AI provider request timed out."
+        );
+      }
+
       throw new AiInterpretationProviderError(
-        "AI provider request timed out."
+        "AI provider request failed."
       );
     }
 
-    throw new AiInterpretationProviderError(
-      "AI provider request failed."
-    );
+    if (!response.ok) {
+      throw new AiInterpretationProviderError(
+        "AI provider request failed with HTTP " + String(response.status) + "."
+      );
+    }
+
+    let body: unknown;
+
+    try {
+      body = await response.json();
+    } catch {
+      throw new AiInterpretationProviderError(
+        "AI provider returned invalid JSON."
+      );
+    }
+
+    const rawText = parseProviderResponse(body);
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      throw new AiInterpretationProviderError(
+        "AI provider returned non-JSON structured output."
+      );
+    }
+
+    const interpretation = interpretationOutputSchema.safeParse(parsed);
+
+    if (!interpretation.success) {
+      throw new AiInterpretationValidationError(
+        "AI provider output did not satisfy the interpretation contract."
+      );
+    }
+
+    validateEvidenceKeys(interpretation.data, grounding);
+
+    return {
+      interpretationVersion: INTERPRETATION_VERSION,
+      provider: "openai",
+      model: config.model,
+      reportFingerprint: report.fingerprint,
+      groundingClaimCount: grounding.length,
+      generatedAt: new Date().toISOString(),
+      interpretation: interpretation.data
+    };
   } finally {
     clearTimeout(timeout);
   }
-
-  if (!response.ok) {
-    throw new AiInterpretationProviderError(
-      "AI provider request failed with HTTP " + String(response.status) + "."
-    );
-  }
-
-  let body: unknown;
-
-  try {
-    body = await response.json();
-  } catch {
-    throw new AiInterpretationProviderError(
-      "AI provider returned invalid JSON."
-    );
-  }
-
-  const rawText = parseProviderResponse(body);
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    throw new AiInterpretationProviderError(
-      "AI provider returned non-JSON structured output."
-    );
-  }
-
-  const interpretation = interpretationOutputSchema.safeParse(parsed);
-
-  if (!interpretation.success) {
-    throw new AiInterpretationValidationError(
-      "AI provider output did not satisfy the interpretation contract."
-    );
-  }
-
-  validateEvidenceKeys(interpretation.data, grounding);
-
-  return {
-    interpretationVersion: INTERPRETATION_VERSION,
-    provider: "openai",
-    model: config.model,
-    reportFingerprint: report.fingerprint,
-    groundingClaimCount: grounding.length,
-    generatedAt: new Date().toISOString(),
-    interpretation: interpretation.data
-  };
 }
