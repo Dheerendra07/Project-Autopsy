@@ -327,13 +327,17 @@ export async function generateAiInterpretation(
     : null;
 
   if (cache && cacheKey) {
-    const cached = await cache.get(cacheKey);
+    try {
+      const cached = await cache.get(cacheKey);
 
-    if (cached) {
-      return {
-        ...cached,
-        cacheHit: true
-      };
+      if (cached) {
+        return {
+          ...cached,
+          cacheHit: true
+        };
+      }
+    } catch {
+      // Cache is an optimization. A cache read failure must not block AI interpretation.
     }
   }
 
@@ -429,7 +433,11 @@ export async function generateAiInterpretation(
     };
 
     if (cache && cacheKey) {
-      await cache.set(cacheKey, result);
+      try {
+        await cache.set(cacheKey, result);
+      } catch {
+        // Cache is an optimization. A cache write failure must not fail a valid provider result.
+      }
     }
 
     return result;
