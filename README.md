@@ -186,6 +186,19 @@ Stories are evidence anchors for interview preparation rather than claims of per
 The runtime-observability story can combine historical runtime/source-change evidence with current runtime observations when both sections contain evidence. When historical runtime evidence is unavailable, the story falls back to the runtime-observations section without fabricating historical context.
 
 
+
+## AI evidence interpretation
+
+Generate a grounded AI interpretation of the existing evidence-backed report:
+
+GET /api/repositories/:repositoryId/interpretation?limit=10
+
+The interpretation layer sends a bounded set of report claims to the configured AI provider and requires structured output. Model output may reference only evidence keys supplied by the server; unknown evidence references are rejected.
+
+The interpretation can summarize recurring themes, identify evidence-backed investigation questions, and list uncertainties. It must not invent personal ownership, developer intent, business impact, deployment history, incidents, root causes, regressions, or production outcomes.
+
+Configuration is optional. Set `AI_API_KEY` to enable the endpoint, with `AI_BASE_URL`, `AI_MODEL`, and `AI_TIMEOUT_MS` available for provider configuration. The default provider configuration targets OpenAI's Responses API with `gpt-5.6-luna`.
+
 ## Repeatedly modified files
 
 Repeated-change API: GET /api/repositories/:repositoryId/repeatedly-modified-files?minTouches=3&limit=20
