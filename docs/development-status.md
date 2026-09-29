@@ -57,9 +57,20 @@ Evidence basis: `typescript_ast_file_change_snapshots`.
 
 The API reports before/after metrics and deltas per changed source file. Deleted files have an explicit deletion event; parse failures and oversized files do not produce fabricated after-metrics.
 
-## Next planned layers
+## Current hardening focus
 
-The original planned layers through evidence-backed interview stories are complete on main, and historical runtime reconstruction v1 is now also merged. Further work should be proposed as a new roadmap item and must preserve the existing evidence contracts and verification gates.
+The original product layers through evidence-backed reports, interview story scaffolds, and grounded AI interpretation are implemented. Current work is production hardening rather than rebuilding the evidence foundation.
+
+Active hardening areas:
+- asynchronous analysis status and recovery behavior
+- worker-local repository storage recovery on ephemeral infrastructure
+- report snapshot consistency under concurrent re-analysis
+- dependency-backed readiness and bounded dependency checks
+- canonical Git revision identity handling for cross-source correlation
+- end-to-end acceptance coverage for import -> analysis -> report flows
+- final production observability, limits, and failure-path audit
+
+Every new change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, and explicit evidence-gap behavior.
 
 ## Verification rule
 
@@ -71,7 +82,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 1f35c9ce27cd8cf840badee5074eec94a3840f8d.
+Current verified main baseline: 697ff8deb0cb2243f7bfcb482df7b49bc9145b28.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -94,6 +105,11 @@ The current main baseline includes:
 - Render Key Value production wiring uses the service connection string through `REDIS_URL`, while local host/port configuration remains supported
 - HTTP-level API access, health, and authenticated not-found contract coverage in CI
 - Report generation is fenced to the latest completed analysis target so partial re-analysis evidence is not surfaced
+- Report generation revalidates the repository head and exact completed analysis snapshot after all evidence collection, including historical runtime reconstruction
+- Worker analysis can re-hydrate missing or unusable repository Git storage from persisted source/branch metadata without changing the persisted analysis target
+- Public `/health` is a dependency-independent liveness endpoint; `/ready` checks PostgreSQL and Redis readiness with bounded Redis probing and returns `503` when required dependencies are unavailable
+- Runtime telemetry and deployment revision SHA inputs are canonicalized to lowercase for deterministic cross-source correlation
+- Asynchronous analysis runs expose a scoped polling endpoint at `GET /api/repositories/:repositoryId/analysis/:analysisRunId`
 
 Recent verified merge sequence for this continuation:
 - PR #42 — AI provider retry hardening
@@ -109,6 +125,16 @@ Recent verified merge sequence for this continuation:
 - PR #58 — Render Redis connection-string hardening
 - PR #60 — API HTTP security contract coverage
 - PR #62 — report/current-analysis consistency fence
+- PR #63 — contributor activity evidence
+- PR #64 — contributor evidence in reports
+- PR #65 — report snapshot revalidation
+- PR #66 — final report snapshot boundary after historical runtime reconstruction
+- PR #67 — analysis repository-storage recovery
+- PR #68 — dependency-backed readiness endpoint
+- PR #69 — bounded Redis readiness checks
+- PR #70 — analysis job recovery state-machine regression coverage
+- PR #71 — Git revision identity normalization
+- PR #72 — asynchronous analysis status endpoint
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
