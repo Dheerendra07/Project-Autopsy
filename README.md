@@ -6,7 +6,7 @@ It analyzes Git history, code structure, dependencies, tests, database/schema ch
 
 ## Current phase
 
-Phase 1 — architecture, repository ingestion foundation, database schema foundation, and background analysis worker.
+Evidence-backed runtime and provenance analysis — repository history, code structure, dependencies, schema/test evolution, runtime telemetry, deployment evidence, deployment↔runtime reconciliation, reports, interview scaffolds, and grounded AI interpretation.
 
 ## Repository structure
 
@@ -24,8 +24,12 @@ src/
 │   ├── dependencies/
 │   ├── complexity/         # AST-derived complexity evolution
 │   ├── reports/
-│   └── interview/
-│   ├── interpretation/  # grounded AI interpretation
+├── interview/
+├── deployments/         # observed deployment evidence
+│   └── ...
+├── runtime/             # runtime telemetry and correlation
+│   └── ...
+└── interpretation/      # grounded AI interpretation
 ├── workers/                # background analysis workers
 ├── routes/                 # API routing
 ├── app.ts
@@ -174,12 +178,6 @@ x-autopsy-deployment-key: <configured key>
 ```
 
 The ingestion contract is idempotent by repository plus event ID. A repeated identical event is accepted as a duplicate; the same event ID with a different payload is rejected. Deployment records are stored as observed external evidence and do not by themselves prove what currently serves traffic or establish runtime causality.
-
-List recent deployment evidence:
-
-```http
-GET /api/repositories/:repositoryId/deployments?limit=50
-```
 
 List recent deployment evidence:
 
