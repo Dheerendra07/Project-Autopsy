@@ -1,0 +1,107 @@
+services:
+  - type: web
+    name: project-autopsy-api
+    runtime: node
+    plan: 0.5c-512mb
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: node dist/server.js
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: project-autopsy-db
+          property: connectionString
+      - key: REDIS_HOST
+        fromService:
+          name: project-autopsy-queue
+          type: keyvalue
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: project-autopsy-queue
+          type: keyvalue
+          property: port
+      - key: REPOSITORY_STORAGE_PATH
+        value: ./storage/repositories
+      - key: MAX_REPOSITORY_SIZE_MB
+        value: "500"
+      - key: MAX_ANALYSIS_TIME_MINUTES
+        value: "30"
+      - key: RUNTIME_TELEMETRY_INGEST_KEY
+        sync: false
+      - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_INTERPRETATION_ACCESS_KEY
+        sync: false
+      - key: AI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: AI_MODEL
+        value: gpt-5.6-luna
+      - key: AI_TIMEOUT_MS
+        value: "30000"
+
+  - type: worker
+    name: project-autopsy-worker
+    runtime: node
+    plan: 0.5c-512mb
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/workers/analysis.worker.js
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 120
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: project-autopsy-db
+          property: connectionString
+      - key: REDIS_HOST
+        fromService:
+          name: project-autopsy-queue
+          type: keyvalue
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: project-autopsy-queue
+          type: keyvalue
+          property: port
+      - key: REPOSITORY_STORAGE_PATH
+        value: ./storage/repositories
+      - key: MAX_REPOSITORY_SIZE_MB
+        value: "500"
+      - key: MAX_ANALYSIS_TIME_MINUTES
+        value: "30"
+      - key: RUNTIME_TELEMETRY_INGEST_KEY
+        sync: false
+      - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_INTERPRETATION_ACCESS_KEY
+        sync: false
+      - key: AI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: AI_MODEL
+        value: gpt-5.6-luna
+      - key: AI_TIMEOUT_MS
+        value: "30000"
+
+  - type: keyvalue
+    name: project-autopsy-queue
+    plan: 256mb
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+    ipAllowList: []
+
+databases:
+  - name: project-autopsy-db
+    plan: 0.5c-1g
+    postgresMajorVersion: "17"
