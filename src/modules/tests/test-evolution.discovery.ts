@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { simpleGit } from "simple-git";
+import { createAnalysisGit } from "../analysis/analysis-git.js";
 
 import type { DiscoveredCommit } from "../commits/commit.discovery.js";
 import type {
@@ -406,7 +407,7 @@ export async function discoverTestEvolution(
   repositoryPath: string,
   commits: DiscoveredCommit[]
 ): Promise<TestEvolutionEvent[]> {
-  const git = simpleGit(repositoryPath);
+  const git = createAnalysisGit(repositoryPath);
   const packageCache = new Map<string, string | null>();
   const events: TestEvolutionEvent[] = [];
 
