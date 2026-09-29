@@ -5,6 +5,10 @@ import { env } from "./config/env.js";
 import { db, checkDatabaseConnection } from "./config/database.js";
 import { redis, checkRedisConnection } from "./config/redis.js";
 
+export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
+export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
+export const HTTP_KEEP_ALIVE_TIMEOUT_MS = 5_000;
+
 let httpServer: Server | undefined;
 let shuttingDown = false;
 
@@ -76,6 +80,10 @@ async function startServer(): Promise<void> {
         `✓ Project Autopsy API listening on port ${env.PORT}`
       );
     });
+
+    httpServer.requestTimeout = HTTP_REQUEST_TIMEOUT_MS;
+    httpServer.headersTimeout = HTTP_HEADERS_TIMEOUT_MS;
+    httpServer.keepAliveTimeout = HTTP_KEEP_ALIVE_TIMEOUT_MS;
 
     httpServer.on("error", (error) => {
       console.error("HTTP server error:", error);
