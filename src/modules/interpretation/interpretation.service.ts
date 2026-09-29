@@ -132,6 +132,18 @@ function parseRetryAfterMs(
 }
 
 function calculateRetryDelayMs(
+  response: null,
+  attemptNumber: number,
+  nowMs: number,
+  randomFn: () => number
+): number;
+function calculateRetryDelayMs(
+  response: Response,
+  attemptNumber: number,
+  nowMs: number,
+  randomFn: () => number
+): number | null;
+function calculateRetryDelayMs(
   response: Response | null,
   attemptNumber: number,
   nowMs: number,
