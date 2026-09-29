@@ -35,6 +35,19 @@ const metadataSchema = z
         message: "metadata exceeds the 8 KiB limit."
       });
     }
+
+    const sensitiveKeyPattern =
+      /(?:secret|token|password|authorization|api[-_]?key|credential)/i;
+
+    for (const key of Object.keys(value)) {
+      if (sensitiveKeyPattern.test(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: "metadata must not contain credential-like fields."
+        });
+      }
+    }
   });
 
 export const deploymentEvidenceEventSchema = z
