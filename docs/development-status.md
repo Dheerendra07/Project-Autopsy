@@ -346,3 +346,18 @@ Evidence semantics:
 - a ready correlation means only that the revision/time/parent/sample evidence requirements were satisfied
 - missing revision, commit time, parent, or sample evidence remains an explicit status
 - the resulting timeline is a historical evidence reconstruction, not a deployment history or proof that a commit produced an observed runtime change
+
+
+### Runtime historical evidence summary v1
+
+Endpoint:
+
+GET /api/repositories/:repositoryId/runtime/historical-correlation/summary?page=1&limit=25&windowMinutes=60&minSamples=10
+
+This page-level summary derives descriptive aggregates from the deterministic historical runtime reconstruction. It reports:
+- ready versus evidence-gap coverage
+- observed average-duration, p95-duration, and error-rate direction counts
+- baseline/target sample totals and sample-count imbalance counts
+- adjacent-commit runtime-window overlap coverage
+
+The summary is intentionally descriptive. Direction counts do not identify regressions or preferred revisions, sample-count differences do not establish workload changes, and window overlap does not establish deployment order or causality.
