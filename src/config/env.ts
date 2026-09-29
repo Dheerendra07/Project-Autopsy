@@ -11,6 +11,11 @@ export const envSchema = z
       .enum(["web", "worker"])
       .default("web"),
 
+    AUTOPSY_CORS_ORIGINS: z
+      .string()
+      .trim()
+      .optional(),
+
     PORT: z.coerce
       .number()
       .int()
