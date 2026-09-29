@@ -18,6 +18,15 @@ export const envSchema = z
       .string()
       .min(1),
 
+    REDIS_URL: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value.startsWith("redis://") || value.startsWith("rediss://"),
+        "REDIS_URL must use redis:// or rediss://."
+      )
+      .optional(),
+
     REDIS_HOST: z
       .string()
       .min(1)
