@@ -288,3 +288,9 @@ The repository includes a render.yaml Blueprint for the API web service, BullMQ 
 Secrets are declared with sync: false and must be supplied in the Render dashboard. The Blueprint uses paid compute/datastore plans so production data and queue state are not dependent on Free-instance limitations.
 
 Render web services must listen on 0.0.0.0; Project Autopsy binds explicitly to all interfaces. The worker treats repository storage as ephemeral and can re-clone a tracked repository from its persisted source URL when its local Git checkout is missing after a worker restart or redeploy.
+
+## Release readiness
+
+The current main baseline is the verified release-ready code checkpoint. GitHub Actions covers typecheck, build, PostgreSQL migrations, migration idempotency, the full test suite, real import -> analysis -> report acceptance, API startup/health, and worker startup/shutdown smoke checks.
+
+The remaining steps are environment-specific rather than missing product functionality: local PostgreSQL/Redis verification requires Docker on the development machine, and the first hosted Render deployment still needs real production secrets, allowed browser origins, and external runtime/deployment evidence sources to be configured.
