@@ -292,7 +292,9 @@ test("builds an evidence report with stable fingerprint independent of generatio
       (section) =>
         section.id === "contributor-evolution" &&
         section.claims[0]?.statement.includes("Ada Example") &&
-        section.claims[0]?.evidence[0]?.source === "contributor_activity"
+        section.claims[0]?.statement.includes("2026-09-04T00:00:00.000Z") &&
+        section.claims[0]?.evidence[0]?.source === "contributor_activity" &&
+        section.claims[0]?.evidence[0]?.key === "Ada Example::ada@example.com"
     )
   );
   const historicalRuntime = first.sections.find(
