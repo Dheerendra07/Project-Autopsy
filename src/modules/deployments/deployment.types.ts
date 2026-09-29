@@ -19,9 +19,21 @@ const metadataSchema = z
   .record(z.string(), z.unknown())
   .default({})
   .superRefine((value, ctx) => {
-    const serialized = JSON.stringify(value);
+    let serialized: string;
 
-    if (serialized === undefined) {
+    try {
+      const result = JSON.stringify(value);
+
+      if (result === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "metadata must be JSON serializable."
+        });
+        return;
+      }
+
+      serialized = result;
+    } catch {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "metadata must be JSON serializable."
