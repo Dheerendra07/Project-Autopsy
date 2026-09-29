@@ -71,9 +71,9 @@ async function startServer(): Promise<void> {
     await checkRedisConnection();
     console.log("✓ Redis connected");
 
-    httpServer = app.listen(env.PORT, () => {
+    httpServer = app.listen(env.PORT, "0.0.0.0", () => {
       console.log(
-        `✓ Project Autopsy API running on http://localhost:${env.PORT}`
+        `✓ Project Autopsy API listening on port ${env.PORT}`
       );
     });
 
