@@ -132,3 +132,25 @@ test("validates the documented AI timeout bounds", () => {
     /AI_TIMEOUT_MS/
   );
 });
+
+test("rejects non-finite resource limits", () => {
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          MAX_REPOSITORY_SIZE_MB: "Infinity"
+        })
+      ),
+    /MAX_REPOSITORY_SIZE_MB/
+  );
+
+  assert.throws(
+    () =>
+      parseEnvironment(
+        baseEnvironment({
+          MAX_ANALYSIS_TIME_MINUTES: "Infinity"
+        })
+      ),
+    /MAX_ANALYSIS_TIME_MINUTES/
+  );
+});
