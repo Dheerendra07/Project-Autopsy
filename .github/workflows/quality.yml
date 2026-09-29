@@ -46,7 +46,6 @@ jobs:
       REPOSITORY_STORAGE_PATH: ./storage/repositories
       MAX_REPOSITORY_SIZE_MB: 500
       MAX_ANALYSIS_TIME_MINUTES: 30
-      AUTOPSY_E2E: 1
 
     steps:
       - name: Checkout
@@ -72,6 +71,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: End-to-end import analysis report acceptance
+        run: AUTOPSY_E2E=1 npx tsx --test tests/e2e.import-analysis-report.test.ts
 
       - name: Verify migrations are idempotent
         run: npm run db:migrate
