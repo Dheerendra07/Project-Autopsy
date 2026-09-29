@@ -51,6 +51,40 @@ export interface HistoricalRuntimeReconstruction {
   events: HistoricalRuntimeReconstructionEvent[];
 }
 
+export const HISTORICAL_RUNTIME_CORRELATION_CONCURRENCY = 4;
+
+export async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new RangeError("concurrency must be a positive integer.");
+  }
+
+  const results: R[] = new Array(items.length);
+
+  for (
+    let offset = 0;
+    offset < items.length;
+    offset += concurrency
+  ) {
+    const chunk = items.slice(offset, offset + concurrency);
+
+    const chunkResults = await Promise.all(
+      chunk.map((item, index) =>
+        mapper(item, offset + index)
+      )
+    );
+
+    chunkResults.forEach((result, index) => {
+      results[offset + index] = result;
+    });
+  }
+
+  return results;
+}
+
 const STATUS_VALUES: RuntimeCorrelationStatus[] = [
   "ready",
   "repository_revision_not_found",
@@ -228,19 +262,18 @@ export async function generateHistoricalRuntimeReconstruction(
       nextPage?.commits[0] ?? null
   };
 
-  const correlations: RuntimeCorrelationEvidence[] = [];
-
-  for (const commit of result.commits) {
-    correlations.push(
-      await generateRuntimeCorrelationEvidence(
+  const correlations = await mapWithConcurrency(
+    result.commits,
+    HISTORICAL_RUNTIME_CORRELATION_CONCURRENCY,
+    (commit) =>
+      generateRuntimeCorrelationEvidence(
         repositoryId,
         commit.sha,
         windowMinutes,
         minimumSamples,
         filters
       )
-    );
-  }
+  );
 
   return buildHistoricalRuntimeReconstruction(
     repositoryId,

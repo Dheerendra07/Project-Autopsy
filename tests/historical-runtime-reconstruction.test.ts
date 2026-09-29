@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  buildHistoricalRuntimeReconstruction
+  buildHistoricalRuntimeReconstruction,
+  HISTORICAL_RUNTIME_CORRELATION_CONCURRENCY,
+  mapWithConcurrency
 } from "../src/modules/runtime/historical-correlation.service.js";
 import type {
   RuntimeCorrelationEvidence
@@ -58,6 +60,37 @@ function evidence(
     ]
   };
 }
+
+test("mapWithConcurrency preserves order and enforces the concurrency ceiling", async () => {
+  let active = 0;
+  let maxActive = 0;
+
+  const results = await mapWithConcurrency(
+    [1, 2, 3, 4, 5, 6, 7],
+    3,
+    async (value) => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      active -= 1;
+      return value * 2;
+    }
+  );
+
+  assert.deepEqual(results, [2, 4, 6, 8, 10, 12, 14]);
+  assert.equal(maxActive, 3);
+});
+
+test("uses the database-safe historical correlation concurrency budget", () => {
+  assert.equal(HISTORICAL_RUNTIME_CORRELATION_CONCURRENCY, 4);
+});
+
+test("rejects invalid concurrency budgets", async () => {
+  await assert.rejects(
+    () => mapWithConcurrency([1], 0, async (value) => value),
+    /positive integer/
+  );
+});
 
 test("builds a deterministic chronological runtime reconstruction", () => {
   const repositoryId = "00000000-0000-0000-0000-000000000001";
