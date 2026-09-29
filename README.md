@@ -187,6 +187,10 @@ GET /api/repositories/:repositoryId/deployments?limit=50
 
 GET /api/repositories/:repositoryId/runtime/deployment-correlation?deploymentId=<deployment-id>&recentEventLimit=25
 
+GET /api/repositories/:repositoryId/deployments/:deploymentId/provenance
+
+The deployment provenance endpoint reconciles the observed evidence for one exact deployment ID. It reports whether the deployment evidence is complete, partial, or conflicting based on the presence and consistency of environment, revision SHA, artifact digest, build ID, and release ID, and it does not infer missing provenance from timestamps.
+
 This endpoint reconciles exact deployment identity against runtime telemetry. It reports whether deployment evidence or runtime evidence is missing, whether observed revision/environment identities are consistent, partial, or conflicting, and preserves the distinction between observed evidence and causal inference.
 
 `runtime telemetry` may optionally include the same external `deploymentId`. This creates an exact runtime-to-deployment identifier link when the deployment system and application instrumentation agree on the identifier. Existing telemetry without `deploymentId` remains valid and unchanged.
