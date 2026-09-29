@@ -58,7 +58,14 @@ const envSchema = z
     AI_INTERPRETATION_ACCESS_KEY: z
       .string()
       .min(32)
-      .optional()
+      .optional(),
+
+    AI_INTERPRETATION_CACHE_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(60)
+      .max(604_800)
+      .default(86_400)
   })
   .superRefine((value, ctx) => {
     if (
