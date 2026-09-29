@@ -13,7 +13,8 @@ const shaSchema = z
   .regex(
     /^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/,
     "revisionSha must be a full Git commit SHA."
-  );
+  )
+  .transform((value) => value.toLowerCase());
 
 const metadataSchema = z
   .record(z.string(), z.unknown())

@@ -98,6 +98,24 @@ test("deployment identity participates in new telemetry payload hashes", () => {
   );
 });
 
+test("normalizes uppercase Git revision identity for correlation", () => {
+  const [event] = prepareRuntimeTelemetryBatch(
+    {
+      events: [
+        validEvent({
+          revisionSha: "ABCDEF1234567890ABCDEF1234567890ABCDEF12"
+        })
+      ]
+    },
+    NOW
+  );
+
+  assert.equal(
+    event?.revisionSha,
+    "abcdef1234567890abcdef1234567890abcdef12"
+  );
+});
+
 test("requires full Git revision identity for telemetry", () => {
   assert.throws(() =>
     runtimeTelemetryBatchSchema.parse({
