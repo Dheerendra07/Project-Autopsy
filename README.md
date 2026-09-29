@@ -200,7 +200,7 @@ The interpretation can summarize recurring themes, identify evidence-backed inve
 
 Configuration is optional. Set `AI_API_KEY` to enable the endpoint, with `AI_BASE_URL`, `AI_MODEL`, and `AI_TIMEOUT_MS` available for provider configuration. The default provider configuration targets OpenAI's Responses API with `gpt-5.6-luna`.
 
-In production, a separate `AI_INTERPRETATION_ACCESS_KEY` is required when `AI_API_KEY` is configured. It can be supplied through the `x-autopsy-ai-access-key` header or a Bearer authorization header.
+In production, a separate `AI_INTERPRETATION_ACCESS_KEY` is required when `AI_API_KEY` is configured. It can be supplied through the `x-autopsy-ai-access-key` header or a Bearer authorization header. Repeated requests for the same report fingerprint and model are served from Redis for the configured cache TTL, reducing duplicate provider calls.
 
 ## Repeatedly modified files
 
