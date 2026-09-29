@@ -9,6 +9,11 @@ import { errorMiddleware } from "./middleware/error.middleware.js";
 import { isApiAccessAuthorized } from "./middleware/apiAccess.middleware.js";
 import { checkDatabaseConnection } from "./config/database.js";
 import { checkRedisConnection } from "./config/redis.js";
+import { env } from "./config/env.js";
+import {
+  isCorsOriginAllowed,
+  parseCorsOrigins
+} from "./config/cors.js";
 
 export const app = express();
 
@@ -22,9 +27,24 @@ app.use(
   })
 );
 
+const configuredCorsOrigins = parseCorsOrigins(
+  env.AUTOPSY_CORS_ORIGINS
+);
+
 app.use(
   cors({
-    origin: true,
+    origin: (requestOrigin, callback) => {
+      callback(
+        null,
+        isCorsOriginAllowed(
+          requestOrigin,
+          env.NODE_ENV,
+          configuredCorsOrigins
+        )
+          ? requestOrigin ?? true
+          : false
+      );
+    },
     credentials: true
   })
 );
