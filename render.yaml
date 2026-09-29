@@ -11,6 +11,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: AUTOPSY_SERVICE_ROLE
+        value: web
       - key: PORT
         value: "10000"
       - key: DATABASE_URL
@@ -56,6 +58,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: AUTOPSY_SERVICE_ROLE
+        value: worker
       - key: DATABASE_URL
         fromDatabase:
           name: project-autopsy-db
@@ -71,16 +75,6 @@ services:
         value: "500"
       - key: MAX_ANALYSIS_TIME_MINUTES
         value: "30"
-      - key: RUNTIME_TELEMETRY_INGEST_KEY
-        sync: false
-      - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
-        sync: false
-      - key: AUTOPSY_API_ACCESS_KEY
-        sync: false
-      - key: AI_API_KEY
-        sync: false
-      - key: AI_INTERPRETATION_ACCESS_KEY
-        sync: false
       - key: AI_BASE_URL
         value: https://api.openai.com/v1
       - key: AI_MODEL
