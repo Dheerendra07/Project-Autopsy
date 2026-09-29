@@ -76,6 +76,7 @@ function buildExtraFilters(
     clauses.push("AND " + column + " = $" + String(startIndex + values.length));
   };
 
+  // Deployment identity is an exact observed runtime filter; never derive it from timestamps.
   if (filters.deploymentId) add("e.deployment_id", filters.deploymentId);
   if (filters.environment) add("e.environment", filters.environment);
   if (filters.operationName) add("e.operation_name", filters.operationName);
