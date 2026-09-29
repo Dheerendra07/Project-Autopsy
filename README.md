@@ -62,9 +62,9 @@ Run the analysis worker separately:
 npm run dev:worker
 ```
 
-API: http://localhost:5000
+API: http://localhost:5100
 
-Health: http://localhost:5000/health
+Health: http://localhost:5100/health
 
 Repository import endpoint:
 
@@ -263,3 +263,11 @@ In production, a separate `AI_INTERPRETATION_ACCESS_KEY` is required when `AI_AP
 Repeated-change API: GET /api/repositories/:repositoryId/repeatedly-modified-files?minTouches=3&limit=20
 
 The endpoint identifies file paths touched by at least the requested number of persisted commits and returns their historical churn, first/last change timestamps, and change span in days. Ordering is deterministic. This is an observed change-frequency signal, not a claim that the file is inherently problematic.
+
+## Render deployment
+
+The repository includes a render.yaml Blueprint for the API web service, BullMQ analysis worker, Render Key Value queue, and Render Postgres database. The API runs migrations in the paid web service pre-deploy step and exposes /health for Render health checks.
+
+Secrets are declared with sync: false and must be supplied in the Render dashboard. The Blueprint uses paid compute/datastore plans so production data and queue state are not dependent on Free-instance limitations.
+
+Render web services must listen on 0.0.0.0; Project Autopsy binds explicitly to all interfaces. The worker treats repository storage as ephemeral and can re-clone a tracked repository from its persisted source URL when its local Git checkout is missing after a worker restart or redeploy.
