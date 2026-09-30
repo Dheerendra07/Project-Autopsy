@@ -969,5 +969,21 @@ test("historical filter state resets when repository or analysis context changes
   assert.ok(refresh.includes("S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"));
   assert.ok(appJs.includes("$('new').onclick=function(){"));
   assert.ok(appJs.includes("S.historicalLoading=false;"));
+  assert.ok(appJs.includes("S.analysisRunsLoading=false;"));
+  assert.ok(appJs.includes("S.analysisRunsLoadToken+=1;"));
   assert.ok(appJs.includes("Saved workspace no longer exists"));
+});
+
+
+test("analysis run history load token resets on repository context changes", () => {
+  const appJs = readRepoFile("public/app.js");
+  const importStart = appJs.indexOf("async function importRepo()");
+  const importEnd = appJs.indexOf("async function getRepo", importStart);
+  const deleteStart = appJs.indexOf("async function deleteRepository()");
+  const deleteEnd = appJs.indexOf("$('settings').onclick", deleteStart);
+  assert.ok(importStart >= 0 && importEnd > importStart);
+  assert.ok(deleteStart >= 0 && deleteEnd > deleteStart);
+  assert.ok(appJs.slice(importStart, importEnd).includes("S.analysisRunsLoadToken+=1"));
+  assert.ok(appJs.slice(deleteStart, deleteEnd).includes("S.analysisRunsLoadToken+=1"));
+  assert.ok(appJs.includes("S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;"));
 });
