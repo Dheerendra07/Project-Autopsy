@@ -14,11 +14,14 @@ test("package remains private and exposes bounded production commands", () => {
   const pkg = JSON.parse(readRepoFile("package.json")) as {
     private?: boolean;
     type?: string;
+    version?: string;
+    engines?: { node?: string };
     scripts?: Record<string, string>;
   };
 
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, "module");
+  assert.equal(pkg.engines?.node, ">=24 <25");
   assert.equal(
     pkg.scripts?.build,
     "tsc"
@@ -26,6 +29,30 @@ test("package remains private and exposes bounded production commands", () => {
   assert.equal(pkg.scripts?.typecheck, "tsc --noEmit");
   assert.equal(pkg.scripts?.["typecheck:tests"], "tsc -p tsconfig.tests.json --noEmit");
   assert.equal(pkg.scripts?.test, "tsx --test tests/*.test.ts");
+});
+
+
+
+test("package and lockfile root metadata stay aligned", () => {
+  const pkg = JSON.parse(readRepoFile("package.json")) as {
+    name?: string;
+    version?: string;
+  };
+  const lock = JSON.parse(readRepoFile("package-lock.json")) as {
+    name?: string;
+    version?: string;
+    packages?: {
+      "": {
+        name?: string;
+        version?: string;
+      };
+    };
+  };
+
+  assert.equal(lock.name, pkg.name);
+  assert.equal(lock.version, pkg.version);
+  assert.equal(lock.packages?.[""]?.name, pkg.name);
+  assert.equal(lock.packages?.[""]?.version, pkg.version);
 });
 
 test("test TypeScript project includes source and test files", () => {
