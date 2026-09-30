@@ -91,6 +91,16 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+  function safeApiBase(value){
+    var raw=String(value==null?'':value).trim().replace(/\/$/,'');
+    if(!raw)throw new Error('API base URL is required.');
+    var u;
+    try{u=new URL(raw)}catch(e){throw new Error('API base URL is invalid.')}
+    var local=['localhost','127.0.0.1','[::1]'].indexOf(u.hostname.toLowerCase())>=0;
+    if(u.protocol!=='https:'&&!local)throw new Error('API base URL must use HTTPS outside localhost.');
+    if(u.username||u.password||u.search||u.hash)throw new Error('API base URL must not contain credentials, query parameters or fragments.');
+    return u.origin;
+  }
   function arr(v,k){return Array.isArray(v)?v:(v&&k&&Array.isArray(v[k])?v[k]:[])}
   function n(v){return v==null||isNaN(Number(v))?'—':new Intl.NumberFormat('en-IN').format(Number(v))}
   function date(v){if(!v)return'—';var d=new Date(v);return isNaN(d)?String(v):d.toLocaleString([],{dateStyle:'medium',timeStyle:'short'})}
@@ -116,7 +126,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   async function boundedFetch(url,options,timeoutMs){var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},timeoutMs||10000),request=Object.assign({},options||{},{signal:controller.signal});try{return await fetch(url,request)}catch(e){if(e&&e.name==='AbortError')throw new Error('Connection test timed out.');throw e}finally{clearTimeout(timer)}}
   async function testConnection(){
-    var base=$('api').value.trim().replace(/\/$/,'');
+    var base=safeApiBase($('api').value);
     var key=$('key').value.trim();
     if(!base){toast('Enter an API base URL','bad');return}
     try{
@@ -138,7 +148,8 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},20000);
     var request=Object.assign({},opt||{},{headers:h,signal:controller.signal});
     try{
-      var r=await fetch(S.api.replace(/\/$/,'')+path,request);
+      var base=safeApiBase(S.api);
+      var r=await fetch(base+path,request);
       var t=await r.text(),b=null,isJson=true;
       try{b=t?JSON.parse(t):null}catch(e){isJson=false}
       if(!r.ok)throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+')');
@@ -375,7 +386,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('modal').hidden=false;$('api').focus()}
   function closeSettings(){ $('modal').hidden=true}
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){S.api=$('api').value.trim().replace(/\/$/,'');S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();sessionStorage.setItem('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();sessionStorage.setItem('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('new').onclick=function(){S.workspaceToken+=1;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
