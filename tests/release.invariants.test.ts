@@ -248,6 +248,17 @@ test("frontend connection failures remain actionable and mobile evidence control
   );
 });
 
+test("frontend distinguishes configured credentials from verified connectivity", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("connectionState:'unknown'"));
+  assert.ok(html.includes("state==='verified'"));
+  assert.ok(html.includes("state==='configured'"));
+  assert.ok(html.includes("Connection settings saved. Test the connection to verify the credentials."));
+  assert.ok(html.includes("S.connectionState='verified'"));
+  assert.ok(html.includes("connected('verified')"));
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
