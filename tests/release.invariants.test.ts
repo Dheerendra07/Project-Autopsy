@@ -276,3 +276,14 @@ test("repository cleanup retry loop is bounded and shutdown-aware", () => {
   assert.ok(server.includes("clearInterval(repositoryCleanupTimer)"));
   assert.ok(server.includes("repositoryCleanupTimer.unref()"));
 });
+
+
+test("analysis terminal updates preserve existing failure diagnostics when no replacement message is supplied", () => {
+  const persistence = readRepoFile(
+    "src/modules/repositories/repository.persistence.ts"
+  );
+
+  assert.ok(
+    persistence.includes("error_message = COALESCE($3, error_message)")
+  );
+});
