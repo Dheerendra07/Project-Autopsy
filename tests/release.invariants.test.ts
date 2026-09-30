@@ -311,6 +311,30 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend failure notifications are scoped to the active analysis run", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadProvenance");
+  const end = appJs.indexOf("function downloadReport", start);
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const provenanceBlock = appJs.slice(start, end);
+  assert.ok(
+    provenanceBlock.includes(
+      "token===S.workspaceToken&&id===S.repoId&&runId===S.runId"
+    )
+  );
+
+  const reportStart = appJs.indexOf("async function loadReport");
+  const reportEnd = appJs.indexOf("async function loadInterview", reportStart);
+  const reportBlock = appJs.slice(reportStart, reportEnd);
+  assert.ok(
+    reportBlock.includes(
+      "token===S.workspaceToken&&id===S.repoId&&runId===S.runId"
+    )
+  );
+});
+
 test("dependency analysis bounds package.json reads before loading content", () => {
   const discovery = readRepoFile("src/modules/dependencies/dependency.discovery.ts");
 
