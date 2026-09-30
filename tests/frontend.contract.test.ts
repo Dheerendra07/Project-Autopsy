@@ -57,6 +57,8 @@ test("product frontend contains the core evidence workflow", () => {
     "Historical repeated-modification evidence."
     "function runtimeFilterDate(value)","\n    "function sameRevision(a,b)",
     "function boundedFetch(url,options,timeoutMs)",
+    "function mapLimited(items,limit,worker)",
+    "await mapLimited(keys,6",
     "previousEvents",
     "runtimeEventsPathWithFilter",
     "Repository head differs from the analyzed target.",
