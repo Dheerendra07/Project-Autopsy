@@ -3,7 +3,7 @@ import test from "node:test";
 
 import {
   isValidAnalysisTransition
-} from "../src/modules/repositories/repository.persistence.js";
+} from "../src/modules/analysis/analysis-state.js";
 
 test("analysis state machine allows only forward terminal transitions", () => {
   const allowed: Array<[string, string]> = [
@@ -20,8 +20,8 @@ test("analysis state machine allows only forward terminal transitions", () => {
   for (const [current, next] of allowed) {
     assert.equal(
       isValidAnalysisTransition(
-        current as never,
-        next as never
+        current as Parameters<typeof isValidAnalysisTransition>[0],
+        next as Parameters<typeof isValidAnalysisTransition>[1]
       ),
       true,
       current + " -> " + next
