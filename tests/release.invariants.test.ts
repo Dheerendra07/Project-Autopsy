@@ -1021,3 +1021,16 @@ test("historical runtime filters stay aligned across summary, correlation and so
   assert.ok(appJs.includes("historicalRuntimePath('source-context',1,25,f)"));
   assert.ok(appJs.includes("historical-filter"));
 });
+
+
+test("file churn discovery paginates full Git history and uses NUL-delimited numstat", () => {
+  const churn = readRepoFile("src/modules/metrics/churn.discovery.ts");
+  assert.ok(churn.includes("export const GIT_LOG_PAGE_SIZE = 500"));
+  assert.ok(churn.includes('["rev-list", "--all", "--count"]'));
+  assert.ok(churn.includes("--skip=${skip}"));
+  assert.ok(churn.includes("--max-count=${GIT_LOG_PAGE_SIZE}"));
+  assert.ok(churn.includes('"--format=",'));
+  assert.ok(churn.includes('"-z",'));
+  assert.ok(churn.includes('output.split("\\0")'));
+  assert.ok(churn.includes("[\\s\\S]+"));
+});
