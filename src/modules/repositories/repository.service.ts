@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm, stat } from "node:fs/promises";
+import { lstat, mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { env } from "../../config/env.js";
 import type { RepositoryMetadata } from "./repository.types.js";
@@ -33,8 +33,8 @@ export async function isRepositoryStorageReady(
   repositoryPath: string
 ): Promise<boolean> {
   try {
-    await stat(path.join(repositoryPath, ".git"));
-    return true;
+    const gitPath = await lstat(path.join(repositoryPath, ".git"));
+    return gitPath.isDirectory();
   } catch {
     return false;
   }
@@ -48,6 +48,10 @@ export async function cloneRepository(
   const safeUrl = validateRemoteRepositoryUrl(remoteUrl);
   const repositoryPath = await prepareRepositoryStorage(repositoryId);
   const parentPath = path.dirname(repositoryPath);
+
+  if (branch) {
+    assertSafeBranchName(branch);
+  }
 
   const git = createAnalysisGit(parentPath);
 
@@ -79,13 +83,32 @@ export async function cloneRepository(
   }
 }
 
-function assertSafeBranchName(branch: string): void {
-  if (!branch || branch.length > 255) {
+export function assertSafeBranchName(branch: string): void {
+  if (
+    !branch ||
+    branch.length > 255 ||
+    branch.startsWith("-") ||
+    branch.endsWith("/") ||
+    branch.endsWith(".") ||
+    branch.includes("..") ||
+    branch.includes("@{") ||
+    branch.includes("//")
+  ) {
     throw new Error("Repository branch is invalid.");
   }
 
   if (!/^[A-Za-z0-9._/-]+$/.test(branch)) {
     throw new Error("Repository branch contains unsupported characters.");
+  }
+
+  const segments = branch.split("/");
+
+  if (
+    segments.some(
+      (segment) => segment.length === 0 || segment === "." || segment === ".."
+    )
+  ) {
+    throw new Error("Repository branch is invalid.");
   }
 }
 
@@ -255,7 +278,7 @@ export function getRepositoryNameFromUrl(url: URL): string {
   return lastSegment.replace(/\.git$/i, "");
 }
 
-async function calculateDirectorySize(
+export async function calculateDirectorySize(
   directoryPath: string
 ): Promise<number> {
   assertAnalysisDeadline();
@@ -271,12 +294,18 @@ async function calculateDirectorySize(
 
     const entryPath = path.join(directoryPath, entry.name);
 
+    if (entry.isSymbolicLink()) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
       total += await calculateDirectorySize(entryPath);
       continue;
     }
 
-    total += (await stat(entryPath)).size;
+    if (entry.isFile()) {
+      total += (await lstat(entryPath)).size;
+    }
   }
 
   return total;
