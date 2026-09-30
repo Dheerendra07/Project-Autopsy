@@ -618,3 +618,12 @@ The API access wall now runs before request-body parsing. Unauthenticated API tr
 The browser client now treats successful API responses as JSON objects, rejects malformed success payloads, and enforces HTTPS API base URLs except for localhost development targets. API base credentials, query parameters, and fragments are rejected. Browser session-storage access is failure-safe so a restricted storage environment does not crash the workspace.
 
 The corresponding contract coverage protects auth-before-parser ordering, malformed/oversized body behavior, secure API URL handling, session-storage guards, and the existing stale async response protections.
+
+
+## Launch hardening — evidence failure semantics + database transport — 2026-09-30
+
+Unexpected Git failures in architecture discovery now fail the analysis instead of being silently represented as an empty architecture result. Dependency manifest lookup distinguishes an actually missing `package.json` from unrelated Git corruption or object/read failures, which are propagated for diagnosis.
+
+Repository service boundaries validate UUID-shaped repository storage identifiers, validate branches before storage allocation, and clean up storage after clone/setup failures.
+
+Database connection URLs now pin the currently secure PostgreSQL SSL interpretation when legacy `prefer`, `require`, or `verify-ca` modes are present, avoiding the repeated pg-connection-string compatibility warning while preserving other URL parameters.
