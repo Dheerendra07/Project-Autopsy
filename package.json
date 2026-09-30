@@ -12,7 +12,8 @@
     "start": "node dist/server.js",
     "start:worker": "node dist/workers/analysis.worker.js",
     "db:migrate": "tsx src/database/migrate.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit"
   },
   "dependencies": {
     "@typescript/typescript6": "^6.0.2",
