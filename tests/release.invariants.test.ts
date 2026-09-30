@@ -311,6 +311,26 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("telemetry and deployment JSON metadata reject excessive nesting before serialization", () => {
+  const runtimeTypes = readRepoFile("src/modules/runtime/runtime.types.ts");
+  const deploymentTypes = readRepoFile("src/modules/deployments/deployment.types.ts");
+
+  assert.ok(runtimeTypes.includes("const MAX_JSON_NESTING_DEPTH = 20"));
+  assert.ok(runtimeTypes.includes("exceedsJsonNestingDepth(value)"));
+  assert.ok(
+    runtimeTypes.includes(
+      "attributes nesting depth exceeds the 20 level limit."
+    )
+  );
+  assert.ok(deploymentTypes.includes("const MAX_JSON_NESTING_DEPTH = 20"));
+  assert.ok(deploymentTypes.includes("exceedsJsonNestingDepth(value)"));
+  assert.ok(
+    deploymentTypes.includes(
+      "metadata nesting depth exceeds the 20 level limit."
+    )
+  );
+});
+
 test("source-analysis readers bound test and migration Git objects before reading content", () => {
   const testDiscovery = readRepoFile("src/modules/tests/test-evolution.discovery.ts");
   const migrationDiscovery = readRepoFile("src/modules/schema/schema.discovery.ts");
