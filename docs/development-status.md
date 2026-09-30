@@ -563,3 +563,8 @@ Current runtime drill-down:
 The Overview analysis snapshot now also displays persisted run status, target SHA, started/completed timestamps, elapsed duration, and the persisted failure message when available.
 
 These additions remain evidence-first: runtime filters select observed records; they do not establish causality, regression, deployment order, ownership, or impact.
+
+
+### CI runner verification — 2026-09-30
+
+The quality workflow now pins the GitHub-hosted runner to `ubuntu-22.04` as a controlled fallback after repeated workflow runs failed before any step executed (`typecheck-build` reported `steps: null`). GitHub currently documents `ubuntu-22.04` as a supported standard Linux runner. This change is a runner-isolation measure; it does not alter application behavior.
