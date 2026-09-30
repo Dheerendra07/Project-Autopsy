@@ -46,7 +46,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     <form id="form" class="import">
       <label class="field">Repository URL<input id="url" type="url" placeholder="https://github.com/owner/repository" required></label>
       <label class="field">Branch <span class="dim">(optional)</span><input id="branch" placeholder="main"></label>
-      <button class="btn primary" type="submit">Analyze repository →</button>
+      <button id="importButton" class="btn primary" type="submit">Analyze repository →</button>
     </form>
     <div id="formerr" class="bad" style="font-size:10px;margin-top:10px" hidden></div>
   </div>
@@ -87,7 +87,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     aiKey:sessionStorage.getItem('autopsy.aiKey')||'',
     repoId:sessionStorage.getItem('autopsy.repoId')||'',
     runId:sessionStorage.getItem('autopsy.runId')||'',
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -151,13 +151,13 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   function workspace(){ $('landing').hidden=true;$('workspace').hidden=false;$('repoName').textContent=S.repo&&S.repo.name||'Repository';$('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';connected(true)}
   function banner(show,title,sub,status){$('banner').hidden=!show;if(!show)return;$('btitle').textContent=title;$('bsub').textContent=sub;var x=$('bstatus');x.textContent=status;x.className='pill '+cls(status)}
   async function importRepo(){
-    var u=$('url').value.trim(),b=$('branch').value.trim(),payload={url:u};if(b)payload.branch=b;
+    if(S.importing)return;var u=$('url').value.trim(),b=$('branch').value.trim(),payload={url:u};if(b)payload.branch=b;
     try{
-      $('formerr').hidden=true;
+      $('formerr').hidden=true;$('importButton').disabled=true;S.importing=true;
       if(!S.key){openSettings();throw new Error('Add your API access key first.')}
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};persist();workspace();setView('overview');poll();
-    }catch(e){$('formerr').textContent=e.message;$('formerr').hidden=false}
+    }catch(e){$('formerr').textContent=e.message;$('formerr').hidden=false}finally{S.importing=false;$('importButton').disabled=false}
   }
   async function getRepo(){S.repo=(await api('/api/repositories/'+S.repoId)).repository;workspace()}
   async function getRun(){return (await api('/api/repositories/'+S.repoId+'/analysis/'+S.runId)).analysis}
@@ -289,7 +289,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     function interview(){return shell('Interview stories','Evidence anchors for preparing truthful project explanations','<button class="btn" data-action="interview">Load stories</button>')+'<div id="stories" class="section">'+(S.data.interview?storiesHtml(S.data.interview):'<div class="empty"><strong>Interview preparation</strong>Load story scaffolds generated from the evidence-backed report.</div>')+'</div>'}
   function storiesHtml(x){var q=x&&x.result&&x.result.stories||x&&x.stories||x&&x.result||[];if(!Array.isArray(q))q=Object.keys(q||{}).map(function(k){return Object.assign({title:k},q[k]||{})});return '<div class="grid g2">'+q.map(function(s){return '<article class="story"><h3>'+esc(s.title||s.name||'Interview story')+'</h3><block><label>Situation</label><div>'+esc(s.situation||s.context||s.setup||'—')+'</div></block><block><label>Action / evidence</label><div>'+esc(s.action||s.actions||s.evidence||s.whatHappened||'—')+'</div></block><block><label>Result / limitation</label><div>'+esc(s.result||s.outcome||s.limitation||'—')+'</div></block></article>'}).join('')+'</div>'}
   function setView(v){S.view=v;resetEvidence();document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===v)});var h=v==='history'?history():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():v==='interpretation'?interpretation():v==='evidence'?evidencePage():v==='contributors'?contributors():overview();$('root').innerHTML=h;window.scrollTo(0,0);if(v==='evidence'){var q=$('evidenceSearch');q.oninput=function(){var term=q.value.trim().toLowerCase(),shown=0;document.querySelectorAll('.evidence-row').forEach(function(row){var ok=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;row.hidden=!ok;if(ok)shown++});$('evidenceEmpty').hidden=shown!==0}}}
-  async function loadRuntimeEvents(reset){var previousEvents=S.runtimeEvents,previousPage=S.runtimePagination,previousFilter=S.runtimeFilter;try{var f={from:($('rtFrom')&&$('rtFrom').value)||S.runtimeFilter.from||'',to:($('rtTo')&&$('rtTo').value)||S.runtimeFilter.to||'',deploymentId:($('rtDeployment')&&$('rtDeployment').value.trim())||S.runtimeFilter.deploymentId||'',revisionSha:($('rtRevision')&&$('rtRevision').value.trim())||S.runtimeFilter.revisionSha||'',environment:($('rtEnvironment')&&$('rtEnvironment').value.trim())||S.runtimeFilter.environment||'',operationName:($('rtOperation')&&$('rtOperation').value.trim())||S.runtimeFilter.operationName||'',signalType:($('rtSignal')&&$('rtSignal').value)||S.runtimeFilter.signalType||''};var page=reset?1:Number(S.runtimePagination&&S.runtimePagination.page||1)+1;var r=await api(runtimeEventsPathWithFilter(page,40,f));var next=arr(r,'events');S.runtimeFilter=f;S.runtimeEvents=reset?next:previousEvents.concat(next);S.runtimePagination=r.pagination;S.data.runtimeEvents=r;S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='runtimeEvents'});setView('runtime');toast(next.length?'Runtime evidence loaded':'No runtime events matched the filters','good')}catch(e){S.runtimeEvents=previousEvents;S.runtimePagination=previousPage;S.runtimeFilter=previousFilter;toast(e.message||'Runtime evidence load failed','bad')}}
+  async function loadRuntimeEvents(reset){if(S.runtimeLoading)return;S.runtimeLoading=true;var previousEvents=S.runtimeEvents,previousPage=S.runtimePagination,previousFilter=S.runtimeFilter;try{var f={from:($('rtFrom')&&$('rtFrom').value)||S.runtimeFilter.from||'',to:($('rtTo')&&$('rtTo').value)||S.runtimeFilter.to||'',deploymentId:($('rtDeployment')&&$('rtDeployment').value.trim())||S.runtimeFilter.deploymentId||'',revisionSha:($('rtRevision')&&$('rtRevision').value.trim())||S.runtimeFilter.revisionSha||'',environment:($('rtEnvironment')&&$('rtEnvironment').value.trim())||S.runtimeFilter.environment||'',operationName:($('rtOperation')&&$('rtOperation').value.trim())||S.runtimeFilter.operationName||'',signalType:($('rtSignal')&&$('rtSignal').value)||S.runtimeFilter.signalType||''};var page=reset?1:Number(S.runtimePagination&&S.runtimePagination.page||1)+1;var r=await api(runtimeEventsPathWithFilter(page,40,f));var next=arr(r,'events');S.runtimeFilter=f;S.runtimeEvents=reset?next:previousEvents.concat(next);S.runtimePagination=r.pagination;S.data.runtimeEvents=r;S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='runtimeEvents'});setView('runtime');toast(next.length?'Runtime evidence loaded':'No runtime events matched the filters','good')}catch(e){S.runtimeEvents=previousEvents;S.runtimePagination=previousPage;S.runtimeFilter=previousFilter;toast(e.message||'Runtime evidence load failed','bad')}finally{S.runtimeLoading=false}}
   async function reloadData(){
     try{
       await loadData();
