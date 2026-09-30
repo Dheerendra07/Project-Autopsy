@@ -27,6 +27,7 @@ export interface DiscoveredCommit {
 const RECORD_SEPARATOR = "\x1e";
 const FIELD_SEPARATOR = "\x1f";
 const NUL_SEPARATOR = "\0";
+const GIT_LOG_PAGE_SIZE = 500;
 
 export async function discoverCommits(
   repositoryPath: string,
