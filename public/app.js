@@ -162,6 +162,7 @@
   async function loadData(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,eps={
       commits:'/api/repositories/'+id+'/commits?page=1&limit=50',
+      analysisRuns:'/api/repositories/'+id+'/analysis-runs?page=1&limit=20',
       timeline:'/api/repositories/'+id+'/timeline?page=1&limit=50',
       hotspots:'/api/repositories/'+id+'/hotspots?limit=20',
       repeated:'/api/repositories/'+id+'/repeatedly-modified-files?minTouches=3&limit=20',
