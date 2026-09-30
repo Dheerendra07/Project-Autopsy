@@ -61,6 +61,8 @@ test("product frontend contains the core evidence workflow", () => {
     "Deployment ",
     "Observed runtime telemetry event.",
     "Historical repeated-modification evidence.",
+    "Historical source-change context",
+    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25',
     "function runtimeFilterDate(value)",
     "function sameRevision(a,b)",
     "function safeApiBase(value)",
