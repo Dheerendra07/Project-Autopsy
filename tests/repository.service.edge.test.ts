@@ -18,6 +18,7 @@ import {
   calculateDirectorySize,
   cloneRepository,
   getRepositoryStoragePath,
+  assertManagedRepositoryStoragePath,
   isRepositoryStorageReady,
   isSafeBranchName
 } from "../src/modules/repositories/repository.service.js";
@@ -202,4 +203,28 @@ test("repository storage ids are strict UUID-shaped identifiers", () => {
     )),
     true
   );
+});
+
+
+test("repository storage deletion accepts only paths inside the managed root", () => {
+  const managed = getRepositoryStoragePath(
+    "00000000-0000-4000-8000-000000000997"
+  );
+
+  assert.doesNotThrow(() => assertManagedRepositoryStoragePath(managed));
+  assert.doesNotThrow(() =>
+    assertManagedRepositoryStoragePath(path.join(managed, "nested"))
+  );
+
+  for (const value of [
+    path.dirname(managed),
+    path.join(path.dirname(managed), "other-repository"),
+    path.resolve(process.cwd(), ".."),
+    "../escape"
+  ]) {
+    assert.throws(
+      () => assertManagedRepositoryStoragePath(value),
+      /outside the managed storage root/
+    );
+  }
 });
