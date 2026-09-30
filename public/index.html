@@ -75,7 +75,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
 </section>
 </main>
 
-<div id="modal" class="modal" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3>Connect the workspace</h3></div><button id="close" class="btn">×</button></div><label class="field">API base URL<input id="api" type="url"></label><label class="field">API access key<input id="key" type="password" autocomplete="off"></label><label class="field">AI interpretation access key<input id="aikey" type="password" autocomplete="off"></label><p class="dim" style="font-size:9px;line-height:1.5;margin:12px 0 0">Stored in this browser session only. Never committed to the repository.</p><div class="modal-actions"><button id="save" class="btn primary">Save connection</button></div></div></div>
+<div id="modal" class="modal" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3>Connect the workspace</h3></div><button id="close" class="btn">×</button></div><label class="field">API base URL<input id="api" type="url"></label><label class="field">API access key<input id="key" type="password" autocomplete="off"></label><label class="field">AI interpretation access key<input id="aikey" type="password" autocomplete="off"></label><p class="dim" style="font-size:9px;line-height:1.5;margin:12px 0 0">Stored in this browser session only. Never committed to the repository.</p><div class="modal-actions"><button id="testConnection" class="btn">Test connection</button><button id="save" class="btn primary">Save connection</button></div></div></div>
 <div id="toast" class="toast" hidden></div><div id="drawer" class="drawer" hidden><div class="drawer-panel"><div class="drawer-head"><div><div class="kicker">EVIDENCE INSPECTOR</div><h3 id="drawerTitle">Evidence</h3></div><button id="drawerClose" class="btn">×</button></div><div id="drawerBasis" class="drawer-basis"></div><pre id="drawerJson" class="json"></pre></div></div>
 
 <script>
@@ -111,6 +111,22 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     ar.forEach(function(x){var k=x.root_path||x.rootPath||x.path||'(root)';groups[k]=(groups[k]||0)+1});
     var keys=Object.keys(groups).sort(function(a,b){return groups[b]-groups[a]||a.localeCompare(b)}).slice(0,12);
     return '<div class="card section"><div class="arch-title"><div><h3>Observed structure map</h3><div class="sub">A visual index of directory surfaces seen in persisted architecture events; it is not a runtime dependency graph.</div></div><span class="tag">'+n(keys.length)+' surfaces</span></div><div class="archmap section"><div class="archcore"><strong>'+esc((S.repo&&S.repo.name)||'Repository')+'</strong><small>persisted Git tree evidence</small></div><div class="archnodes">'+keys.map(function(k){var count=groups[k],sample=ar.filter(function(x){return (x.root_path||x.rootPath||x.path||'(root)')===k}).slice(-3);return '<div class="archnode"><b title="'+esc(k)+'">'+esc(k)+'</b><small>'+n(count)+' structural events</small>'+inspectButton('Architecture surface: '+k,'Observed directory/root-path evidence from the architecture endpoint.',{surface:k,eventCount:count,recentEvents:sample})+'</div>'}).join('')+'</div></div></div>';
+  }
+  async function testConnection(){
+    var base=$('api').value.trim().replace(/\/$/,'');
+    var key=$('key').value.trim();
+    if(!base){toast('Enter an API base URL','bad');return}
+    try{
+      var h=new Headers({'Accept':'application/json'});
+      if(key)h.set('x-autopsy-api-key',key);
+      var health=await fetch(base+'/health',{headers:h});
+      if(!health.ok)throw new Error('Health check returned HTTP '+health.status);
+      if(!key){toast('API reachable. Add the API access key to use protected routes.','warn');return}
+      var probe=await fetch(base+'/api/repositories/00000000-0000-4000-8000-000000000000',{headers:h});
+      if(probe.status===401)throw new Error('API key rejected by protected API');
+      if(probe.status!==404&&probe.ok!==true)throw new Error('Protected API probe returned HTTP '+probe.status);
+      toast('API URL and access key are working','good');
+    }catch(e){toast(e.message||'Connection test failed','bad')}
   }
   async function api(path,opt){
     var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
@@ -241,7 +257,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   async function refresh(){try{var r=await api('/api/repositories/'+S.repoId+'/analyze',{method:'POST',body:'{}'});S.runId=r.analysis.id;S.analysis=null;persist();poll();toast('Refresh analysis queued')}catch(e){toast(e.message,'bad')}}
   function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('modal').hidden=false;$('api').focus()}
   function closeSettings(){ $('modal').hidden=true}
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){S.api=$('api').value.trim().replace(/\/$/,'');S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();sessionStorage.setItem('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){S.api=$('api').value.trim().replace(/\/$/,'');S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();sessionStorage.setItem('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('new').onclick=function(){clearInterval(S.timer);S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
