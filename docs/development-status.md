@@ -511,3 +511,39 @@ This projection connects each historical runtime comparison to the exact persist
 
 The projection validates that source-context commit identity matches the historical commit before returning the event. Changed files remain evidence for the commit as a whole; runtime measurements are not attributed to individual files, and no causal or regression conclusion is inferred.
 \n## Free deployment architecture — 2026-09-30\n\nThe Render deployment was simplified to target zero monthly infrastructure cost:\n- one Render Free web service runs both the HTTP API and BullMQ analysis worker in the same Node.js process\n- PostgreSQL is supplied through DATABASE_URL rather than a paid Render database\n- Redis is supplied through REDIS_URL rather than a paid Render Key Value instance\n- database migrations run from the compiled migration entrypoint before the combined runtime starts\n- the Render health check uses dependency-independent /health, while /ready remains the dependency readiness probe\n\nThis keeps the existing queue and analysis contracts intact while removing the need for a paid Render worker, Render Postgres, or Render Key Value resource. Free-tier external services remain subject to their own storage, compute, sleep, retention, and usage limits; those operational constraints must be verified during the first hosted deployment.\n
+
+## Product workspace — 2026-09-30
+
+The first production product surface is now implemented in `public/index.html` as a dependency-free static workspace.
+
+Current product flow:
+`Import -> async analysis -> evidence workspace -> report -> grounded AI interpretation -> evidence inspection`
+
+Current UI surfaces:
+- Overview
+- History with 50-commit pagination
+- Structure with observed directory map and inspectable architecture/dependency records
+- Quality evidence
+- Runtime & provenance with historical runtime reconstruction and on-demand deployment provenance reconciliation
+- Evidence report with claim-level inspection and JSON export
+- Interview story scaffolds
+- Grounded AI interpretation
+- Evidence explorer with search/filter
+- Contributor activity reconstructed from exact Git author tuples
+- Connection settings with API health/protected-route probe
+
+Frontend security boundary:
+- API and AI access keys are entered by the user and retained in browser session storage only.
+- No production credential is embedded in the static frontend.
+- The frontend remains a client for the protected API; it does not create a second authentication system.
+
+Hosted product verification:
+- The Render static frontend service is live on the Free plan at the configured `onrender.com` URL.
+- The API service is live after the latest product commits.
+- GitHub Actions runs on the latest product commits are still failing before workflow steps execute (`typecheck-build` reports `steps: null`); a targeted rerun has been initiated. This remains an infrastructure/runner verification issue, not evidence of a failing test command.
+
+Next product hardening focus:
+- complete CI runner verification
+- browser-level production smoke with a real user-supplied access key
+- expose remaining high-value evidence drill-downs without weakening evidence/causality semantics
+- final release checkpoint after CI and browser verification
