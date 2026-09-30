@@ -129,7 +129,6 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   async function boundedFetch(url,options,timeoutMs){var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},timeoutMs||10000),request=Object.assign({},options||{},{signal:controller.signal});try{return await fetch(url,request)}catch(e){if(e&&e.name==='AbortError')throw new Error('Connection test timed out.');throw e}finally{clearTimeout(timer)}}
   async function testConnection(){
     var base=safeApiBase($('api').value);
-    var key=$('key').value.trim();
     if(!base){toast('Enter an API base URL','bad');return}
     try{
       var h=new Headers({'Accept':'application/json'});
