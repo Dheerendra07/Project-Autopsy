@@ -138,7 +138,9 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       var ready=await boundedFetch(base+'/ready',{headers:h},10000);
       if(!ready.ok)throw new Error('Backend is not ready (HTTP '+ready.status+'). Database or Redis may be unavailable.');
       if(!key){toast('API, database and Redis are ready. Add the API access key to use protected routes.','warn');return}
-      var probe=await boundedFetch(base+'/api/repositories/00000000-0000-4000-8000-000000000000',{headers:h},10000);
+      var probeHeaders=new Headers(h);
+      probeHeaders.set('x-autopsy-api-key',key);
+      var probe=await boundedFetch(base+'/api/repositories/00000000-0000-4000-8000-000000000000',{headers:probeHeaders},10000);
       if(probe.status===401)throw new Error('API key rejected by protected API');
       if(probe.status!==404&&probe.ok!==true)throw new Error('Protected API probe returned HTTP '+probe.status);
       toast('API, database, Redis and access key are working','good');
