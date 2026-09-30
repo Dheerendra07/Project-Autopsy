@@ -153,6 +153,87 @@ test("frontend retains all primary evidence workspace views", () => {
   }
 });
 
+test("frontend dedicated evidence tables expose direct inspection hooks", () => {
+  const html = readRepoFile("public/index.html");
+
+  for (const marker of [
+    'inspectButton("Architecture "',
+    'inspectButton("Dependency "',
+    'inspectButton("Complexity "',
+    'inspectButton("Coupling "',
+    'inspectButton("Bug-area signal "',
+    'inspectButton("Test evolution "',
+    'inspectButton("Repeated file "',
+    'inspectButton("Migration "'
+  ]) {
+    assert.ok(html.includes(marker), "missing inspection hook: " + marker);
+  }
+});
+
+test("frontend quality workspace renders refactor evidence", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("Refactor signals"));
+  assert.ok(html.includes('inspectButton("Refactor signal "'));
+  assert.ok(html.includes("Commit-subject heuristic signals; not proof of intent"));
+});
+
+test("frontend overview exposes direct evidence inspection hooks", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes('inspectButton("Commit "'));
+  assert.ok(html.includes('inspectButton("Hotspot "'));
+  assert.ok(html.includes("Most touched files"));
+});
+
+test("frontend connection test handles invalid API base URLs", () => {
+  const html = readRepoFile("public/index.html");
+  const start = html.indexOf("async function testConnection()");
+  const end = html.indexOf("async function importRepo()", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const probe = html.slice(start, end);
+  assert.ok(probe.includes("var base;"));
+  assert.ok(probe.includes("safeApiBase"));
+  assert.ok(probe.includes("toast(e.message||'API base URL is invalid.','bad')"));
+});
+
+test("frontend interview and refactor views match persisted evidence schemas", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("s.draftAnswer||{}"));
+  assert.ok(html.includes("s.verification||{}"));
+  assert.ok(html.includes('inspectButton("Inspect story evidence"'));
+  assert.ok(html.includes("<th>Commit</th><th>Subject</th><th>Files changed</th><th>When</th>"));
+  assert.ok(html.includes("x.subject||\"—\""));
+  assert.ok(html.includes("x.committed_at"));
+});
+
+test("frontend AI interpretation keeps validated evidence keys inspectable", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("function grounding(keys)"));
+  assert.ok(html.includes("s.id===parts[0]"));
+  assert.ok(html.includes('inspectButton("Inspect supporting evidence"'));
+  assert.ok(html.includes("Validated report claims referenced by this AI theme."));
+});
+});
+
+test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("API access key was rejected. Open Settings and update the key."));
+  assert.ok(html.includes("Access to this API operation was denied."));
+  assert.ok(html.includes("Saved workspace could not be restored. Reconnect in Settings."));
+  assert.ok(html.includes("Connection settings"));
+  assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
+  assert.ok(
+    html.includes("S.dataErrors.length?'warn':'good'")
+  );
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
