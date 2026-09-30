@@ -87,7 +87,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -343,16 +343,19 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     }catch(e){toast(e.message,'bad')}
   }
   async function loadMoreCommits(){
-    var token=S.workspaceToken,id=S.repoId,runId=S.runId;
+    if(S.commitLoading)return;
+    var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.commitLoadToken;
+    S.commitLoading=true;
     try{
       var current=arr(S.data.commits,'commits'),page=Number(S.data.commits&&S.data.commits.pagination&&S.data.commits.pagination.page||1)+1;
       var r=await api('/api/repositories/'+id+'/commits?page='+page+'&limit=50');
-      if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;
+      if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||loadToken!==S.commitLoadToken)return;
       var next=arr(r,'commits');
       S.data.commits={commits:current.concat(next),pagination:r.pagination};
       setView('history');
       toast(next.length?'Loaded next commit page':'No more commit evidence','good');
-    }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
+    }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.commitLoadToken)toast(e.message,'bad')}
+    finally{if(loadToken===S.commitLoadToken)S.commitLoading=false}
   }
   async function loadProvenance(deploymentId){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
@@ -379,6 +382,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){
+    S.commitLoadToken+=1;S.commitLoading=false;
     var token=S.workspaceToken,id=S.repoId;
     try{
       var r=await api('/api/repositories/'+id+'/analyze',{method:'POST',body:'{}'});
@@ -390,7 +394,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   function closeSettings(){ $('modal').hidden=true}
   $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
-  $('new').onclick=function(){S.workspaceToken+=1;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
+  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false)}
   async function boot(){connected(!!S.key);if(S.repoId&&S.runId&&S.key){var token=S.workspaceToken,id=S.repoId,runId=S.runId;try{S.repo=await getRepo(id);if(token!==S.workspaceToken||id!==S.repoId)return;workspace();var analysis=await getRun(id,runId);if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.analysis=analysis;if(S.analysis.status==='completed'){await loadData();if(token===S.workspaceToken&&id===S.repoId)setView(S.view)}else{setView('overview');poll()}return}catch(e){}}landing()}
