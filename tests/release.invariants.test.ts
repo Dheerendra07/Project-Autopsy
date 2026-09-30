@@ -954,3 +954,15 @@ test("historical source-context UI stays wired to the bounded backend projection
   assert.ok(appJs.includes("sourceContextComplete"));
   assert.ok(appJs.includes("changedFilesTruncated"));
 });
+
+
+test("historical runtime filters stay aligned across summary, correlation and source context", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function historicalRuntimePath(kind,page,limit,filter)"));
+  assert.ok(appJs.includes("windowMinutes"));
+  assert.ok(appJs.includes("minSamples"));
+  assert.ok(appJs.includes("historicalRuntimePath('summary',1,25,f)"));
+  assert.ok(appJs.includes("historicalRuntimePath('correlation',1,25,f)"));
+  assert.ok(appJs.includes("historicalRuntimePath('source-context',1,25,f)"));
+  assert.ok(appJs.includes("data-action')==='historical-filter"));
+});
