@@ -46,13 +46,13 @@ export async function cloneRepository(
   branch?: string
 ): Promise<RepositoryMetadata> {
   const safeUrl = validateRemoteRepositoryUrl(remoteUrl);
-  const repositoryPath = await prepareRepositoryStorage(repositoryId);
-  const parentPath = path.dirname(repositoryPath);
 
   if (branch) {
     assertSafeBranchName(branch);
   }
 
+  const repositoryPath = await prepareRepositoryStorage(repositoryId);
+  const parentPath = path.dirname(repositoryPath);
   const git = createAnalysisGit(parentPath);
 
   const cloneArgs = ["--no-tags", "--filter=blob:none"];
