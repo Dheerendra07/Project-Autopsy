@@ -418,6 +418,23 @@ export async function getLatestCompletedAnalysisRun(
   return result.rows[0] ?? null;
 }
 
+const ANALYSIS_TRANSITIONS: Record<
+  AnalysisRunStatus,
+  readonly AnalysisRunStatus[]
+> = {
+  queued: ["running", "failed"],
+  running: ["completed", "failed"],
+  completed: [],
+  failed: []
+};
+
+export function isValidAnalysisTransition(
+  current: AnalysisRunStatus,
+  next: AnalysisRunStatus
+): boolean {
+  return current === next || ANALYSIS_TRANSITIONS[current].includes(next);
+}
+
 export async function updateAnalysisRun(
   analysisRunId: string,
   status: AnalysisRunStatus,
@@ -425,24 +442,61 @@ export async function updateAnalysisRun(
     errorMessage?: string;
   }
 ): Promise<void> {
-  await db.query(
-    `
-      UPDATE analysis_runs
-      SET
-        status = $2::varchar,
-        started_at = CASE
-          WHEN $2::varchar = 'running' AND started_at IS NULL THEN NOW()
-          ELSE started_at
-        END,
-        completed_at = CASE
-          WHEN $2::varchar IN ('completed', 'failed') THEN NOW()
-          ELSE completed_at
-        END,
-        error_message = $3
-      WHERE id = $1
-    `,
-    [analysisRunId, status, details?.errorMessage ?? null]
-  );
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const currentResult = await client.query<{
+      status: AnalysisRunStatus;
+    }>(
+      `
+        SELECT status
+        FROM analysis_runs
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [analysisRunId]
+    );
+
+    const current = currentResult.rows[0];
+
+    if (!current) {
+      throw new Error("Analysis run not found.");
+    }
+
+    if (!isValidAnalysisTransition(current.status, status)) {
+      throw new Error(
+        `Invalid analysis transition: ${current.status} -> ${status}.`
+      );
+    }
+
+    await client.query(
+      `
+        UPDATE analysis_runs
+        SET
+          status = $2::varchar,
+          started_at = CASE
+            WHEN $2::varchar = 'running' AND started_at IS NULL THEN NOW()
+            ELSE started_at
+          END,
+          completed_at = CASE
+            WHEN $2::varchar IN ('completed', 'failed') THEN NOW()
+            ELSE completed_at
+          END,
+          error_message = $3
+        WHERE id = $1
+      `,
+      [analysisRunId, status, details?.errorMessage ?? null]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 async function writeCommitBatch(
