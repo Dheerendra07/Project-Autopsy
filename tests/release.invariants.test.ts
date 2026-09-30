@@ -79,7 +79,7 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
   }
 });
 
-test("quality workflow starts on push and pull requests and uses the pinned Linux runner", () => {
+test("quality workflow runs on main pushes and pull requests and uses the supported Linux runner", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
   for (const marker of [
@@ -97,8 +97,8 @@ test("quality workflow starts on push and pull requests and uses the pinned Linu
   ]) {
     assert.ok(workflow.includes(marker), "missing workflow invariant: " + marker);
   }
+  assert.ok(workflow.includes("branches:\n      - main"));
 });
-
 
 
 test("Git history discovery paginates commit and numstat output", () => {
