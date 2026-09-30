@@ -370,11 +370,7 @@ export async function discoverCodeComplexityEvolution(
 
     let baseBlobShas = new Map<string, string>();
 
-    try {
-      baseBlobShas = await readBlobShas(git, baseHeadSha);
-    } catch {
-      baseBlobShas = new Map();
-    }
+    baseBlobShas = await readBlobShas(git, baseHeadSha);
 
     for (const filePath of relevantPaths) {
       const baseBlobSha = baseBlobShas.get(filePath);
