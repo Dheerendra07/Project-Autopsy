@@ -1054,3 +1054,15 @@ test("complexity cache avoids recursive tree scans for blob identity", () => {
   assert.ok(complexity.includes('objectSpec'));
   assert.doesNotMatch(complexity, /function readBlobShas\(/);
 });
+
+
+test("numstat evidence is merged per history page", () => {
+  const discovery = readRepoFile("src/modules/commits/commit.discovery.ts");
+  assert.ok(discovery.includes("const pageNumstat = await discoverNumstatPage("));
+  assert.ok(discovery.includes("applyNumstat(commit, pageNumstat.get(commit.sha))"));
+  assert.ok(discovery.includes("async function discoverNumstatPage("));
+  assert.doesNotMatch(
+    discovery,
+    /const numstat = await discoverNumstat\(git, range\)/
+  );
+});
