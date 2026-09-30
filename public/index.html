@@ -87,7 +87,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,connectionState:'unknown'
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -114,7 +114,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   function storageSet(key,value){try{sessionStorage.setItem(key,value);return true}catch(e){return false}}
   function toast(msg,tone){var x=$('toast');x.textContent=msg;x.style.borderColor=tone==='bad'?'#5b302c':tone==='good'?'#35523d':'#303028';x.hidden=false;clearTimeout(x._t);x._t=setTimeout(function(){x.hidden=true},3200)}
   function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.key',S.key);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
-  function connected(v){var c=$('conn');c.textContent=v?'connected':'not connected';c.className='pill '+(v?'good':'')}
+  function connected(state){var c=$('conn');var verified=state==='verified',configured=state==='configured';c.textContent=verified?'connected':configured?'configured':'not connected';c.className='pill '+(verified?'good':configured?'warn':'')}
   function resetEvidence(){S.evidence=[];S.evidenceSeq=0}
   function addEvidence(label,basis,payload){var id=++S.evidenceSeq;S.evidence.push({id:id,label:label,basis:basis,payload:payload});return id}
   function inspectButton(label,basis,payload){return '<button class="inspect" data-evidence-id="'+addEvidence(label,basis,payload)+'">Inspect</button>'}
@@ -140,14 +140,16 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       if(!health.ok)throw new Error('Health check returned HTTP '+health.status);
       var ready=await boundedFetch(base+'/ready',{headers:h},10000);
       if(!ready.ok)throw new Error('Backend is not ready (HTTP '+ready.status+'). Database or Redis may be unavailable.');
-      if(!key){toast('API, database and Redis are ready. Add the API access key to use protected routes.','warn');return}
+      if(!key){S.connectionState='unknown';connected('unknown');toast('API, database and Redis are ready. Add the API access key to use protected routes.','warn');return}
       var probeHeaders=new Headers(h);
       probeHeaders.set('x-autopsy-api-key',key);
       var probe=await boundedFetch(base+'/api/repositories/00000000-0000-4000-8000-000000000000',{headers:probeHeaders},10000);
       if(probe.status===401)throw new Error('API key rejected by protected API');
       if(probe.status!==404&&probe.ok!==true)throw new Error('Protected API probe returned HTTP '+probe.status);
+      S.connectionState='verified';
+      connected('verified');
       toast('API, database, Redis and access key are working','good');
-    }catch(e){toast(e.message||'Connection test failed','bad')}
+    }catch(e){S.connectionState='configured';connected('configured');toast(e.message||'Connection test failed','bad')}
   }
   async function api(path,opt){
     var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
@@ -414,12 +416,12 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
     }
   }
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false)}
-  async function boot(){connected(!!S.key);if(S.repoId&&S.runId&&S.key){var token=S.workspaceToken,id=S.repoId,runId=S.runId;try{S.repo=await getRepo(id);if(token!==S.workspaceToken||id!==S.repoId)return;workspace();var analysis=await getRun(id,runId);if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.analysis=analysis;if(S.analysis.status==='completed'){await loadData();if(token===S.workspaceToken&&id===S.repoId)setView(S.view)}else{setView('overview');poll()}return}catch(e){toast(e.message||'Saved workspace could not be restored. Reconnect in Settings.','warn')}}landing()}
+  async function boot(){S.connectionState=S.key?'configured':'unknown';connected(S.connectionState);if(S.repoId&&S.runId&&S.key){var token=S.workspaceToken,id=S.repoId,runId=S.runId;try{S.repo=await getRepo(id);if(token!==S.workspaceToken||id!==S.repoId)return;workspace();var analysis=await getRun(id,runId);if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.analysis=analysis;if(S.analysis.status==='completed'){await loadData();if(token===S.workspaceToken&&id===S.repoId)setView(S.view)}else{setView('overview');poll()}return}catch(e){toast(e.message||'Saved workspace could not be restored. Reconnect in Settings.','warn')}}landing()}
   boot()
 })();
 </script>
