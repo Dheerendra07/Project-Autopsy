@@ -37,9 +37,17 @@ test("product frontend contains the core evidence workflow", () => {
     "function reportHtml(rep)",
     "async function testConnection()",
     "base+'/ready'",
-    "Database or Redis may be unavailable."
+    "Database or Redis may be unavailable.",
     "async function reloadData()",
-    "data-action="reload-data""
+    "data-action=\"reload-data\"",
+    "runtime event explorer",
+    "rtDeployment",
+    "rtRevision",
+    "rtEnvironment",
+    "rtOperation",
+    "rtSignal",
+    "runtime-more",
+    "function runtimeEventsPath(page,limit)",
     "sessionStorage.getItem('autopsy.key')",
     "sessionStorage.setItem('autopsy.aiKey'",
     "/api/repositories/import"
