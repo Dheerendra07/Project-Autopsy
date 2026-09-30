@@ -53,11 +53,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql redis-server
 
-          sudo systemctl start postgresql
-          sudo systemctl start redis-server
+          sudo service postgresql start || sudo systemctl start postgresql
+          sudo service redis-server start || sudo systemctl start redis-server
 
           sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE USER autopsy WITH PASSWORD 'autopsy_dev_password';" || true
-          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE project_autopsy OWNER autopsy;" || true
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER USER autopsy WITH PASSWORD 'autopsy_dev_password';"
+          sudo -u postgres createdb -O autopsy project_autopsy 2>/dev/null || true
 
           pg_isready -h 127.0.0.1 -p 5432 -U autopsy -d project_autopsy
           redis-cli -h 127.0.0.1 -p 6379 ping
