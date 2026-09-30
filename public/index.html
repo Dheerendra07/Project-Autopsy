@@ -133,7 +133,6 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     if(!base){toast('Enter an API base URL','bad');return}
     try{
       var h=new Headers({'Accept':'application/json'});
-      if(key)h.set('x-autopsy-api-key',key);
       var health=await boundedFetch(base+'/health',{headers:h},10000);
       if(!health.ok)throw new Error('Health check returned HTTP '+health.status);
       var ready=await boundedFetch(base+'/ready',{headers:h},10000);
