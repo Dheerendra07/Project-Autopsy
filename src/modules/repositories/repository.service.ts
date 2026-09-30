@@ -1,6 +1,7 @@
 import { lstat, mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { env } from "../../config/env.js";
+import { db } from "../../config/database.js";
 import type { RepositoryMetadata } from "./repository.types.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import { assertAnalysisDeadline } from "../analysis/analysis-deadline.js";
@@ -28,6 +29,88 @@ export async function prepareRepositoryStorage(
   await mkdir(repositoryPath, { recursive: true });
 
   return repositoryPath;
+}
+
+export type RepositoryDeletionResult =
+  | { status: "deleted"; storageDeleted: boolean }
+  | { status: "not_found" }
+  | { status: "blocked"; analysisRunId: string };
+
+export async function deleteRepositoryWithStorage(
+  repositoryId: string
+): Promise<RepositoryDeletionResult> {
+  assertRepositoryId(repositoryId);
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const repositoryResult = await client.query<{
+      storage_path: string | null;
+    }>(
+      `
+        SELECT storage_path
+        FROM repositories
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [repositoryId]
+    );
+
+    const repository = repositoryResult.rows[0];
+
+    if (!repository) {
+      await client.query("ROLLBACK");
+      return { status: "not_found" };
+    }
+
+    const activeRunResult = await client.query<{ id: string }>(
+      `
+        SELECT id
+        FROM analysis_runs
+        WHERE repository_id = $1
+          AND status IN ('queued', 'running')
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+      [repositoryId]
+    );
+
+    const activeRun = activeRunResult.rows[0];
+
+    if (activeRun) {
+      await client.query("ROLLBACK");
+      return {
+        status: "blocked",
+        analysisRunId: activeRun.id
+      };
+    }
+
+    if (repository.storage_path) {
+      assertManagedRepositoryStoragePath(repository.storage_path);
+    }
+
+    await client.query(
+      "DELETE FROM repositories WHERE id = $1",
+      [repositoryId]
+    );
+
+    if (repository.storage_path) {
+      await removeRepositoryStoragePath(repository.storage_path);
+    }
+
+    await client.query("COMMIT");
+
+    return {
+      status: "deleted",
+      storageDeleted: repository.storage_path !== null
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export function assertManagedRepositoryStoragePath(
