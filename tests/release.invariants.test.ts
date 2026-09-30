@@ -134,6 +134,20 @@ test("frontend script remains dependency-free, parseable and key-gated", () => {
   );
 });
 
+test("web service serves the frontend and avoids a hardcoded API origin", () => {
+  const app = readRepoFile("src/app.ts");
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(app.includes("express.static(publicDirectory"));
+  assert.ok(app.includes('path.dirname(fileURLToPath(import.meta.url))'));
+  assert.ok(app.includes('"../public"'));
+  assert.ok(html.includes("location.origin"));
+  assert.doesNotMatch(
+    html,
+    /https:\/\/project-autopsy\.onrender\.com/
+  );
+});
+
 test("frontend retains all primary evidence workspace views", () => {
   const html = readRepoFile("public/index.html");
 

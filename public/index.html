@@ -82,7 +82,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
 (function(){
   'use strict';
   var S={
-    api:storageGet('autopsy.api')||'https://project-autopsy.onrender.com',
+    api:storageGet('autopsy.api')||((location.protocol==='http:'||location.protocol==='https:')?location.origin:'http://localhost:5100'),
     key:storageGet('autopsy.key'),
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
