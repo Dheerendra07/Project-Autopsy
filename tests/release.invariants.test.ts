@@ -79,7 +79,7 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
   }
 });
 
-test("quality workflow runs on main pushes and pull requests and uses the supported Linux runner", () => {
+test("quality workflow is manual while GitHub-hosted runner provisioning is unavailable", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
   for (const marker of [
@@ -97,7 +97,9 @@ test("quality workflow runs on main pushes and pull requests and uses the suppor
   ]) {
     assert.ok(workflow.includes(marker), "missing workflow invariant: " + marker);
   }
-  assert.ok(workflow.includes("branches:\n      - main"));
+  assert.ok(workflow.includes("workflow_dispatch:"));
+  assert.doesNotMatch(workflow, /pull_request:/);
+  assert.doesNotMatch(workflow, /push:/);
 });
 
 
