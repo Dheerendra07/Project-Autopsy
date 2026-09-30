@@ -278,3 +278,33 @@ test("defaults AI model and provider URL while retaining explicit values", () =>
   assert.equal(explicit.AI_BASE_URL, "https://example.com/v1");
   assert.equal(explicit.AI_MODEL, "custom-model");
 });
+
+
+test("MAX_ANALYZED_COMMITS is bounded and integer-valued", () => {
+  assert.equal(
+    parseEnvironment({
+      DATABASE_URL: "postgresql://localhost/autopsy",
+      MAX_ANALYZED_COMMITS: "1"
+    }).MAX_ANALYZED_COMMITS,
+    1
+  );
+
+  assert.equal(
+    parseEnvironment({
+      DATABASE_URL: "postgresql://localhost/autopsy",
+      MAX_ANALYZED_COMMITS: "100000"
+    }).MAX_ANALYZED_COMMITS,
+    100_000
+  );
+
+  for (const value of ["0", "-1", "1.5", "100001"]) {
+    assert.throws(
+      () =>
+        parseEnvironment({
+          DATABASE_URL: "postgresql://localhost/autopsy",
+          MAX_ANALYZED_COMMITS: value
+        }),
+      /MAX_ANALYZED_COMMITS/
+    );
+  }
+});
