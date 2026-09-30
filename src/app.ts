@@ -26,6 +26,12 @@ app.use(
   helmet({
     crossOriginResourcePolicy: {
       policy: "cross-origin"
+    },
+    contentSecurityPolicy: {
+      directives: {
+        upgradeInsecureRequests:
+          env.NODE_ENV === "production" ? [] : null
+      }
     }
   })
 );
