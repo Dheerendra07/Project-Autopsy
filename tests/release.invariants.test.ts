@@ -987,3 +987,16 @@ test("analysis run history load token resets on repository context changes", () 
   assert.ok(appJs.slice(deleteStart, deleteEnd).includes("S.analysisRunsLoadToken+=1"));
   assert.ok(appJs.includes("S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;"));
 });
+
+
+test("historical runtime numeric inputs are normalized before API requests", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadHistoricalRuntime()");
+  const end = appJs.indexOf("async function reloadData()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("Number.isInteger(windowMinutes)"));
+  assert.ok(fn.includes("Number.isInteger(minSamples)"));
+  assert.ok(fn.includes("windowMinutes=60"));
+  assert.ok(fn.includes("minSamples=10"));
+});
