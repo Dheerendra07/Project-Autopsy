@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import {
   getRepositoryNameFromUrl,
   getRepositoryStoragePath,
-  isSafeBranchName
+  isSafeBranchName,
+  removeRepositoryStoragePath
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
@@ -310,7 +311,7 @@ router.delete("/:repositoryId", async (req, res, next) => {
 
     if (repository.storage_path) {
       try {
-        await removeRepositoryStorage(repositoryId);
+        await removeRepositoryStoragePath(repository.storage_path);
       } catch (error) {
         console.error(
           `Failed to remove repository storage before deleting ${repositoryId}:`,
