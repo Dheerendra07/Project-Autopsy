@@ -90,7 +90,7 @@ test("frontend script remains dependency-free, parseable and key-gated", () => {
   assert.ok(html.includes("sessionStorage.setItem('autopsy.aiKey'"));
   assert.doesNotMatch(
     html,
-    /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\\s*[:=]\\s*['"][^'"]{12,}['"]/i
+    /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\s*[:=]\s*['"][^'"]{12,}['"]/i
   );
 });
 
