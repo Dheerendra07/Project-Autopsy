@@ -122,8 +122,10 @@ test("frontend script remains dependency-free, parseable and key-gated", () => {
   assert.ok(script);
   assert.doesNotThrow(() => new Function(script));
   assert.doesNotMatch(html, /<script\s+src=/i);
-  assert.ok(html.includes("sessionStorage.getItem('autopsy.key')"));
-  assert.ok(html.includes("sessionStorage.setItem('autopsy.aiKey'"));
+  assert.ok(html.includes("function storageGet(key)"));
+  assert.ok(html.includes("function storageSet(key,value)"));
+  assert.ok(html.includes("storageGet('autopsy.key')"));
+  assert.ok(html.includes("storageSet('autopsy.aiKey',S.aiKey)"));
   assert.doesNotMatch(
     html,
     /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\s*[:=]\s*['"][^'"]{12,}['"]/i
