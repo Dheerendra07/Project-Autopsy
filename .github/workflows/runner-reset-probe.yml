@@ -1,0 +1,23 @@
+name: runner-reset-probe
+
+on:
+  push:
+    branches:
+      - probe/runner-reset-2026-10-01
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe runner
+        run: |
+          set -euo pipefail
+          echo "runner=$RUNNER_NAME"
+          echo "os=$RUNNER_OS"
+          echo "arch=$RUNNER_ARCH"
+          node --version
+          git --version
