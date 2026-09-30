@@ -200,6 +200,17 @@ test("frontend connection test handles invalid API base URLs", () => {
   assert.ok(probe.includes("toast(e.message||'API base URL is invalid.','bad')"));
 });
 
+test("frontend interview and refactor views match persisted evidence schemas", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("s.draftAnswer||{}"));
+  assert.ok(html.includes("s.verification||{}"));
+  assert.ok(html.includes('inspectButton("Inspect story evidence"'));
+  assert.ok(html.includes("<th>Commit</th><th>Subject</th><th>Files changed</th><th>When</th>"));
+  assert.ok(html.includes("x.subject||\"—\""));
+  assert.ok(html.includes("x.committed_at"));
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
