@@ -894,9 +894,10 @@ test("analysis run history endpoint is bounded and release-visible", () => {
 
   assert.ok(persistence.includes("export async function listAnalysisRuns("));
   assert.ok(persistence.includes("ORDER BY created_at DESC, id DESC"));
-  assert.ok(routes.includes('/analysis-runs'));
+  assert.ok(routes.includes('router.get("/:repositoryId/analysis-runs"'));
   assert.ok(routes.includes("max(50)"));
   assert.ok(routes.includes("sanitizePublicAnalysisErrorMessage"));
   assert.ok(migration.includes("idx_analysis_runs_repository_created_at"));
+  assert.ok(appJs.includes("analysisRuns:'/api/repositories/'+id+'/analysis-runs?page=1&limit=20'"));
   assert.ok(appJs.includes("analysisRuns"));
 });
