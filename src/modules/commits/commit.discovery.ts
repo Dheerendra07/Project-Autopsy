@@ -84,12 +84,9 @@ export async function discoverCommits(
 
   const numstat = await discoverNumstat(git, range);
 
-  return output
-    .split(RECORD_SEPARATOR)
-    .map((record) => record.replace(/^\r?\n/, "").replace(/\r?\n$/, ""))
-    .filter(Boolean)
-    .map(parseCommitRecord)
-    .map((commit) => applyNumstat(commit, numstat.get(commit.sha)));
+  return commits.map((commit) =>
+    applyNumstat(commit, numstat.get(commit.sha))
+  );
 }
 
 async function countCommits(
