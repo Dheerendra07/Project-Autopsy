@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "dev:worker": "tsx watch src/workers/analysis.worker.ts",
-    "build": "tsc",
+    "build": "npm install --include=dev --no-audit --no-fund && tsc",
     "test": "tsx --test tests/*.test.ts",
     "start": "node dist/server.js",
     "start:worker": "node dist/workers/analysis.worker.js",
