@@ -971,3 +971,12 @@ test("historical filter state resets when repository or analysis context changes
   assert.ok(appJs.includes("S.historicalLoading=false;"));
   assert.ok(appJs.includes("Saved workspace no longer exists"));
 });
+
+
+test("analysis history pagination UI uses the bounded backend page", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("async function loadMoreAnalysisRuns()"));
+  assert.ok(appJs.includes("/analysis-runs?page="));
+  assert.ok(appJs.includes("data-action=\\\"analysis-runs-more\\\""));
+  assert.ok(appJs.includes("Load older analysis runs"));
+});
