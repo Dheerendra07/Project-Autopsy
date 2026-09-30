@@ -153,6 +153,23 @@ test("frontend retains all primary evidence workspace views", () => {
   }
 });
 
+test("frontend dedicated evidence tables expose direct inspection hooks", () => {
+  const html = readRepoFile("public/index.html");
+
+  for (const marker of [
+    'inspectButton("Architecture "',
+    'inspectButton("Dependency "',
+    'inspectButton("Complexity "',
+    'inspectButton("Coupling "',
+    'inspectButton("Bug-area signal "',
+    'inspectButton("Test evolution "',
+    'inspectButton("Repeated file "',
+    'inspectButton("Migration "'
+  ]) {
+    assert.ok(html.includes(marker), "missing inspection hook: " + marker);
+  }
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
