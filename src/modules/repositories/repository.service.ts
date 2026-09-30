@@ -83,7 +83,7 @@ export async function cloneRepository(
   }
 }
 
-export function assertSafeBranchName(branch: string): void {
+export function isSafeBranchName(branch: string): boolean {
   if (
     !branch ||
     branch.length > 255 ||
@@ -94,20 +94,26 @@ export function assertSafeBranchName(branch: string): void {
     branch.includes("@{") ||
     branch.includes("//")
   ) {
-    throw new Error("Repository branch is invalid.");
+    return false;
   }
 
   if (!/^[A-Za-z0-9._/-]+$/.test(branch)) {
-    throw new Error("Repository branch contains unsupported characters.");
+    return false;
   }
 
   const segments = branch.split("/");
 
-  if (
-    segments.some(
-      (segment) => segment.length === 0 || segment === "." || segment === ".."
-    )
-  ) {
+  return !segments.some(
+    (segment) => segment.length === 0 || segment === "." || segment === ".."
+  );
+}
+
+export function assertSafeBranchName(branch: string): void {
+  if (!branch || branch.length > 255) {
+    throw new Error("Repository branch is invalid.");
+  }
+
+  if (!isSafeBranchName(branch)) {
     throw new Error("Repository branch is invalid.");
   }
 }
