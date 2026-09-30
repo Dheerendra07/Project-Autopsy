@@ -311,6 +311,28 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend clears derived results when a refresh analysis is queued", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function refresh()");
+  const end = appJs.indexOf("function openSettings()", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const refresh = appJs.slice(start, end);
+  assert.ok(refresh.includes("S.data.report=null"));
+  assert.ok(refresh.includes("S.data.interview=null"));
+  assert.ok(refresh.includes("S.data.interpretation=null"));
+  assert.ok(
+    refresh.indexOf("S.runId=r.analysis.id") <
+      refresh.indexOf("S.data.report=null")
+  );
+  assert.ok(
+    refresh.indexOf("S.data.interpretation=null") <
+      refresh.indexOf("persist();poll()")
+  );
+});
+
 test("frontend refreshes repository metadata after analysis completion", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("if(st==='completed'){");
