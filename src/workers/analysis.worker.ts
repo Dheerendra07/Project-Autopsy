@@ -371,23 +371,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
-      const persistedCount =
-        analysis.analysis_mode === "incremental"
-          ? await persistCommitBatch(repositoryId, commits)
-          : await replaceRepositoryCommitHistory(
-              repositoryId,
-              commits
-            );
-
-      deadline.assertNotExpired();
-
       const fileChurn = await discoverFileChurn(
         repository.storage_path
       );
-
-      deadline.assertNotExpired();
-
-      await replaceFileChangeMetrics(repositoryId, fileChurn);
 
       deadline.assertNotExpired();
 
@@ -405,22 +391,6 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
-      if (analysis.analysis_mode === "incremental") {
-        await appendDependencyEvolution(
-          repositoryId,
-          dependencyEvolution.snapshots,
-          dependencyEvolution.changes
-        );
-      } else {
-        await replaceDependencyEvolution(
-          repositoryId,
-          dependencyEvolution.snapshots,
-          dependencyEvolution.changes
-        );
-      }
-
-      deadline.assertNotExpired();
-
       const architectureEvolution =
         await discoverArchitectureEvolution(
           repository.storage_path,
@@ -435,22 +405,6 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
-      if (analysis.analysis_mode === "incremental") {
-        await appendArchitectureEvolution(
-          repositoryId,
-          architectureEvolution.snapshots,
-          architectureEvolution.events
-        );
-      } else {
-        await replaceArchitectureEvolution(
-          repositoryId,
-          architectureEvolution.snapshots,
-          architectureEvolution.events
-        );
-      }
-
-      deadline.assertNotExpired();
-
       const databaseMigrationEvolution =
         await discoverDatabaseMigrationEvolution(
           repository.storage_path,
@@ -459,32 +413,10 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
-      if (analysis.analysis_mode === "incremental") {
-        await appendDatabaseMigrationEvolution(
-          repositoryId,
-          databaseMigrationEvolution
-        );
-      } else {
-        await replaceDatabaseMigrationEvolution(
-          repositoryId,
-          databaseMigrationEvolution
-        );
-      }
-
-      deadline.assertNotExpired();
-
       const testEvolution = await discoverTestEvolution(
         repository.storage_path,
         commits
       );
-
-      deadline.assertNotExpired();
-
-      if (analysis.analysis_mode === "incremental") {
-        await appendTestEvolution(repositoryId, testEvolution);
-      } else {
-        await replaceTestEvolution(repositoryId, testEvolution);
-      }
 
       deadline.assertNotExpired();
 
@@ -506,8 +438,6 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           )
       };
 
-      deadline.assertNotExpired();
-
       const complexityEvolution =
         await discoverCodeComplexityEvolution(
           repository.storage_path,
@@ -517,6 +447,74 @@ export const analysisWorker = new Worker<AnalysisJobData>(
             ? analysis.base_head_sha
             : null
         );
+
+      deadline.assertNotExpired();
+
+      const persistedCount =
+        analysis.analysis_mode === "incremental"
+          ? await persistCommitBatch(repositoryId, commits)
+          : await replaceRepositoryCommitHistory(
+              repositoryId,
+              commits
+            );
+
+      deadline.assertNotExpired();
+
+      await replaceFileChangeMetrics(repositoryId, fileChurn);
+
+      deadline.assertNotExpired();
+
+      if (analysis.analysis_mode === "incremental") {
+        await appendDependencyEvolution(
+          repositoryId,
+          dependencyEvolution.snapshots,
+          dependencyEvolution.changes
+        );
+      } else {
+        await replaceDependencyEvolution(
+          repositoryId,
+          dependencyEvolution.snapshots,
+          dependencyEvolution.changes
+        );
+      }
+
+      deadline.assertNotExpired();
+
+      if (analysis.analysis_mode === "incremental") {
+        await appendArchitectureEvolution(
+          repositoryId,
+          architectureEvolution.snapshots,
+          architectureEvolution.events
+        );
+      } else {
+        await replaceArchitectureEvolution(
+          repositoryId,
+          architectureEvolution.snapshots,
+          architectureEvolution.events
+        );
+      }
+
+      deadline.assertNotExpired();
+
+      if (analysis.analysis_mode === "incremental") {
+        await appendDatabaseMigrationEvolution(
+          repositoryId,
+          databaseMigrationEvolution
+        );
+      } else {
+        await replaceDatabaseMigrationEvolution(
+          repositoryId,
+          databaseMigrationEvolution
+        );
+      }
+
+      deadline.assertNotExpired();
+
+      if (analysis.analysis_mode === "incremental") {
+        await appendTestEvolution(repositoryId, testEvolution);
+      } else {
+        await replaceTestEvolution(repositoryId, testEvolution);
+      }
 
       deadline.assertNotExpired();
 
