@@ -186,6 +186,20 @@ test("frontend overview exposes direct evidence inspection hooks", () => {
   assert.ok(html.includes("Most touched files"));
 });
 
+test("frontend connection test handles invalid API base URLs", () => {
+  const html = readRepoFile("public/index.html");
+  const start = html.indexOf("async function testConnection()");
+  const end = html.indexOf("async function importRepo()", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const probe = html.slice(start, end);
+  assert.ok(probe.includes("var base;"));
+  assert.ok(probe.includes("safeApiBase"));
+  assert.ok(probe.includes("toast(e.message||'API base URL is invalid.','bad')"));
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
