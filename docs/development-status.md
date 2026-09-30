@@ -568,3 +568,10 @@ These additions remain evidence-first: runtime filters select observed records; 
 ### CI runner verification — 2026-09-30
 
 The quality workflow now pins the GitHub-hosted runner to `ubuntu-22.04` as a controlled fallback after repeated workflow runs failed before any step executed (`typecheck-build` reported `steps: null`). GitHub currently documents `ubuntu-22.04` as a supported standard Linux runner. This change is a runner-isolation measure; it does not alter application behavior.
+
+
+## Evidence explorer coverage expansion — 2026-09-30
+
+The Evidence Explorer now includes bounded samples from the remaining high-value persisted evidence families: timeline classification, hotspots, architecture, dependencies, complexity, coupling, bug-area signals, repeated modifications, refactor signals, database migrations, test evolution, runtime telemetry, deployment evidence, and contributors.
+
+Each row remains directly inspectable through the existing evidence drawer. The explorer intentionally uses bounded samples; dedicated views retain their own pagination and filtering controls for larger datasets.
