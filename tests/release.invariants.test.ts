@@ -121,7 +121,7 @@ test("frontend JavaScript is served as a same-origin CSP-compatible asset", () =
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes('<script src="/app.js" defer></script>'));
+  assert.ok(html.includes('<script src="app.js" defer></script>'));
   assert.doesNotMatch(html, /<script>\s*[\s\S]*?<\/script>/i);
   assert.doesNotThrow(() => new Function(appJs));
   assert.doesNotMatch(html, /<script[^>]+src=["'][a-z]+:\/\//i);
