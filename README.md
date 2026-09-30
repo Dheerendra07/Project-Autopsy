@@ -114,7 +114,7 @@ The response is paginated and exposes persisted engineering evidence; repository
 
 ## Deterministic hotspots
 
-File-churn discovery pages Git history in bounded 500-commit chunks and parses NUL-delimited numstat records so valid filenames containing tabs or newlines remain intact.
+File-churn discovery and commit change statistics are processed in bounded 500-commit Git pages. Numstat statistics are merged into the page's commits immediately instead of retaining a history-wide duplicate stats map. NUL-delimited records preserve valid filenames containing tabs or newlines.
 
 GET /api/repositories/:repositoryId/hotspots?limit=20
 
