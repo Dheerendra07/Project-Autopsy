@@ -82,11 +82,11 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
 (function(){
   'use strict';
   var S={
-    api:sessionStorage.getItem('autopsy.api')||'https://project-autopsy.onrender.com',
-    key:sessionStorage.getItem('autopsy.key')||'',
-    aiKey:sessionStorage.getItem('autopsy.aiKey')||'',
-    repoId:sessionStorage.getItem('autopsy.repoId')||'',
-    runId:sessionStorage.getItem('autopsy.runId')||'',
+    api:storageGet('autopsy.api')||'https://project-autopsy.onrender.com',
+    key:storageGet('autopsy.key'),
+    aiKey:storageGet('autopsy.aiKey'),
+    repoId:storageGet('autopsy.repoId'),
+    runId:storageGet('autopsy.runId'),
     repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null
   };
   function $(id){return document.getElementById(id)}
@@ -99,7 +99,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     var local=['localhost','127.0.0.1','[::1]'].indexOf(u.hostname.toLowerCase())>=0;
     if(u.protocol!=='https:'&&!local)throw new Error('API base URL must use HTTPS outside localhost.');
     if(u.username||u.password||u.search||u.hash)throw new Error('API base URL must not contain credentials, query parameters or fragments.');
-    return u.origin;
+    return u.toString().replace(/\/$/,'');
   }
   function arr(v,k){return Array.isArray(v)?v:(v&&k&&Array.isArray(v[k])?v[k]:[])}
   function n(v){return v==null||isNaN(Number(v))?'—':new Intl.NumberFormat('en-IN').format(Number(v))}
@@ -110,8 +110,10 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   function elapsed(start,end){if(!start)return'—';var a=new Date(start),b=end?new Date(end):new Date();if(isNaN(a)||isNaN(b))return'—';var d=Math.max(0,b-a);if(d<1000)return n(d)+' ms';if(d<60000)return (d/1000).toFixed(1)+' s';return Math.floor(d/60000)+'m '+Math.floor((d%60000)/1000)+'s'}
   function cls(status){return ['completed','up_to_date','succeeded'].indexOf(status)>=0?'good':['failed','cancelled','canceled'].indexOf(status)>=0?'bad':'warn'}
   function sameRevision(a,b){return !!a&&!!b&&String(a).toLowerCase()===String(b).toLowerCase()}
+  function storageGet(key){try{return sessionStorage.getItem(key)||''}catch(e){return''}}
+  function storageSet(key,value){try{sessionStorage.setItem(key,value);return true}catch(e){return false}}
   function toast(msg,tone){var x=$('toast');x.textContent=msg;x.style.borderColor=tone==='bad'?'#5b302c':tone==='good'?'#35523d':'#303028';x.hidden=false;clearTimeout(x._t);x._t=setTimeout(function(){x.hidden=true},3200)}
-  function persist(){sessionStorage.setItem('autopsy.api',S.api);sessionStorage.setItem('autopsy.key',S.key);sessionStorage.setItem('autopsy.repoId',S.repoId||'');sessionStorage.setItem('autopsy.runId',S.runId||'')}
+  function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.key',S.key);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
   function connected(v){var c=$('conn');c.textContent=v?'connected':'not connected';c.className='pill '+(v?'good':'')}
   function resetEvidence(){S.evidence=[];S.evidenceSeq=0}
   function addEvidence(label,basis,payload){var id=++S.evidenceSeq;S.evidence.push({id:id,label:label,basis:basis,payload:payload});return id}
@@ -386,7 +388,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('modal').hidden=false;$('api').focus()}
   function closeSettings(){ $('modal').hidden=true}
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();sessionStorage.setItem('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('new').onclick=function(){S.workspaceToken+=1;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
