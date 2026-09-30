@@ -336,7 +336,9 @@
     try{
       var r=await api('/api/repositories/'+id+'/analyze',{method:'POST',body:'{}'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
-      S.runId=r.analysis.id;S.analysis=null;persist();poll();toast('Refresh analysis queued')
+      S.runId=r.analysis.id;S.analysis=null;
+      S.data.report=null;S.data.interview=null;S.data.interpretation=null;
+      persist();poll();toast('Refresh analysis queued')
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
   }
   function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;$('api').focus()}
