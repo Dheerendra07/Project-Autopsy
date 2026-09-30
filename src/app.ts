@@ -1,4 +1,6 @@
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -112,6 +114,18 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/api", router);
+
+const publicDirectory = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../public"
+);
+
+app.use(
+  express.static(publicDirectory, {
+    index: "index.html",
+    fallthrough: true
+  })
+);
 
 app.use(notFoundMiddleware);
 
