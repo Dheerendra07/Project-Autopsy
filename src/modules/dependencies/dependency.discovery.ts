@@ -155,6 +155,11 @@ export async function discoverDependencyEvolution(
   return { snapshots, changes };
 }
 
+export function isMissingPackageManifestError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /path .*package\.json.* does not exist in/i.test(message);
+}
+
 async function readPackageJsonAtCommit(
   git: ReturnType<typeof simpleGit>,
   sha: string
@@ -163,9 +168,7 @@ async function readPackageJsonAtCommit(
     const raw = await git.show([`${sha}:package.json`]);
     return JSON.parse(raw) as PackageManifest;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-
-    if (/path .*package\.json.* does not exist in/i.test(message)) {
+    if (isMissingPackageManifestError(error)) {
       return null;
     }
 
