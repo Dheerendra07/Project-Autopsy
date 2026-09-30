@@ -83,32 +83,25 @@ async function listDirectoriesAtCommit(
   sha: string,
   rootPath: string
 ): Promise<string[]> {
-  const output = await git.raw(["ls-tree", "-r", "--name-only", sha]);
-  const prefix = rootPath ? `${rootPath}/` : "";
-  const directories = new Set<string>();
+  const treeish = rootPath ? sha + ":" + rootPath : sha;
+  const output = await git.raw([
+    "ls-tree",
+    "--name-only",
+    "-d",
+    treeish
+  ]);
 
-  for (const rawPath of output.split(new RegExp("\\r?\\n"))) {
-    const filePath = rawPath.trim();
-
-    if (!filePath || (prefix && !filePath.startsWith(prefix))) {
-      continue;
-    }
-
-    const relative = prefix
-      ? filePath.slice(prefix.length)
-      : filePath;
-    const segments = relative.split("/").filter(Boolean);
-
-    if (segments.length < 2) {
-      continue;
-    }
-
-    directories.add(segments[0]!);
-  }
-
-  return [...directories].sort((a, b) => a.localeCompare(b));
+  return output
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map((directory) =>
+      rootPath && directory.startsWith(rootPath + "/")
+        ? directory.slice(rootPath.length + 1)
+        : directory
+    );
 }
-
 export function diffDirectorySets(
   previous: Set<string>,
   current: Set<string>
