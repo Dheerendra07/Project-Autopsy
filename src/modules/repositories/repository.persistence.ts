@@ -470,7 +470,7 @@ export async function updateAnalysisRun(
               THEN NOW()
             ELSE completed_at
           END,
-          error_message = $3
+          error_message = COALESCE($3, error_message)
         WHERE id = $1
       `,
       [analysisRunId, status, details?.errorMessage ?? null]
