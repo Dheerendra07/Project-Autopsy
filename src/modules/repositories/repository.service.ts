@@ -111,10 +111,19 @@ export function isSafeBranchName(branch: string): boolean {
     return false;
   }
 
+  if (branch === "@") {
+    return false;
+  }
+
   const segments = branch.split("/");
 
   return !segments.some(
-    (segment) => segment.length === 0 || segment === "." || segment === ".."
+    (segment) =>
+      segment.length === 0 ||
+      segment === "." ||
+      segment === ".." ||
+      segment.startsWith(".") ||
+      segment.endsWith(".lock")
   );
 }
 
