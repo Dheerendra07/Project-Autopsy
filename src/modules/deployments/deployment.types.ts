@@ -1,5 +1,30 @@
 import { z } from "zod";
 
+const MAX_JSON_NESTING_DEPTH = 20;
+
+function exceedsJsonNestingDepth(
+  value: unknown,
+  depth = 0
+): boolean {
+  if (depth > MAX_JSON_NESTING_DEPTH) {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((item) =>
+      exceedsJsonNestingDepth(item, depth + 1)
+    );
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value).some((child) =>
+      exceedsJsonNestingDepth(child, depth + 1)
+    );
+  }
+
+  return false;
+}
+
 const boundedLabel = (name: string, max: number) =>
   z
     .string()
