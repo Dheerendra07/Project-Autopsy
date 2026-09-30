@@ -222,6 +222,68 @@ test("commit pagination rejects zero and oversized limits before persistence acc
   }
 });
 
+test("commit history is newest-first while the timeline remains chronological", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
+  const newestSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const middleSha = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+  const oldestSha = "cccccccccccccccccccccccccccccccccccccccc";
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, source_type, source_url, name, tracked_branch, head_sha
+      )
+      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'commit-order-test', 'main', $2)
+    `,
+    [repositoryId, newestSha]
+  );
+
+  await db.query(
+    `
+      INSERT INTO commits (
+        repository_id, sha, subject, committed_at, files_changed, additions, deletions
+      )
+      VALUES
+        ($1, $2, 'newest commit', '2026-03-03T00:00:00Z', 1, 3, 1),
+        ($1, $3, 'middle commit', '2026-03-02T00:00:00Z', 2, 4, 2),
+        ($1, $4, 'oldest commit', '2026-03-01T00:00:00Z', 3, 5, 3)
+    `,
+    [repositoryId, newestSha, middleSha, oldestSha]
+  );
+
+  try {
+    const commitsResponse = await fetch(
+      baseUrl + "/api/repositories/" + repositoryId + "/commits?page=1&limit=3",
+      { headers: { "x-autopsy-api-key": TEST_API_KEY } }
+    );
+    assert.equal(commitsResponse.status, 200);
+    const commitsBody = await commitsResponse.json() as {
+      commits: Array<{ sha: string; subject: string }>;
+    };
+    assert.deepEqual(
+      commitsBody.commits.map((commit) => commit.sha),
+      [newestSha, middleSha, oldestSha]
+    );
+
+    const timelineResponse = await fetch(
+      baseUrl + "/api/repositories/" + repositoryId + "/timeline?page=1&limit=3",
+      { headers: { "x-autopsy-api-key": TEST_API_KEY } }
+    );
+    assert.equal(timelineResponse.status, 200);
+    const timelineBody = await timelineResponse.json() as {
+      events: Array<{ sha: string; subject: string }>;
+    };
+    assert.deepEqual(
+      timelineBody.events.map((event) => event.sha),
+      [oldestSha, middleSha, newestSha]
+    );
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+  }
+});
+
+
 test("runtime telemetry rejects a non-chronological date window", async () => {
   const response = await fetch(
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
