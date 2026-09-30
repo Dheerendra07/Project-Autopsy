@@ -261,6 +261,20 @@ test("frontend connection failures remain actionable and mobile evidence control
   );
 });
 
+test("frontend workspace keeps the real connection state", () => {
+  const html = readRepoFile("public/index.html");
+
+  const start = html.indexOf("function workspace()");
+  const end = html.indexOf("function banner(", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const workspace = html.slice(start, end);
+  assert.ok(workspace.includes("connected(S.connectionState)"));
+  assert.doesNotMatch(workspace, /connected\(true\)/);
+});
+
 test("frontend distinguishes configured credentials from verified connectivity", () => {
   const html = readRepoFile("public/index.html");
 
