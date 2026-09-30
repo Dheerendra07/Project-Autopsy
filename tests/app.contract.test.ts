@@ -516,7 +516,9 @@ test("repository deletion is blocked while analysis is active", async () => {
   const { db } = await import("../src/config/database.js");
   const repositoryId = randomUUID();
   const analysisRunId = randomUUID();
-  const storagePath = await mkdtemp(path.join(process.cwd(), "storage-delete-active-"));
+  const { getRepositoryStoragePath } = await import("../src/modules/repositories/repository.service.js");
+  const storagePath = getRepositoryStoragePath(repositoryId);
+  await mkdir(storagePath, { recursive: true });
 
   await db.query(
     `
@@ -565,8 +567,9 @@ test("repository deletion is blocked while analysis is active", async () => {
 test("repository deletion removes persisted metadata and checkout storage", async () => {
   const { db } = await import("../src/config/database.js");
   const repositoryId = randomUUID();
-  const storagePath = await mkdtemp(path.join(process.cwd(), "storage-delete-success-"));
-  await mkdir(path.join(storagePath, ".git"));
+  const { getRepositoryStoragePath } = await import("../src/modules/repositories/repository.service.js");
+  const storagePath = getRepositoryStoragePath(repositoryId);
+  await mkdir(path.join(storagePath, ".git"), { recursive: true });
 
   await db.query(
     `
