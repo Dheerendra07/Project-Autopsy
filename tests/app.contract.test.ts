@@ -944,3 +944,16 @@ test("analysis-runs endpoint bounds pagination", async () => {
     assert.ok(body.error.issues.length > 0);
   }
 });
+
+
+test("API rate-limit configuration is visible through bounded response headers", async () => {
+  const response = await fetch(baseUrl + "/api/", {
+    headers: {
+      "x-autopsy-api-key": TEST_API_KEY
+    }
+  });
+
+  assert.notEqual(response.headers.get("x-ratelimit-limit"), null);
+  assert.notEqual(response.headers.get("x-ratelimit-remaining"), null);
+  assert.notEqual(response.headers.get("x-ratelimit-reset"), null);
+});
