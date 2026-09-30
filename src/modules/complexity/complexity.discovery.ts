@@ -332,19 +332,28 @@ export function parseBlobTree(
   return blobShas;
 }
 
-async function readBlobShas(
+async function readBlobSha(
   git: ReturnType<typeof simpleGit>,
-  sha: string
-): Promise<Map<string, string>> {
-  const output = await git.raw([
-    "ls-tree",
-    "-r",
-    "-z",
-    "--full-name",
-    sha
-  ]);
+  sha: string,
+  filePath: string
+): Promise<string | null> {
+  const objectSpec = sha + ":" + filePath;
 
-  return parseBlobTree(output);
+  try {
+    const output = await git.raw([
+      "rev-parse",
+      "--verify",
+      objectSpec
+    ]);
+
+    const blobSha = output.trim();
+
+    return /^[0-9a-f]{7,64}$/i.test(blobSha)
+      ? blobSha
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function discoverCodeComplexityEvolution(
@@ -369,12 +378,12 @@ export async function discoverCodeComplexityEvolution(
       )
     );
 
-    let baseBlobShas = new Map<string, string>();
-
-    baseBlobShas = await readBlobShas(git, baseHeadSha);
-
     for (const filePath of relevantPaths) {
-      const baseBlobSha = baseBlobShas.get(filePath);
+      const baseBlobSha = await readBlobSha(
+        git,
+        baseHeadSha,
+        filePath
+      );
 
       if (!baseBlobSha) {
         continue;
@@ -437,16 +446,6 @@ export async function discoverCodeComplexityEvolution(
 
   for (const commit of commits) {
 
-    let blobShas = new Map<string, string>();
-
-    if (cache) {
-      try {
-        blobShas = await readBlobShas(git, commit.sha);
-      } catch {
-        blobShas = new Map();
-      }
-    }
-
     for (const file of commit.files) {
       if (!isSupportedSourcePath(file.path)) {
         continue;
@@ -478,7 +477,10 @@ export async function discoverCodeComplexityEvolution(
       }
 
       let analysis: CodeComplexityAnalysis | null = null;
-      const blobSha = blobShas.get(file.path);
+      const blobSha =
+        cache
+          ? await readBlobSha(git, commit.sha, file.path)
+          : null;
 
       if (cache && blobSha) {
         const cacheKey = `${blobSha}:${extname(file.path).toLowerCase()}`;
