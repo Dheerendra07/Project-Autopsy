@@ -266,7 +266,8 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
         baseHeadSha: analysis.base_head_sha,
         targetHeadSha: analysis.target_head_sha,
         startedAt: analysis.started_at,
-        completedAt: analysis.completed_at
+        completedAt: analysis.completed_at,
+        errorMessage: analysis.error_message
       }
     });
   } catch (error) {
