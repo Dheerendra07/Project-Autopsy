@@ -28,6 +28,8 @@ services:
         value: "30"
       - key: MAX_ANALYZED_COMMITS
         value: "25000"
+      - key: EVIDENCE_RETENTION_DAYS
+        value: "365"
       - key: RUNTIME_TELEMETRY_INGEST_KEY
         sync: false
       - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
