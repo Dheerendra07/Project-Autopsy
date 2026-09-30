@@ -8,7 +8,8 @@ import type { DiscoveredCommit } from "../commits/commit.discovery.js";
 export type ComplexityAnalysisStatus =
   | "supported"
   | "parse_error"
-  | "skipped_too_large";
+  | "skipped_too_large"
+  | "read_error";
 
 export interface CodeComplexityMetrics {
   sourceLines: number;
@@ -511,6 +512,17 @@ export async function discoverCodeComplexityEvolution(
             commit.sha + ":" + file.path
           ]);
         } catch {
+          events.push({
+            sha: commit.sha,
+            path: file.path,
+            changeType,
+            analysisStatus: "read_error",
+            before: previous,
+            after: null
+          });
+
+          previousByPath.delete(file.path);
+          existingPaths.delete(file.path);
           continue;
         }
 
