@@ -312,7 +312,7 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(poll.includes("API access key was rejected."));
   assert.ok(poll.includes("Access to this API operation was denied."));
   assert.ok(poll.includes("Request failed (404)."));
-  assert.ok(poll.includes("The saved API key was rejected"));
+  assert.ok(poll.includes("The saved API access key was rejected"));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
