@@ -311,6 +311,25 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend refreshes repository metadata after analysis completion", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("if(st==='completed'){");
+  const end = appJs.indexOf("if(st==='failed'){", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const completion = appJs.slice(start, end);
+
+  assert.ok(completion.includes("var latestRepo=await getRepo(repoId)"));
+  assert.ok(completion.includes("S.repo=latestRepo"));
+  assert.ok(completion.includes("await loadData()"));
+  assert.ok(
+    completion.indexOf("S.repo=latestRepo") <
+      completion.indexOf("await loadData()")
+  );
+});
+ 
 test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
