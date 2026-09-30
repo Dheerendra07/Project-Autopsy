@@ -900,3 +900,47 @@ test("repository storage cleanup retains failed paths for retry without throwing
     );
   }
 });
+
+
+test("analysis-runs endpoint returns the repository-not-found contract", async () => {
+  const response = await fetch(
+    baseUrl +
+      "/api/repositories/00000000-0000-4000-8000-000000000999/analysis-runs",
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "REPOSITORY_NOT_FOUND",
+      message: "Repository not found."
+    }
+  });
+});
+
+test("analysis-runs endpoint bounds pagination", async () => {
+  for (const limit of [0, 51]) {
+    const response = await fetch(
+      baseUrl +
+        "/api/repositories/00000000-0000-4000-8000-000000000999/analysis-runs?limit=" +
+        limit,
+      {
+        headers: {
+          "x-autopsy-api-key": TEST_API_KEY
+        }
+      }
+    );
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      error: { code: string; issues: unknown[] };
+    };
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.ok(body.error.issues.length > 0);
+  }
+});
