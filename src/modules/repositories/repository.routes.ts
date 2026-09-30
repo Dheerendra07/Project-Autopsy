@@ -15,6 +15,7 @@ import {
   getActiveAnalysisRun,
   getAnalysisRunById,
   getRepositoryById,
+  listAnalysisRuns,
   listRepositoryCommits,
   listRepositoryHotspots,
   updateAnalysisRun
@@ -259,6 +260,67 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
 
       next(error);
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:repositoryId/analysis-runs", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const query = z.object({
+      page: z.coerce.number().int().min(1).max(10_000).default(1),
+      limit: z.coerce.number().int().min(1).max(50).default(20)
+    }).parse(req.query);
+
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const result = await listAnalysisRuns(
+      repositoryId,
+      query.page,
+      query.limit
+    );
+
+    const totalPages =
+      result.total === 0
+        ? 0
+        : Math.ceil(result.total / query.limit);
+
+    res.json({
+      success: true,
+      repositoryId,
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total: result.total,
+        totalPages
+      },
+      runs: result.runs.map((run) => ({
+        id: run.id,
+        status: run.status,
+        mode: run.analysis_mode,
+        analyzerVersion: run.analyzer_version,
+        baseHeadSha: run.base_head_sha,
+        targetHeadSha: run.target_head_sha,
+        startedAt: run.started_at,
+        completedAt: run.completed_at,
+        errorMessage: sanitizePublicAnalysisErrorMessage(
+          run.error_message,
+          getRepositoryStoragePath(repositoryId)
+        )
+      }))
+    });
   } catch (error) {
     next(error);
   }
