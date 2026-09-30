@@ -1,5 +1,6 @@
 import { simpleGit } from "simple-git";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
+import { env } from "../../config/env.js";
 
 export interface DiscoveredCommitFile {
   path: string;
@@ -40,6 +41,14 @@ export async function discoverCommits(
       ? [`${range.fromExclusive}..${range.toInclusive}`]
       : ["--all"];
 
+  const commitCount = await countCommits(git, range);
+
+  if (commitCount > env.MAX_ANALYZED_COMMITS) {
+    throw new Error(
+      `Repository history contains ${commitCount.toLocaleString()} commits; the configured analysis limit is ${env.MAX_ANALYZED_COMMITS.toLocaleString()}.`
+    );
+  }
+
   const output = await git.raw([
     "log",
     ...rangeArguments,
@@ -59,6 +68,33 @@ export async function discoverCommits(
     .filter(Boolean)
     .map(parseCommitRecord)
     .map((commit) => applyNumstat(commit, numstat.get(commit.sha)));
+}
+
+async function countCommits(
+  git: ReturnType<typeof simpleGit>,
+  range?: {
+    fromExclusive?: string;
+    toInclusive?: string;
+  }
+): Promise<number> {
+  const rangeArguments =
+    range?.fromExclusive && range.toInclusive
+      ? [`${range.fromExclusive}..${range.toInclusive}`]
+      : ["--all"];
+
+  const output = await git.raw([
+    "rev-list",
+    ...rangeArguments,
+    "--count"
+  ]);
+
+  const count = Number.parseInt(output.trim(), 10);
+
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new Error("Git returned an invalid commit count.");
+  }
+
+  return count;
 }
 
 export function parseCommitRecord(record: string): DiscoveredCommit {
