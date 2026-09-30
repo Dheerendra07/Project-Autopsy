@@ -72,7 +72,7 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
     "healthCheckPath: /health",
     "startCommand: node dist/database/migrate.js && node dist/free-runtime.js",
     "MAX_ANALYZED_COMMITS",
-    "value: "25000"",
+    'value: "25000"',
     "autoDeployTrigger: checksPass"
   ]) {
     assert.ok(render.includes(marker), "missing Render invariant: " + marker);
