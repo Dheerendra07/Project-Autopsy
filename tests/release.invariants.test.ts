@@ -129,17 +129,16 @@ test("frontend JavaScript is served as a same-origin CSP-compatible asset", () =
 
 test("frontend script remains dependency-free, parseable and key-gated", () => {
   const html = readRepoFile("public/index.html");
-  const script = html.match(/<script>\s*([\s\S]*?)\s*<\/script>/i)?.[1];
+  const appJs = readRepoFile("public/app.js");
 
-  assert.ok(script);
-  assert.doesNotThrow(() => new Function(script));
-  assert.doesNotMatch(html, /<script\s+src=/i);
-  assert.ok(html.includes("function storageGet(key)"));
-  assert.ok(html.includes("function storageSet(key,value)"));
-  assert.ok(html.includes("storageGet('autopsy.key')"));
-  assert.ok(html.includes("storageSet('autopsy.aiKey',S.aiKey)"));
+  assert.doesNotThrow(() => new Function(appJs));
+  assert.ok(html.includes('<script src="/app.js" defer></script>'));
+  assert.ok(appJs.includes("function storageGet(key)"));
+  assert.ok(appJs.includes("function storageSet(key,value)"));
+  assert.ok(appJs.includes("storageGet('autopsy.key')"));
+  assert.ok(appJs.includes("storageSet('autopsy.aiKey',S.aiKey)"));
   assert.doesNotMatch(
-    html,
+    html + "\n" + appJs,
     /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\s*[:=]\s*['"][^'"]{12,}['"]/i
   );
 });
@@ -147,13 +146,14 @@ test("frontend script remains dependency-free, parseable and key-gated", () => {
 test("web service serves the frontend and avoids a hardcoded API origin", () => {
   const app = readRepoFile("src/app.ts");
   const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
   assert.ok(app.includes("express.static(publicDirectory"));
   assert.ok(app.includes('path.dirname(fileURLToPath(import.meta.url))'));
   assert.ok(app.includes('"../public"'));
-  assert.ok(html.includes("location.origin"));
+  assert.ok(appJs.includes("location.origin"));
   assert.doesNotMatch(
-    html,
+    html + "\n" + appJs,
     /https:\/\/project-autopsy\.onrender\.com/
   );
 });
@@ -193,6 +193,7 @@ test("frontend retains all primary evidence workspace views", () => {
 
 test("frontend dedicated evidence tables expose direct inspection hooks", () => {
   const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
   for (const marker of [
     'inspectButton("Architecture "',
@@ -204,100 +205,103 @@ test("frontend dedicated evidence tables expose direct inspection hooks", () => 
     'inspectButton("Repeated file "',
     'inspectButton("Migration "'
   ]) {
-    assert.ok(html.includes(marker), "missing inspection hook: " + marker);
+    assert.ok(appJs.includes(marker), "missing inspection hook: " + marker);
   }
 });
 
 test("frontend quality workspace renders refactor evidence", () => {
   const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
   assert.ok(html.includes("Refactor signals"));
-  assert.ok(html.includes('inspectButton("Refactor signal "'));
-  assert.ok(html.includes("Commit-subject heuristic signals; not proof of intent"));
+  assert.ok(appJs.includes('inspectButton("Refactor signal "'));
+  assert.ok(appJs.includes("Commit-subject heuristic signals; not proof of intent"));
 });
 
 test("frontend overview exposes direct evidence inspection hooks", () => {
   const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes('inspectButton("Commit "'));
-  assert.ok(html.includes('inspectButton("Hotspot "'));
+  assert.ok(appJs.includes('inspectButton("Commit "'));
+  assert.ok(appJs.includes('inspectButton("Hotspot "'));
   assert.ok(html.includes("Most touched files"));
 });
 
 test("frontend connection test handles invalid API base URLs", () => {
-  const html = readRepoFile("public/index.html");
-  const start = html.indexOf("async function testConnection()");
-  const end = html.indexOf("async function importRepo()", start);
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function testConnection()");
+  const end = appJs.indexOf("async function importRepo()", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
 
-  const probe = html.slice(start, end);
+  const probe = appJs.slice(start, end);
   assert.ok(probe.includes("var base;"));
   assert.ok(probe.includes("safeApiBase"));
   assert.ok(probe.includes("toast(e.message||'API base URL is invalid.','bad')"));
 });
 
 test("frontend interview and refactor views match persisted evidence schemas", () => {
-  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes("s.draftAnswer||{}"));
-  assert.ok(html.includes("s.verification||{}"));
-  assert.ok(html.includes('inspectButton("Inspect story evidence"'));
-  assert.ok(html.includes("<th>Commit</th><th>Subject</th><th>Files changed</th><th>When</th>"));
-  assert.ok(html.includes("x.subject||\"—\""));
-  assert.ok(html.includes("x.committed_at"));
+  assert.ok(appJs.includes("s.draftAnswer||{}"));
+  assert.ok(appJs.includes("s.verification||{}"));
+  assert.ok(appJs.includes('inspectButton("Inspect story evidence"'));
+  assert.ok(appJs.includes("<th>Commit</th><th>Subject</th><th>Files changed</th><th>When</th>"));
+  assert.ok(appJs.includes("x.subject||\"—\""));
+  assert.ok(appJs.includes("x.committed_at"));
 });
 
 test("frontend AI interpretation keeps validated evidence keys inspectable", () => {
-  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes("function grounding(keys)"));
-  assert.ok(html.includes("s.id===parts[0]"));
-  assert.ok(html.includes('inspectButton("Inspect supporting evidence"'));
-  assert.ok(html.includes("Validated report claims referenced by this AI theme."));
+  assert.ok(appJs.includes("function grounding(keys)"));
+  assert.ok(appJs.includes("s.id===parts[0]"));
+  assert.ok(appJs.includes('inspectButton("Inspect supporting evidence"'));
+  assert.ok(appJs.includes("Validated report claims referenced by this AI theme."));
 });
 
 test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
   const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes("API access key was rejected. Open Settings and update the key."));
-  assert.ok(html.includes("Access to this API operation was denied."));
-  assert.ok(html.includes("Saved workspace could not be restored. Reconnect in Settings."));
+  assert.ok(appJs.includes("API access key was rejected. Open Settings and update the key."));
+  assert.ok(appJs.includes("Access to this API operation was denied."));
+  assert.ok(appJs.includes("Saved workspace could not be restored. Reconnect in Settings."));
   assert.ok(html.includes("Connection settings"));
   assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
   assert.ok(
-    html.includes("S.dataErrors.length?'warn':'good'")
+    appJs.includes("S.dataErrors.length?'warn':'good'")
   );
 });
 
 test("frontend workspace keeps the real connection state", () => {
-  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
-  const start = html.indexOf("function workspace()");
-  const end = html.indexOf("function banner(", start);
+  const start = appJs.indexOf("function workspace()");
+  const end = appJs.indexOf("function banner(", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
 
-  const workspace = html.slice(start, end);
+  const workspace = appJs.slice(start, end);
   assert.ok(workspace.includes("connected(S.connectionState)"));
   assert.doesNotMatch(workspace, /connected\(true\)/);
 });
 
 test("frontend distinguishes configured credentials from verified connectivity", () => {
-  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes("connectionState:'unknown'"));
-  assert.ok(html.includes("state==='verified'"));
-  assert.ok(html.includes("state==='configured'"));
-  assert.ok(html.includes("Connection settings saved. Test the connection to verify the credentials."));
-  assert.ok(html.includes("S.connectionState='verified'"));
-  assert.ok(html.includes("connected('verified')"));
+  assert.ok(appJs.includes("connectionState:'unknown'"));
+  assert.ok(appJs.includes("state==='verified'"));
+  assert.ok(appJs.includes("state==='configured'"));
+  assert.ok(appJs.includes("Connection settings saved. Test the connection to verify the credentials."));
+  assert.ok(appJs.includes("S.connectionState='verified'"));
+  assert.ok(appJs.includes("connected('verified')"));
 });
 
 test("frontend retains failure-safe and stale-analysis controls", () => {
-  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
 
   for (const marker of [
     "function boundedFetch(url,options,timeoutMs)",
@@ -306,7 +310,7 @@ test("frontend retains failure-safe and stale-analysis controls", () => {
     "previousEvents",
     "Request timed out after 20 seconds."
   ]) {
-    assert.ok(html.includes(marker), "missing frontend invariant: " + marker);
+    assert.ok(appJs.includes(marker), "missing frontend invariant: " + marker);
   }
 });
 
@@ -433,14 +437,14 @@ test("analysis terminal updates preserve existing failure diagnostics when no re
 
 
 test("frontend health probes do not attach privileged API credentials", () => {
-  const html = readRepoFile("public/index.html");
-  const start = html.indexOf("async function testConnection()");
-  const end = html.indexOf("async function importRepo()", start);
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function testConnection()");
+  const end = appJs.indexOf("async function importRepo()", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
 
-  const probe = html.slice(start, end);
+  const probe = appJs.slice(start, end);
   assert.match(probe, /boundedFetch\(base\+'\/health'/);
   assert.match(probe, /boundedFetch\(base\+'\/ready'/);
   assert.ok(probe.includes("var probeHeaders=new Headers(h)"));
