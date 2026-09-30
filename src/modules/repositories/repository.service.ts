@@ -30,13 +30,36 @@ export async function prepareRepositoryStorage(
   return repositoryPath;
 }
 
-export async function removeRepositoryStorage(
-  repositoryId: string
+export function assertManagedRepositoryStoragePath(
+  storagePath: string
+): void {
+  const rootPath = path.resolve(env.REPOSITORY_STORAGE_PATH);
+  const targetPath = path.resolve(storagePath);
+  const relativePath = path.relative(rootPath, targetPath);
+
+  if (
+    !relativePath ||
+    relativePath.startsWith("..") ||
+    path.isAbsolute(relativePath)
+  ) {
+    throw new Error("Repository storage path is outside the managed storage root.");
+  }
+}
+
+export async function removeRepositoryStoragePath(
+  storagePath: string
 ): Promise<void> {
-  await rm(getRepositoryStoragePath(repositoryId), {
+  assertManagedRepositoryStoragePath(storagePath);
+  await rm(storagePath, {
     recursive: true,
     force: true
   });
+}
+
+export async function removeRepositoryStorage(
+  repositoryId: string
+): Promise<void> {
+  await removeRepositoryStoragePath(getRepositoryStoragePath(repositoryId));
 }
 
 export async function isRepositoryStorageReady(
