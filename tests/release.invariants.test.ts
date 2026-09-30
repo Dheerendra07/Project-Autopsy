@@ -148,6 +148,20 @@ test("web service serves the frontend and avoids a hardcoded API origin", () => 
   );
 });
 
+test("Render deployment keeps the free single-service delivery contract", () => {
+  const render = readRepoFile("render.yaml");
+  const readme = readRepoFile("README.md");
+  const architecture = readRepoFile("docs/architecture.md");
+
+  assert.ok(render.includes("name: project-autopsy"));
+  assert.ok(render.includes("plan: free"));
+  assert.ok(render.includes("autoDeployTrigger: commit"));
+  assert.ok(render.includes("startCommand: node dist/database/migrate.js && node dist/free-runtime.js"));
+  assert.ok(readme.includes("same service serves the browser workspace from public/index.html"));
+  assert.ok(architecture.includes("serves the browser workspace from public/index.html"));
+  assert.ok(architecture.includes("single free web service"));
+});
+
 test("frontend retains all primary evidence workspace views", () => {
   const html = readRepoFile("public/index.html");
 
