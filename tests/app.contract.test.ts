@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import test, { after, before } from "node:test";
 
@@ -506,4 +509,103 @@ test("oversized JSON returns a bounded payload error", async () => {
       message: "Request body exceeds the configured size limit."
     }
   });
+});
+
+
+test("repository deletion is blocked while analysis is active", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
+  const analysisRunId = randomUUID();
+  const storagePath = await mkdtemp(path.join(process.cwd(), "storage-delete-active-"));
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, source_type, source_url, name, tracked_branch, storage_path
+      )
+      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-active-test', 'main', $2)
+    `,
+    [repositoryId, storagePath]
+  );
+
+  await db.query(
+    `
+      INSERT INTO analysis_runs (
+        id, repository_id, analyzer_version, analysis_mode, status
+      )
+      VALUES ($1, $2, 'test', 'full', 'queued')
+    `,
+    [analysisRunId, repositoryId]
+  );
+
+  try {
+    const response = await fetch(baseUrl + "/api/repositories/" + repositoryId, {
+      method: "DELETE",
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    });
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      success: false,
+      error: {
+        code: "REPOSITORY_DELETE_BLOCKED",
+        message:
+          "Repository deletion is blocked while an analysis is queued or running.",
+        analysisRunId
+      }
+    });
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+    await rm(storagePath, { recursive: true, force: true });
+  }
+});
+
+test("repository deletion removes persisted metadata and checkout storage", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
+  const storagePath = await mkdtemp(path.join(process.cwd(), "storage-delete-success-"));
+  await mkdir(path.join(storagePath, ".git"));
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, source_type, source_url, name, tracked_branch, storage_path
+      )
+      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-success-test', 'main', $2)
+    `,
+    [repositoryId, storagePath]
+  );
+
+  try {
+    const response = await fetch(baseUrl + "/api/repositories/" + repositoryId, {
+      method: "DELETE",
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      success: true,
+      repositoryId,
+      deleted: true,
+      storageDeleted: true
+    });
+
+    const row = await db.query(
+      "SELECT id FROM repositories WHERE id = $1",
+      [repositoryId]
+    );
+
+    assert.equal(row.rows.length, 0);
+    await assert.rejects(
+      rm(storagePath, { recursive: false }),
+      /ENOENT/
+    );
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+    await rm(storagePath, { recursive: true, force: true });
+  }
 });
