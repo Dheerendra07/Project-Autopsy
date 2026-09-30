@@ -178,6 +178,14 @@ test("frontend quality workspace renders refactor evidence", () => {
   assert.ok(html.includes("Commit-subject heuristic signals; not proof of intent"));
 });
 
+test("frontend overview exposes direct evidence inspection hooks", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes('inspectButton("Commit "'));
+  assert.ok(html.includes('inspectButton("Hotspot "'));
+  assert.ok(html.includes("Most touched files"));
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
