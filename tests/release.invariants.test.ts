@@ -311,6 +311,24 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("source-analysis readers bound test and migration Git objects before reading content", () => {
+  const testDiscovery = readRepoFile("src/modules/tests/test-evolution.discovery.ts");
+  const migrationDiscovery = readRepoFile("src/modules/schema/schema.discovery.ts");
+
+  assert.ok(testDiscovery.includes("const MAX_TEST_SOURCE_BYTES = 2_000_000"));
+  assert.ok(testDiscovery.includes('git.raw(["cat-file", "-s", objectSpec])'));
+  assert.ok(
+    testDiscovery.includes("sourceBytes > MAX_TEST_SOURCE_BYTES")
+  );
+  assert.ok(migrationDiscovery.includes("const MAX_MIGRATION_SOURCE_BYTES = 2_000_000"));
+  assert.ok(migrationDiscovery.includes('git.raw(["cat-file", "-s", objectSpec])'));
+  assert.ok(
+    migrationDiscovery.includes(
+      "sourceBytes > MAX_MIGRATION_SOURCE_BYTES"
+    )
+  );
+});
+
 test("frontend hides derived results when the analysis snapshot is stale", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("function currentAnalysisSnapshot()"));
