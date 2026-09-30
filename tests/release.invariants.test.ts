@@ -247,7 +247,6 @@ test("frontend AI interpretation keeps validated evidence keys inspectable", () 
   assert.ok(html.includes('inspectButton("Inspect supporting evidence"'));
   assert.ok(html.includes("Validated report claims referenced by this AI theme."));
 });
-});
 
 test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
   const html = readRepoFile("public/index.html");
