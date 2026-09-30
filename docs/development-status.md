@@ -680,3 +680,14 @@ Repository deletion uses a database row lock plus a retryable storage-cleanup le
 ## Launch hardening — private response caching — 2026-09-30
 
 All `/api` responses now carry `Cache-Control: no-store`. Autopsy API payloads can contain repository history, source structure, contributor metadata, runtime telemetry, deployment evidence, and generated reports, so browser/proxy caching is explicitly disabled at the API boundary.
+
+
+## Launch hardening — final transport/state verification checkpoint — 2026-09-30
+
+Connection diagnostics now keep privileged credentials off public `/health` and `/ready` requests while using a separate API-key-bearing probe for the protected API surface.
+
+Error middleware no longer logs raw parser/application error objects. Request failures are reduced to bounded type/status or name/message fields, preventing malformed request bodies from being copied into application logs.
+
+The cleanup retry loop now serializes ledger processing inside a database transaction with row locks, while retaining the retry-safe filesystem semantics. Analysis terminal timestamps are idempotent and prior failure diagnostics are preserved when a repeated transition has no replacement message.
+
+CI remains externally blocked before workflow steps execute: the latest push-triggered quality runs terminate with the `typecheck-build` job at `failure` and `steps: null`. No project command failure has been observed from those runs, so CI is not being represented as a code regression.
