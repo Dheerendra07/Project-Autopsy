@@ -14,6 +14,8 @@ import type {
   DatabaseMigrationOperationType
 } from "./schema.types.js";
 
+const MAX_MIGRATION_SOURCE_BYTES = 2_000_000;
+
 const SQL_EXTENSIONS = new Set([".sql"]);
 const CODE_MIGRATION_EXTENSIONS = new Set([
   ".js",
