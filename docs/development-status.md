@@ -627,3 +627,12 @@ Unexpected Git failures in architecture discovery now fail the analysis instead 
 Repository service boundaries validate UUID-shaped repository storage identifiers, validate branches before storage allocation, and clean up storage after clone/setup failures.
 
 Database connection URLs now pin the currently secure PostgreSQL SSL interpretation when legacy `prefer`, `require`, or `verify-ca` modes are present, avoiding the repeated pg-connection-string compatibility warning while preserving other URL parameters.
+
+
+## Launch hardening — analyzer failure transparency — 2026-09-30
+
+Incremental complexity analysis now fails when the base revision tree cannot be read, rather than degrading to empty baseline state. Per-file complexity source read failures are retained as explicit `read_error` evidence events, and reports state that no complexity value is asserted for those files.
+
+Migration and test-evolution Git object readers now distinguish expected missing-path cases from unrelated Git failures. Unrelated object/tree/repository failures propagate to the analysis instead of being silently converted into empty evidence.
+
+Body-parser errors are classified only by explicit parser error type, preventing unrelated application errors that happen to carry HTTP status 400/413/415 from being mislabeled as request parsing failures.
