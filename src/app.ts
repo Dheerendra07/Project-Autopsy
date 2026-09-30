@@ -17,6 +17,7 @@ import {
   parseCorsOrigins
 } from "./config/cors.js";
 import { requestIdMiddleware } from "./middleware/request-id.middleware.js";
+import { createRateLimitMiddleware } from "./middleware/rate-limit.middleware.js";
 
 export const app = express();
 
@@ -59,6 +60,8 @@ app.use(
 
 app.use(requestIdMiddleware);
 
+const rateLimitMiddleware = createRateLimitMiddleware(redis);
+
 morgan.token("request-id", (_req, res) =>
   String(res.getHeader("x-request-id") ?? "-")
 );
@@ -93,6 +96,8 @@ app.get("/ready", async (_req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.use("/api", rateLimitMiddleware);
 
 app.use("/api", (req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
