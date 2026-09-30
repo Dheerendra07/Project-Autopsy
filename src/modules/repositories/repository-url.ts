@@ -16,8 +16,33 @@ export function validateRemoteRepositoryUrl(value: string): URL {
     throw new Error("Only HTTPS repository URLs are allowed.");
   }
 
-  if (!ALLOWED_GIT_HOSTS.has(url.hostname.toLowerCase())) {
+  const hostname = url.hostname.toLowerCase();
+
+  if (!ALLOWED_GIT_HOSTS.has(hostname)) {
     throw new Error("Repository host is not supported.");
+  }
+
+  let segments: string[];
+  try {
+    segments = decodeURIComponent(url.pathname)
+      .split("/")
+      .filter(Boolean);
+  } catch {
+    throw new Error("Repository path contains invalid URL encoding.");
+  }
+
+  const expectedMinimumSegments = 2;
+
+  if (segments.length < expectedMinimumSegments) {
+    throw new Error("Repository URL must include an owner/group and repository name.");
+  }
+
+  if ((hostname === "github.com" || hostname === "bitbucket.org") && segments.length !== 2) {
+    throw new Error("Repository URL has an invalid path for its Git provider.");
+  }
+
+  if (segments.some((segment) => segment === "." || segment === "..")) {
+    throw new Error("Repository URL contains an invalid path segment.");
   }
 
   if (url.username || url.password) {
@@ -32,7 +57,7 @@ export function validateRemoteRepositoryUrl(value: string): URL {
     );
   }
 
-  url.hostname = url.hostname.toLowerCase();
+  url.hostname = hostname;
   url.pathname = url.pathname.replace(/\/+$/, "");
 
   return url;
