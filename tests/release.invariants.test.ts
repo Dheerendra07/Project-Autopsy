@@ -287,3 +287,18 @@ test("analysis terminal updates preserve existing failure diagnostics when no re
     persistence.includes("error_message = COALESCE($3, error_message)")
   );
 });
+
+
+test("frontend health probes do not attach privileged API credentials", () => {
+  const html = readRepoFile("public/index.html");
+  const start = html.indexOf("async function testConnection()");
+  const end = html.indexOf("async function importRepo()", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const probe = html.slice(start, end);
+  assert.match(probe, /boundedFetch\(base\+'\/health'/);
+  assert.match(probe, /boundedFetch\(base\+'\/ready'/);
+  assert.doesNotMatch(probe, /x-autopsy-api-key/);
+});
