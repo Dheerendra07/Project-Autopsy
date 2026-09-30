@@ -88,7 +88,15 @@ export async function cloneRepository(
 
     return metadata;
   } catch (error) {
-    await removeRepositoryStorage(repositoryId);
+    try {
+      await removeRepositoryStorage(repositoryId);
+    } catch (cleanupError) {
+      console.error(
+        `Failed to clean repository storage after clone failure for ${repositoryId}:`,
+        cleanupError
+      );
+    }
+
     throw error;
   }
 }
