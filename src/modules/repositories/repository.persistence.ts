@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { db } from "../../config/database.js";
 import type { AnalysisRunStatus } from "../analysis/analysis.types.js";
+import { isValidAnalysisTransition } from "../analysis/analysis-state.js";
 import type { RepositoryMetadata } from "./repository.types.js";
 
 export type AnalysisMode = "check" | "full" | "incremental";
@@ -416,23 +417,6 @@ export async function getLatestCompletedAnalysisRun(
   );
 
   return result.rows[0] ?? null;
-}
-
-const ANALYSIS_TRANSITIONS: Record<
-  AnalysisRunStatus,
-  readonly AnalysisRunStatus[]
-> = {
-  queued: ["running", "failed"],
-  running: ["completed", "failed"],
-  completed: [],
-  failed: []
-};
-
-export function isValidAnalysisTransition(
-  current: AnalysisRunStatus,
-  next: AnalysisRunStatus
-): boolean {
-  return current === next || ANALYSIS_TRANSITIONS[current].includes(next);
 }
 
 export async function updateAnalysisRun(
