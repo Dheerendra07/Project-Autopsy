@@ -14,6 +14,8 @@ import type {
   DatabaseMigrationOperationType
 } from "./schema.types.js";
 
+const MAX_MIGRATION_SOURCE_BYTES = 2_000_000;
+
 const SQL_EXTENSIONS = new Set([".sql"]);
 const CODE_MIGRATION_EXTENSIONS = new Set([
   ".js",
@@ -1007,8 +1009,21 @@ async function readMigrationAtCommit(
   sha: string,
   filePath: string
 ): Promise<string | null> {
+  const objectSpec = sha + ":" + filePath;
+
   try {
-    return await git.show([sha + ":" + filePath]);
+    const sizeOutput = await git.raw(["cat-file", "-s", objectSpec]);
+    const sourceBytes = Number.parseInt(sizeOutput.trim(), 10);
+
+    if (
+      !Number.isSafeInteger(sourceBytes) ||
+      sourceBytes < 0 ||
+      sourceBytes > MAX_MIGRATION_SOURCE_BYTES
+    ) {
+      return null;
+    }
+
+    return await git.show([objectSpec]);
   } catch (error) {
     if (isMissingGitPathError(error)) {
       return null;
