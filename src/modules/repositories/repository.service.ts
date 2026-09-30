@@ -300,7 +300,21 @@ export async function isRepositoryStorageReady(
 ): Promise<boolean> {
   try {
     const gitPath = await lstat(path.join(repositoryPath, ".git"));
-    return gitPath.isDirectory();
+
+    if (!gitPath.isDirectory()) {
+      return false;
+    }
+
+    const git = createAnalysisGit(repositoryPath);
+    const [insideWorkTree, gitDirectory] = await Promise.all([
+      git.raw(["rev-parse", "--is-inside-work-tree"]),
+      git.raw(["rev-parse", "--git-dir"])
+    ]);
+
+    return (
+      insideWorkTree.trim() === "true" &&
+      gitDirectory.trim().length > 0
+    );
   } catch {
     return false;
   }

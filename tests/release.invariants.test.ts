@@ -1066,3 +1066,11 @@ test("numstat evidence is merged per history page", () => {
     /const numstat = await discoverNumstat\(git, range\)/
   );
 });
+
+
+test("storage readiness performs real Git integrity probes", () => {
+  const service = readRepoFile("src/modules/repositories/repository.service.ts");
+  assert.ok(service.includes('git.raw(["rev-parse", "--is-inside-work-tree"])'));
+  assert.ok(service.includes('git.raw(["rev-parse", "--git-dir"])'));
+  assert.ok(service.includes('insideWorkTree.trim() === "true"'));
+});
