@@ -85,17 +85,60 @@ test("quality workflow starts on push and pull requests and uses the pinned Linu
   for (const marker of [
     "push:",
     "pull_request:",
-    "runs-on: ubuntu-22.04",
+    "runs-on: ubuntu-latest",
     "permissions:",
     "contents: read",
     "cancel-in-progress: true",
     "timeout-minutes: 45",
-    "uses: actions/checkout@v5",
-    "uses: actions/setup-node@v5",
+    "uses: actions/checkout@v6",
+    "uses: actions/setup-node@v7",
     "node-version: 24"
   ]) {
     assert.ok(workflow.includes(marker), "missing workflow invariant: " + marker);
   }
+});
+
+
+
+test("Git history discovery paginates commit and numstat output", () => {
+  const discovery = readRepoFile("src/modules/commits/commit.discovery.ts");
+
+  assert.ok(discovery.includes("const GIT_LOG_PAGE_SIZE = 500"));
+  assert.ok(discovery.includes('`--skip=${skip}`'));
+  assert.ok(discovery.includes('`--max-count=${GIT_LOG_PAGE_SIZE}`'));
+  assert.ok(
+    discovery.indexOf("const commits: DiscoveredCommit[] = []") <
+      discovery.indexOf("const numstat = await discoverNumstat")
+  );
+  assert.equal(
+    (discovery.match(/"--numstat"/g) ?? []).length,
+    1
+  );
+});
+
+
+test("evidence retention is configured, indexed and shutdown-aware", () => {
+  const env = readRepoFile("src/config/env.ts");
+  const server = readRepoFile("src/server.ts");
+  const retention = readRepoFile("src/modules/evidence-retention.service.ts");
+  const migration = readRepoFile(
+    "database/migrations/016_evidence_retention_indexes.sql"
+  );
+  const render = readRepoFile("render.yaml");
+
+  assert.ok(env.includes("EVIDENCE_RETENTION_DAYS"));
+  assert.ok(env.includes(".min(30)"));
+  assert.ok(env.includes(".max(365)"));
+  assert.ok(server.includes("EVIDENCE_RETENTION_INTERVAL_MS = 6 * 60 * 60_000"));
+  assert.ok(server.includes("runEvidenceRetentionSweep()"));
+  assert.ok(server.includes("clearInterval(evidenceRetentionTimer)"));
+  assert.ok(retention.includes("EVIDENCE_RETENTION_BATCH_SIZE = 5_000"));
+  assert.ok(retention.includes("runtime_telemetry_events"));
+  assert.ok(retention.includes("deployment_evidence_events"));
+  assert.ok(migration.includes("idx_runtime_telemetry_retention_observed_at"));
+  assert.ok(migration.includes("idx_deployment_evidence_retention_occurred_at"));
+  assert.ok(render.includes('key: EVIDENCE_RETENTION_DAYS'));
+  assert.ok(render.includes('value: "365"'));
 });
 
 test("quality workflow retains the full validation gate", () => {
