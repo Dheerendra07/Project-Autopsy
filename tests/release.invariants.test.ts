@@ -311,6 +311,31 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend releases the runtime loading lock when an analysis run changes", () => {
+  const appJs = readRepoFile("public/app.js");
+  const runtimeStart = appJs.indexOf("async function loadRuntimeEvents");
+  const runtimeEnd = appJs.indexOf("async function reloadData", runtimeStart);
+  assert.ok(runtimeStart >= 0);
+  assert.ok(runtimeEnd > runtimeStart);
+
+  const runtimeBlock = appJs.slice(runtimeStart, runtimeEnd);
+  assert.ok(
+    runtimeBlock.includes(
+      "finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false}"
+    )
+  );
+
+  const refreshStart = appJs.indexOf("async function refresh()");
+  const refreshEnd = appJs.indexOf("function openSettings", refreshStart);
+  assert.ok(refreshStart >= 0);
+  assert.ok(refreshEnd > refreshStart);
+  assert.ok(
+    appJs.slice(refreshStart, refreshEnd).includes(
+      "S.runtimeLoading=false"
+    )
+  );
+});
+
 test("frontend failure notifications are scoped to the active analysis run", () => {
   const appJs = readRepoFile("public/app.js");
   const functions = [
