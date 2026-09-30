@@ -314,6 +314,23 @@ export async function updateRepositoryHead(
   );
 }
 
+export async function deleteRepositoryById(
+  repositoryId: string
+): Promise<{ storagePath: string | null } | null> {
+  const result = await db.query<{ storage_path: string | null }>(
+    `
+      DELETE FROM repositories
+      WHERE id = $1
+      RETURNING storage_path
+    `,
+    [repositoryId]
+  );
+
+  const row = result.rows[0];
+
+  return row ? { storagePath: row.storage_path } : null;
+}
+
 export async function getRepositoryById(
   repositoryId: string
 ): Promise<StoredRepository | null> {
