@@ -236,6 +236,35 @@ test("enforces interpretation cache TTL boundaries", () => {
   }
 });
 
+test("evidence retention is bounded to the documented 365-day maximum", () => {
+  assert.equal(
+    parseEnvironment({
+      ...base,
+      EVIDENCE_RETENTION_DAYS: "30"
+    }).EVIDENCE_RETENTION_DAYS,
+    30
+  );
+
+  assert.equal(
+    parseEnvironment({
+      ...base,
+      EVIDENCE_RETENTION_DAYS: "365"
+    }).EVIDENCE_RETENTION_DAYS,
+    365
+  );
+
+  for (const value of ["29", "366", "30.5", "Infinity", "NaN"]) {
+    assert.throws(
+      () =>
+        parseEnvironment({
+          ...base,
+          EVIDENCE_RETENTION_DAYS: value
+        }),
+      /EVIDENCE_RETENTION_DAYS/
+    );
+  }
+});
+
 test("requires database configuration", () => {
   assert.throws(() =>
     parseEnvironment({})

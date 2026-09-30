@@ -254,6 +254,22 @@ Continuation rule:
 - next engineering work must target the remaining release/runtime gaps above, in priority order, with evidence-preserving semantics
 - preserve the free single-service deployment contract, deterministic fingerprints, explicit evidence gaps, security boundaries, and bounded execution
 
+## Release-gap hardening — 2026-10-01
+
+Current implementation work on branch `hardening/finish-release-gaps-2026-10-01` closes the remaining code/runtime gaps identified after PR #115:
+
+- Git history discovery now pages commit and numstat output in 500-commit chunks, so the previous full-history `git log` output is no longer held in one large process buffer. The existing 25,000-commit ceiling remains enforced.
+- Runtime telemetry and deployment evidence now use a documented 365-day default retention policy, configurable only from 30 to 365 days.
+- Retention cleanup runs in bounded 5,000-row batches, caps each sweep at 20,000 deletions, prevents overlapping sweeps, runs every six hours in the web runtime, and is canceled during shutdown.
+- Retention indexes were added for the observed/occurred timestamps used by cleanup.
+- GitHub quality no longer depends on workflow-level service-container provisioning. The quality runner uses the supported `ubuntu-latest` label, current checkout/setup-node actions, and starts PostgreSQL/Redis explicitly inside the job before executing the existing typecheck/build/test/E2E/startup gates.
+- Release invariants and environment tests now cover the retention policy, bounded Git history paging, and the updated CI runner/service setup.
+
+Production verification note:
+- A reproducible manual production-smoke workflow now checks the hosted frontend, static app asset, liveness/readiness, unauthenticated API rejection, invalid-key rejection, and authenticated protected-route behavior using a user-supplied production API access key.
+- The smoke workflow is manual by design so production credentials never enter pull-request logs or automated feature branches.
+- The production URL is provided as a workflow input; the API key is read only from the GitHub Actions secret `AUTOPSY_API_ACCESS_KEY`.
+
 ## Evidence semantics
 
 - Change coupling means files changed together in the same persisted Git commit; it is not proof of architectural dependency.

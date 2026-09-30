@@ -21,33 +21,9 @@ concurrency:
 
 jobs:
   typecheck-build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: project_autopsy
-          POSTGRES_USER: autopsy
-          POSTGRES_PASSWORD: autopsy_dev_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U autopsy -d project_autopsy"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
 
     env:
       NODE_ENV: test
@@ -61,13 +37,31 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
+
+      - name: Prepare PostgreSQL and Redis
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y postgresql redis-server
+
+          sudo service postgresql start || sudo systemctl start postgresql
+          sudo service redis-server start || sudo systemctl start redis-server
+
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE USER autopsy WITH PASSWORD 'autopsy_dev_password';" || true
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER USER autopsy WITH PASSWORD 'autopsy_dev_password';"
+          sudo -u postgres createdb -O autopsy project_autopsy 2>/dev/null || true
+
+          pg_isready -h 127.0.0.1 -p 5432 -U autopsy -d project_autopsy
+          redis-cli -h 127.0.0.1 -p 6379 ping
 
       - name: Install dependencies
         run: npm ci

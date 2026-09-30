@@ -1,0 +1,31 @@
+name: production-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Hosted Project Autopsy URL"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      AUTOPSY_PRODUCTION_URL: ${{ inputs.url }}
+      AUTOPSY_API_ACCESS_KEY: ${{ secrets.AUTOPSY_API_ACCESS_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Run production smoke
+        run: node scripts/production-smoke.mjs
