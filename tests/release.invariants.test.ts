@@ -332,6 +332,14 @@ test("frontend retains failure-safe and stale-analysis controls", () => {
 });
 
 
+test("Helmet keeps HTTPS upgrades production-only", () => {
+  const app = readRepoFile("src/app.ts");
+
+  assert.ok(app.includes("upgradeInsecureRequests:"));
+  assert.ok(app.includes("env.NODE_ENV === " + '"production"'));
+  assert.ok(app.includes("? [] : null"));
+});
+
 test("API authentication is mounted before JSON body parsing", () => {
   const app = readRepoFile("src/app.ts");
   const authIndex = app.indexOf("isApiAccessAuthorized(");
