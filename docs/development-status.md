@@ -121,7 +121,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60.
+Current verified main baseline: 089f17d4ae22c978234defc6d41af17b268a8ad7.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -201,6 +201,16 @@ Recent verified merge sequence for this continuation:
 - PR #103 — sanitized public analysis failure diagnostics
 - PR #104 — stale saved workspace self-recovery
 - PR #105 — preserve evidence when analysis discovery fails
+- PR #106 — continuation checkpoint synchronization
+- PR #107 — refresh frontend repository metadata after analysis
+- PR #108 — clear stale derived results on refresh
+- PR #109 — prevent stale evidence on partial reload
+- PR #110 — hide derived results from stale analysis snapshots
+- PR #111 — bound test and migration source reads
+- PR #112 — bound telemetry/deployment JSON nesting depth
+- PR #113 — NUL-safe Git path parsing for commit and numstat evidence
+- PR #114 — bound package.json source reads
+- PR #115 — guard stale frontend failure notifications and release runtime loading locks
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
@@ -212,6 +222,37 @@ Final integrated verification on main:
 - worker startup/shutdown smoke: passed
 
 Preserve all existing API routes, evidence models, migrations, deterministic analyzer behavior, retry semantics, security boundaries, and shutdown behavior when continuing. New roadmap work must start from this verified baseline rather than reworking completed layers.
+
+## Continuation checkpoint — 2026-10-01 (latest)
+
+main currently ends at commit `089f17d4ae22c978234defc6d41af17b268a8ad7`. Open pull requests: 0.
+
+Verified hardening since the previous checkpoint:
+- frontend repository metadata is refreshed after completed analysis before evidence data is rendered
+- derived report/interview/AI state is cleared when a new refresh run is queued
+- partial evidence reloads do not reuse data from an older analysis run
+- report, interview, and AI interpretation views suppress derived results whose analysis/report snapshot is stale
+- Git test/migration/package manifest reads check object size before loading source content
+- runtime telemetry and deployment metadata reject excessively deep JSON
+- Git commit/name-status and numstat ingestion use NUL-delimited paths so tabs/newlines in valid filenames remain intact
+- late frontend errors are scoped to the active analysis run, and the runtime loading lock is released across repository/analysis changes
+
+Automated verification constraint:
+- recent GitHub Actions quality runs for PRs #110 through #115 consistently terminated in the `typecheck-build` job with `failure`, `steps: null`, and no project-step logs; this remains a runner/provisioning failure before repository commands execute
+- the repository therefore must not represent those runs as application test/build failures
+
+Known remaining release gaps, not silently reclassified as complete:
+- GitHub-hosted CI runner/provisioning reliability still needs external resolution before a clean current-commit CI green can be claimed
+- a browser-level production smoke still requires the hosted runtime/credential environment; no production credential is embedded in the repo
+- full-history Git discovery still buffers large `git log` output in memory; the existing 25,000-commit guard bounds history depth, but streaming/parsing refactoring would further reduce peak memory
+- runtime/deployment evidence retention remains an operational/product-policy decision; no arbitrary destructive retention rule has been introduced
+- multi-stage evidence persistence uses idempotent/upsert-safe operations but is intentionally not presented as one database transaction; raw evidence endpoints may reflect persisted historical evidence while a newer analysis is still running, while report generation remains fenced to completed snapshots
+
+Continuation rule:
+- treat `089f17d4ae22c978234defc6d41af17b268a8ad7` as the current code baseline
+- do not rework merged features
+- next engineering work must target the remaining release/runtime gaps above, in priority order, with evidence-preserving semantics
+- preserve the free single-service deployment contract, deterministic fingerprints, explicit evidence gaps, security boundaries, and bounded execution
 
 ## Evidence semantics
 
@@ -707,7 +748,7 @@ CI remains externally blocked before workflow steps execute: the latest push-tri
 
 ## Continuation checkpoint — 2026-10-01
 
-main currently ends at commit 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60 (PR #105).
+main currently ends at commit 089f17d4ae22c978234defc6d41af17b268a8ad7 (PR #105).
 
 Verified continuation hardening now present after PR #87:
 - release-readiness documentation was updated through the production checkpoint
@@ -725,7 +766,7 @@ Current verification constraint:
 - the existing repository documentation records a GitHub-hosted runner/provisioning failure as the blocker for automated workflow execution; this is an infrastructure verification limitation, not evidence of an application test failure
 
 Continuation rule:
-- treat commit 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60 as the current code baseline
+- treat commit 089f17d4ae22c978234defc6d41af17b268a8ad7 as the current code baseline
 - do not restart or rework merged features
 - next engineering work must target remaining release/runtime/user-facing gaps only
 - any new change must preserve evidence-first semantics, deterministic report fingerprints, security boundaries, explicit evidence gaps, bounded execution, and the current free single-service deployment contract
