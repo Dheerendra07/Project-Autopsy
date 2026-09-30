@@ -1,6 +1,16 @@
 import { simpleGit } from "simple-git";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
 
+const MAX_PACKAGE_MANIFEST_BYTES = 2_000_000;
+
+export class DependencyManifestTooLargeError extends Error {
+  constructor() {
+    super(
+      "package.json exceeds the 2 MB dependency-analysis source limit."
+    );
+    this.name = "DependencyManifestTooLargeError";
+  }
+}
 export type DependencyScope = "dependencies" | "devDependencies";
 export type DependencyChangeType = "added" | "removed" | "changed";
 
