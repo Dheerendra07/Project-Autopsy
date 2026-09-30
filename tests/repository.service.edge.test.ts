@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  access,
   lstat,
   mkdir,
   mkdtemp,
@@ -14,6 +15,8 @@ import test from "node:test";
 import {
   assertSafeBranchName,
   calculateDirectorySize,
+  cloneRepository,
+  getRepositoryStoragePath,
   isRepositoryStorageReady,
   isSafeBranchName
 } from "../src/modules/repositories/repository.service.js";
@@ -140,4 +143,31 @@ test("requires an actual .git directory for ready repository storage", async () 
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+
+test("invalid clone branch is rejected before repository storage is allocated", async () => {
+  const repositoryId = "00000000-0000-4000-8000-000000000997";
+
+  await assert.doesNotReject(
+    rm(getRepositoryStoragePath(repositoryId), {
+      recursive: true,
+      force: true
+    })
+  );
+
+  await assert.rejects(
+    () =>
+      cloneRepository(
+        repositoryId,
+        "https://github.com/octocat/Hello-World.git",
+        "../main"
+      ),
+    /Repository branch is invalid/
+  );
+
+  await assert.rejects(
+    access(getRepositoryStoragePath(repositoryId)),
+    /ENOENT/
+  );
 });
