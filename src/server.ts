@@ -5,14 +5,17 @@ import { env } from "./config/env.js";
 import { db, checkDatabaseConnection } from "./config/database.js";
 import { redis, checkRedisConnection } from "./config/redis.js";
 import { retryRepositoryStorageCleanup } from "./modules/repositories/repository.service.js";
+import { runEvidenceRetentionSweep } from "./modules/evidence-retention.service.js";
 
 export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
 export const HTTP_KEEP_ALIVE_TIMEOUT_MS = 5_000;
 export const REPOSITORY_STORAGE_CLEANUP_INTERVAL_MS = 5 * 60_000;
+export const EVIDENCE_RETENTION_INTERVAL_MS = 6 * 60 * 60_000;
 
 export let httpServer: Server | undefined;
 let repositoryCleanupTimer: NodeJS.Timeout | undefined;
+let evidenceRetentionTimer: NodeJS.Timeout | undefined;
 let shuttingDown = false;
 
 async function closeResources(): Promise<void> {
@@ -26,6 +29,11 @@ export async function closeServer(): Promise<void> {
   if (repositoryCleanupTimer) {
     clearInterval(repositoryCleanupTimer);
     repositoryCleanupTimer = undefined;
+  }
+
+  if (evidenceRetentionTimer) {
+    clearInterval(evidenceRetentionTimer);
+    evidenceRetentionTimer = undefined;
   }
 
   if (!httpServer) {
@@ -110,6 +118,39 @@ export async function startServer(): Promise<void> {
         });
     }, REPOSITORY_STORAGE_CLEANUP_INTERVAL_MS);
     repositoryCleanupTimer.unref();
+
+    void runEvidenceRetentionSweep()
+      .then((result) => {
+        if (
+          result.runtimeTelemetryDeleted > 0 ||
+          result.deploymentEvidenceDeleted > 0
+        ) {
+          console.log(
+            `✓ Evidence retention sweep: ${result.runtimeTelemetryDeleted} runtime events, ${result.deploymentEvidenceDeleted} deployment events removed`
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Evidence retention sweep failed:", error);
+      });
+
+    evidenceRetentionTimer = setInterval(() => {
+      void runEvidenceRetentionSweep()
+        .then((result) => {
+          if (
+            result.runtimeTelemetryDeleted > 0 ||
+            result.deploymentEvidenceDeleted > 0
+          ) {
+            console.log(
+              `✓ Evidence retention sweep: ${result.runtimeTelemetryDeleted} runtime events, ${result.deploymentEvidenceDeleted} deployment events removed`
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Evidence retention sweep failed:", error);
+        });
+    }, EVIDENCE_RETENTION_INTERVAL_MS);
+    evidenceRetentionTimer.unref();
 
     httpServer = app.listen(env.PORT, "0.0.0.0", () => {
       console.log(
