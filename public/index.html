@@ -64,7 +64,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       <button data-view="quality"><span>04</span>Quality</button>
       <button data-view="runtime"><span>05</span>Runtime</button>
       <button data-view="report"><span>06</span>Report</button>
-      <button data-view="interview"><span>07</span>Interview</button>
+      <button data-view="interview"><span>07</span>Interview</button><button data-view="interpretation"><span>08</span>Interpretation</button>
     </nav>
     <div class="sidefoot"><button id="refresh" class="btn">Refresh analysis</button><button id="new" class="btn link">← Analyze another repository</button></div>
   </aside>
@@ -75,7 +75,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
 </section>
 </main>
 
-<div id="modal" class="modal" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3>Connect the workspace</h3></div><button id="close" class="btn">×</button></div><label class="field">API base URL<input id="api" type="url"></label><label class="field">API access key<input id="key" type="password" autocomplete="off"></label><p class="dim" style="font-size:9px;line-height:1.5;margin:12px 0 0">Stored in this browser session only. Never committed to the repository.</p><div class="modal-actions"><button id="save" class="btn primary">Save connection</button></div></div></div>
+<div id="modal" class="modal" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3>Connect the workspace</h3></div><button id="close" class="btn">×</button></div><label class="field">API base URL<input id="api" type="url"></label><label class="field">API access key<input id="key" type="password" autocomplete="off"></label><label class="field">AI interpretation access key<input id="aikey" type="password" autocomplete="off"></label><p class="dim" style="font-size:9px;line-height:1.5;margin:12px 0 0">Stored in this browser session only. Never committed to the repository.</p><div class="modal-actions"><button id="save" class="btn primary">Save connection</button></div></div></div>
 <div id="toast" class="toast" hidden></div>
 
 <script>
@@ -84,6 +84,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   var S={
     api:sessionStorage.getItem('autopsy.api')||'https://project-autopsy.onrender.com',
     key:sessionStorage.getItem('autopsy.key')||'',
+    aiKey:sessionStorage.getItem('autopsy.aiKey')||'',
     repoId:sessionStorage.getItem('autopsy.repoId')||'',
     runId:sessionStorage.getItem('autopsy.runId')||'',
     repo:null,analysis:null,data:{},view:'overview',timer:null
@@ -101,7 +102,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   function persist(){sessionStorage.setItem('autopsy.api',S.api);sessionStorage.setItem('autopsy.key',S.key);sessionStorage.setItem('autopsy.repoId',S.repoId||'');sessionStorage.setItem('autopsy.runId',S.runId||'')}
   function connected(v){var c=$('conn');c.textContent=v?'connected':'not connected';c.className='pill '+(v?'good':'')}
   async function api(path,opt){
-    var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);
+    var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
     var r=await fetch(S.api.replace(/\/$/,'')+path,Object.assign({},opt||{},{headers:h}));
     var t=await r.text(),b=null;try{b=t?JSON.parse(t):null}catch(e){b={raw:t}}
     if(!r.ok)throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+')');
@@ -143,7 +144,8 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       complexity:'/api/repositories/'+id+'/complexity?limit=100',
       contributors:'/api/repositories/'+id+'/contributors?limit=25',
       runtime:'/api/repositories/'+id+'/runtime/telemetry/summary',
-      deployments:'/api/repositories/'+id+'/deployments?limit=50'
+      deployments:'/api/repositories/'+id+'/deployments?limit=50',
+      contributors:'/api/repositories/'+id+'/contributors?limit=25'
     };
     var keys=Object.keys(eps),out={};await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null}}));S.data=out;
   }
@@ -190,21 +192,25 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       '<div class="card"><h3>Deployment evidence</h3><div class="sub">External records without current-traffic inference</div><div class="table section"><table><thead><tr><th>Provider</th><th>Deployment</th><th>Env</th><th>State</th><th>Revision</th></tr></thead><tbody>'+dp.slice(0,30).map(function(x){return '<tr><td>'+esc(x.provider)+'</td><td class="mono">'+esc(x.deploymentId)+'</td><td>'+esc(x.environment)+'</td><td>'+esc(x.state)+'</td><td class="mono">'+esc(sha(x.revisionSha))+'</td></tr>'}).join('')+'</tbody></table></div></div></div>'+
       '<div class="callout section">Runtime telemetry is observational. Autopsy does not infer that a code change caused a regression or that a deployment caused a runtime change from timestamps alone.</div>';
   }
-  function reportPage(){return shell('Evidence report','A bounded report generated from the latest completed analysis snapshot','<button class="btn primary" data-action="report">Generate / refresh</button>')+'<div id="reportBox" class="section">'+(S.data.report?reportHtml(S.data.report):'<div class="empty"><strong>No report loaded</strong>Generate the evidence report from the completed analysis snapshot.</div>')+'</div>'}
+  function reportPage(){return shell('Evidence report','A bounded report generated from the latest completed analysis snapshot','<div class="actions"><button class="btn" data-action="download">Download JSON</button><button class="btn" data-action="interpretation">Interpret with AI</button><button class="btn primary" data-action="report">Generate / refresh</button></div>')+'<div id="reportBox" class="section">'+(S.data.report?reportHtml(S.data.report):'<div class="empty"><strong>No report loaded</strong>Generate the evidence report from the completed analysis snapshot.</div>')+'</div>'}
   function reportHtml(rep){return '<div class="grid g4">'+metric('Report version',rep.reportVersion)+metric('Persisted commits',n(rep.coverage&&rep.coverage.persistedCommits))+metric('Evidence sections',n(rep.coverage&&rep.coverage.sectionsWithEvidence))+metric('Fingerprint',sha(rep.fingerprint))+'</div><div class="callout section">Generated '+esc(date(rep.generatedAt))+' · fingerprint <span class="mono">'+esc(rep.fingerprint)+'</span></div><div class="section">'+(rep.sections||[]).map(function(s){return '<div class="report"><div class="report-head"><strong>'+esc(s.title)+'</strong><small>'+esc(s.evidenceBasis)+' · '+n((s.claims||[]).length)+' claims</small></div>'+(s.claims||[]).map(function(c){return '<div class="claim"><p>'+esc(c.statement)+'</p><div class="tags">'+(c.evidence||[]).slice(0,6).map(function(e){return '<span class="tag">'+esc(e.source)+':'+esc(e.key)+'</span>'}).join('')+'</div><div class="limit">'+esc(c.limitation)+'</div></div>'}).join('')+'</div>'}).join('')+'</div>'}
+  function interpretation(){return shell('AI interpretation','Grounded interpretation of the evidence-backed report. Model output is constrained to server-supplied evidence keys.','<button class="btn primary" data-action="interpretation">Generate interpretation</button>')+'<div id="aiBox" class="section">'+(S.data.interpretation?interpretationHtml(S.data.interpretation):'<div class="empty"><strong>No interpretation loaded</strong>Enter the AI interpretation access key in settings, then generate grounded analysis.</div>')+'</div>'}
+  function interpretationHtml(x){var r=x&&x.result||x||{},i=r.interpretation||{};return '<div class="grid g3">'+metric('Grounding claims',n(r.groundingClaimCount))+metric('Model',r.model||'—')+metric('Cache',r.cacheHit?'hit':'fresh')+'</div><div class="card section"><h3>Executive summary</h3><div class="callout">'+esc(i.executiveSummary||'No executive summary returned.')+'</div></div><div class="grid g2 section"><div class="card"><h3>Themes</h3><div class="section">'+(i.themes||[]).map(function(t){return '<div class="story"><h3>'+esc(t.title)+'</h3><p style="font-size:10px;line-height:1.55;color:var(--muted)">'+esc(t.analysis)+'</p><div class="tags">'+(t.evidenceKeys||[]).map(function(k){return '<span class="tag">'+esc(k)+'</span>'}).join('')+'</div></div>'}).join('')||'<div class="empty">No themes returned.</div>'+'</div></div><div class="card"><h3>Investigation questions</h3><div class="section">'+(i.investigationQuestions||[]).map(function(q){return '<div class="callout"><strong>'+esc(q.question)+'</strong><div class="tags" style="margin-top:7px">'+(q.evidenceKeys||[]).map(function(k){return '<span class="tag">'+esc(k)+'</span>'}).join('')+'</div></div>'}).join('')||'<div class="empty">No investigation questions returned.</div>'+'</div></div></div><div class="card section"><h3>Uncertainties</h3><div class="section">'+(i.uncertainties||[]).map(function(u){return '<div class="callout">'+esc(u)+'</div>'}).join('')||'<div class="empty">No uncertainties returned.</div>'+'</div></div>'}
   function interview(){return shell('Interview stories','Evidence anchors for preparing truthful project explanations','<button class="btn" data-action="interview">Load stories</button>')+'<div id="stories" class="section">'+(S.data.interview?storiesHtml(S.data.interview):'<div class="empty"><strong>Interview preparation</strong>Load story scaffolds generated from the evidence-backed report.</div>')+'</div>'}
   function storiesHtml(x){var q=x&&x.result&&x.result.stories||x&&x.stories||x&&x.result||[];if(!Array.isArray(q))q=Object.keys(q||{}).map(function(k){return Object.assign({title:k},q[k]||{})});return '<div class="grid g2">'+q.map(function(s){return '<article class="story"><h3>'+esc(s.title||s.name||'Interview story')+'</h3><block><label>Situation</label><div>'+esc(s.situation||s.context||s.setup||'—')+'</div></block><block><label>Action / evidence</label><div>'+esc(s.action||s.actions||s.evidence||s.whatHappened||'—')+'</div></block><block><label>Result / limitation</label><div>'+esc(s.result||s.outcome||s.limitation||'—')+'</div></block></article>'}).join('')+'</div>'}
-  function setView(v){S.view=v;document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===v)});var h=v==='history'?history():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():overview();$('root').innerHTML=h;window.scrollTo(0,0)}
+  function setView(v){S.view=v;document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===v)});var h=v==='history'?history():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():v==='interpretation'?interpretation():overview();$('root').innerHTML=h;window.scrollTo(0,0)}
   async function loadReport(){try{var r=await api('/api/repositories/'+S.repoId+'/report?limit=10');S.data.report=r.report;setView('report');toast('Evidence report refreshed','good')}catch(e){toast(e.message,'bad')}}
   async function loadInterview(){try{var r=await api('/api/repositories/'+S.repoId+'/interview-stories?limit=6');S.data.interview=r;setView('interview');toast('Interview stories loaded','good')}catch(e){toast(e.message,'bad')}}
+  async function loadInterpretation(){try{if(!S.aiKey){openSettings(true);throw new Error('Add the AI interpretation access key in settings first.')}var r=await api('/api/repositories/'+S.repoId+'/interpretation?limit=10',{aiKey:true});S.data.interpretation=r;setView('interpretation');toast('AI interpretation generated','good')}catch(e){toast(e.message,'bad')}}
+  function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){try{var r=await api('/api/repositories/'+S.repoId+'/analyze',{method:'POST',body:'{}'});S.runId=r.analysis.id;S.analysis=null;persist();poll();toast('Refresh analysis queued')}catch(e){toast(e.message,'bad')}}
-  function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('modal').hidden=false;$('api').focus()}
+  function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('modal').hidden=false;$('api').focus()}
   function closeSettings(){ $('modal').hidden=true}
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('save').onclick=function(){S.api=$('api').value.trim().replace(/\/$/,'');S.key=$('key').value.trim();persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('save').onclick=function(){S.api=$('api').value.trim().replace(/\/$/,'');S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();sessionStorage.setItem('autopsy.aiKey',S.aiKey);persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('new').onclick=function(){clearInterval(S.timer);S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
-  $('root').onclick=function(e){var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview()}
+  $('root').onclick=function(e){var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport()}
   async function boot(){connected(!!S.key);if(S.repoId&&S.runId&&S.key){try{await getRepo();S.analysis=await getRun();if(S.analysis.status==='completed'){await loadData();setView(S.view)}else{setView('overview');poll()}return}catch(e){}}landing()}
   boot()
 })();
