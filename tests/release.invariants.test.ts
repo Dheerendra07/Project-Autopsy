@@ -954,3 +954,17 @@ test("historical source-context UI stays wired to the bounded backend projection
   assert.ok(appJs.includes("sourceContextComplete"));
   assert.ok(appJs.includes("changedFilesTruncated"));
 });
+
+
+test("historical filter state resets when repository or analysis context changes", () => {
+  const appJs = readRepoFile("public/app.js");
+  const defaultFilter = "{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''}";
+  assert.ok(appJs.includes("S.historicalFilter=" + defaultFilter));
+  const refreshStart = appJs.indexOf("async function refresh()");
+  const refreshEnd = appJs.indexOf("function openSettings()", refreshStart);
+  assert.ok(refreshStart >= 0);
+  assert.ok(refreshEnd > refreshStart);
+  const refresh = appJs.slice(refreshStart, refreshEnd);
+  assert.ok(refresh.includes("S.historicalFilter=" + defaultFilter));
+  assert.ok(refresh.includes("S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"));
+});
