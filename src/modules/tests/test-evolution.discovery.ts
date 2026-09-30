@@ -305,8 +305,21 @@ async function showFile(
   commitSha: string,
   filePath: string
 ): Promise<string | null> {
+  const objectSpec = commitSha + ":" + filePath;
+
   try {
-    return await git.show([commitSha + ":" + filePath]);
+    const sizeOutput = await git.raw(["cat-file", "-s", objectSpec]);
+    const sourceBytes = Number.parseInt(sizeOutput.trim(), 10);
+
+    if (
+      !Number.isSafeInteger(sourceBytes) ||
+      sourceBytes < 0 ||
+      sourceBytes > MAX_TEST_SOURCE_BYTES
+    ) {
+      return null;
+    }
+
+    return await git.show([objectSpec]);
   } catch (error) {
     if (isMissingTestObjectError(error)) {
       return null;
