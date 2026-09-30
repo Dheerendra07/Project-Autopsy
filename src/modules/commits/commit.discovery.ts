@@ -58,7 +58,7 @@ export async function discoverCommits(
     skip < commitCount;
     skip += GIT_LOG_PAGE_SIZE
   ) {
-    const output = await git.raw([
+    const commitOutput = await git.raw([
       "log",
       ...rangeArguments,
       "--full-history",
@@ -72,23 +72,29 @@ export async function discoverCommits(
       `--max-count=${GIT_LOG_PAGE_SIZE}`
     ]);
 
-    for (const record of output
+    const pageCommits = commitOutput
       .split(RECORD_SEPARATOR)
       .map((value) =>
         value.replace(/^\r?\n/, "").replace(/\r?\n$/, "")
       )
-      .filter(Boolean)) {
-      commits.push(parseCommitRecord(record));
+      .filter(Boolean)
+      .map(parseCommitRecord);
+
+    const pageNumstat = await discoverNumstatPage(
+      git,
+      rangeArguments,
+      skip
+    );
+
+    for (const commit of pageCommits) {
+      commits.push(
+        applyNumstat(commit, pageNumstat.get(commit.sha))
+      );
     }
   }
 
-  const numstat = await discoverNumstat(git, range);
-
-  return commits.map((commit) =>
-    applyNumstat(commit, numstat.get(commit.sha))
-  );
+  return commits;
 }
-
 async function countCommits(
   git: ReturnType<typeof simpleGit>,
   range?: {
@@ -210,97 +216,93 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
   };
 }
 
-async function discoverNumstat(
+async function discoverNumstatPage(
   git: ReturnType<typeof simpleGit>,
-  range?: {
-    fromExclusive?: string;
-    toInclusive?: string;
-  }
-): Promise<Map<string, Map<string, { additions: number; deletions: number }>>> {
-  const rangeArguments =
-    range?.fromExclusive && range.toInclusive
-      ? [`${range.fromExclusive}..${range.toInclusive}`]
-      : ["--all"];
+  rangeArguments: string[],
+  skip: number
+): Promise<
+  Map<string, Map<string, { additions: number; deletions: number }>>
+> {
+  const output = await git.raw([
+    "log",
+    ...rangeArguments,
+    "--full-history",
+    "--reverse",
+    "--format=%x1e%H",
+    "--numstat",
+    "--no-renames",
+    "-z",
+    `--skip=${skip}`,
+    `--max-count=${GIT_LOG_PAGE_SIZE}`
+  ]);
 
-  const commitCount = await countCommits(git, range);
-  const result = new Map<string, Map<string, { additions: number; deletions: number }>>();
+  const result = new Map<
+    string,
+    Map<string, { additions: number; deletions: number }>
+  >();
 
-  for (
-    let skip = 0;
-    skip < commitCount;
-    skip += GIT_LOG_PAGE_SIZE
-  ) {
-    const output = await git.raw([
-      "log",
-      ...rangeArguments,
-      "--full-history",
-      "--reverse",
-      "--format=%x1e%H",
-      "--numstat",
-      "--no-renames",
-      "-z",
-      `--skip=${skip}`,
-      `--max-count=${GIT_LOG_PAGE_SIZE}`
-    ]);
+  for (const rawRecord of output.split(RECORD_SEPARATOR)) {
+    const record = rawRecord.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
+    if (!record) {
+      continue;
+    }
 
-    for (const rawRecord of output.split(RECORD_SEPARATOR)) {
-      const record = rawRecord.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
-      if (!record) continue;
+    const parts = record.split(NUL_SEPARATOR);
+    const sha = (parts.shift() ?? "").trim();
 
-      const parts = record.split(NUL_SEPARATOR);
-      const sha = (parts.shift() ?? "").trim();
+    if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
+      continue;
+    }
 
-      if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
+    const files = new Map<
+      string,
+      { additions: number; deletions: number }
+    >();
+
+    for (const rawPart of parts) {
+      const line = rawPart.replace(/^\r?\n/, "").replace(/\r$/, "");
+
+      if (!line) {
         continue;
       }
 
-      const files = new Map<string, { additions: number; deletions: number }>();
+      const firstTab = line.indexOf("\t");
+      const secondTab =
+        firstTab >= 0
+          ? line.indexOf("\t", firstTab + 1)
+          : -1;
 
-      for (const rawPart of parts) {
-        const line = rawPart.replace(/^\r?\n/, "").replace(/\r$/, "");
-
-        if (!line) {
-          continue;
-        }
-
-        const firstTab = line.indexOf("\t");
-        const secondTab =
-          firstTab >= 0
-            ? line.indexOf("\t", firstTab + 1)
-            : -1;
-
-        if (firstTab <= 0 || secondTab <= firstTab) {
-          continue;
-        }
-
-        const additionsField = line.slice(0, firstTab);
-        const deletionsField = line.slice(firstTab + 1, secondTab);
-        const filePath = line.slice(secondTab + 1);
-
-        if (!additionsField || !deletionsField || !filePath) {
-          continue;
-        }
-
-        if (additionsField === "-" && deletionsField === "-") {
-          files.set(filePath, { additions: 0, deletions: 0 });
-          continue;
-        }
-
-        const additions = Number.parseInt(additionsField, 10);
-        const deletions = Number.parseInt(deletionsField, 10);
-
-        if (
-          Number.isSafeInteger(additions) &&
-          Number.isSafeInteger(deletions) &&
-          additions >= 0 &&
-          deletions >= 0
-        ) {
-          files.set(filePath, { additions, deletions });
-        }
+      if (firstTab <= 0 || secondTab <= firstTab) {
+        continue;
       }
 
-      result.set(sha, files);
+      const additionsField = line.slice(0, firstTab);
+      const deletionsField = line.slice(firstTab + 1, secondTab);
+      const filePath = line.slice(secondTab + 1);
+
+      if (!additionsField || !deletionsField || !filePath) {
+        continue;
+      }
+
+      if (additionsField === "-" && deletionsField === "-") {
+        files.set(filePath, { additions: 0, deletions: 0 });
+        continue;
+      }
+
+      const additions = Number.parseInt(additionsField, 10);
+      const deletions = Number.parseInt(deletionsField, 10);
+
+      if (
+        Number.isSafeInteger(additions) &&
+        Number.isSafeInteger(deletions) &&
+        additions >= 0 &&
+        deletions >= 0
+      ) {
+        files.set(filePath, { additions, deletions });
+      }
     }
+
+    result.set(sha, files);
   }
 
   return result;
