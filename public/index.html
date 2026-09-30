@@ -158,7 +158,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   async function getRun(){return (await api('/api/repositories/'+S.repoId+'/analysis/'+S.runId)).analysis}
   function poll(){
     clearInterval(S.timer);banner(true,'Analysis in progress','Walking commits, source structure and evolution signals…','queued');
-    var tick=async function(){try{S.analysis=await getRun();var st=S.analysis.status;if(st==='completed'){clearInterval(S.timer);S.timer=null;banner(false);await loadData();setView(S.view);toast('Analysis complete','good');return}if(st==='failed'){clearInterval(S.timer);S.timer=null;banner(true,'Analysis failed','The worker reported a failure.','failed');toast('Analysis failed','bad');return}banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)}catch(e){banner(true,'Checking analysis status','Retrying status request…','queued')}};
+    var tick=async function(){try{S.analysis=await getRun();var st=S.analysis.status;if(st==='completed'){clearInterval(S.timer);S.timer=null;banner(false);await loadData();setView(S.view);toast('Analysis complete','good');return}if(st==='failed'){clearInterval(S.timer);S.timer=null;banner(true,'Analysis failed',S.analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.','failed');toast('Analysis failed','bad');return}banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)}catch(e){banner(true,'Checking analysis status','Retrying status request…','queued')}};
     tick();S.timer=setInterval(tick,2200)
   }
   async function loadData(){
