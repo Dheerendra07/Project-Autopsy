@@ -38,6 +38,7 @@ test("product frontend contains the core evidence workflow", () => {
     "async function testConnection()",
     "base+'/ready'",
     "Database or Redis may be unavailable.",
+    "elapsed(a.startedAt,a.completedAt)",
     "async function reloadData()",
     "data-action=\"reload-data\"",
     "runtime event explorer",
