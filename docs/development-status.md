@@ -645,3 +645,10 @@ Clone cleanup now preserves the original repository/clone failure even when clea
 Git branch validation is aligned more closely with Git ref rules, including rejection of `@`, dot-prefixed components, and `.lock`-suffixed components.
 
 Complexity, migration, and test-evolution analyzers now preserve or surface source-read failures rather than silently dropping evidence, while cache-only failures remain non-blocking because cache state is not evidence.
+
+
+## Launch hardening — bounded history and reproducible runtime — 2026-09-30
+
+Repository analysis now performs a lightweight Git commit-count preflight and refuses histories above the configured `MAX_ANALYZED_COMMITS` ceiling (25,000 by default). This prevents pathological histories from forcing unbounded full-history output into the free runtime memory budget and avoids silently returning partial historical analysis.
+
+The production blueprint declares the same 25,000-commit ceiling. Package metadata now pins the supported Node major range to 24.x, and `package.json`/lockfile root versions are kept identical for deterministic `npm ci` installs.
