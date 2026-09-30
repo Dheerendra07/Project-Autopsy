@@ -13,6 +13,7 @@ import path from "node:path";
 import test from "node:test";
 
 import {
+  assertRepositoryId,
   assertSafeBranchName,
   calculateDirectorySize,
   cloneRepository,
@@ -169,5 +170,32 @@ test("invalid clone branch is rejected before repository storage is allocated", 
   await assert.rejects(
     access(getRepositoryStoragePath(repositoryId)),
     /ENOENT/
+  );
+});
+
+
+test("repository storage ids are strict UUID-shaped identifiers", () => {
+  const valid = "00000000-0000-4000-8000-000000000997";
+
+  assert.doesNotThrow(() => assertRepositoryId(valid));
+
+  for (const value of [
+    "../escape",
+    "../../tmp",
+    "00000000-0000-4000-8000-000000000997/extra",
+    "00000000-0000-4000-8000-00000000099x",
+    ""
+  ]) {
+    assert.throws(
+      () => assertRepositoryId(value),
+      /Repository id is invalid/
+    );
+  }
+
+  assert.equal(
+    getRepositoryStoragePath(valid).endsWith(path.join(
+      valid
+    )),
+    true
   );
 });
