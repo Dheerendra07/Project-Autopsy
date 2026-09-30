@@ -282,6 +282,81 @@ test("report and interpretation endpoints reject limits outside their bounded ra
   }
 });
 
+
+
+test("repository import rejects invalid branch syntax before queueing work", async () => {
+  for (const branch of ["", "main branch", "main;rm", "main?x", "main#x"]) {
+    const response = await fetch(baseUrl + "/api/repositories/import", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-autopsy-api-key": TEST_API_KEY
+      },
+      body: JSON.stringify({
+        url: "https://github.com/octocat/Hello-World.git",
+        branch
+      })
+    });
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      success: boolean;
+      error: { code: string; issues: unknown[] };
+    };
+    assert.equal(body.success, false);
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.ok(body.error.issues.length > 0);
+  }
+});
+
+test("repository import rejects unsupported repository hosts before persistence", async () => {
+  for (const url of [
+    "http://github.com/octocat/Hello-World.git",
+    "https://example.com/octocat/Hello-World.git",
+    "https://user:password@github.com/octocat/Hello-World.git",
+    "https://github.com/octocat/Hello-World.git?token=secret"
+  ]) {
+    const response = await fetch(baseUrl + "/api/repositories/import", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-autopsy-api-key": TEST_API_KEY
+      },
+      body: JSON.stringify({ url })
+    });
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      success: boolean;
+      error: { code: string; issues?: unknown[]; message?: string };
+    };
+    assert.equal(body.success, false);
+    assert.ok(body.error);
+    assert.notEqual(body.error.code, "INTERNAL_SERVER_ERROR");
+  }
+});
+
+test("authorization header takes the bearer credential when header key is omitted", async () => {
+  const response = await fetch(baseUrl + "/api/", {
+    headers: {
+      authorization: "Bearer " + TEST_API_KEY
+    }
+  });
+
+  assert.equal(response.status, 200);
+});
+
+test("a wrong header key cannot override a valid bearer credential", async () => {
+  const response = await fetch(baseUrl + "/api/", {
+    headers: {
+      authorization: "Bearer wrong-key",
+      "x-autopsy-api-key": "wrong-key"
+    }
+  });
+
+  assert.equal(response.status, 401);
+});
+
 test("analysis status endpoint returns a scoped not-found contract", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const analysisRunId = "00000000-0000-4000-8000-000000000998";
