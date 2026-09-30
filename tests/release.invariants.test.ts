@@ -367,6 +367,31 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
 
+test("frontend clears stale saved workspace state after a missing repository or analysis run", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function boot()");
+  const end = appJs.indexOf("boot()", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const boot = appJs.slice(start, end);
+  assert.ok(boot.includes("Request failed (404)."));
+  assert.ok(boot.includes("S.repoId=''"));
+  assert.ok(boot.includes("S.runId=''"));
+  assert.ok(boot.includes("S.data={}"));
+  assert.ok(
+    boot.includes(
+      "S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"
+    )
+  );
+  assert.ok(
+    boot.includes("Saved workspace no longer exists. Start a new repository analysis.")
+  );
+  assert.ok(boot.includes("persist()"));
+});
+
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const appJs = readRepoFile("public/app.js");
 
