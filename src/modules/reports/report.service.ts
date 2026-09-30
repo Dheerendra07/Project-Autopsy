@@ -328,19 +328,26 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
         ...input.complexityEvents.map((item, index) =>
           evidenceClaim(
             "complexity-" + String(index + 1),
-            item.path +
-              ": cyclomatic complexity changed from " +
-              String(item.before_cyclomatic_complexity ?? "n/a") +
-              " to " +
-              String(item.after_cyclomatic_complexity ?? "n/a") +
-              ".",
+            item.analysis_status === "read_error"
+              ? item.path +
+                " could not be read from the recorded Git object for commit " +
+                item.sha.slice(0, 12) +
+                "."
+              : item.path +
+                ": cyclomatic complexity changed from " +
+                String(item.before_cyclomatic_complexity ?? "n/a") +
+                " to " +
+                String(item.after_cyclomatic_complexity ?? "n/a") +
+                ".",
             [
               evidenceRef("code_complexity", item.sha, {
                 commitSha: item.sha,
                 path: item.path
               })
             ],
-            "Complexity is AST-derived source evidence and may be absent when parsing limits apply."
+            item.analysis_status === "read_error"
+              ? "The source object could not be read; no complexity value is asserted."
+              : "Complexity is AST-derived source evidence and may be absent when parsing or size limits apply."
           )
         )
       ].slice(0, input.sampleLimit),
