@@ -42,6 +42,8 @@ test("product frontend contains the core evidence workflow", () => {
     "data-action=\"reload-data\"",
     "runtime event explorer",
     "rtDeployment",
+    "rtFrom",
+    "rtTo",
     "rtRevision",
     "rtEnvironment",
     "rtOperation",
