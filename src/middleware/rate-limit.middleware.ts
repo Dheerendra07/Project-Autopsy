@@ -7,6 +7,12 @@ export const API_RATE_LIMIT_HEAVY_MAX_REQUESTS = 12;
 
 type RateLimitCategory = "api" | "heavy";
 
+export interface RateLimitConfig {
+  windowSeconds: number;
+  maxRequests: number;
+  heavyMaxRequests: number;
+}
+
 interface RateLimitResult {
   count: number;
   limit: number;
@@ -18,11 +24,11 @@ export interface RateLimitRedisClient {
   expire(key: string, seconds: number): Promise<number>;
 }
 
-function resolveCategory(req: Request): RateLimitCategory {
+export function resolveRateLimitCategory(req: Request): RateLimitCategory {
   const path = req.path;
 
   if (
-    req.method === "POST" &&
+    (req.method === "POST" || req.method === "GET") &&
     (
       path === "/repositories/import" ||
       /^\/repositories\/[0-9a-f-]+\/analyze$/i.test(path) ||
@@ -47,10 +53,17 @@ function resolveCategory(req: Request): RateLimitCategory {
   return "api";
 }
 
-function limitFor(category: RateLimitCategory): number {
-  return category === "heavy"
-    ? API_RATE_LIMIT_HEAVY_MAX_REQUESTS
-    : API_RATE_LIMIT_MAX_REQUESTS;
+export function getRateLimitLimit(
+  req: Request,
+  config: RateLimitConfig = {
+    windowSeconds: API_RATE_LIMIT_WINDOW_SECONDS,
+    maxRequests: API_RATE_LIMIT_MAX_REQUESTS,
+    heavyMaxRequests: API_RATE_LIMIT_HEAVY_MAX_REQUESTS
+  }
+): number {
+  return resolveRateLimitCategory(req) === "heavy"
+    ? config.heavyMaxRequests
+    : config.maxRequests;
 }
 
 function getClientKey(req: Request, category: RateLimitCategory): string {
@@ -65,19 +78,23 @@ export async function consumeRateLimit(
     nowMs?: number;
     windowSeconds?: number;
     maxRequests?: number;
+    heavyMaxRequests?: number;
   } = {}
 ): Promise<RateLimitResult> {
   const nowMs = options.nowMs ?? Date.now();
   const windowSeconds = options.windowSeconds ?? API_RATE_LIMIT_WINDOW_SECONDS;
   const limit =
     options.maxRequests ??
-    (resolveCategory(req) === "heavy"
-      ? API_RATE_LIMIT_HEAVY_MAX_REQUESTS
-      : API_RATE_LIMIT_MAX_REQUESTS);
+    getRateLimitLimit(req, {
+      windowSeconds,
+      maxRequests: options.maxRequests ?? API_RATE_LIMIT_MAX_REQUESTS,
+      heavyMaxRequests:
+        options.heavyMaxRequests ?? API_RATE_LIMIT_HEAVY_MAX_REQUESTS
+    });
 
   const windowId = Math.floor(nowMs / (windowSeconds * 1_000));
   const resetAt = (windowId + 1) * windowSeconds * 1_000;
-  const key = getClientKey(req, resolveCategory(req)) + ":" + windowId;
+  const key = getClientKey(req, resolveRateLimitCategory(req)) + ":" + windowId;
 
   const count = await redis.incr(key);
   if (count === 1) {
@@ -88,10 +105,19 @@ export async function consumeRateLimit(
 }
 
 export function createRateLimitMiddleware(
-  redis: RateLimitRedisClient
+  redis: RateLimitRedisClient,
+  config: RateLimitConfig = {
+    windowSeconds: API_RATE_LIMIT_WINDOW_SECONDS,
+    maxRequests: API_RATE_LIMIT_MAX_REQUESTS,
+    heavyMaxRequests: API_RATE_LIMIT_HEAVY_MAX_REQUESTS
+  }
 ): (req: Request, res: Response, next: NextFunction) => void {
   return (req, res, next) => {
-    void consumeRateLimit(req, redis)
+    void consumeRateLimit(req, redis, {
+      windowSeconds: config.windowSeconds,
+      maxRequests: config.maxRequests,
+      heavyMaxRequests: config.heavyMaxRequests
+    })
       .then(({ count, limit, resetAt }) => {
         const remaining = Math.max(0, limit - count);
         res.setHeader("X-RateLimit-Limit", String(limit));
