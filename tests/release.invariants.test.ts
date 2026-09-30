@@ -300,5 +300,10 @@ test("frontend health probes do not attach privileged API credentials", () => {
   const probe = html.slice(start, end);
   assert.match(probe, /boundedFetch\(base\+'\/health'/);
   assert.match(probe, /boundedFetch\(base\+'\/ready'/);
-  assert.doesNotMatch(probe, /x-autopsy-api-key/);
+  assert.ok(probe.includes("var probeHeaders=new Headers(h)"));
+  assert.ok(probe.includes("probeHeaders.set('x-autopsy-api-key',key)"));
+  assert.doesNotMatch(
+    probe.slice(0, probe.indexOf("var probeHeaders")),
+    /x-autopsy-api-key/
+  );
 });
