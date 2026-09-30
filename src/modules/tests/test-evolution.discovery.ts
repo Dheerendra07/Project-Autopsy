@@ -42,6 +42,8 @@ const TEST_CONFIG_BASENAMES = new Set([
   "karma.conf.ts"
 ]);
 
+const MAX_TEST_SOURCE_BYTES = 2_000_000;
+
 const TEST_DIRECTORIES = new Set([
   "test",
   "tests",
