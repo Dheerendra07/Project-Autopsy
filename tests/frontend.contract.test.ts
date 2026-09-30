@@ -56,6 +56,9 @@ test("product frontend contains the core evidence workflow", () => {
     "Observed runtime telemetry event.",
     "Historical repeated-modification evidence."
     "function runtimeFilterDate(value)","\n    "function sameRevision(a,b)",
+    "function boundedFetch(url,options,timeoutMs)",
+    "previousEvents",
+    "runtimeEventsPathWithFilter",
     "Repository head differs from the analyzed target.",
     "function runtimeEventsPath(page,limit)",
     "S.runtimeEvents=arr(out.runtimeEvents,'events')",
