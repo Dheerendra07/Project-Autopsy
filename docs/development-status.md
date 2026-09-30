@@ -266,7 +266,9 @@ Current implementation work on branch `hardening/finish-release-gaps-2026-10-01`
 - Release invariants and environment tests now cover the retention policy, bounded Git history paging, and the updated CI runner/service setup.
 
 Production verification note:
-- Public hosted liveness/auth-boundary verification can be performed without exposing credentials. Full authenticated workspace smoke still requires the production API access key to be supplied through the deployment/CI environment; no credential is stored in the repository.
+- A reproducible manual production-smoke workflow now checks the hosted frontend, static app asset, liveness/readiness, unauthenticated API rejection, invalid-key rejection, and authenticated protected-route behavior using a user-supplied production API access key.
+- The smoke workflow is manual by design so production credentials never enter pull-request logs or automated feature branches.
+- The production URL is provided as a workflow input; the API key is read only from the GitHub Actions secret `AUTOPSY_API_ACCESS_KEY`.
 
 ## Evidence semantics
 
