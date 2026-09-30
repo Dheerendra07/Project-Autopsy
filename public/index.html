@@ -87,7 +87,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     aiKey:sessionStorage.getItem('autopsy.aiKey')||'',
     repoId:sessionStorage.getItem('autopsy.repoId')||'',
     runId:sessionStorage.getItem('autopsy.runId')||'',
-    repo:null,analysis:null,data:{},view:'overview',timer:null,evidence:[],evidenceSeq:0
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -130,10 +130,17 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   async function api(path,opt){
     var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
-    var r=await fetch(S.api.replace(/\/$/,'')+path,Object.assign({},opt||{},{headers:h}));
-    var t=await r.text(),b=null;try{b=t?JSON.parse(t):null}catch(e){b={raw:t}}
-    if(!r.ok)throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+')');
-    return b;
+    var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},20000);
+    var request=Object.assign({},opt||{},{headers:h,signal:controller.signal});
+    try{
+      var r=await fetch(S.api.replace(/\/$/,'')+path,request);
+      var t=await r.text(),b=null;try{b=t?JSON.parse(t):null}catch(e){b={raw:t}}
+      if(!r.ok)throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+')');
+      return b;
+    }catch(e){
+      if(e&&e.name==='AbortError')throw new Error('Request timed out after 20 seconds.');
+      throw e;
+    }finally{clearTimeout(timer)}
   }
   function landing(){ $('landing').hidden=false;$('workspace').hidden=true }
   function workspace(){ $('landing').hidden=true;$('workspace').hidden=false;$('repoName').textContent=S.repo&&S.repo.name||'Repository';$('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';connected(true)}
@@ -176,7 +183,8 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25',
       contributors:'/api/repositories/'+id+'/contributors?limit=25'
     };
-    var keys=Object.keys(eps),out={};await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null}}));S.data=out;
+    var keys=Object.keys(eps),out={},errs=[];await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null;errs.push({key:k,path:eps[k],message:e.message})}}));S.data=out;S.dataErrors=errs;
+    if(errs.length){toast(errs.length+' evidence source'+(errs.length===1?'':'s')+' unavailable; showing the remaining persisted data.','warn')}
   }
   function shell(title,desc,actions){return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'}
   function metric(label,val,sub){return '<div class="card"><div class="metric">'+esc(val)+'</div><div class="metric-label">'+esc(label)+'</div>'+(sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div>'}
@@ -184,7 +192,11 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     var r=S.repo||{},a=S.analysis||{},d=S.data,c=arr(d.commits,'commits'),h=arr(d.hotspots,'hotspots');
     var max=1;h.slice(0,8).forEach(function(x){max=Math.max(max,Number(x.commits_touched||0))});
     return shell('Engineering overview','A compact, evidence-backed map of how this repository has changed.','<button class="btn" data-action="report">Generate report</button>')+
-      '<div class="grid g4">'+metric('Persisted commits',n(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length),'stored Git history')+metric('Change hotspots',n(h.length),'top file activity')+metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+'</div>'+
+      '<div class="grid g4">'+metric('Persisted commits',n(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length),'stored Git history')+metric('Change hotspots',n(h.length),'top file activity')+metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+'</div>'+(
+        S.dataErrors.length
+          ? '<div class="callout section"><strong>Partial evidence load</strong><br>'+n(S.dataErrors.length)+' endpoint'+(S.dataErrors.length===1?'':'s')+' could not be loaded. Existing persisted data remains visible; retry by refreshing the analysis view.</div>'
+          : ''
+      )+
       '<div class="grid g2 section"><div class="card"><h3>Repository identity</h3><div class="sub">Persisted metadata</div><div class="callout"><strong>'+esc(r.name)+'</strong><br><span class="mono">'+esc(r.source_url||r.sourceUrl||'Source unavailable')+'</span><br>branch <span class="mono">'+esc(r.tracked_branch||r.trackedBranch||'—')+'</span> · head <span class="mono">'+esc(sha(r.head_sha||r.headSha))+'</span></div></div>'+
       '<div class="card"><h3>Analysis snapshot</h3><div class="sub">Exact completed target</div><div class="callout">run <span class="mono">'+esc(sha(a.id))+'</span><br>target <span class="mono">'+esc(sha(a.targetHeadSha))+'</span><br>completed <span class="mono">'+esc(date(a.completedAt))+'</span></div></div></div>'+
       '<div class="grid g2 section"><div class="card"><h3>Recent history</h3><div class="sub">Latest persisted commit evidence</div><div class="timeline">'+c.slice(0,7).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+' · '+n(x.files_changed)+' files</p></div>'}).join('')||'<div class="empty">No commit evidence.</div>'+'</div></div>'+
