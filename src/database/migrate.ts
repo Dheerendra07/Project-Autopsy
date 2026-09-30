@@ -60,6 +60,8 @@ async function runMigrations(): Promise<void> {
   } finally {
     try {
       await client.query("SELECT pg_advisory_unlock(2147483647)");
+    } catch (unlockError) {
+      console.error("Failed to release database migration lock:", unlockError);
     } finally {
       client.release();
       await db.end();
