@@ -162,8 +162,14 @@ async function readPackageJsonAtCommit(
   try {
     const raw = await git.show([`${sha}:package.json`]);
     return JSON.parse(raw) as PackageManifest;
-  } catch {
-    return null;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (/path .*package\\.json.* does not exist in/i.test(message)) {
+      return null;
+    }
+
+    throw error;
   }
 }
 
