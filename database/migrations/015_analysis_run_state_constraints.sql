@@ -1,4 +1,14 @@
-DO $$
+UPDATE analysis_runs
+SET completed_at = COALESCE(completed_at, created_at)
+WHERE status IN ('completed', 'failed')
+  AND completed_at IS NULL;
+
+UPDATE analysis_runs
+SET completed_at = NULL
+WHERE status IN ('queued', 'running')
+  AND completed_at IS NOT NULL;
+
+DO $
 BEGIN
   IF NOT EXISTS (
     SELECT 1
