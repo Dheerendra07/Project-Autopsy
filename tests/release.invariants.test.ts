@@ -79,7 +79,7 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
   }
 });
 
-test("quality workflow starts on push and pull requests and uses the pinned Linux runner", () => {
+test("quality workflow runs on main pushes and pull requests and uses the supported Linux runner", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
   for (const marker of [
@@ -97,8 +97,8 @@ test("quality workflow starts on push and pull requests and uses the pinned Linu
   ]) {
     assert.ok(workflow.includes(marker), "missing workflow invariant: " + marker);
   }
+  assert.ok(workflow.includes("branches:\n      - main"));
 });
-
 
 
 test("Git history discovery paginates commit and numstat output", () => {
@@ -870,4 +870,15 @@ test("frontend health probes do not attach privileged API credentials", () => {
     probe.slice(0, probe.indexOf("var probeHeaders")),
     /x-autopsy-api-key/
   );
+});
+
+
+test("production-smoke workflow validates its production credential before checkout", () => {
+  const workflow = readRepoFile(".github/workflows/production-smoke.yml");
+  const validation = workflow.indexOf("Validate production credential");
+  const checkout = workflow.indexOf("name: Checkout");
+  assert.ok(validation >= 0);
+  assert.ok(checkout > validation);
+  assert.ok(workflow.includes('test -n "$AUTOPSY_API_ACCESS_KEY"'));
+  assert.ok(workflow.includes('test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32'));
 });

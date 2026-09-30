@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: production-smoke
+  cancel-in-progress: true
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
@@ -19,6 +23,13 @@ jobs:
       AUTOPSY_PRODUCTION_URL: ${{ inputs.url }}
       AUTOPSY_API_ACCESS_KEY: ${{ secrets.AUTOPSY_API_ACCESS_KEY }}
     steps:
+      - name: Validate production credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$AUTOPSY_API_ACCESS_KEY"
+          test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32
+
       - name: Checkout
         uses: actions/checkout@v6
 
