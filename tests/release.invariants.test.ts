@@ -218,3 +218,19 @@ test("repository storage cleanup is retryable and startup-wired", () => {
   assert.ok(migration.includes("repository_storage_cleanup"));
   assert.ok(migration.includes("completed_at"));
 });
+
+
+test("analysis state policy and migration serialization remain explicit", () => {
+  const state = readRepoFile("src/modules/analysis/analysis-state.ts");
+  const migration = readRepoFile("src/database/migrate.ts");
+  const constraints = readRepoFile(
+    "database/migrations/015_analysis_run_state_constraints.sql"
+  );
+
+  assert.ok(state.includes('queued: ["running", "failed"]'));
+  assert.ok(state.includes("completed: []"));
+  assert.ok(state.includes('SELECT pg_advisory_lock(2147483647)'));
+  assert.ok(state.includes('SELECT pg_advisory_unlock(2147483647)'));
+  assert.ok(constraints.includes("analysis_runs_status_check"));
+  assert.ok(constraints.includes("analysis_runs_terminal_timestamp_check"));
+});
