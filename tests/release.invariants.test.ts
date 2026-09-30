@@ -77,11 +77,11 @@ test("quality workflow retains the full validation gate", () => {
 
 test("frontend script remains dependency-free, parseable and key-gated", () => {
   const html = readRepoFile("public/index.html");
-  const script = html.match(/<script>\\s*([\\s\\S]*?)\\s*<\\/script>/i)?.[1];
+  const script = html.match(/<script>\s*([\s\S]*?)\s*<\/script>/i)?.[1];
 
   assert.ok(script);
   assert.doesNotThrow(() => new Function(script));
-  assert.doesNotMatch(html, /<script\\s+src=/i);
+  assert.doesNotMatch(html, /<script\s+src=/i);
   assert.ok(html.includes("sessionStorage.getItem('autopsy.key')"));
   assert.ok(html.includes("sessionStorage.setItem('autopsy.aiKey'"));
   assert.doesNotMatch(
