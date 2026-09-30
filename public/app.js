@@ -113,7 +113,7 @@
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;
-      S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};persist();workspace();setView('overview');poll();
+      S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};persist();workspace();setView('overview');poll();
     }catch(e){
       if(token===S.workspaceToken){$('formerr').textContent=e.message;$('formerr').hidden=false}
     }finally{
@@ -343,7 +343,7 @@
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){
-    S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;
+    S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.historicalLoading=false;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};
     var token=S.workspaceToken,id=S.repoId;
     try{
       var r=await api('/api/repositories/'+id+'/analyze',{method:'POST',body:'{}'});
@@ -363,7 +363,7 @@
       var r=await api('/api/repositories/'+id,{method:'DELETE'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;
-      S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.evidence=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};
+      S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.evidence=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalLoading=false;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};
       persist();closeSettings();landing();toast(r.cleanupPending?'Repository deleted; storage cleanup is pending and will be retried automatically.':'Repository data deleted','good');
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
