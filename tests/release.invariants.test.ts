@@ -294,6 +294,23 @@ test("frontend AI interpretation keeps validated evidence keys inspectable", () 
   assert.ok(appJs.includes("Validated report claims referenced by this AI theme."));
 });
 
+test("frontend clears runtime filters when the active repository is deleted", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function deleteRepository()");
+  const end = appJs.indexOf("$('settings').onclick", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const deletion = appJs.slice(start, end);
+  assert.ok(
+    deletion.includes(
+      "S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"
+    )
+  );
+});
+
+
 test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
