@@ -191,3 +191,17 @@ test("API authentication is mounted before JSON body parsing", () => {
     /,\s*router\)/
   );
 });
+
+
+test("repository deletion keeps an explicit lifecycle guard in the API and client", () => {
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const service = readRepoFile("src/modules/repositories/repository.service.ts");
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(routes.includes('router.delete("/:repositoryId"'));
+  assert.ok(routes.includes("REPOSITORY_DELETE_BLOCKED"));
+  assert.ok(service.includes("deleteRepositoryWithStorage"));
+  assert.ok(service.includes('FOR UPDATE'));
+  assert.ok(html.includes("Delete repository data"));
+  assert.ok(html.includes("Permanently delete "));
+});
