@@ -594,7 +594,8 @@ test("repository deletion removes persisted metadata and checkout storage", asyn
       success: true,
       repositoryId,
       deleted: true,
-      storageDeleted: true
+      storageDeleted: true,
+      cleanupPending: false
     });
 
     const row = await db.query(
@@ -665,5 +666,95 @@ test("repository deletion and refresh cannot both succeed concurrently", async (
   } finally {
     await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
     await rm(storagePath, { recursive: true, force: true });
+  }
+});
+
+
+test("repository storage cleanup retry removes pending managed storage", async () => {
+  const { db } = await import("../src/config/database.js");
+  const { getRepositoryStoragePath, retryRepositoryStorageCleanup } =
+    await import("../src/modules/repositories/repository.service.js");
+  const repositoryId = randomUUID();
+  const storagePath = getRepositoryStoragePath(repositoryId);
+
+  await mkdir(path.join(storagePath, "nested"), { recursive: true });
+
+  await db.query(
+    `
+      INSERT INTO repository_storage_cleanup (
+        repository_id, storage_path
+      )
+      VALUES ($1, $2)
+    `,
+    [repositoryId, storagePath]
+  );
+
+  try {
+    const result = await retryRepositoryStorageCleanup(20);
+
+    assert.equal(result.attempted, 1);
+    assert.equal(result.cleaned, 1);
+    assert.equal(result.pending, 0);
+
+    await assert.rejects(
+      rm(storagePath, { recursive: false }),
+      /ENOENT/
+    );
+
+    const row = await db.query(
+      "SELECT repository_id FROM repository_storage_cleanup WHERE repository_id = $1",
+      [repositoryId]
+    );
+
+    assert.equal(row.rows.length, 0);
+  } finally {
+    await db.query(
+      "DELETE FROM repository_storage_cleanup WHERE repository_id = $1",
+      [repositoryId]
+    );
+    await rm(storagePath, { recursive: true, force: true });
+  }
+});
+
+test("repository storage cleanup retains failed paths for retry without throwing", async () => {
+  const { db } = await import("../src/config/database.js");
+  const { retryRepositoryStorageCleanup } =
+    await import("../src/modules/repositories/repository.service.js");
+  const repositoryId = randomUUID();
+  const invalidPath = path.resolve(process.cwd(), "..");
+
+  await db.query(
+    `
+      INSERT INTO repository_storage_cleanup (
+        repository_id, storage_path
+      )
+      VALUES ($1, $2)
+    `,
+    [repositoryId, invalidPath]
+  );
+
+  try {
+    const result = await retryRepositoryStorageCleanup(20);
+
+    assert.equal(result.attempted, 1);
+    assert.equal(result.cleaned, 0);
+    assert.equal(result.pending, 1);
+
+    const row = await db.query<{ attempts: number; last_error: string | null }>(
+      `
+        SELECT attempts, last_error
+        FROM repository_storage_cleanup
+        WHERE repository_id = $1
+      `,
+      [repositoryId]
+    );
+
+    assert.equal(row.rows[0]?.attempts, 1);
+    assert.match(row.rows[0]?.last_error ?? "", /outside the managed storage root/);
+  } finally {
+    await db.query(
+      "DELETE FROM repository_storage_cleanup WHERE repository_id = $1",
+      [repositoryId]
+    );
   }
 });
