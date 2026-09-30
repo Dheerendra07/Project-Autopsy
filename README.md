@@ -97,7 +97,7 @@ Project Autopsy separates observed evidence from interpretation.
 
 ## Security
 
-The API uses Redis-backed bounded rate limiting per client IP. Normal API traffic is limited to 120 requests per minute; expensive import, re-analysis, report, interpretation, runtime-ingestion, and deployment-ingestion operations use a 12-request-per-minute bucket. Rate-limiter failures fail open so a Redis outage does not take down the application.
+The API uses Redis-backed bounded rate limiting per client address. Normal API traffic is limited to 120 requests per minute; expensive import, re-analysis, report, interpretation, runtime-ingestion, and deployment-ingestion operations use a 12-request-per-minute bucket. Rate-limiter failures fail open so a Redis outage does not take down the application.
 
 
 Never commit `.env`, API keys, OAuth tokens, database passwords, private repository credentials, or repository source snapshots.
