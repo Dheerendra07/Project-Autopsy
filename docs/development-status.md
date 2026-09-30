@@ -598,3 +598,14 @@ The quality workflow now uses least-privilege read permissions, cancels supersed
 Two controlled pull-request runner experiments were executed without product changes. The first used `ubuntu-22.04`; the second used `ubuntu-24.04`. Both workflow jobs completed with `failure` while reporting `steps: null`, and GitHub did not expose a job log blob. The failure therefore occurs before the repository workflow steps execute.
 
 Both experiments were closed and neither was merged into `main`. The production branch remains on the pinned `ubuntu-22.04` workflow configuration; application validation remains independently corroborated by successful Render TypeScript builds.
+
+
+## Launch hardening — repository boundaries + frontend concurrency — 2026-09-30
+
+Repository ingestion now validates branch names at both the HTTP boundary and the Git service boundary. Ambiguous/unsafe ref forms such as option-looking names, traversal segments, repeated separators, invalid terminal dots/slashes, and Git-special ref syntax are rejected before clone work begins.
+
+Repository storage inspection is symlink-safe: readiness checks do not follow a symlinked `.git` path, and repository size accounting ignores symbolic links and only counts regular files. This prevents a repository-local link from causing the size guard to traverse or account for filesystem content outside the managed checkout.
+
+The static workspace now tags asynchronous repository/data requests with both a workspace token and analysis-run identity. Responses from a previous repository or superseded analysis run are discarded instead of overwriting current state. Runtime pagination loading also keeps its loading lock scoped to the request that owns it.
+
+The corresponding edge/contract tests cover unsafe branch shapes, symlink-safe storage accounting/readiness, frontend stale-response guards, and the existing protected API import boundary.
