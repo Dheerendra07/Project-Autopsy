@@ -55,7 +55,8 @@ test("product frontend contains the core evidence workflow", () => {
     "Deployment ",
     "Observed runtime telemetry event.",
     "Historical repeated-modification evidence."
-    "function runtimeFilterDate(value)",
+    "function runtimeFilterDate(value)","\n    "function sameRevision(a,b)",
+    "Repository head differs from the analyzed target.",
     "function runtimeEventsPath(page,limit)",
     "S.runtimeEvents=arr(out.runtimeEvents,'events')",
     "sessionStorage.getItem('autopsy.key')",
