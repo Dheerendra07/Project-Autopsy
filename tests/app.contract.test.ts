@@ -426,3 +426,45 @@ test("contributor endpoint returns the repository-not-found contract", async () 
     }
   });
 });
+
+
+test("malformed JSON returns a client error instead of a generic server error", async () => {
+  const response = await fetch(baseUrl + "/api/repositories/import", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-autopsy-api-key": TEST_API_KEY
+    },
+    body: '{"url":'
+  });
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "INVALID_REQUEST_BODY",
+      message: "Request body could not be parsed."
+    }
+  });
+});
+
+test("oversized JSON returns a bounded payload error", async () => {
+  const oversizedValue = "x".repeat(1_100_000);
+  const response = await fetch(baseUrl + "/api/repositories/import", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-autopsy-api-key": TEST_API_KEY
+    },
+    body: JSON.stringify({ value: oversizedValue })
+  });
+
+  assert.equal(response.status, 413);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "REQUEST_BODY_TOO_LARGE",
+      message: "Request body exceeds the configured size limit."
+    }
+  });
+});
