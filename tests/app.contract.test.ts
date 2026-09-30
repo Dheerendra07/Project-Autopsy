@@ -595,6 +595,65 @@ test("oversized JSON returns a bounded payload error", async () => {
 });
 
 
+test("analysis status hides internal failure paths from API consumers", async () => {
+  const { db } = await import("../src/config/database.js");
+  const { getRepositoryStoragePath } =
+    await import("../src/modules/repositories/repository.service.js");
+  const repositoryId = randomUUID();
+  const analysisRunId = randomUUID();
+  const storagePath = getRepositoryStoragePath(repositoryId);
+  const internalPath = storagePath + "/.git/index";
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, source_type, source_url, name, tracked_branch, storage_path
+      )
+      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $2)
+    `,
+    [repositoryId, storagePath]
+  );
+
+  await db.query(
+    `
+      INSERT INTO analysis_runs (
+        id, repository_id, analyzer_version, analysis_mode, status, error_message
+      )
+      VALUES ($1, $2, 'test', 'full', 'failed', $3)
+    `,
+    [analysisRunId, repositoryId, `Git clone failed at ${internalPath}: ${"x".repeat(1_200)}`]
+  );
+
+  try {
+    const response = await fetch(
+      baseUrl +
+        "/api/repositories/" +
+        repositoryId +
+        "/analysis/" +
+        analysisRunId,
+      {
+        headers: {
+          "x-autopsy-api-key": TEST_API_KEY
+        }
+      }
+    );
+
+    assert.equal(response.status, 200);
+    const body = await response.json() as {
+      analysis: {
+        errorMessage: string | null;
+      };
+    };
+
+    assert.equal(body.analysis.errorMessage?.includes(storagePath), false);
+    assert.equal(body.analysis.errorMessage?.includes("<managed-path>"), true);
+    assert.ok((body.analysis.errorMessage?.length ?? 0) <= 1_000);
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+  }
+});
+
+
 test("repository deletion is blocked while analysis is active", async () => {
   const { db } = await import("../src/config/database.js");
   const repositoryId = randomUUID();
