@@ -248,3 +248,46 @@ test("discovers only commits after the supplied base head", async () => {
     await rm(repositoryPath, { recursive: true, force: true });
   }
 });
+
+test("preserves newline and tab filenames during file churn discovery", async () => {
+  const repositoryPath = await mkdtemp(
+    path.join(tmpdir(), "project-autopsy-churn-special-paths-")
+  );
+
+  try {
+    const git = simpleGit(repositoryPath);
+
+    await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    const tabPath = "churn\tfile.ts";
+    const newlinePath = "churn\nfile.ts";
+
+    await writeFile(
+      path.join(repositoryPath, tabPath),
+      "export const tab = true;\n",
+      "utf8"
+    );
+    await writeFile(
+      path.join(repositoryPath, newlinePath),
+      "export const newline = true;\n",
+      "utf8"
+    );
+    await git.add(".");
+    await git.commit("special churn paths");
+
+    const churn = await discoverFileChurn(repositoryPath);
+
+    assert.equal(
+      churn.find((item) => item.path === tabPath)?.additions,
+      1
+    );
+    assert.equal(
+      churn.find((item) => item.path === newlinePath)?.additions,
+      1
+    );
+  } finally {
+    await rm(repositoryPath, { recursive: true, force: true });
+  }
+});
