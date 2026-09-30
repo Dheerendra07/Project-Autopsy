@@ -313,26 +313,27 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 
 test("frontend failure notifications are scoped to the active analysis run", () => {
   const appJs = readRepoFile("public/app.js");
-  const start = appJs.indexOf("async function loadProvenance");
-  const end = appJs.indexOf("function downloadReport", start);
-  assert.ok(start >= 0);
-  assert.ok(end > start);
+  const functions = [
+    ["loadProvenance", "function downloadReport"],
+    ["loadReport", "async function loadInterview"],
+    ["loadInterview", "async function loadInterpretation"],
+    ["loadInterpretation", "function downloadReport"]
+  ];
 
-  const provenanceBlock = appJs.slice(start, end);
-  assert.ok(
-    provenanceBlock.includes(
-      "token===S.workspaceToken&&id===S.repoId&&runId===S.runId"
-    )
-  );
+  for (const [name, endMarker] of functions) {
+    const start = appJs.indexOf("async function " + name);
+    const end = appJs.indexOf(endMarker, start + 1);
 
-  const reportStart = appJs.indexOf("async function loadReport");
-  const reportEnd = appJs.indexOf("async function loadInterview", reportStart);
-  const reportBlock = appJs.slice(reportStart, reportEnd);
-  assert.ok(
-    reportBlock.includes(
-      "token===S.workspaceToken&&id===S.repoId&&runId===S.runId"
-    )
-  );
+    assert.ok(start >= 0);
+    assert.ok(end > start);
+
+    const block = appJs.slice(start, end);
+    assert.ok(
+      block.includes(
+        "token===S.workspaceToken&&id===S.repoId&&runId===S.runId"
+      )
+    );
+  }
 });
 
 test("dependency analysis bounds package.json reads before loading content", () => {
