@@ -59,13 +59,24 @@ The API reports before/after metrics and deltas per changed source file. Deleted
 
 ## Release readiness
 
-The product layers through evidence-backed reports, interview story scaffolds, grounded AI interpretation, runtime correlation, deployment provenance, historical reconstruction, and bounded asynchronous analysis are implemented on main.
+The backend product layers through evidence-backed reports, interview story scaffolds, grounded AI interpretation, runtime correlation, deployment provenance, historical reconstruction, and bounded asynchronous analysis are implemented on `main`.
 
-The production-hardening pass is complete for code and CI. The remaining verification items are operational rather than product-code gaps:
-- provision PostgreSQL and Redis locally when Docker is available, then repeat the already-green integration path locally
-- perform the first hosted Render deployment and verify real credentials, DNS/origin configuration, resource sizing, and external ingestion sources in that environment
+Hosted Render verification completed on 2026-09-30:
+- the production service `project-autopsy` is live on the Free web service
+- PostgreSQL migrations completed successfully during deploy
+- PostgreSQL and Redis connected successfully after restart
+- `/health` returned HTTP 200
+- `/ready` returned HTTP 200 with database and Redis ready
+- the post-restart runtime produced no Redis `ECONNRESET`, Redis readiness timeout, or optimistic-volatile eviction warning
+- the production runtime passed the existing API authentication/security contract checks
 
-Every future change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, explicit evidence-gap behavior, and bounded execution contracts.
+The remaining verification items are environment/infrastructure-specific rather than missing backend product functionality:
+- local PostgreSQL/Redis integration requires Docker on the development machine
+- browser CORS origins must be supplied when the frontend origin exists
+- optional AI interpretation requires its production credentials
+- GitHub Actions run `855` is currently blocked by a runner/provisioning failure before workflow steps execute; this does not represent a typecheck, build, test, or backend runtime failure
+
+Every future product change must preserve the evidence-first semantics, deterministic fingerprints, security boundaries, explicit evidence-gap behavior, and bounded execution contracts.
 
 ## Production hardening continuation — 2026-09-30
 
