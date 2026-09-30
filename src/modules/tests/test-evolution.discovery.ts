@@ -293,6 +293,11 @@ function sha256(source: string): string {
     .digest("hex");
 }
 
+export function isMissingTestObjectError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /path .* does not exist in/i.test(message);
+}
+
 async function showFile(
   git: ReturnType<typeof simpleGit>,
   commitSha: string,
@@ -300,8 +305,12 @@ async function showFile(
 ): Promise<string | null> {
   try {
     return await git.show([commitSha + ":" + filePath]);
-  } catch {
-    return null;
+  } catch (error) {
+    if (isMissingTestObjectError(error)) {
+      return null;
+    }
+
+    throw error;
   }
 }
 
