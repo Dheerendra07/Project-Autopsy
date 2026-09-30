@@ -300,6 +300,23 @@ test("frontend distinguishes configured credentials from verified connectivity",
   assert.ok(appJs.includes("connected('verified')"));
 });
 
+test("frontend stops polling on terminal analysis access errors", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function poll()");
+  const end = appJs.indexOf("async function mapLimited", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const poll = appJs.slice(start, end);
+  assert.ok(poll.includes("API access key was rejected."));
+  assert.ok(poll.includes("Access to this API operation was denied."));
+  assert.ok(poll.includes("Request failed (404)."));
+  assert.ok(poll.includes("The saved API key was rejected"));
+  assert.ok(poll.includes("The saved analysis run no longer exists."));
+  assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const appJs = readRepoFile("public/app.js");
 
