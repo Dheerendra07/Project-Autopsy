@@ -884,3 +884,20 @@ test("production-smoke workflow validates its production credential before check
   assert.ok(workflow.includes('test -n "$AUTOPSY_API_ACCESS_KEY"'));
   assert.ok(workflow.includes('test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32'));
 });
+
+
+test("analysis run history endpoint is bounded and release-visible", () => {
+  const persistence = readRepoFile("src/modules/repositories/repository.persistence.ts");
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const migration = readRepoFile("database/migrations/017_analysis_run_history_index.sql");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(persistence.includes("export async function listAnalysisRuns("));
+  assert.ok(persistence.includes("ORDER BY created_at DESC, id DESC"));
+  assert.ok(routes.includes('router.get("/:repositoryId/analysis-runs"'));
+  assert.ok(routes.includes("max(50)"));
+  assert.ok(routes.includes("sanitizePublicAnalysisErrorMessage"));
+  assert.ok(migration.includes("idx_analysis_runs_repository_created_at"));
+  assert.ok(appJs.includes("analysisRuns:'/api/repositories/'+id+'/analysis-runs?page=1&limit=20'"));
+  assert.ok(appJs.includes("analysisRuns"));
+});

@@ -10,6 +10,7 @@ test(
     const {
       createAnalysisRunForRepository,
       getAnalysisRunById,
+      listAnalysisRuns,
       updateAnalysisRun,
       replaceFileChangeMetrics
     } = await import("../src/modules/repositories/repository.persistence.js");
@@ -32,6 +33,11 @@ test(
       const stored = await getAnalysisRunById(runId);
 
       assert.ok(stored);
+
+      const history = await listAnalysisRuns(repositoryId, 1, 20);
+      assert.equal(history.total, 1);
+      assert.equal(history.runs[0]?.id, runId);
+      assert.equal(history.runs[0]?.analysis_mode, "full");
 
       await replaceFileChangeMetrics(repositoryId, [
         {
