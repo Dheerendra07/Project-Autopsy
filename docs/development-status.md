@@ -748,7 +748,7 @@ CI remains externally blocked before workflow steps execute: the latest push-tri
 
 ## Continuation checkpoint — 2026-10-01
 
-main currently ends at commit 089f17d4ae22c978234defc6d41af17b268a8ad7 (PR #105).
+The previous continuation checkpoint ended at commit 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60 (PR #105); see the latest checkpoint above for the current main baseline.
 
 Verified continuation hardening now present after PR #87:
 - release-readiness documentation was updated through the production checkpoint
