@@ -316,19 +316,19 @@
       $('drawerBasis').textContent='Exact deployment evidence reconciliation between observed deployment fields and available runtime identity.';
       $('drawerJson').textContent=JSON.stringify(r,null,2);
       $('drawer').hidden=false;
-    }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
+    }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
   }
   async function loadReport(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
-    try{var r=await api('/api/repositories/'+id+'/report?limit=10');if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.report=r.report;setView('report');toast('Evidence report refreshed','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
+    try{var r=await api('/api/repositories/'+id+'/report?limit=10');if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.report=r.report;setView('report');toast('Evidence report refreshed','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
   }
   async function loadInterview(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
-    try{var r=await api('/api/repositories/'+id+'/interview-stories?limit=6');if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.interview=r;setView('interview');toast('Interview stories loaded','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
+    try{var r=await api('/api/repositories/'+id+'/interview-stories?limit=6');if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.interview=r;setView('interview');toast('Interview stories loaded','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
   }
   async function loadInterpretation(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
-    try{if(!S.aiKey){openSettings();throw new Error('Add the AI interpretation access key in settings first.')}var r=await api('/api/repositories/'+id+'/interpretation?limit=10',{aiKey:true});if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.interpretation=r;setView('interpretation');toast('AI interpretation generated','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
+    try{if(!S.aiKey){openSettings();throw new Error('Add the AI interpretation access key in settings first.')}var r=await api('/api/repositories/'+id+'/interpretation?limit=10',{aiKey:true});if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.interpretation=r;setView('interpretation');toast('AI interpretation generated','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){
