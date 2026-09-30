@@ -86,6 +86,7 @@ test("quality workflow starts on push and pull requests and uses the pinned Linu
     "push:",
     "pull_request:",
     "runs-on: ubuntu-latest",
+    "Prepare PostgreSQL and Redis",
     "permissions:",
     "contents: read",
     "cancel-in-progress: true",
@@ -133,6 +134,7 @@ test("evidence retention is configured, indexed and shutdown-aware", () => {
   assert.ok(server.includes("runEvidenceRetentionSweep()"));
   assert.ok(server.includes("clearInterval(evidenceRetentionTimer)"));
   assert.ok(retention.includes("EVIDENCE_RETENTION_BATCH_SIZE = 5_000"));
+  assert.ok(retention.includes("EVIDENCE_RETENTION_MAX_DELETIONS_PER_SWEEP = 20_000"));
   assert.ok(retention.includes("runtime_telemetry_events"));
   assert.ok(retention.includes("deployment_evidence_events"));
   assert.ok(migration.includes("idx_runtime_telemetry_retention_observed_at"));
