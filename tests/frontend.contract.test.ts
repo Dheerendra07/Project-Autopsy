@@ -32,6 +32,8 @@ test("product frontend contains the core evidence workflow", () => {
     'id="testConnection"',
     "function architectureMap(ar)",
     "function openEvidence(id)",
+    "function loadProvenance(deploymentId)",
+    "function reportHtml(rep)",
     "async function testConnection()",
     "sessionStorage.getItem('autopsy.key')",
     "sessionStorage.setItem('autopsy.aiKey'",
