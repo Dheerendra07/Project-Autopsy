@@ -247,3 +247,9 @@ test("AI provider transport remains bounded and redirect-safe", () => {
     )
   );
 });
+
+
+test("private API responses remain non-cacheable", () => {
+  const app = readRepoFile("src/app.ts");
+  assert.ok(app.includes('res.setHeader("Cache-Control", "no-store")'));
+});
