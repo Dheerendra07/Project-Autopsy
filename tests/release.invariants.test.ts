@@ -544,6 +544,51 @@ test("repository cleanup retry loop is bounded and shutdown-aware", () => {
 });
 
 
+test("analysis discovery finishes before current evidence is mutated", () => {
+  const worker = readRepoFile("src/workers/analysis.worker.ts");
+
+  const discoveryStart = worker.indexOf(
+    "const fileChurn = await discoverFileChurn("
+  );
+  const persistenceStart = worker.indexOf(
+    "const persistedCount ="
+  );
+  const complexityStart = worker.indexOf(
+    "const complexityEvolution ="
+  );
+
+  assert.ok(discoveryStart >= 0);
+  assert.ok(persistenceStart > discoveryStart);
+  assert.ok(complexityStart > discoveryStart);
+  assert.ok(
+    persistenceStart >
+      worker.indexOf(
+        "const databaseMigrationEvolution ="
+      )
+  );
+  assert.ok(
+    persistenceStart >
+      worker.indexOf(
+        "const testEvolution = await discoverTestEvolution("
+      )
+  );
+  assert.ok(
+    persistenceStart >
+      worker.indexOf(
+        "const architectureEvolution ="
+      )
+  );
+  assert.ok(
+    worker.indexOf("await replaceFileChangeMetrics(repositoryId, fileChurn)") >
+      persistenceStart
+  );
+  assert.ok(
+    worker.indexOf("await updateAnalysisRun(analysisRunId, \"completed\")") >
+      worker.indexOf("const couplingPairs = await rebuildFileChangeCoupling(")
+  );
+});
+
+
 test("analysis terminal updates preserve existing failure diagnostics when no replacement message is supplied", () => {
   const persistence = readRepoFile(
     "src/modules/repositories/repository.persistence.ts"
