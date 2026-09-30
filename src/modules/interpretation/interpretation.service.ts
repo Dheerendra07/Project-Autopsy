@@ -72,11 +72,72 @@ function sleep(milliseconds: number): Promise<void> {
   });
 }
 
+const MAX_AI_RESPONSE_BYTES = 256 * 1024;
+
+async function readResponseText(
+  response: Response,
+  maxBytes = MAX_AI_RESPONSE_BYTES
+): Promise<string> {
+  const contentLength = Number(response.headers.get("content-length"));
+
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    throw new AiInterpretationProviderError(
+      "AI provider response exceeded the configured size limit."
+    );
+  }
+
+  if (!response.body) {
+    return "";
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      totalBytes += value.byteLength;
+
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new AiInterpretationProviderError(
+          "AI provider response exceeded the configured size limit."
+        );
+      }
+
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return new TextDecoder().decode(combined);
+}
+
 async function readProviderErrorCode(
   response: Response
 ): Promise<string | undefined> {
   try {
-    const body = (await response.clone().json()) as {
+    const raw = await readResponseText(response.clone(), 32 * 1024);
+    if (!raw) {
+      return undefined;
+    }
+
+    const body = JSON.parse(raw) as {
       error?: { code?: unknown };
     };
 
@@ -578,7 +639,17 @@ export async function generateAiInterpretation(
         );
       }
 
-      const body: unknown = await response.json();
+      const raw = await readResponseText(response);
+      let body: unknown;
+
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        throw new AiInterpretationProviderError(
+          "AI provider returned invalid JSON."
+        );
+      }
+
       const rawText = parseProviderResponse(body);
       let parsed: unknown;
 
