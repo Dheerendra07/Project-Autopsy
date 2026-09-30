@@ -199,9 +199,21 @@ function ensureRetryTimeAvailable(
 
 function normalizeBaseUrl(value: string): string {
   const url = new URL(value);
-  if (url.protocol !== "https:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+  const hostname = url.hostname.toLowerCase();
+  const isLocalhost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]";
+
+  if (url.protocol !== "https:" && !isLocalhost) {
     throw new AiInterpretationNotConfiguredError(
       "AI_BASE_URL must use HTTPS unless it targets localhost."
+    );
+  }
+
+  if (url.username || url.password || url.search || url.hash) {
+    throw new AiInterpretationNotConfiguredError(
+      "AI_BASE_URL must not contain credentials, query parameters or fragments."
     );
   }
 
@@ -456,6 +468,7 @@ export async function generateAiInterpretation(
             authorization: "Bearer " + config.apiKey,
             "content-type": "application/json"
           },
+          "redirect": "error",
           body: JSON.stringify({
             model: config.model,
             input: [
