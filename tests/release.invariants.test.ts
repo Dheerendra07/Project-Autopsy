@@ -1044,3 +1044,13 @@ test("architecture discovery reads only bounded directory trees", () => {
   assert.ok(architecture.includes("const treeish = rootPath ? sha + ":" + rootPath : sha;"));
   assert.doesNotMatch(architecture, /"ls-tree", "-r"/);
 });
+
+
+test("complexity cache avoids recursive tree scans for blob identity", () => {
+  const complexity = readRepoFile("src/modules/complexity/complexity.discovery.ts");
+  assert.ok(complexity.includes("async function readBlobSha("));
+  assert.ok(complexity.includes('"rev-parse",'));
+  assert.ok(complexity.includes('"--verify",'));
+  assert.ok(complexity.includes('objectSpec'));
+  assert.doesNotMatch(complexity, /function readBlobShas\(/);
+});
