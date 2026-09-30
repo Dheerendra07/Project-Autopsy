@@ -225,7 +225,7 @@ Preserve all existing API routes, evidence models, migrations, deterministic ana
 
 ## Continuation checkpoint — 2026-10-01 (latest)
 
-main currently ends at commit `089f17d4ae22c978234defc6d41af17b268a8ad7`. Open pull requests: 0.
+Current production code baseline in this checkpoint: `089f17d4ae22c978234defc6d41af17b268a8ad7` (PR #115); subsequent main commits through PR #118 are release-hardening/documentation synchronization commits. Open pull requests: 0.
 
 Verified hardening since the previous checkpoint:
 - frontend repository metadata is refreshed after completed analysis before evidence data is rendered
