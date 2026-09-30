@@ -36,6 +36,8 @@ test("product frontend contains the core evidence workflow", () => {
     "errorMessage: analysis.error_message",
     "function reportHtml(rep)",
     "async function testConnection()",
+    "base+'/ready'",
+    "Database or Redis may be unavailable."
     "async function reloadData()",
     "data-action="reload-data""
     "sessionStorage.getItem('autopsy.key')",
