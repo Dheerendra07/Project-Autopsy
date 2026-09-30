@@ -9,8 +9,10 @@ import { retryRepositoryStorageCleanup } from "./modules/repositories/repository
 export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
 export const HTTP_KEEP_ALIVE_TIMEOUT_MS = 5_000;
+export const REPOSITORY_STORAGE_CLEANUP_INTERVAL_MS = 5 * 60_000;
 
 export let httpServer: Server | undefined;
+let repositoryCleanupTimer: NodeJS.Timeout | undefined;
 let shuttingDown = false;
 
 async function closeResources(): Promise<void> {
@@ -21,6 +23,11 @@ async function closeResources(): Promise<void> {
 }
 
 export async function closeServer(): Promise<void> {
+  if (repositoryCleanupTimer) {
+    clearInterval(repositoryCleanupTimer);
+    repositoryCleanupTimer = undefined;
+  }
+
   if (!httpServer) {
     return;
   }
@@ -88,6 +95,21 @@ export async function startServer(): Promise<void> {
         `✓ Repository storage cleanup: ${cleanup.cleaned}/${cleanup.attempted} cleaned, ${cleanup.pending} pending`
       );
     }
+
+    repositoryCleanupTimer = setInterval(() => {
+      void retryRepositoryStorageCleanup(20)
+        .then((result) => {
+          if (result.attempted > 0) {
+            console.log(
+              `✓ Repository storage cleanup: ${result.cleaned}/${result.attempted} cleaned, ${result.pending} pending`
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Repository storage cleanup sweep failed:", error);
+        });
+    }, REPOSITORY_STORAGE_CLEANUP_INTERVAL_MS);
+    repositoryCleanupTimer.unref();
 
     httpServer = app.listen(env.PORT, "0.0.0.0", () => {
       console.log(
