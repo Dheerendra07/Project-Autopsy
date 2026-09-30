@@ -51,17 +51,36 @@ export async function discoverCommits(
     );
   }
 
-  const output = await git.raw([
-    "log",
-    ...rangeArguments,
-    "--full-history",
-    "--reverse",
-    "--date=iso-strict",
-    "--format=%x1e%H%x1f%P%x1f%an%x1f%ae%x1f%aI%x1f%cn%x1f%ce%x1f%cI%x1f%s",
-    "--name-status",
-    "--no-renames",
-    "-z"
-  ]);
+  const commits: DiscoveredCommit[] = [];
+
+  for (
+    let skip = 0;
+    skip < commitCount;
+    skip += GIT_LOG_PAGE_SIZE
+  ) {
+    const output = await git.raw([
+      "log",
+      ...rangeArguments,
+      "--full-history",
+      "--reverse",
+      "--date=iso-strict",
+      "--format=%x1e%H%x1f%P%x1f%an%x1f%ae%x1f%aI%x1f%cn%x1f%ce%x1f%cI%x1f%s",
+      "--name-status",
+      "--no-renames",
+      "-z",
+      `--skip=${skip}`,
+      `--max-count=${GIT_LOG_PAGE_SIZE}`
+    ]);
+
+    for (const record of output
+      .split(RECORD_SEPARATOR)
+      .map((value) =>
+        value.replace(/^\r?\n/, "").replace(/\r?\n$/, "")
+      )
+      .filter(Boolean)) {
+      commits.push(parseCommitRecord(record));
+    }
+  }
 
   const numstat = await discoverNumstat(git, range);
 
