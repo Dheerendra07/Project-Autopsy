@@ -591,3 +591,10 @@ The frontend runtime explorer was also hardened against failed filter requests c
 The release path was tightened further without adding infrastructure: dependency installation is now performed once per Render/GitHub build (`npm ci` followed by `tsc`), frontend evidence loading is bounded to six concurrent API requests, and runtime filter/connection failures preserve existing UI state where possible.
 
 The quality workflow now uses least-privilege read permissions, cancels superseded runs, and enforces a 45-minute job timeout. A dedicated release-invariant test suite validates the package/build contract, Render Blueprint expectations, CI gate markers, frontend dependency/security boundary, and primary workspace views.
+
+
+## CI runner isolation result — 2026-09-30
+
+Two controlled pull-request runner experiments were executed without product changes. The first used `ubuntu-22.04`; the second used `ubuntu-24.04`. Both workflow jobs completed with `failure` while reporting `steps: null`, and GitHub did not expose a job log blob. The failure therefore occurs before the repository workflow steps execute.
+
+Both experiments were closed and neither was merged into `main`. The production branch remains on the pinned `ubuntu-22.04` workflow configuration; application validation remains independently corroborated by successful Render TypeScript builds.
