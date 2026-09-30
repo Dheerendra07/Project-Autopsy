@@ -458,6 +458,25 @@ test("analysis state policy and migration serialization remain explicit", () => 
 });
 
 
+test("public analysis errors are bounded and sanitized", () => {
+  const sanitizer = readRepoFile("src/modules/analysis/analysis-error.ts");
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const worker = readRepoFile("src/workers/analysis.worker.ts");
+
+  assert.ok(
+    sanitizer.includes("MAX_PUBLIC_ANALYSIS_ERROR_LENGTH = 1_000")
+  );
+  assert.ok(sanitizer.includes("<managed-path>"));
+  assert.ok(
+    sanitizer.includes(
+      ".slice(0, MAX_PUBLIC_ANALYSIS_ERROR_LENGTH - 1)"
+    )
+  );
+  assert.ok(routes.includes("sanitizePublicAnalysisErrorMessage("));
+  assert.ok(worker.includes("sanitizePublicAnalysisErrorMessage("));
+});
+
+
 test("AI provider transport remains bounded and redirect-safe", () => {
   const source = readRepoFile("src/modules/interpretation/interpretation.service.ts");
 
