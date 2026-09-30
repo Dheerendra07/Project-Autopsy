@@ -170,6 +170,14 @@ test("frontend dedicated evidence tables expose direct inspection hooks", () => 
   }
 });
 
+test("frontend quality workspace renders refactor evidence", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("Refactor signals"));
+  assert.ok(html.includes('inspectButton("Refactor signal "'));
+  assert.ok(html.includes("Commit-subject heuristic signals; not proof of intent"));
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
