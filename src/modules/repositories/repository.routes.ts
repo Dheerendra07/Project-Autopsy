@@ -2,17 +2,16 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
+  deleteRepositoryWithStorage,
   getRepositoryNameFromUrl,
   getRepositoryStoragePath,
-  isSafeBranchName,
-  removeRepositoryStoragePath
+  isSafeBranchName
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
   createAnalysisRunForRepository,
   createPendingRepositoryWithAnalysis,
   createRepositoryWithAnalysis,
-  deleteRepositoryById,
   getActiveAnalysisRun,
   getAnalysisRunById,
   getRepositoryById,
@@ -281,9 +280,9 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
 router.delete("/:repositoryId", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
-    const repository = await getRepositoryById(repositoryId);
+    const result = await deleteRepositoryWithStorage(repositoryId);
 
-    if (!repository) {
+    if (result.status === "not_found") {
       res.status(404).json({
         success: false,
         error: {
@@ -294,56 +293,14 @@ router.delete("/:repositoryId", async (req, res, next) => {
       return;
     }
 
-    const activeRun = await getActiveAnalysisRun(repositoryId);
-
-    if (activeRun) {
+    if (result.status === "blocked") {
       res.status(409).json({
         success: false,
         error: {
           code: "REPOSITORY_DELETE_BLOCKED",
           message:
             "Repository deletion is blocked while an analysis is queued or running.",
-          analysisRunId: activeRun.id
-        }
-      });
-      return;
-    }
-
-    if (repository.storage_path) {
-      try {
-        await removeRepositoryStoragePath(repository.storage_path);
-      } catch (error) {
-        console.error(
-          `Failed to remove repository storage before deleting ${repositoryId}:`,
-          error
-        );
-
-        res.status(500).json({
-          success: false,
-          error: {
-            code: "REPOSITORY_STORAGE_DELETE_FAILED",
-            message:
-              "Repository data could not be fully removed. The repository was not deleted."
-          }
-        });
-        return;
-      }
-    }
-
-    const deleted = await deleteRepositoryById(repositoryId);
-
-    if (!deleted) {
-      if (repository.storage_path) {
-        console.warn(
-          `Repository ${repositoryId} storage was removed, but the database row was not deleted.`
-        );
-      }
-
-      res.status(404).json({
-        success: false,
-        error: {
-          code: "REPOSITORY_NOT_FOUND",
-          message: "Repository not found."
+          analysisRunId: result.analysisRunId
         }
       });
       return;
@@ -353,7 +310,7 @@ router.delete("/:repositoryId", async (req, res, next) => {
       success: true,
       repositoryId,
       deleted: true,
-      storageDeleted: repository.storage_path !== null
+      storageDeleted: result.storageDeleted
     });
   } catch (error) {
     next(error);
