@@ -26,6 +26,7 @@ test("product frontend contains the core evidence workflow", () => {
     'data-view="interview"',
     'data-view="interpretation"',
     'data-view="evidence"',
+    'data-view="contributors"',
     'id="evidenceSearch"',
     'id="drawer"',
     'id="testConnection"',
