@@ -121,7 +121,7 @@ Windows local Docker is not currently available on the development machine (`doc
 
 ## Continuation checkpoint
 
-Current verified main baseline: 4bae2df511ce741580a6781c8f01385cd05c63b7.
+Current verified main baseline: 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60.
 
 The current main baseline includes:
 - runtime telemetry with PostgreSQL-backed integration verification
@@ -189,6 +189,18 @@ Recent verified merge sequence for this continuation:
 - PR #85 — cooperative analysis worker deadline
 - PR #86 — post-deadline hardening checkpoint synchronization
 - PR #87 — final production execution-time bounds
+- PR #88 — production hardening checkpoint documentation
+- PR #89 — final release-readiness checkpoint documentation
+- PR #90 — zero-cost single-service Render deployment
+- PR #94 — direct evidence drill-downs in the frontend
+- PR #98 — same-origin frontend delivery
+- PR #99 — accurate configured-versus-verified connection state
+- PR #100 — hardened free Render delivery path
+- PR #101 — newest-first history and safe 404 responses
+- PR #102 — runtime filter reset on repository change
+- PR #103 — sanitized public analysis failure diagnostics
+- PR #104 — stale saved workspace self-recovery
+- PR #105 — preserve evidence when analysis discovery fails
 
 Final integrated verification on main:
 - GitHub Actions typecheck: passed
@@ -691,3 +703,29 @@ Error middleware no longer logs raw parser/application error objects. Request fa
 The cleanup retry loop now serializes ledger processing inside a database transaction with row locks, while retaining the retry-safe filesystem semantics. Analysis terminal timestamps are idempotent and prior failure diagnostics are preserved when a repeated transition has no replacement message.
 
 CI remains externally blocked before workflow steps execute: the latest push-triggered quality runs terminate with the `typecheck-build` job at `failure` and `steps: null`. No project command failure has been observed from those runs, so CI is not being represented as a code regression.
+
+
+## Continuation checkpoint — 2026-10-01
+
+main currently ends at commit 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60 (PR #105).
+
+Verified continuation hardening now present after PR #87:
+- release-readiness documentation was updated through the production checkpoint
+- the frontend is served by the same web service and uses a same-origin API base by default
+- the frontend distinguishes configured credentials from verified API connectivity
+- runtime filters are cleared when the active repository changes or is deleted
+- history/report samples use newest-first commit ordering while the timeline remains chronological
+- unknown-route 404 responses no longer reflect query strings
+- public analysis failure diagnostics are bounded and sanitized at persistence and API boundaries
+- stale saved repository/analysis workspace state self-heals after missing-resource 404s
+- analysis discovery completes before persisted repository evidence is mutated, preventing later discovery-stage failures from overwriting the last persisted evidence snapshot
+
+Current verification constraint:
+- no CI status is attached to the current PR #105 merge commit through the GitHub status/workflow endpoints currently available to this session
+- the existing repository documentation records a GitHub-hosted runner/provisioning failure as the blocker for automated workflow execution; this is an infrastructure verification limitation, not evidence of an application test failure
+
+Continuation rule:
+- treat commit 6418e68dc7cf434bfcbe17fa66da6b13e1e8ca60 as the current code baseline
+- do not restart or rework merged features
+- next engineering work must target remaining release/runtime/user-facing gaps only
+- any new change must preserve evidence-first semantics, deterministic report fingerprints, security boundaries, explicit evidence gaps, bounded execution, and the current free single-service deployment contract
