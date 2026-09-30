@@ -997,6 +997,11 @@ export function classifyDatabaseMigrationSource(
   };
 }
 
+export function isMissingGitPathError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /path .* does not exist in/i.test(message);
+}
+
 async function readMigrationAtCommit(
   git: ReturnType<typeof simpleGit>,
   sha: string,
@@ -1004,8 +1009,12 @@ async function readMigrationAtCommit(
 ): Promise<string | null> {
   try {
     return await git.show([sha + ":" + filePath]);
-  } catch {
-    return null;
+  } catch (error) {
+    if (isMissingGitPathError(error)) {
+      return null;
+    }
+
+    throw error;
   }
 }
 
