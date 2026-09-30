@@ -150,7 +150,7 @@ A co-change count means both file paths were changed in the same persisted Git c
 
 Code-complexity API: GET /api/repositories/:repositoryId/complexity?limit=100
 
-Complexity evidence is derived from TypeScript AST parsing for .ts, .tsx, .js, .jsx, .mjs, and .cjs files. The analyzer records source line count, function count, class count, cyclomatic complexity, and maximum control-flow nesting depth for changed files.
+Complexity evidence is derived from TypeScript AST parsing for .ts, .tsx, .js, .jsx, .mjs, and .cjs files. The analyzer records source line count, function count, class count, cyclomatic complexity, and maximum control-flow nesting depth for changed files. Complexity cache blob identity is resolved for the exact changed path instead of scanning every blob in each commit.
 
 The API exposes before/after values and deterministic deltas. Deleted files are represented explicitly, while parse failures and oversized source files remain marked instead of receiving fabricated metrics.
 
