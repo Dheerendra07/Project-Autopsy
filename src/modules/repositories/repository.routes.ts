@@ -295,7 +295,7 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
         completedAt: analysis.completed_at,
         errorMessage: sanitizePublicAnalysisErrorMessage(
           analysis.error_message,
-          (await getRepositoryById(repositoryId))?.storage_path ?? null
+          getRepositoryStoragePath(repositoryId)
         )
       }
     });
