@@ -143,6 +143,73 @@ test("derives commit-level additions and deletions from numstat", () => {
 });
 
 
+test("preserves tab and newline filenames during commit discovery", async () => {
+  const repositoryPath = await mkdtemp(
+    path.join(tmpdir(), "project-autopsy-special-paths-")
+  );
+
+  try {
+    const git = simpleGit(repositoryPath);
+
+    await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    await writeFile(
+      path.join(repositoryPath, "baseline.txt"),
+      "baseline\n",
+      "utf8"
+    );
+    await git.add(".");
+
+    await git.commit("baseline");
+
+    const tabPath = "file\twith\ttab.ts";
+    const newlinePath = "file\nwith\nnewline.ts";
+
+    await writeFile(
+      path.join(repositoryPath, tabPath),
+      "export const tab = true;\n",
+      "utf8"
+    );
+    await writeFile(
+      path.join(repositoryPath, newlinePath),
+      "export const newline = true;\n",
+      "utf8"
+    );
+    await git.add(".");
+    await git.commit("add unusual paths");
+
+    const commits = await discoverCommits(repositoryPath);
+    const latest = commits.at(-1);
+
+    assert.ok(latest);
+    assert.equal(latest?.subject, "add unusual paths");
+    assert.ok(
+      latest?.files.some((file) => file.path === tabPath)
+    );
+    assert.ok(
+      latest?.files.some((file) => file.path === newlinePath)
+    );
+
+    const tabFile = latest?.files.find(
+      (file) => file.path === tabPath
+    );
+    const newlineFile = latest?.files.find(
+      (file) => file.path === newlinePath
+    );
+
+    assert.ok(tabFile);
+    assert.ok(newlineFile);
+    assert.equal(tabFile.additions, 1);
+    assert.equal(newlineFile.additions, 1);
+    assert.equal(tabFile.deletions, 0);
+    assert.equal(newlineFile.deletions, 0);
+  } finally {
+    await rm(repositoryPath, { recursive: true, force: true });
+  }
+});
+
 test("discovers only commits after the supplied base head", async () => {
   const repositoryPath = await mkdtemp(
     path.join(tmpdir(), "project-autopsy-range-")
