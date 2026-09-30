@@ -175,6 +175,113 @@ test("authenticated unknown API routes reach the API not-found contract", async 
   });
 });
 
+
+
+test("protected repository routes reject malformed UUIDs with the validation contract", async () => {
+  const response = await fetch(
+    baseUrl + "/api/repositories/not-a-uuid/commits",
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  const body = await response.json() as {
+    success: boolean;
+    error: { code: string; message: string; issues: unknown[] };
+  };
+
+  assert.equal(body.success, false);
+  assert.equal(body.error.code, "VALIDATION_ERROR");
+  assert.equal(body.error.message, "Request validation failed.");
+  assert.ok(Array.isArray(body.error.issues));
+});
+
+test("commit pagination rejects zero and oversized limits before persistence access", async () => {
+  for (const query of ["page=0&limit=50", "page=1&limit=101"]) {
+    const response = await fetch(
+      baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/commits?" + query,
+      {
+        headers: {
+          "x-autopsy-api-key": TEST_API_KEY
+        }
+      }
+    );
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      error: { code: string; issues: unknown[] };
+    };
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.ok(body.error.issues.length > 0);
+  }
+});
+
+test("runtime telemetry rejects a non-chronological date window", async () => {
+  const response = await fetch(
+    baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  const body = await response.json() as {
+    error: { code: string; issues: Array<{ message: string }> };
+  };
+  assert.equal(body.error.code, "VALIDATION_ERROR");
+  assert.ok(
+    body.error.issues.some((issue) =>
+      /from must be earlier than to/i.test(issue.message)
+    )
+  );
+});
+
+test("runtime telemetry rejects invalid revision filter shape", async () => {
+  const response = await fetch(
+    baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?revisionSha=abc",
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 400);
+  const body = await response.json() as {
+    error: { code: string; issues: unknown[] };
+  };
+  assert.equal(body.error.code, "VALIDATION_ERROR");
+  assert.ok(body.error.issues.length > 0);
+});
+
+test("report and interpretation endpoints reject limits outside their bounded range", async () => {
+  for (const route of [
+    "/api/repositories/00000000-0000-4000-8000-000000000999/report?limit=0",
+    "/api/repositories/00000000-0000-4000-8000-000000000999/report?limit=51",
+    "/api/repositories/00000000-0000-4000-8000-000000000999/interpretation?limit=0",
+    "/api/repositories/00000000-0000-4000-8000-000000000999/interpretation?limit=51"
+  ]) {
+    const response = await fetch(baseUrl + route, {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY,
+        "x-autopsy-ai-access-key": "test-ai-key"
+      }
+    });
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      error: { code: string; issues: unknown[] };
+    };
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.ok(body.error.issues.length > 0);
+  }
+});
+
 test("analysis status endpoint returns a scoped not-found contract", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const analysisRunId = "00000000-0000-4000-8000-000000000998";
