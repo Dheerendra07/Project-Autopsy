@@ -84,7 +84,7 @@ The import endpoint returns `202 Accepted`. Clone and initial analysis execute i
 
 Poll a specific asynchronous analysis run with `GET /api/repositories/:repositoryId/analysis/:analysisRunId`. The response exposes the persisted run status, mode, analyzer version, base head, target head, and lifecycle timestamps without exposing worker-local storage paths.
 
-List the bounded analysis-run history with `GET /api/repositories/:repositoryId/analysis-runs?page=1&limit=20`. The response is ordered newest-first and exposes the persisted lifecycle state and sanitized failure diagnostics without exposing worker-local storage paths.
+List the bounded analysis-run history with `GET /api/repositories/:repositoryId/analysis-runs?page=1&limit=20`. The response is ordered newest-first and exposes the persisted lifecycle state and sanitized failure diagnostics without exposing worker-local storage paths. The frontend overview can load older pages without starting a new analysis.
 
 ## Evidence policy
 
