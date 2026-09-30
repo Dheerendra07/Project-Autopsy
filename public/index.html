@@ -139,8 +139,11 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     var request=Object.assign({},opt||{},{headers:h,signal:controller.signal});
     try{
       var r=await fetch(S.api.replace(/\/$/,'')+path,request);
-      var t=await r.text(),b=null;try{b=t?JSON.parse(t):null}catch(e){b={raw:t}}
+      var t=await r.text(),b=null,isJson=true;
+      try{b=t?JSON.parse(t):null}catch(e){isJson=false}
       if(!r.ok)throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+')');
+      if(!isJson)throw new Error('API returned an invalid JSON response ('+r.status+').');
+      if(!b||typeof b!=='object'||Array.isArray(b))throw new Error('API returned an invalid response body ('+r.status+').');
       return b;
     }catch(e){
       if(e&&e.name==='AbortError')throw new Error('Request timed out after 20 seconds.');
