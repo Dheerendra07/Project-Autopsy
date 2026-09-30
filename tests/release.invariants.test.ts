@@ -871,3 +871,14 @@ test("frontend health probes do not attach privileged API credentials", () => {
     /x-autopsy-api-key/
   );
 });
+
+
+test("production-smoke workflow validates its production credential before checkout", () => {
+  const workflow = readRepoFile(".github/workflows/production-smoke.yml");
+  const validation = workflow.indexOf("Validate production credential");
+  const checkout = workflow.indexOf("name: Checkout");
+  assert.ok(validation >= 0);
+  assert.ok(checkout > validation);
+  assert.ok(workflow.includes('test -n "$AUTOPSY_API_ACCESS_KEY"'));
+  assert.ok(workflow.includes('test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32'));
+});
