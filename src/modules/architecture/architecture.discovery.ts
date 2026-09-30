@@ -83,34 +83,30 @@ async function listDirectoriesAtCommit(
   sha: string,
   rootPath: string
 ): Promise<string[]> {
-  try {
-    const output = await git.raw(["ls-tree", "-r", "--name-only", sha]);
-    const prefix = rootPath ? `${rootPath}/` : "";
-    const directories = new Set<string>();
+  const output = await git.raw(["ls-tree", "-r", "--name-only", sha]);
+  const prefix = rootPath ? `${rootPath}/` : "";
+  const directories = new Set<string>();
 
-    for (const rawPath of output.split(new RegExp("\\r?\\n"))) {
-      const filePath = rawPath.trim();
+  for (const rawPath of output.split(new RegExp("\\r?\\n"))) {
+    const filePath = rawPath.trim();
 
-      if (!filePath || (prefix && !filePath.startsWith(prefix))) {
-        continue;
-      }
-
-      const relative = prefix
-        ? filePath.slice(prefix.length)
-        : filePath;
-      const segments = relative.split("/").filter(Boolean);
-
-      if (segments.length < 2) {
-        continue;
-      }
-
-      directories.add(segments[0]!);
+    if (!filePath || (prefix && !filePath.startsWith(prefix))) {
+      continue;
     }
 
-    return [...directories].sort((a, b) => a.localeCompare(b));
-  } catch {
-    return [];
+    const relative = prefix
+      ? filePath.slice(prefix.length)
+      : filePath;
+    const segments = relative.split("/").filter(Boolean);
+
+    if (segments.length < 2) {
+      continue;
+    }
+
+    directories.add(segments[0]!);
   }
+
+  return [...directories].sort((a, b) => a.localeCompare(b));
 }
 
 export function diffDirectorySets(
