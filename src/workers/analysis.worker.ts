@@ -8,6 +8,7 @@ import {
   getAnalysisRunById,
   getLatestCompletedAnalysisRun,
   getRepositoryById,
+  getRepositoryStoragePath,
   persistCommitBatch,
   setAnalysisRunPlan,
   setAnalysisRunTargetHead,
@@ -68,6 +69,7 @@ import {
 import { prepareRepositoryStorageForAnalysis } from "../modules/analysis/storage-recovery.js";
 import { classifyAnalysisJobRecovery } from "../modules/analysis/job-recovery.js";
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
+import { sanitizePublicAnalysisErrorMessage } from "../modules/analysis/analysis-error.js";
 
 export const ANALYSIS_WORKER_LOCK_DURATION_MS = 120_000;
 export const ANALYSIS_WORKER_STALLED_INTERVAL_MS = 30_000;
@@ -562,11 +564,16 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         couplingPairs: couplingPairs
       };
       } catch (error) {
-        const message = deadline.expired
-          ? "Analysis exceeded the configured time limit."
-          : error instanceof Error
-            ? error.message
-            : "Unknown analysis error";
+        const rawMessage = deadline.expired
+        ? "Analysis exceeded the configured time limit."
+        : error instanceof Error
+          ? error.message
+          : "Unknown analysis error";
+      const message =
+        sanitizePublicAnalysisErrorMessage(
+          rawMessage,
+          getRepositoryStoragePath(repositoryId)
+        ) ?? "Analysis failed.";
 
       const maxAttempts = job.opts.attempts ?? 1;
       const willRetry = job.attemptsMade + 1 < maxAttempts;

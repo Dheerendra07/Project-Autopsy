@@ -27,6 +27,7 @@ import {
   enqueueRepositoryRefresh
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
+import { sanitizePublicAnalysisErrorMessage } from "../analysis/analysis-error.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
 import { classifyRefactorSignal } from "../refactors/refactor-signals.js";
 import { listFileChangeCoupling } from "../coupling/coupling.persistence.js";
@@ -102,10 +103,15 @@ router.post("/import", async (req, res, next) => {
         }
       });
     } catch (error) {
-      const message =
+      const rawMessage =
         error instanceof Error
           ? error.message
           : "Failed to queue repository import.";
+      const message =
+        sanitizePublicAnalysisErrorMessage(
+          rawMessage,
+          getRepositoryStoragePath(repositoryId)
+        ) ?? "Failed to queue repository import.";
 
       try {
         await updateAnalysisRun(repository.analysisRunId, "failed", {
@@ -230,8 +236,15 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
         }
       });
     } catch (error) {
+      const rawMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to queue repository refresh.";
       const message =
-        error instanceof Error ? error.message : "Failed to queue repository refresh.";
+        sanitizePublicAnalysisErrorMessage(
+          rawMessage,
+          repository.storage_path
+        ) ?? "Failed to queue repository refresh.";
 
       try {
         await updateAnalysisRun(analysisRunId, "failed", {
@@ -280,7 +293,10 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
         targetHeadSha: analysis.target_head_sha,
         startedAt: analysis.started_at,
         completedAt: analysis.completed_at,
-        errorMessage: analysis.error_message
+        errorMessage: sanitizePublicAnalysisErrorMessage(
+          analysis.error_message,
+          getRepositoryStoragePath(repositoryId)
+        )
       }
     });
   } catch (error) {
