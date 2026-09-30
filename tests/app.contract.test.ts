@@ -161,6 +161,27 @@ test("API root accepts the configured bearer credential", async () => {
   });
 });
 
+test("authenticated unknown API routes do not reflect query strings", async () => {
+  const response = await fetch(
+    baseUrl + "/api/not-a-real-route?secret=should-not-echo",
+    {
+      headers: {
+        "x-autopsy-api-key": TEST_API_KEY
+      }
+    }
+  );
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "ROUTE_NOT_FOUND",
+      message: "Route not found: GET /api/not-a-real-route"
+    }
+  });
+});
+
+
 test("authenticated unknown API routes reach the API not-found contract", async () => {
   const response = await fetch(`${baseUrl}/api/not-a-real-route`, {
     headers: {
