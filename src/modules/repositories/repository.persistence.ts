@@ -363,6 +363,57 @@ export async function getAnalysisRunById(
   return result.rows[0] ?? null;
 }
 
+export async function listAnalysisRuns(
+  repositoryId: string,
+  page: number,
+  limit: number
+): Promise<{ runs: StoredAnalysisRun[]; total: number }> {
+  const offset = (page - 1) * limit;
+
+  const [rowsResult, countResult] = await Promise.all([
+    db.query<StoredAnalysisRun>(
+      `
+        SELECT
+          id,
+          repository_id,
+          analyzer_version,
+          analysis_mode,
+          base_head_sha,
+          target_head_sha,
+          status,
+          started_at,
+          completed_at,
+          error_message
+        FROM analysis_runs
+        WHERE repository_id = $1
+        ORDER BY created_at DESC, id DESC
+        LIMIT $2
+        OFFSET $3
+      `,
+      [repositoryId, limit, offset]
+    ),
+    db.query<{ count: string }>(
+      `
+        SELECT COUNT(*)::text AS count
+        FROM analysis_runs
+        WHERE repository_id = $1
+      `,
+      [repositoryId]
+    )
+  ]);
+
+  const countRow = countResult.rows[0];
+
+  if (!countRow) {
+    throw new Error("Failed to count repository analysis runs.");
+  }
+
+  return {
+    runs: rowsResult.rows,
+    total: Number.parseInt(countRow.count, 10)
+  };
+}
+
 export async function getActiveAnalysisRun(
   repositoryId: string
 ): Promise<StoredAnalysisRun | null> {
