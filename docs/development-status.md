@@ -575,3 +575,12 @@ The quality workflow now pins the GitHub-hosted runner to `ubuntu-22.04` as a co
 The Evidence Explorer now includes bounded samples from the remaining high-value persisted evidence families: timeline classification, hotspots, architecture, dependencies, complexity, coupling, bug-area signals, repeated modifications, refactor signals, database migrations, test evolution, runtime telemetry, deployment evidence, and contributors.
 
 Each row remains directly inspectable through the existing evidence drawer. The explorer intentionally uses bounded samples; dedicated views retain their own pagination and filtering controls for larger datasets.
+
+
+## Adversarial hardening pass — 2026-09-30
+
+A dedicated edge-case layer was added around repository URL validation, runtime telemetry ingestion, HTTP query validation, import boundaries, and API/AI authentication.
+
+Coverage now includes malformed/unsupported repository URLs, embedded credentials, query/hash injection, exact and over-limit telemetry fields, malformed trace/span IDs, HTTP status semantics, timestamp boundary behavior, duplicate event IDs, JSON serialization limits, deterministic payload hashes, 500-event batches, malformed repository IDs, pagination bounds, invalid runtime date windows/revision filters, bounded report/interpretation limits, authentication fallback/precedence, and production fail-closed behavior.
+
+The frontend runtime explorer was also hardened against failed filter requests clearing the currently visible dataset, and connection probes now have a bounded timeout. Overview surfaces when persisted repository head differs from the analyzed target so stale analysis is explicit.
