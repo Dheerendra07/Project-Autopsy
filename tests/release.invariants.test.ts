@@ -916,6 +916,8 @@ test("API rate limiter remains bounded and fail-open", () => {
   assert.ok(middleware.includes("API_RATE_LIMIT_HEAVY_MAX_REQUESTS = 12"));
   assert.ok(middleware.includes("RATE_LIMIT_EXCEEDED"));
   assert.ok(middleware.includes("API rate limiter failed open"));
+  assert.ok(app.includes('app.set("trust proxy", 1)'));
   assert.ok(app.includes('app.use("/api", rateLimitMiddleware)'));
+  assert.ok(middleware.includes("resolveRateLimitCategory"));
   assert.ok(example.includes("API_RATE_LIMIT_WINDOW_SECONDS=60"));
 });
