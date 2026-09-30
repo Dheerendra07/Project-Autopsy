@@ -4,6 +4,7 @@ import { app } from "./app.js";
 import { env } from "./config/env.js";
 import { db, checkDatabaseConnection } from "./config/database.js";
 import { redis, checkRedisConnection } from "./config/redis.js";
+import { retryRepositoryStorageCleanup } from "./modules/repositories/repository.service.js";
 
 export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
@@ -80,6 +81,13 @@ export async function startServer(): Promise<void> {
 
     await checkRedisConnection();
     console.log("✓ Redis connected");
+
+    const cleanup = await retryRepositoryStorageCleanup(20);
+    if (cleanup.attempted > 0) {
+      console.log(
+        `✓ Repository storage cleanup: ${cleanup.cleaned}/${cleanup.attempted} cleaned, ${cleanup.pending} pending`
+      );
+    }
 
     httpServer = app.listen(env.PORT, "0.0.0.0", () => {
       console.log(
