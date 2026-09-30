@@ -21,7 +21,7 @@ test("package remains private and exposes bounded production commands", () => {
   assert.equal(pkg.type, "module");
   assert.equal(
     pkg.scripts?.build,
-    "npm install --include=dev --no-audit --no-fund && tsc"
+    "tsc"
   );
   assert.equal(pkg.scripts?.typecheck, "tsc --noEmit");
   assert.equal(pkg.scripts?.test, "tsx --test tests/*.test.ts");
