@@ -77,28 +77,17 @@ function isBodyParserError(error: unknown): error is BodyParserError & { status:
 
   const candidate = error as BodyParserError;
   const type = String(candidate.type ?? "");
-  const statusValue = Number(candidate.status ?? candidate.statusCode);
-
-  if (
-    type === "entity.too.large" ||
-    statusValue === 413
-  ) {
+  if (type === "entity.too.large") {
     candidate.status = 413;
     return true;
   }
 
-  if (
-    type === "encoding.unsupported" ||
-    statusValue === 415
-  ) {
+  if (type === "encoding.unsupported") {
     candidate.status = 415;
     return true;
   }
 
-  if (
-    type === "entity.parse.failed" ||
-    statusValue === 400
-  ) {
+  if (type === "entity.parse.failed") {
     candidate.status = 400;
     return true;
   }
