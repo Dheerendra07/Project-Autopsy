@@ -64,13 +64,16 @@ Worker-local repository storage is treated as ephemeral. If a tracked repository
 
 ## Production deployment
 
-Render deployment is represented by a repository-level Blueprint:
-- public web API service
-- background worker service
-- Render Postgres
-- Render Key Value for BullMQ/cache
+Render deployment is represented by a single free web service:
+- serves the browser workspace from public/index.html
+- exposes the HTTP API
+- starts the BullMQ analysis worker through the combined runtime
 
-Production database migrations run as a paid web-service pre-deploy command. Hosted API traffic binds explicitly to 0.0.0.0.
+The service runs database migrations before the combined runtime starts and binds HTTP traffic to 0.0.0.0. PostgreSQL and Redis are external dependencies supplied through DATABASE_URL and REDIS_URL, so the Blueprint does not require a paid Render database or Key Value resource.
+
+Repository working copies are intentionally ephemeral on the hosting filesystem. Persisted repository metadata and analysis state remain in PostgreSQL; the worker can rehydrate a missing repository clone from its stored source URL and tracked branch after a restart or redeploy.
+
+The browser workspace defaults its API base to the current origin, so the deployed service does not depend on a hardcoded frontend/API hostname.
 
 ## Security boundary
 

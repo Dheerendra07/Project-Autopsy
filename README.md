@@ -292,6 +292,10 @@ Render web services must listen on 0.0.0.0; Project Autopsy binds explicitly to 
 
 ## Release readiness
 
-The current main baseline is the verified release-ready code checkpoint. GitHub Actions covers typecheck, build, PostgreSQL migrations, migration idempotency, the full test suite, real import -> analysis -> report acceptance, API startup/health, and worker startup/shutdown smoke checks.
+The current main branch is the source-of-truth application checkpoint. The repository contains automated quality checks for typechecking, builds, migrations, tests, end-to-end acceptance, API startup, and worker startup.
 
-The remaining steps are environment-specific rather than missing product functionality: local PostgreSQL/Redis verification requires Docker on the development machine, and the first hosted Render deployment still needs real production secrets, allowed browser origins, and external runtime/deployment evidence sources to be configured.
+GitHub-hosted Actions execution is an environment-level dependency for those checks; when hosted-runner execution is unavailable, that does not change the application contract or the persisted evidence model.
+
+The Render Blueprint is designed as a zero-cost single web service: the same service serves the browser workspace from public/index.html, exposes the API, and runs the BullMQ analysis worker in the combined runtime. PostgreSQL and Redis are supplied through DATABASE_URL and REDIS_URL. The service uses /health for hosting health checks, while production API access and optional evidence ingestion/AI features remain protected by environment-configured credentials.
+
+The remaining hosted setup work is environment-specific: supply the required production connection strings and secrets in the deployment platform, then perform the first real import -> analysis -> report smoke test against the live service.

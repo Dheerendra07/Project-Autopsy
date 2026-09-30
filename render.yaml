@@ -6,7 +6,7 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: node dist/database/migrate.js && node dist/free-runtime.js
     healthCheckPath: /health
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
