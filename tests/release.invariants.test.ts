@@ -132,7 +132,7 @@ test("frontend script remains dependency-free, parseable and key-gated", () => {
   const appJs = readRepoFile("public/app.js");
 
   assert.doesNotThrow(() => new Function(appJs));
-  assert.ok(html.includes('<script src="/app.js" defer></script>'));
+  assert.ok(html.includes('<script src="app.js" defer></script>'));
   assert.ok(appJs.includes("function storageGet(key)"));
   assert.ok(appJs.includes("function storageSet(key,value)"));
   assert.ok(appJs.includes("storageGet('autopsy.key')"));
