@@ -1,6 +1,4 @@
 import type { NextFunction, Request, Response } from "express";
-import type { Redis } from "ioredis";
-
 export const API_RATE_LIMIT_WINDOW_SECONDS = 60;
 export const API_RATE_LIMIT_MAX_REQUESTS = 120;
 export const API_RATE_LIMIT_HEAVY_MAX_REQUESTS = 12;
@@ -28,14 +26,16 @@ export function resolveRateLimitCategory(req: Request): RateLimitCategory {
   const path = req.path;
 
   if (
-    (req.method === "POST" || req.method === "GET") &&
-    (
-      path === "/repositories/import" ||
-      /^\/repositories\/[0-9a-f-]+\/analyze$/i.test(path) ||
-      path === "/repositories/:repositoryId/report" ||
-      /^\/repositories\/[0-9a-f-]+\/report$/i.test(path) ||
-      /^\/repositories\/[0-9a-f-]+\/interpretation$/i.test(path)
-    )
+    (req.method === "POST" &&
+      (
+        path === "/repositories/import" ||
+        /^\/repositories\/[0-9a-f-]+\/analyze$/i.test(path)
+      )) ||
+    (req.method === "GET" &&
+      (
+        /^\/repositories\/[0-9a-f-]+\/report$/i.test(path) ||
+        /^\/repositories\/[0-9a-f-]+\/interpretation$/i.test(path)
+      ))
   ) {
     return "heavy";
   }
