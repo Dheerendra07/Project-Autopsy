@@ -87,6 +87,8 @@ app.get("/ready", async (_req, res) => {
 });
 
 app.use("/api", (req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+
   if (
     !isApiAccessAuthorized(
       req.header("authorization"),
