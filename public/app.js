@@ -351,6 +351,49 @@
   $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false)}
-  async function boot(){S.connectionState=S.key?'configured':'unknown';connected(S.connectionState);if(S.repoId&&S.runId&&S.key){var token=S.workspaceToken,id=S.repoId,runId=S.runId;try{S.repo=await getRepo(id);if(token!==S.workspaceToken||id!==S.repoId)return;workspace();var analysis=await getRun(id,runId);if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.analysis=analysis;if(S.analysis.status==='completed'){await loadData();if(token===S.workspaceToken&&id===S.repoId)setView(S.view)}else{setView('overview');poll()}return}catch(e){toast(e.message||'Saved workspace could not be restored. Reconnect in Settings.','warn')}}landing()}
+  async function boot(){
+    S.connectionState=S.key?'configured':'unknown';connected(S.connectionState);
+    if(S.repoId&&S.runId&&S.key){
+      var token=S.workspaceToken,id=S.repoId,runId=S.runId;
+      try{
+        S.repo=await getRepo(id);
+        if(token!==S.workspaceToken||id!==S.repoId)return;
+        workspace();
+        var analysis=await getRun(id,runId);
+        if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;
+        S.analysis=analysis;
+        if(S.analysis.status==='completed'){
+          await loadData();
+          if(token===S.workspaceToken&&id===S.repoId)setView(S.view);
+        }else{
+          setView('overview');poll();
+        }
+        return;
+      }catch(e){
+        var message=e&&e.message?String(e.message):'Saved workspace could not be restored.';
+        if(message.indexOf('Request failed (404).')===0){
+          S.workspaceToken+=1;
+          S.commitLoadToken+=1;
+          clearInterval(S.timer);
+          S.timer=null;
+          S.repoId='';
+          S.runId='';
+          S.repo=null;
+          S.analysis=null;
+          S.data={};
+          S.dataErrors=[];
+          S.evidence=[];
+          S.runtimeEvents=[];
+          S.runtimePagination=null;
+          S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};
+          persist();
+          toast('Saved workspace no longer exists. Start a new repository analysis.','warn');
+        }else{
+          toast(message,'warn');
+        }
+      }
+    }
+    landing()
+  }
   boot()
 })();
