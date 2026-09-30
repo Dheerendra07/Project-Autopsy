@@ -306,11 +306,12 @@ router.delete("/:repositoryId", async (req, res, next) => {
       return;
     }
 
-    res.json({
+    res.status(result.cleanupPending ? 202 : 200).json({
       success: true,
       repositoryId,
       deleted: true,
-      storageDeleted: result.storageDeleted
+      storageDeleted: result.storageDeleted,
+      cleanupPending: result.cleanupPending
     });
   } catch (error) {
     next(error);
