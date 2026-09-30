@@ -612,3 +612,58 @@ test("repository deletion removes persisted metadata and checkout storage", asyn
     await rm(storagePath, { recursive: true, force: true });
   }
 });
+
+
+test("repository deletion and refresh cannot both succeed concurrently", async () => {
+  const { db } = await import("../src/config/database.js");
+  const { getRepositoryStoragePath } = await import("../src/modules/repositories/repository.service.js");
+  const repositoryId = randomUUID();
+  const storagePath = getRepositoryStoragePath(repositoryId);
+
+  await mkdir(storagePath, { recursive: true });
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, source_type, source_url, name, tracked_branch, storage_path
+      )
+      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-race-test', 'main', $2)
+    `,
+    [repositoryId, storagePath]
+  );
+
+  try {
+    const [deleteResponse, analyzeResponse] = await Promise.all([
+      fetch(baseUrl + "/api/repositories/" + repositoryId, {
+        method: "DELETE",
+        headers: { "x-autopsy-api-key": TEST_API_KEY }
+      }),
+      fetch(baseUrl + "/api/repositories/" + repositoryId + "/analyze", {
+        method: "POST",
+        headers: {
+          "x-autopsy-api-key": TEST_API_KEY,
+          "content-type": "application/json"
+        },
+        body: "{}"
+      })
+    ]);
+
+    const deleteBody = await deleteResponse.json();
+    const analyzeBody = await analyzeResponse.json();
+
+    const refreshWon =
+      deleteResponse.status === 409 &&
+      analyzeResponse.status === 202 &&
+      deleteBody.error?.code === "REPOSITORY_DELETE_BLOCKED";
+
+    const deleteWon =
+      deleteResponse.status === 200 &&
+      analyzeResponse.status === 404 &&
+      deleteBody.deleted === true &&
+      analyzeBody.error?.code === "REPOSITORY_NOT_FOUND";
+
+    assert.equal(refreshWon || deleteWon, true);
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+    await rm(storagePath, { recursive: true, force: true });
+  }
+});
