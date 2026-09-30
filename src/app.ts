@@ -106,7 +106,6 @@ app.use("/api", (req, res, next) => {
   next();
 });
 
-
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 
