@@ -73,6 +73,7 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
     "startCommand: node dist/database/migrate.js && node dist/free-runtime.js",
     "MAX_ANALYZED_COMMITS",
     'value: "25000"',
+    "database/migrations/014_repository_storage_cleanup.sql",
     "autoDeployTrigger: checksPass"
   ]) {
     assert.ok(render.includes(marker), "missing Render invariant: " + marker);
@@ -204,4 +205,17 @@ test("repository deletion keeps an explicit lifecycle guard in the API and clien
   assert.ok(service.includes('FOR UPDATE'));
   assert.ok(html.includes("Delete repository data"));
   assert.ok(html.includes("Permanently delete "));
+});
+
+
+test("repository storage cleanup is retryable and startup-wired", () => {
+  const service = readRepoFile("src/modules/repositories/repository.service.ts");
+  const server = readRepoFile("src/server.ts");
+  const migration = readRepoFile("database/migrations/014_repository_storage_cleanup.sql");
+
+  assert.ok(service.includes("retryRepositoryStorageCleanup"));
+  assert.ok(service.includes("repository_storage_cleanup"));
+  assert.ok(server.includes("retryRepositoryStorageCleanup(20)"));
+  assert.ok(migration.includes("repository_storage_cleanup"));
+  assert.ok(migration.includes("completed_at"));
 });
