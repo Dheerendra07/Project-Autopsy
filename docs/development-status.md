@@ -666,3 +666,12 @@ Provider failures continue to expose bounded generic messages to the application
 Repositories now expose an explicit DELETE lifecycle. Deletion is blocked while an analysis is queued or running, preventing workers from writing into a disappearing repository. Once inactive, the exact recorded checkout path is removed first and must remain inside the managed repository-storage root; only then is the repository row deleted, allowing existing database foreign keys to cascade persisted evidence.
 
 The browser workspace exposes this as a clearly separated data-lifecycle action in Settings with explicit confirmation. Successful deletion clears the browser's repository/run state while retaining the saved connection credentials.
+
+
+## Launch hardening — migration/state consistency — 2026-09-30
+
+Database migrations now use a PostgreSQL advisory lock so concurrent application instances cannot execute the same migration set simultaneously.
+
+Analysis-run state transitions are explicit and forward-only at the application layer, with terminal states protected from resurrection. Migration 015 adds database constraints for valid statuses/modes and terminal timestamp consistency, while normalizing legacy timestamp anomalies before enforcing the constraints.
+
+Repository deletion uses a database row lock plus a retryable storage-cleanup ledger, preventing delete/refresh races and allowing filesystem cleanup to recover after process interruption.
