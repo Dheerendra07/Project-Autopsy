@@ -12,6 +12,8 @@ async function runMigrations(): Promise<void> {
   const client = await db.connect();
 
   try {
+    await client.query("SELECT pg_advisory_lock(2147483647)");
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         filename VARCHAR(255) PRIMARY KEY,
@@ -56,8 +58,12 @@ async function runMigrations(): Promise<void> {
 
     console.log("✓ Database migrations complete");
   } finally {
-    client.release();
-    await db.end();
+    try {
+      await client.query("SELECT pg_advisory_unlock(2147483647)");
+    } finally {
+      client.release();
+      await db.end();
+    }
   }
 }
 
