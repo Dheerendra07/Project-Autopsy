@@ -137,7 +137,7 @@ The current main baseline includes:
 - exact deployment↔runtime identity reconciliation
 - deployment provenance completeness/partial/conflict assessment
 - production configuration validation for runtime/deployment/API/AI access boundaries
-- Render production Blueprint for web API, BullMQ worker, Render Key Value, and Render Postgres
+- Render production Blueprint for the free combined web/worker runtime with external DATABASE_URL and REDIS_URL connections
 - explicit 0.0.0.0 API binding for hosted traffic
 - worker repository-storage rehydration after restart/redeploy
 - local Autopsy development default isolated to port 5100; CI continues to use its own isolated test port 5000
@@ -226,7 +226,7 @@ Preserve all existing API routes, evidence models, migrations, deterministic ana
 ## Final release checkpoint — 2026-10-01
 
 Authoritative current state:
-- Current `main` HEAD: `7c0bfdb98ca3286388c7c6872ec76fdaf8df4aa2`.
+- Current `main` is the source-of-truth branch; this release-cleanup change is part of the final main checkpoint after merge.
 - Current production code baseline: `15eb4ed45cd201ac74b77c93921c76a2fb7cfc46` (PR #118).
 - PRs #119 and #120 are documentation-only synchronization commits.
 - Open pull requests: 0.
