@@ -3,7 +3,8 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import {
   getRepositoryNameFromUrl,
-  getRepositoryStoragePath
+  getRepositoryStoragePath,
+  isSafeBranchName
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
@@ -54,7 +55,7 @@ const importSchema = z.object({
     .trim()
     .min(1)
     .max(255)
-    .regex(/^[A-Za-z0-9._/-]+$/)
+    .refine(isSafeBranchName, "Repository branch is invalid.")
     .optional()
 });
 
