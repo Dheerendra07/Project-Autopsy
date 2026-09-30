@@ -652,3 +652,10 @@ Complexity, migration, and test-evolution analyzers now preserve or surface sour
 Repository analysis now performs a lightweight Git commit-count preflight and refuses histories above the configured `MAX_ANALYZED_COMMITS` ceiling (25,000 by default). This prevents pathological histories from forcing unbounded full-history output into the free runtime memory budget and avoids silently returning partial historical analysis.
 
 The production blueprint declares the same 25,000-commit ceiling. Package metadata now pins the supported Node major range to 24.x, and `package.json`/lockfile root versions are kept identical for deterministic `npm ci` installs.
+
+
+## Launch hardening — AI provider transport — 2026-09-30
+
+AI provider configuration now rejects endpoint credentials, query parameters, and fragments, and permits plain HTTP only for localhost development endpoints. Provider HTTP requests explicitly disable redirect following so an operator-configured endpoint cannot silently redirect the API-key-bearing request elsewhere.
+
+Provider failures continue to expose bounded generic messages to the application layer rather than forwarding arbitrary third-party error bodies into API responses.
