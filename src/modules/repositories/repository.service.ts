@@ -6,7 +6,17 @@ import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import { assertAnalysisDeadline } from "../analysis/analysis-deadline.js";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
 
+const REPOSITORY_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function assertRepositoryId(repositoryId: string): void {
+  if (!REPOSITORY_ID_PATTERN.test(repositoryId)) {
+    throw new Error("Repository id is invalid.");
+  }
+}
+
 export function getRepositoryStoragePath(repositoryId: string): string {
+  assertRepositoryId(repositoryId);
   return path.resolve(env.REPOSITORY_STORAGE_PATH, repositoryId);
 }
 
