@@ -50,6 +50,11 @@ test("product frontend contains the core evidence workflow", () => {
     "rtOperation",
     "rtSignal",
     "runtime-more",
+    "Test evolution",
+    "Migration ",
+    "Deployment ",
+    "Observed runtime telemetry event.",
+    "Historical repeated-modification evidence."
     "function runtimeFilterDate(value)",
     "function runtimeEventsPath(page,limit)",
     "S.runtimeEvents=arr(out.runtimeEvents,'events')",
