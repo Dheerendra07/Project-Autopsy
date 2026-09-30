@@ -142,14 +142,21 @@ test("API authentication is mounted before JSON body parsing", () => {
   const authIndex = app.indexOf("isApiAccessAuthorized(");
   const jsonParserIndex = app.indexOf('app.use(express.json({ limit: "1mb" }))');
   const routerIndex = app.indexOf('app.use("/api", router);');
+  const authMountEnd = app.indexOf("});", authIndex);
 
   assert.ok(authIndex >= 0);
   assert.ok(jsonParserIndex >= 0);
   assert.ok(routerIndex >= 0);
-  assert.ok(authIndex < jsonParserIndex);
+  assert.ok(authMountEnd >= 0);
+  assert.ok(authIndex < authMountEnd);
+  assert.ok(authMountEnd < jsonParserIndex);
   assert.ok(jsonParserIndex < routerIndex);
   assert.equal(
     (app.match(/app\.use\("\/api", router\);/g) ?? []).length,
     1
+  );
+  assert.doesNotMatch(
+    app.slice(Math.max(0, authIndex - 80), authMountEnd + 3),
+    /,\s*router\)/
   );
 });
