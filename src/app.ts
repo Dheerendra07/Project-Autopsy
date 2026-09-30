@@ -21,6 +21,7 @@ import { createRateLimitMiddleware } from "./middleware/rate-limit.middleware.js
 
 export const app = express();
 
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 app.use(
@@ -60,7 +61,11 @@ app.use(
 
 app.use(requestIdMiddleware);
 
-const rateLimitMiddleware = createRateLimitMiddleware(redis);
+const rateLimitMiddleware = createRateLimitMiddleware(redis, {
+  windowSeconds: env.API_RATE_LIMIT_WINDOW_SECONDS,
+  maxRequests: env.API_RATE_LIMIT_MAX_REQUESTS,
+  heavyMaxRequests: env.API_RATE_LIMIT_HEAVY_MAX_REQUESTS
+});
 
 morgan.token("request-id", (_req, res) =>
   String(res.getHeader("x-request-id") ?? "-")
