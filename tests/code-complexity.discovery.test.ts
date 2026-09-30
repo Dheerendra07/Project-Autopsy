@@ -146,3 +146,46 @@ test("reuses cached analysis for identical Git blobs", async () => {
     await rm(repositoryPath, { recursive: true, force: true });
   }
 });
+
+test("preserves exact blob lookup for unusual filenames", async () => {
+  const repositoryPath = await mkdtemp(
+    path.join(tmpdir(), "project-autopsy-complexity-blob-")
+  );
+
+  try {
+    const git = simpleGit(repositoryPath);
+    await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    const paths = [
+      "src/a*.ts",
+      "src/file\twith\ttab.ts",
+      "src/file\nwith\nnewline.ts"
+    ];
+
+    for (const [index, filePath] of paths.entries()) {
+      await writeFile(
+        path.join(repositoryPath, filePath),
+        "export const value" + index + " = " + index + ";\n",
+        "utf8"
+      );
+    }
+
+    await git.add(".");
+    await git.commit("add exact blob paths");
+
+    const head = (await git.revparse(["HEAD"])).trim();
+    const outputs = await Promise.all(
+      paths.map(async (filePath) =>
+        (await git.raw(["rev-parse", "--verify", head + ":" + filePath])).trim()
+      )
+    );
+
+    outputs.forEach((sha) => {
+      assert.match(sha, /^[0-9a-f]{40}$/);
+    });
+  } finally {
+    await rm(repositoryPath, { recursive: true, force: true });
+  }
+});
