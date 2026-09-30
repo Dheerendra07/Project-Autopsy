@@ -7,13 +7,19 @@ const htmlPath = fileURLToPath(
   new URL("../public/index.html", import.meta.url)
 );
 const html = readFileSync(htmlPath, "utf8");
-const script = html.match(/<script>\n([\s\S]*?)<\/script>/)?.[1];
+const appJsPath = fileURLToPath(
+  new URL("../public/app.js", import.meta.url)
+);
+const appJs = readFileSync(appJsPath, "utf8");
 
 test("product frontend contains the core evidence workflow", () => {
-  assert.ok(script, "frontend script must exist");
+  assert.ok(
+    html.includes('<script src="app.js" defer></script>'),
+    "frontend must load the external app.js asset"
+  );
   assert.doesNotThrow(
-    () => new Function(script),
-    "frontend script must parse as JavaScript"
+    () => new Function(appJs),
+    "frontend app.js must parse as JavaScript"
   );
 
   for (const marker of [
@@ -33,7 +39,7 @@ test("product frontend contains the core evidence workflow", () => {
     "function architectureMap(ar)",
     "function openEvidence(id)",
     "function loadProvenance(deploymentId)",
-    "errorMessage: analysis.error_message",
+    "analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.'",
     "function reportHtml(rep)",
     "async function testConnection()",
     "base+'/ready'",
@@ -41,7 +47,7 @@ test("product frontend contains the core evidence workflow", () => {
     "elapsed(a.startedAt,a.completedAt)",
     "async function reloadData()",
     "data-action=\"reload-data\"",
-    "runtime event explorer",
+    "Runtime event explorer",
     "rtDeployment",
     "rtFrom",
     "rtTo",
@@ -83,7 +89,10 @@ test("product frontend contains the core evidence workflow", () => {
     "sessionStorage.setItem('autopsy.aiKey'",
     "/api/repositories/import"
   ]) {
-    assert.ok(html.includes(marker), `missing frontend marker: ${marker}`);
+    assert.ok(
+      (html + "\n" + appJs).includes(marker),
+      `missing frontend marker: ${marker}`
+    );
   }
 });
 
