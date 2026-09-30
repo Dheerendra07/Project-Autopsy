@@ -428,6 +428,25 @@ test("contributor endpoint returns the repository-not-found contract", async () 
 });
 
 
+test("unauthenticated malformed JSON is rejected by the API access wall", async () => {
+  const response = await fetch(baseUrl + "/api/repositories/import", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: '{"url":'
+  });
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "API_ACCESS_UNAUTHORIZED",
+      message: "API access credentials are invalid."
+    }
+  });
+});
+
 test("malformed JSON returns a client error instead of a generic server error", async () => {
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
@@ -444,6 +463,26 @@ test("malformed JSON returns a client error instead of a generic server error", 
     error: {
       code: "INVALID_REQUEST_BODY",
       message: "Request body could not be parsed."
+    }
+  });
+});
+
+test("unauthenticated oversized JSON is rejected before body parsing", async () => {
+  const oversizedValue = "x".repeat(1_100_000);
+  const response = await fetch(baseUrl + "/api/repositories/import", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({ value: oversizedValue })
+  });
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "API_ACCESS_UNAUTHORIZED",
+      message: "API access credentials are invalid."
     }
   });
 });
