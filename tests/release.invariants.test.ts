@@ -253,3 +253,14 @@ test("private API responses remain non-cacheable", () => {
   const app = readRepoFile("src/app.ts");
   assert.ok(app.includes('res.setHeader("Cache-Control", "no-store")'));
 });
+
+
+test("analysis-state migration keeps executable PostgreSQL dollar quoting", () => {
+  const migration = readRepoFile(
+    "database/migrations/015_analysis_run_state_constraints.sql"
+  );
+
+  assert.ok(migration.includes("DO $$\nBEGIN"));
+  assert.ok(migration.includes("\nEND $$;"));
+  assert.doesNotMatch(migration, /DO \$\nBEGIN/);
+});
