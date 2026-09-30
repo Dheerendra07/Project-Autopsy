@@ -49,6 +49,10 @@ test("quality workflow starts on push and pull requests and uses the pinned Linu
     "push:",
     "pull_request:",
     "runs-on: ubuntu-22.04",
+    "permissions:",
+    "contents: read",
+    "cancel-in-progress: true",
+    "timeout-minutes: 45",
     "uses: actions/checkout@v5",
     "uses: actions/setup-node@v5",
     "node-version: 24"
