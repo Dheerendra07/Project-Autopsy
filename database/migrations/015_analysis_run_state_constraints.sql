@@ -8,7 +8,7 @@ SET completed_at = NULL
 WHERE status IN ('queued', 'running')
   AND completed_at IS NOT NULL;
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
