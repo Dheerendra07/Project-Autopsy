@@ -132,6 +132,71 @@ test("does not allow credential-looking path data to become URL credentials", ()
   assert.equal(parsed.hostname, "github.com");
 });
 
+
+
+test("rejects repository-host root and owner-only paths", () => {
+  for (const url of [
+    "https://github.com",
+    "https://github.com/",
+    "https://github.com/owner",
+    "https://bitbucket.org/workspace"
+  ]) {
+    assert.throws(
+      () => validateRemoteRepositoryUrl(url),
+      /owner\/group and repository name/
+    );
+  }
+
+  assert.throws(
+    () => validateRemoteRepositoryUrl("https://gitlab.com/group"),
+    /owner\/group and repository name/
+  );
+});
+
+test("rejects extra path segments for GitHub and Bitbucket", () => {
+  assert.throws(
+    () => validateRemoteRepositoryUrl(
+      "https://github.com/owner/repo/extra"
+    ),
+    /invalid path for its Git provider/
+  );
+
+  assert.throws(
+    () => validateRemoteRepositoryUrl(
+      "https://bitbucket.org/workspace/repo/extra"
+    ),
+    /invalid path for its Git provider/
+  );
+});
+
+test("allows nested GitLab group paths", () => {
+  assert.doesNotThrow(() =>
+    validateRemoteRepositoryUrl(
+      "https://gitlab.com/group/subgroup/project.git"
+    )
+  );
+});
+
+test("rejects dot path traversal segments after URL decoding", () => {
+  for (const segment of [".", "..", "%2e", "%2e%2e"]) {
+    assert.throws(
+      () => validateRemoteRepositoryUrl(
+        "https://github.com/owner/" + segment
+      ),
+      /invalid path segment|invalid path for its Git provider/
+    );
+  }
+});
+
+test("rejects malformed percent-encoding in the repository path", () => {
+  assert.throws(
+    () => validateRemoteRepositoryUrl(
+      "https://github.com/owner/repo%ZZ"
+    ),
+    /invalid URL encoding/i
+  );
+});
+
 test("preserves nested repository paths for hosted Git providers", () => {
   const parsed = validateRemoteRepositoryUrl(
     "https://gitlab.com/group/subgroup/repo.git"
