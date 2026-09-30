@@ -83,14 +83,13 @@ export async function consumeRateLimit(
 ): Promise<RateLimitResult> {
   const nowMs = options.nowMs ?? Date.now();
   const windowSeconds = options.windowSeconds ?? API_RATE_LIMIT_WINDOW_SECONDS;
-  const limit =
-    options.maxRequests ??
-    getRateLimitLimit(req, {
-      windowSeconds,
-      maxRequests: options.maxRequests ?? API_RATE_LIMIT_MAX_REQUESTS,
-      heavyMaxRequests:
-        options.heavyMaxRequests ?? API_RATE_LIMIT_HEAVY_MAX_REQUESTS
-    });
+  const limit = getRateLimitLimit(req, {
+    windowSeconds,
+    maxRequests:
+      options.maxRequests ?? API_RATE_LIMIT_MAX_REQUESTS,
+    heavyMaxRequests:
+      options.heavyMaxRequests ?? API_RATE_LIMIT_HEAVY_MAX_REQUESTS
+  });
 
   const windowId = Math.floor(nowMs / (windowSeconds * 1_000));
   const resetAt = (windowId + 1) * windowSeconds * 1_000;
