@@ -187,13 +187,24 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
         typeof error === "object" &&
         error !== null &&
         "code" in error &&
-        error.code === "23505"
+        (error.code === "23505" || error.code === "23503")
       ) {
-        res.status(409).json({
+        if (error.code === "23505") {
+          res.status(409).json({
+            success: false,
+            error: {
+              code: "ANALYSIS_ALREADY_RUNNING",
+              message: "An analysis is already queued or running for this repository."
+            }
+          });
+          return;
+        }
+
+        res.status(404).json({
           success: false,
           error: {
-            code: "ANALYSIS_ALREADY_RUNNING",
-            message: "An analysis is already queued or running for this repository."
+            code: "REPOSITORY_NOT_FOUND",
+            message: "Repository not found."
           }
         });
         return;
