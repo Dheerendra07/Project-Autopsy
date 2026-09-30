@@ -35,6 +35,8 @@ test("product frontend contains the core evidence workflow", () => {
     "function loadProvenance(deploymentId)",
     "function reportHtml(rep)",
     "async function testConnection()",
+    "async function reloadData()",
+    "data-action="reload-data""
     "sessionStorage.getItem('autopsy.key')",
     "sessionStorage.setItem('autopsy.aiKey'",
     "/api/repositories/import"
