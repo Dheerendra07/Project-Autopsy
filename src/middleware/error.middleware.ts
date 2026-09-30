@@ -66,11 +66,9 @@ export function errorMiddleware(
 interface BodyParserError {
   type?: unknown;
   status?: unknown;
-  statusCode?: unknown;
-  message?: unknown;
 }
 
-function isBodyParserError(error: unknown): error is BodyParserError & { status: number } {
+export function isBodyParserError(error: unknown): error is BodyParserError & { status: number } {
   if (!error || typeof error !== "object") {
     return false;
   }
