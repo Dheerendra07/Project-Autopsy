@@ -584,3 +584,10 @@ A dedicated edge-case layer was added around repository URL validation, runtime 
 Coverage now includes malformed/unsupported repository URLs, embedded credentials, query/hash injection, exact and over-limit telemetry fields, malformed trace/span IDs, HTTP status semantics, timestamp boundary behavior, duplicate event IDs, JSON serialization limits, deterministic payload hashes, 500-event batches, malformed repository IDs, pagination bounds, invalid runtime date windows/revision filters, bounded report/interpretation limits, authentication fallback/precedence, and production fail-closed behavior.
 
 The frontend runtime explorer was also hardened against failed filter requests clearing the currently visible dataset, and connection probes now have a bounded timeout. Overview surfaces when persisted repository head differs from the analyzed target so stale analysis is explicit.
+
+
+## Release hardening pass — 2026-09-30
+
+The release path was tightened further without adding infrastructure: dependency installation is now performed once per Render/GitHub build (`npm ci` followed by `tsc`), frontend evidence loading is bounded to six concurrent API requests, and runtime filter/connection failures preserve existing UI state where possible.
+
+The quality workflow now uses least-privilege read permissions, cancels superseded runs, and enforces a 45-minute job timeout. A dedicated release-invariant test suite validates the package/build contract, Render Blueprint expectations, CI gate markers, frontend dependency/security boundary, and primary workspace views.
