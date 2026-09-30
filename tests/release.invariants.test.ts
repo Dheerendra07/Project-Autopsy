@@ -117,6 +117,16 @@ test("quality workflow retains the full validation gate", () => {
   }
 });
 
+test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(html.includes('<script src="/app.js" defer></script>'));
+  assert.doesNotMatch(html, /<script>\s*[\\s\\S]*?<\/script>/i);
+  assert.doesNotThrow(() => new Function(appJs));
+  assert.doesNotMatch(html, /<script[^>]+src=["'][a-z]+:\/\//i);
+});
+
 test("frontend script remains dependency-free, parseable and key-gated", () => {
   const html = readRepoFile("public/index.html");
   const script = html.match(/<script>\s*([\s\S]*?)\s*<\/script>/i)?.[1];
