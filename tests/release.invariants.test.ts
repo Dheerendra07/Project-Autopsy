@@ -311,6 +311,56 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend releases the runtime loading lock when an analysis run changes", () => {
+  const appJs = readRepoFile("public/app.js");
+  const runtimeStart = appJs.indexOf("async function loadRuntimeEvents");
+  const runtimeEnd = appJs.indexOf("async function reloadData", runtimeStart);
+  assert.ok(runtimeStart >= 0);
+  assert.ok(runtimeEnd > runtimeStart);
+
+  const runtimeBlock = appJs.slice(runtimeStart, runtimeEnd);
+  assert.ok(
+    runtimeBlock.includes(
+      "finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false}"
+    )
+  );
+
+  const refreshStart = appJs.indexOf("async function refresh()");
+  const refreshEnd = appJs.indexOf("function openSettings", refreshStart);
+  assert.ok(refreshStart >= 0);
+  assert.ok(refreshEnd > refreshStart);
+  assert.ok(
+    appJs.slice(refreshStart, refreshEnd).includes(
+      "S.runtimeLoading=false"
+    )
+  );
+});
+
+test("frontend failure notifications are scoped to the active analysis run", () => {
+  const appJs = readRepoFile("public/app.js");
+  const functions = [
+    ["loadProvenance", "function downloadReport"],
+    ["loadReport", "async function loadInterview"],
+    ["loadInterview", "async function loadInterpretation"],
+    ["loadInterpretation", "function downloadReport"]
+  ];
+
+  for (const [name, endMarker] of functions) {
+    const start = appJs.indexOf("async function " + name);
+    const end = appJs.indexOf(endMarker, start + 1);
+
+    assert.ok(start >= 0);
+    assert.ok(end > start);
+
+    const block = appJs.slice(start, end);
+    assert.ok(
+      block.includes(
+        "token===S.workspaceToken&&id===S.repoId&&runId===S.runId"
+      )
+    );
+  }
+});
+
 test("dependency analysis bounds package.json reads before loading content", () => {
   const discovery = readRepoFile("src/modules/dependencies/dependency.discovery.ts");
 
