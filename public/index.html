@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#11110f">
+<title>Project Autopsy — Engineering Evidence</title>
+<style>
+:root{--bg:#11110f;--panel:#181815;--panel2:#1f1f1a;--line:#303028;--text:#f3f0e8;--muted:#aaa69b;--dim:#77736a;--gold:#d5bf87;--good:#91c79f;--bad:#d98578;--warn:#d6b16b;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% -10%,rgba(213,191,135,.1),transparent 34%),var(--bg);color:var(--text)}button,input{font:inherit}button{cursor:pointer}input{outline:none}
+.top{height:72px;border-bottom:1px solid #24241f;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:20;background:rgba(17,17,15,.92);backdrop-filter:blur(15px)}
+.brand{display:flex;gap:11px;align-items:center}.mark{width:30px;height:30px;border:1px solid #6c624d;border-radius:9px;display:grid;place-items:center;color:var(--gold);font:600 12px var(--mono)}.brand b{font-size:13px}.brand small{display:block;color:var(--dim);font-size:9px;text-transform:uppercase;letter-spacing:.13em;margin-top:2px}
+.pill{border:1px solid var(--line);border-radius:999px;padding:6px 9px;color:var(--muted);font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.08em}.pill.good{color:var(--good);border-color:#35523d}.pill.bad{color:var(--bad);border-color:#5b302c}.pill.warn{color:var(--warn);border-color:#57472a}
+.btn{border:1px solid var(--line);background:#1c1c17;color:var(--text);border-radius:11px;padding:11px 14px}.btn:hover{border-color:#4b493e}.btn.primary{background:var(--gold);border-color:var(--gold);color:#15140f;font-weight:750}.btn.link{border:0;background:none;color:var(--muted);padding:6px}
+main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1050px;margin:auto}.eyebrow,.kicker{font:600 9px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}h1{font-size:clamp(48px,7vw,84px);line-height:.96;letter-spacing:-.055em;margin:18px 0 20px;max-width:950px}h1 em{font-style:normal;color:var(--gold)}.lead{max-width:760px;font-size:17px;line-height:1.7;color:var(--muted);margin:0 0 34px}
+.card{border:1px solid var(--line);background:rgba(24,24,21,.9);border-radius:17px;padding:19px}.import-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.import-head h2{font-size:20px;margin:7px 0 0}.muted{color:var(--muted)}.dim{color:var(--dim)}.import{display:grid;grid-template-columns:1fr 170px auto;gap:10px;margin-top:20px}.field{display:grid;gap:7px;font-size:11px;color:var(--muted)}.field input{background:#12120f;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px}.strip{display:flex;flex-wrap:wrap;gap:7px;margin-top:20px}.tag{font:600 9px var(--mono);color:var(--muted);border:1px solid #292922;background:#151512;border-radius:999px;padding:6px 8px}.note{color:var(--dim);font-size:10px;line-height:1.6;margin-top:35px}
+.workspace{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 72px)}.side{border-right:1px solid #24241f;padding:22px 14px;display:flex;flex-direction:column;position:sticky;top:72px;height:calc(100vh - 72px)}.repo-meta{padding:8px 9px 20px;border-bottom:1px solid #24241f;margin-bottom:14px}.repo-meta strong{display:block;margin-top:8px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repo-meta span:last-child{display:block;margin-top:5px;color:var(--dim);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nav{display:grid;gap:3px}.nav button{border:0;background:none;color:var(--muted);text-align:left;border-radius:9px;padding:10px 9px;font-size:11px}.nav button:hover,.nav button.active{background:#1e1e19;color:var(--text)}.nav button span{font:600 8px var(--mono);color:#656158;margin-right:9px}.nav button.active span{color:var(--gold)}.sidefoot{margin-top:auto;display:grid;gap:7px}
+.content{padding:28px 32px 65px;min-width:0}.banner{display:flex;gap:11px;align-items:center;border:1px solid #4a412e;background:#1b1913;padding:12px 14px;border-radius:13px;margin-bottom:22px}.spinner{width:18px;height:18px;border:2px solid #514a3a;border-top-color:var(--gold);border-radius:50%;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}.banner strong{display:block;font-size:11px}.banner small{display:block;color:var(--dim);margin-top:3px;font-size:10px}.banner .pill{margin-left:auto}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px}.head h2{font-size:30px;letter-spacing:-.035em;margin:7px 0 0}.head p{margin:7px 0 0;max-width:750px;color:var(--muted);font-size:11px;line-height:1.5}.actions{display:flex;gap:7px;flex-wrap:wrap}
+.grid{display:grid;gap:12px}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.section{margin-top:24px}
+.metric{font-size:31px;letter-spacing:-.04em;margin-top:12px}.metric-label{font:600 9px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:5px}
+.card h3{font-size:12px;margin:0}.sub{font-size:9px;color:var(--dim);margin-top:4px;line-height:1.45}.callout{margin-top:14px;background:#131310;border:1px solid #262620;border-radius:10px;padding:12px;font-size:10px;line-height:1.65;color:var(--muted)}.mono{font-family:var(--mono)}
+.table{border:1px solid #262620;border-radius:12px;overflow:auto}.table table{width:100%;min-width:620px;border-collapse:collapse}.table th,.table td{padding:10px 11px;border-bottom:1px solid #24241f;text-align:left;font-size:10px}.table th{background:#141411;color:var(--dim);font:600 8px var(--mono);text-transform:uppercase;letter-spacing:.1em}.table tr:last-child td{border-bottom:0}.path{font-family:var(--mono);color:#e0cf9e}
+.timeline{position:relative;margin-left:5px}.timeline:before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:1px;background:#2d2c26}.item{position:relative;padding:0 0 17px 23px}.item i{position:absolute;left:1px;top:4px;width:9px;height:9px;background:var(--gold);border-radius:50%;box-shadow:0 0 0 2px var(--bg)}.item strong{font-size:11px}.item p{margin:4px 0 0;color:var(--muted);font-size:9px;line-height:1.5}
+.bars{display:grid;gap:8px}.bar{display:grid;grid-template-columns:150px 1fr 35px;gap:8px;align-items:center}.bar span{font:600 8px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track{height:6px;background:#25251f;border-radius:99px;overflow:hidden}.fill{height:100%;background:var(--gold);border-radius:99px}.bar b{font:600 8px var(--mono);color:var(--dim);text-align:right}
+.empty{border:1px dashed #302f28;border-radius:12px;padding:28px;text-align:center;color:var(--dim);font-size:10px}.empty strong{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+.report{border:1px solid #262620;border-radius:13px;overflow:hidden;margin-bottom:9px;background:#181815}.report-head{padding:13px;border-bottom:1px solid #262620}.report-head strong{font-size:11px}.report-head small{display:block;color:var(--dim);font-size:8px;margin-top:3px}.claim{padding:12px 13px;border-bottom:1px solid #24241f}.claim:last-child{border-bottom:0}.claim p{margin:0;color:#ddd8ce;font-size:10px;line-height:1.55}.claim .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.claim .limit{margin-top:7px;color:var(--dim);font-size:9px;line-height:1.45}
+.story{border:1px solid #262620;border-radius:13px;padding:15px;background:#181815}.story h3{font-size:13px;margin:0 0 13px}.story block{display:block;margin-top:11px}.story label{font:600 8px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--gold)}.story div{font-size:10px;color:var(--muted);line-height:1.55;margin-top:4px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:grid;place-items:center;padding:18px;z-index:50}.modal>div{width:min(470px,100%);background:#181815;border:1px solid #3b3930;border-radius:16px;padding:18px}.modal h3{margin:7px 0 16px}.modal .field+ .field{margin-top:12px}.modal-actions{display:flex;justify-content:flex-end;margin-top:18px}.toast{position:fixed;right:16px;bottom:16px;background:#1e1e19;border:1px solid var(--line);padding:11px 13px;border-radius:11px;font-size:10px;z-index:80;box-shadow:0 15px 40px rgba(0,0,0,.3)}
+@media(max-width:1000px){.workspace{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid #24241f}.nav{grid-template-columns:repeat(4,1fr)}.sidefoot{margin-top:15px;grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.top{padding:0 13px}.brand small{display:none}.landing{padding:66px 16px 45px}.lead{font-size:15px}.import{grid-template-columns:1fr}.content{padding:18px 14px 45px}.nav{grid-template-columns:repeat(2,1fr)}.sidefoot{grid-template-columns:1fr}.g3,.g2{grid-template-columns:1fr}.head{align-items:flex-start;flex-direction:column}.bar{grid-template-columns:110px 1fr 30px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#"><span class="mark">A</span><span><b>Project Autopsy</b><small>engineering evidence workspace</small></span></a>
+  <div style="display:flex;gap:8px;align-items:center"><span id="conn" class="pill">not connected</span><button id="settings" class="btn">⚙</button></div>
+</header>
+<main>
+<section id="landing" class="landing">
+  <div class="eyebrow">EVIDENCE-FIRST ENGINEERING HISTORY</div>
+  <h1>See how a codebase <em>actually evolved.</em></h1>
+  <p class="lead">Import a repository and reconstruct its engineering journey from commits, code structure, dependencies, tests, schema changes, runtime evidence and deployment records.</p>
+  <div class="card">
+    <div class="import-head"><div><div class="kicker">Start an analysis</div><h2>Bring a repository into the workspace.</h2></div><span class="tag">HTTPS sources</span></div>
+    <form id="form" class="import">
+      <label class="field">Repository URL<input id="url" type="url" placeholder="https://github.com/owner/repository" required></label>
+      <label class="field">Branch <span class="dim">(optional)</span><input id="branch" placeholder="main"></label>
+      <button class="btn primary" type="submit">Analyze repository →</button>
+    </form>
+    <div id="formerr" class="bad" style="font-size:10px;margin-top:10px" hidden></div>
+  </div>
+  <div class="strip"><span class="tag">Git history</span><span class="tag">Complexity</span><span class="tag">Architecture</span><span class="tag">Schema</span><span class="tag">Runtime</span><span class="tag">Deployments</span></div>
+  <p class="note">Autopsy separates observed evidence from interpretation. Signals are not presented as proof of intent, causality, regressions or impact.</p>
+</section>
+
+<section id="workspace" class="workspace" hidden>
+  <aside class="side">
+    <div class="repo-meta"><div class="repo-label kicker">CURRENT REPOSITORY</div><strong id="repoName">—</strong><span id="repoBranch">—</span></div>
+    <nav id="nav" class="nav">
+      <button class="active" data-view="overview"><span>01</span>Overview</button>
+      <button data-view="history"><span>02</span>History</button>
+      <button data-view="structure"><span>03</span>Structure</button>
+      <button data-view="quality"><span>04</span>Quality</button>
+      <button data-view="runtime"><span>05</span>Runtime</button>
+      <button data-view="report"><span>06</span>Report</button>
+      <button data-view="interview"><span>07</span>Interview</button>
+    </nav>
+    <div class="sidefoot"><button id="refresh" class="btn">Refresh analysis</button><button id="new" class="btn link">← Analyze another repository</button></div>
+  </aside>
+  <div class="content">
+    <div id="banner" class="banner" hidden><div class="spinner"></div><div><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div><span id="bstatus" class="pill warn">queued</span></div>
+    <div id="root"></div>
+  </div>
+</section>
+</main>
+
+<div id="modal" class="modal" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3>Connect the workspace</h3></div><button id="close" class="btn">×</button></div><label class="field">API base URL<input id="api" type="url"></label><label class="field">API access key<input id="key" type="password" autocomplete="off"></label><p class="dim" style="font-size:9px;line-height:1.5;margin:12px 0 0">Stored in this browser session only. Never committed to the repository.</p><div class="modal-actions"><button id="save" class="btn primary">Save connection</button></div></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function(){
+  'use strict';
+  var S={
+    api:sessionStorage.getItem('autopsy.api')||'https://project-autopsy.onrender.com',
+    key:sessionStorage.getItem('autopsy.key')||'',
+    repoId:sessionStorage.getItem('autopsy.repoId')||'',
+    runId:sessionStorage.getItem('autopsy.runId')||'',
+    repo:null,analysis:null,data:{},view:'overview',timer:null
+  };
+  function $(id){return document.getElementById(id)}
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+  function arr(v,k){return Array.isArray(v)?v:(v&&k&&Array.isArray(v[k])?v[k]:[])}
+  function n(v){return v==null||isNaN(Number(v))?'—':new Intl.NumberFormat('en-IN').format(Number(v))}
+  function date(v){if(!v)return'—';var d=new Date(v);return isNaN(d)?String(v):d.toLocaleString([],{dateStyle:'medium',timeStyle:'short'})}
+  function sha(v){return v?String(v).slice(0,12):'—'}
+  function pct(v){return v==null||isNaN(Number(v))?'—':(Number(v)*100).toFixed(Number(v)<.1?2:1)+'%'}
+  function ms(v){return v==null?'—':n(Math.round(Number(v)))+' ms'}
+  function cls(status){return ['completed','up_to_date','succeeded'].indexOf(status)>=0?'good':['failed','cancelled','canceled'].indexOf(status)>=0?'bad':'warn'}
+  function toast(msg,tone){var x=$('toast');x.textContent=msg;x.style.borderColor=tone==='bad'?'#5b302c':tone==='good'?'#35523d':'#303028';x.hidden=false;clearTimeout(x._t);x._t=setTimeout(function(){x.hidden=true},3200)}
+  function persist(){sessionStorage.setItem('autopsy.api',S.api);sessionStorage.setItem('autopsy.key',S.key);sessionStorage.setItem('autopsy.repoId',S.repoId||'');sessionStorage.setItem('autopsy.runId',S.runId||'')}
+  function connected(v){var c=$('conn');c.textContent=v?'connected':'not connected';c.className='pill '+(v?'good':'')}
+  async function api(path,opt){
+    var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);
+    var r=await fetch(S.api.replace(/\/$/,'')+path,Object.assign({},opt||{},{headers:h}));
+    var t=await r.text(),b=null;try{b=t?JSON.parse(t):null}catch(e){b={raw:t}}
+    if(!r.ok)throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+')');
+    return b;
+  }
+  function landing(){ $('landing').hidden=false;$('workspace').hidden=true }
+  function workspace(){ $('landing').hidden=true;$('workspace').hidden=false;$('repoName').textContent=S.repo&&S.repo.name||'Repository';$('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';connected(true)}
+  function banner(show,title,sub,status){$('banner').hidden=!show;if(!show)return;$('btitle').textContent=title;$('bsub').textContent=sub;var x=$('bstatus');x.textContent=status;x.className='pill '+cls(status)}
+  async function importRepo(){
+    var u=$('url').value.trim(),b=$('branch').value.trim(),payload={url:u};if(b)payload.branch=b;
+    try{
+      $('formerr').hidden=true;
+      if(!S.key){openSettings();throw new Error('Add your API access key first.')}
+      var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
+      S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};persist();workspace();setView('overview');poll();
+    }catch(e){$('formerr').textContent=e.message;$('formerr').hidden=false}
+  }
+  async function getRepo(){S.repo=(await api('/api/repositories/'+S.repoId)).repository;workspace()}
+  async function getRun(){return (await api('/api/repositories/'+S.repoId+'/analysis/'+S.runId)).analysis}
+  function poll(){
+    clearInterval(S.timer);banner(true,'Analysis in progress','Walking commits, source structure and evolution signals…','queued');
+    var tick=async function(){try{S.analysis=await getRun();var st=S.analysis.status;if(st==='completed'){clearInterval(S.timer);S.timer=null;banner(false);await loadData();setView(S.view);toast('Analysis complete','good');return}if(st==='failed'){clearInterval(S.timer);S.timer=null;banner(true,'Analysis failed','The worker reported a failure.','failed');toast('Analysis failed','bad');return}banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)}catch(e){banner(true,'Checking analysis status','Retrying status request…','queued')}};
+    tick();S.timer=setInterval(tick,2200)
+  }
+  async function loadData(){
+    var id=S.repoId,eps={
+      commits:'/api/repositories/'+id+'/commits?page=1&limit=50',
+      timeline:'/api/repositories/'+id+'/timeline?page=1&limit=50',
+      hotspots:'/api/repositories/'+id+'/hotspots?limit=20',
+      repeated:'/api/repositories/'+id+'/repeatedly-modified-files?minTouches=3&limit=20',
+      bugs:'/api/repositories/'+id+'/repeated-bug-areas?limit=20',
+      coupling:'/api/repositories/'+id+'/coupling?minCoChanges=2&limit=50',
+      refactors:'/api/repositories/'+id+'/refactors?limit=20',
+      dependencies:'/api/repositories/'+id+'/dependencies?limit=100',
+      architecture:'/api/repositories/'+id+'/architecture?limit=100',
+      migrations:'/api/repositories/'+id+'/database-migrations?limit=100',
+      tests:'/api/repositories/'+id+'/test-evolution?limit=100',
+      testSummary:'/api/repositories/'+id+'/test-evolution/summary',
+      complexity:'/api/repositories/'+id+'/complexity?limit=100',
+      contributors:'/api/repositories/'+id+'/contributors?limit=25',
+      runtime:'/api/repositories/'+id+'/runtime/telemetry/summary',
+      deployments:'/api/repositories/'+id+'/deployments?limit=50'
+    };
+    var keys=Object.keys(eps),out={};await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null}}));S.data=out;
+  }
+  function shell(title,desc,actions){return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'}
+  function metric(label,val,sub){return '<div class="card"><div class="metric">'+esc(val)+'</div><div class="metric-label">'+esc(label)+'</div>'+(sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div>'}
+  function overview(){
+    var r=S.repo||{},a=S.analysis||{},d=S.data,c=arr(d.commits,'commits'),h=arr(d.hotspots,'hotspots');
+    var max=1;h.slice(0,8).forEach(function(x){max=Math.max(max,Number(x.commits_touched||0))});
+    return shell('Engineering overview','A compact, evidence-backed map of how this repository has changed.','<button class="btn" data-action="report">Generate report</button>')+
+      '<div class="grid g4">'+metric('Persisted commits',n(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length),'stored Git history')+metric('Change hotspots',n(h.length),'top file activity')+metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+'</div>'+
+      '<div class="grid g2 section"><div class="card"><h3>Repository identity</h3><div class="sub">Persisted metadata</div><div class="callout"><strong>'+esc(r.name)+'</strong><br><span class="mono">'+esc(r.source_url||r.sourceUrl||'Source unavailable')+'</span><br>branch <span class="mono">'+esc(r.tracked_branch||r.trackedBranch||'—')+'</span> · head <span class="mono">'+esc(sha(r.head_sha||r.headSha))+'</span></div></div>'+
+      '<div class="card"><h3>Analysis snapshot</h3><div class="sub">Exact completed target</div><div class="callout">run <span class="mono">'+esc(sha(a.id))+'</span><br>target <span class="mono">'+esc(sha(a.targetHeadSha))+'</span><br>completed <span class="mono">'+esc(date(a.completedAt))+'</span></div></div></div>'+
+      '<div class="grid g2 section"><div class="card"><h3>Recent history</h3><div class="sub">Latest persisted commit evidence</div><div class="timeline">'+c.slice(0,7).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+' · '+n(x.files_changed)+' files</p></div>'}).join('')||'<div class="empty">No commit evidence.</div>'+'</div></div>'+
+      '<div class="card"><h3>Most touched files</h3><div class="sub">Historical activity signal — not a quality ranking</div><div class="bars" style="margin-top:15px">'+h.slice(0,8).map(function(x){return '<div class="bar"><span title="'+esc(x.path)+'">'+esc(x.path)+'</span><div class="track"><div class="fill" style="width:'+(Number(x.commits_touched||0)/max*100)+'%"></div></div><b>'+n(x.commits_touched)+'</b></div>'}).join('')||'<div class="empty">No hotspot evidence.</div>'+'</div></div></div>';
+  }
+  function history(){
+    var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events');
+    return shell('History','Chronological Git evidence with descriptive event classification.')+
+      '<div class="grid g2"><div class="card"><h3>Timeline signals</h3><div class="sub">Commit-subject keyword heuristics</div><div class="timeline" style="margin-top:15px">'+t.slice(0,25).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+'</p></div>'}).join('')||'<div class="empty">No timeline evidence.</div>'+'</div></div>'+
+      '<div class="card"><h3>Commit ledger</h3><div class="sub">Persisted metadata and numstat evidence</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Commit</th><th>Subject</th><th>Files</th><th>+</th><th>−</th><th>When</th></tr></thead><tbody>'+c.slice(0,35).map(function(x){return '<tr><td class="mono">'+esc(sha(x.sha))+'</td><td>'+esc(x.subject)+'</td><td>'+n(x.files_changed)+'</td><td>'+n(x.additions)+'</td><td>'+n(x.deletions)+'</td><td>'+esc(date(x.committed_at))+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+  }
+  function structure(){
+    var d=S.data,ar=arr(d.architecture,'events'),de=arr(d.dependencies,'changes'),cx=arr(d.complexity,'events'),co=arr(d.coupling,'pairs');
+    return shell('Structure','Architecture, dependency, complexity and co-change evidence')+
+      '<div class="grid g2"><div class="card"><h3>Architecture evolution</h3><div class="sub">Git tree directory snapshots</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Event</th><th>Path</th><th>Root</th><th>Commit</th></tr></thead><tbody>'+ar.slice(0,40).map(function(x){return '<tr><td>'+esc(x.event_type)+'</td><td class="path">'+esc(x.path)+'</td><td class="path">'+esc(x.root_path)+'</td><td class="mono">'+esc(sha(x.sha))+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+      '<div class="card"><h3>Dependency evolution</h3><div class="sub">Historical package.json changes</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Package</th><th>Scope</th><th>Change</th><th>From</th><th>To</th></tr></thead><tbody>'+de.slice(0,40).map(function(x){return '<tr><td class="path">'+esc(x.package_name)+'</td><td>'+esc(x.scope)+'</td><td>'+esc(x.change_type)+'</td><td class="mono">'+esc(x.previous_spec||'—')+'</td><td class="mono">'+esc(x.current_spec||'—')+'</td></tr>'}).join('')+'</tbody></table></div></div></div>'+
+      '<div class="grid g2 section"><div class="card"><h3>Complexity change events</h3><div class="sub">AST-derived source metrics</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Path</th><th>Before</th><th>After</th><th>Δ</th></tr></thead><tbody>'+cx.slice(0,50).map(function(x){return '<tr><td class="path">'+esc(x.path)+'</td><td>'+n(x.before&&x.before.cyclomaticComplexity)+'</td><td>'+n(x.after&&x.after.cyclomaticComplexity)+'</td><td>'+n(x.delta&&x.delta.cyclomaticComplexity)+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+      '<div class="card"><h3>Change coupling</h3><div class="sub">Files changed together in the same persisted commits</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Path A</th><th>Path B</th><th>Co-changes</th></tr></thead><tbody>'+co.slice(0,50).map(function(x){return '<tr><td class="path">'+esc(x.path_a)+'</td><td class="path">'+esc(x.path_b)+'</td><td>'+n(x.co_change_count)+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+  }
+  function quality(){
+    var d=S.data,b=arr(d.bugs,'areas'),r=arr(d.repeated,'files'),rf=arr(d.refactors,'signals'),m=arr(d.migrations,'events'),t=arr(d.tests,'events'),ts=d.testSummary||{};
+    return shell('Quality evidence','Historical signals across bug/fix subjects, repeated changes, tests and database migrations')+
+      '<div class="grid g4">'+metric('Bug-area signals',n(b.length),'heuristic signals')+metric('Repeatedly modified',n(r.length),'historical touch frequency')+metric('Refactor signals',n(rf.length),'subject heuristic')+metric('Migration events',n(m.length),'source-file analysis')+'</div>'+
+      '<div class="grid g2 section"><div class="card"><h3>Bug / fix signal areas</h3><div class="sub">Observed subjects, not defect proof</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Path</th><th>Signals</th><th>Touches</th><th>Ratio</th></tr></thead><tbody>'+b.slice(0,35).map(function(x){return '<tr><td class="path">'+esc(x.path)+'</td><td>'+n(x.signal_commits)+'</td><td>'+n(x.total_commits_touched)+'</td><td>'+pct(x.signal_ratio)+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+      '<div class="card"><h3>Test evolution</h3><div class="sub">Changed-test source evidence — not pass/fail</div><div class="grid g4 section">'+metric('Events',n(ts.eventCount||t.length))+metric('Test cases',n(ts.testCaseCount))+metric('Case delta',n(ts.testCaseDelta))+metric('Assertions',n(ts.assertionCount))+'</div><div class="table section"><table><thead><tr><th>Path</th><th>Framework</th><th>Type</th><th>Δ cases</th></tr></thead><tbody>'+t.slice(0,25).map(function(x){return '<tr><td class="path">'+esc(x.path)+'</td><td>'+esc(x.framework)+'</td><td>'+esc(x.testType)+'</td><td>'+n(x.testCaseDelta)+'</td></tr>'}).join('')+'</tbody></table></div></div></div>'+
+      '<div class="grid g2 section"><div class="card"><h3>Repeatedly modified files</h3><div class="table section"><table><thead><tr><th>Path</th><th>Touches</th><th>Churn</th><th>Span</th></tr></thead><tbody>'+r.slice(0,30).map(function(x){return '<tr><td class="path">'+esc(x.path)+'</td><td>'+n(x.commits_touched)+'</td><td>'+n(x.total_churn)+'</td><td>'+n(x.change_span_days)+'d</td></tr>'}).join('')+'</tbody></table></div></div>'+
+      '<div class="card"><h3>Migration evidence</h3><div class="sub">Source evidence; target migrations are never executed</div><div class="table section"><table><thead><tr><th>Path</th><th>Framework</th><th>Kind</th><th>Ops</th><th>Status</th></tr></thead><tbody>'+m.slice(0,30).map(function(x){return '<tr><td class="path">'+esc(x.path)+'</td><td>'+esc(x.framework)+'</td><td>'+esc(x.migrationKind)+'</td><td>'+n(x.operationCount)+'</td><td>'+esc(x.analysisStatus)+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+  }
+  function runtime(){
+    var d=S.data,rt=d.runtime&&d.runtime.overall||{},g=arr(d.runtime,'groups'),dp=arr(d.deployments,'events');
+    return shell('Runtime & provenance','Observed runtime telemetry and externally supplied deployment evidence')+
+      '<div class="grid g4">'+metric('Runtime samples',n(rt.sampleCount))+metric('p95 duration',ms(rt.p95DurationMs))+metric('Error rate',pct(rt.errorRate))+metric('Deployment evidence',n(dp.length))+'</div>'+
+      '<div class="grid g2 section"><div class="card"><h3>Runtime groups</h3><div class="sub">Persisted observations by summary grouping</div><div class="table section"><table><thead><tr><th>Group</th><th>Samples</th><th>Avg</th><th>Error</th></tr></thead><tbody>'+g.slice(0,40).map(function(x){return '<tr><td class="path">'+esc(x.key)+'</td><td>'+n(x.sampleCount)+'</td><td>'+ms(x.avgDurationMs)+'</td><td>'+pct(x.errorRate)+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+      '<div class="card"><h3>Deployment evidence</h3><div class="sub">External records without current-traffic inference</div><div class="table section"><table><thead><tr><th>Provider</th><th>Deployment</th><th>Env</th><th>State</th><th>Revision</th></tr></thead><tbody>'+dp.slice(0,30).map(function(x){return '<tr><td>'+esc(x.provider)+'</td><td class="mono">'+esc(x.deploymentId)+'</td><td>'+esc(x.environment)+'</td><td>'+esc(x.state)+'</td><td class="mono">'+esc(sha(x.revisionSha))+'</td></tr>'}).join('')+'</tbody></table></div></div></div>'+
+      '<div class="callout section">Runtime telemetry is observational. Autopsy does not infer that a code change caused a regression or that a deployment caused a runtime change from timestamps alone.</div>';
+  }
+  function reportPage(){return shell('Evidence report','A bounded report generated from the latest completed analysis snapshot','<button class="btn primary" data-action="report">Generate / refresh</button>')+'<div id="reportBox" class="section">'+(S.data.report?reportHtml(S.data.report):'<div class="empty"><strong>No report loaded</strong>Generate the evidence report from the completed analysis snapshot.</div>')+'</div>'}
+  function reportHtml(rep){return '<div class="grid g4">'+metric('Report version',rep.reportVersion)+metric('Persisted commits',n(rep.coverage&&rep.coverage.persistedCommits))+metric('Evidence sections',n(rep.coverage&&rep.coverage.sectionsWithEvidence))+metric('Fingerprint',sha(rep.fingerprint))+'</div><div class="callout section">Generated '+esc(date(rep.generatedAt))+' · fingerprint <span class="mono">'+esc(rep.fingerprint)+'</span></div><div class="section">'+(rep.sections||[]).map(function(s){return '<div class="report"><div class="report-head"><strong>'+esc(s.title)+'</strong><small>'+esc(s.evidenceBasis)+' · '+n((s.claims||[]).length)+' claims</small></div>'+(s.claims||[]).map(function(c){return '<div class="claim"><p>'+esc(c.statement)+'</p><div class="tags">'+(c.evidence||[]).slice(0,6).map(function(e){return '<span class="tag">'+esc(e.source)+':'+esc(e.key)+'</span>'}).join('')+'</div><div class="limit">'+esc(c.limitation)+'</div></div>'}).join('')+'</div>'}).join('')+'</div>'}
+  function interview(){return shell('Interview stories','Evidence anchors for preparing truthful project explanations','<button class="btn" data-action="interview">Load stories</button>')+'<div id="stories" class="section">'+(S.data.interview?storiesHtml(S.data.interview):'<div class="empty"><strong>Interview preparation</strong>Load story scaffolds generated from the evidence-backed report.</div>')+'</div>'}
+  function storiesHtml(x){var q=x&&x.result&&x.result.stories||x&&x.stories||x&&x.result||[];if(!Array.isArray(q))q=Object.keys(q||{}).map(function(k){return Object.assign({title:k},q[k]||{})});return '<div class="grid g2">'+q.map(function(s){return '<article class="story"><h3>'+esc(s.title||s.name||'Interview story')+'</h3><block><label>Situation</label><div>'+esc(s.situation||s.context||s.setup||'—')+'</div></block><block><label>Action / evidence</label><div>'+esc(s.action||s.actions||s.evidence||s.whatHappened||'—')+'</div></block><block><label>Result / limitation</label><div>'+esc(s.result||s.outcome||s.limitation||'—')+'</div></block></article>'}).join('')+'</div>'}
+  function setView(v){S.view=v;document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===v)});var h=v==='history'?history():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():overview();$('root').innerHTML=h;window.scrollTo(0,0)}
+  async function loadReport(){try{var r=await api('/api/repositories/'+S.repoId+'/report?limit=10');S.data.report=r.report;setView('report');toast('Evidence report refreshed','good')}catch(e){toast(e.message,'bad')}}
+  async function loadInterview(){try{var r=await api('/api/repositories/'+S.repoId+'/interview-stories?limit=6');S.data.interview=r;setView('interview');toast('Interview stories loaded','good')}catch(e){toast(e.message,'bad')}}
+  async function refresh(){try{var r=await api('/api/repositories/'+S.repoId+'/analyze',{method:'POST',body:'{}'});S.runId=r.analysis.id;S.analysis=null;persist();poll();toast('Refresh analysis queued')}catch(e){toast(e.message,'bad')}}
+  function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('modal').hidden=false;$('api').focus()}
+  function closeSettings(){ $('modal').hidden=true}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('save').onclick=function(){S.api=$('api').value.trim().replace(/\/$/,'');S.key=$('key').value.trim();persist();closeSettings();connected(!!S.key);toast('Connection settings saved','good')}
+  $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
+  $('new').onclick=function(){clearInterval(S.timer);S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};persist();landing()}
+  $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
+  $('root').onclick=function(e){var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview()}
+  async function boot(){connected(!!S.key);if(S.repoId&&S.runId&&S.key){try{await getRepo();S.analysis=await getRun();if(S.analysis.status==='completed'){await loadData();setView(S.view)}else{setView('overview');poll()}return}catch(e){}}landing()}
+  boot()
+})();
+</script>
+</body>
+</html>
