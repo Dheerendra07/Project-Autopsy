@@ -26,6 +26,7 @@ export interface DiscoveredCommit {
 
 const RECORD_SEPARATOR = "\x1e";
 const FIELD_SEPARATOR = "\x1f";
+const NUL_SEPARATOR = "\0";
 
 export async function discoverCommits(
   repositoryPath: string,
@@ -57,7 +58,8 @@ export async function discoverCommits(
     "--date=iso-strict",
     "--format=%x1e%H%x1f%P%x1f%an%x1f%ae%x1f%aI%x1f%cn%x1f%ce%x1f%cI%x1f%s",
     "--name-status",
-    "--no-renames"
+    "--no-renames",
+    "-z"
   ]);
 
   const numstat = await discoverNumstat(git, range);
@@ -98,8 +100,11 @@ async function countCommits(
 }
 
 export function parseCommitRecord(record: string): DiscoveredCommit {
-  const lines = record.split(/\r?\n/);
-  const header = lines.shift() ?? "";
+  const parts = record.split(NUL_SEPARATOR);
+  const hasNulDelimitedFiles = parts.length > 1;
+  const header = hasNulDelimitedFiles
+    ? parts.shift() ?? ""
+    : (record.split(/\r?\n/).shift() ?? "");
   const fields = header.split(FIELD_SEPARATOR);
 
   if (fields.length !== 9) {
@@ -126,27 +131,51 @@ export function parseCommitRecord(record: string): DiscoveredCommit {
     throw new Error("Git commit record is missing required timestamps.");
   }
 
-  const files = lines
-    .map((line) => line.replace(/\r$/, ""))
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const separatorIndex = line.indexOf("\t");
+  const files = hasNulDelimitedFiles
+    ? Array.from(
+        { length: Math.floor(parts.length / 2) },
+        (_unused, index) => {
+          const status = (parts[index * 2] ?? "").replace(/^\r?\n/, "");
+          const filePath = parts[index * 2 + 1] ?? "";
 
-      if (separatorIndex <= 0) {
-        return null;
-      }
+          if (!status || !filePath) {
+            return null;
+          }
 
-      return {
-        status: line.slice(0, separatorIndex),
-        path: line.slice(separatorIndex + 1),
-        additions: 0,
-        deletions: 0
-      };
-    })
-    .filter(
-      (file): file is DiscoveredCommitFile =>
-        file !== null && file.path.length > 0
-    );
+          return {
+            status,
+            path: filePath,
+            additions: 0,
+            deletions: 0
+          };
+        }
+      ).filter(
+        (file): file is DiscoveredCommitFile =>
+          file !== null && file.path.length > 0
+      )
+    : record
+        .split(/\r?\n/)
+        .slice(1)
+        .map((line) => line.replace(/\r$/, ""))
+        .filter((line) => line.length > 0)
+        .map((line) => {
+          const separatorIndex = line.indexOf("\t");
+
+          if (separatorIndex <= 0) {
+            return null;
+          }
+
+          return {
+            status: line.slice(0, separatorIndex),
+            path: line.slice(separatorIndex + 1),
+            additions: 0,
+            deletions: 0
+          };
+        })
+        .filter(
+          (file): file is DiscoveredCommitFile =>
+            file !== null && file.path.length > 0
+        );
 
   return {
     sha,
@@ -183,7 +212,8 @@ async function discoverNumstat(
     "--reverse",
     "--format=%x1e%H",
     "--numstat",
-    "--no-renames"
+    "--no-renames",
+    "-z"
   ]);
 
   const result = new Map<string, Map<string, { additions: number; deletions: number }>>();
@@ -192,8 +222,8 @@ async function discoverNumstat(
     const record = rawRecord.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
     if (!record) continue;
 
-    const lines = record.split(/\r?\n/);
-    const sha = lines.shift()?.trim();
+    const parts = record.split(NUL_SEPARATOR);
+    const sha = (parts.shift() ?? "").trim();
 
     if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
       continue;
@@ -201,22 +231,33 @@ async function discoverNumstat(
 
     const files = new Map<string, { additions: number; deletions: number }>();
 
-    for (const rawLine of lines) {
-      const line = rawLine.replace(/\r$/, "");
-      const fields = line.split("\t");
+    for (const rawPart of parts) {
+      const line = rawPart.replace(/^\r?\n/, "").replace(/\r$/, "");
 
-      if (fields.length !== 3) {
+      if (!line) {
         continue;
       }
 
-      const [additionsField, deletionsField, path] = fields;
+      const firstTab = line.indexOf("\t");
+      const secondTab =
+        firstTab >= 0
+          ? line.indexOf("\t", firstTab + 1)
+          : -1;
 
-      if (!additionsField || !deletionsField || !path) {
+      if (firstTab <= 0 || secondTab <= firstTab) {
+        continue;
+      }
+
+      const additionsField = line.slice(0, firstTab);
+      const deletionsField = line.slice(firstTab + 1, secondTab);
+      const filePath = line.slice(secondTab + 1);
+
+      if (!additionsField || !deletionsField || !filePath) {
         continue;
       }
 
       if (additionsField === "-" && deletionsField === "-") {
-        files.set(path, { additions: 0, deletions: 0 });
+        files.set(filePath, { additions: 0, deletions: 0 });
         continue;
       }
 
@@ -229,7 +270,7 @@ async function discoverNumstat(
         additions >= 0 &&
         deletions >= 0
       ) {
-        files.set(path, { additions, deletions });
+        files.set(filePath, { additions, deletions });
       }
     }
 
