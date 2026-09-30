@@ -58,6 +58,8 @@ test("product frontend contains the core evidence workflow", () => {
     "function runtimeFilterDate(value)",
     "function sameRevision(a,b)",
     "function boundedFetch(url,options,timeoutMs)",
+    "API returned an invalid JSON response",
+    "API returned an invalid response body",
     "function mapLimited(items,limit,worker)",
     "importButton",
     "S.importing=true",
