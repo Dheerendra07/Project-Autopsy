@@ -226,9 +226,9 @@ Preserve all existing API routes, evidence models, migrations, deterministic ana
 ## Final release checkpoint — 2026-10-01
 
 Authoritative current state:
-- Current `main` is the source-of-truth branch; this release-cleanup change is part of the final main checkpoint after merge.
-- Current production code baseline: `15eb4ed45cd201ac74b77c93921c76a2fb7cfc46` (PR #118).
-- PRs #119 and #120 are documentation-only synchronization commits.
+- Current `main` HEAD: `e648be8052f3243f7895b722fe04e239f8378df5` (PR #126).
+- PR #118 introduced the release-gap production hardening baseline; PRs #119–#122 synchronized the release/CI state, including the manual quality workflow while hosted-runner provisioning is unavailable.
+- PR #123 added bounded analysis-run history, PR #124 added API rate limiting, PR #125 completed environment-example parity and 429 UX, and PR #126 exposed historical runtime source context in the frontend.
 - Open pull requests: 0.
 
 Release-gap hardening merged in PR #118 includes bounded Git history/numstat paging, bounded evidence retention with indexed cleanup, explicit retention configuration, hardened GitHub Actions setup, a manual production-smoke workflow, and corresponding release invariants.
@@ -237,7 +237,7 @@ Current product hardening adds a bounded analysis-run history endpoint and an ov
 
 API abuse protection is also hardened with Redis-backed per-client-address rate limiting: 120 requests/minute for normal API traffic and 12 requests/minute for expensive analysis/report/AI/runtime/deployment operations. Report and AI interpretation GET requests use the heavy bucket. Limiter failures fail open to preserve service availability.
 
-The historical runtime source-context projection is now exposed in the frontend runtime workspace, pairing each reconstructed commit with exact persisted changed-file evidence and explicit complete/truncated/unavailable coverage.
+The historical runtime source-context projection is now exposed in the frontend runtime workspace, pairing each reconstructed commit with exact persisted changed-file evidence and explicit complete/truncated/unavailable coverage. Analysis-run lifecycle history, bounded API rate limiting, environment-example parity, and actionable rate-limit UX are also part of the current main product hardening.
 
 Current environment verification status:
 - GitHub Actions runs #1223–#1232 for the release-hardening line failed before any repository workflow step executed (`steps: []`). The quality workflow is therefore manual-only until hosted-runner provisioning is demonstrably usable again; the verification commands themselves remain intact and unchanged.
@@ -248,3 +248,11 @@ Continuation rule:
 - Treat this section as the single authoritative current checkpoint.
 - Preserve evidence-first semantics, deterministic fingerprints, security boundaries, bounded execution, and the free single-service deployment contract.
 - Do not treat external runner/hosting verification as complete until an actual current environment run succeeds.
+
+
+## Recent merged hardening sequence — 2026-10-01
+
+- PR #123 — bounded analysis-run history endpoint and overview lifecycle ledger; corrected frontend contract testing for the external app.js architecture.
+- PR #124 — Redis-backed bounded API rate limiting with heavy-operation protection and fail-open behavior.
+- PR #125 — environment example parity and actionable frontend 429 retry guidance.
+- PR #126 — historical runtime source-context evidence exposed in the Runtime & provenance workspace.
