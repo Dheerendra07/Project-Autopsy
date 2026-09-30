@@ -465,7 +465,9 @@ export async function updateAnalysisRun(
             ELSE started_at
           END,
           completed_at = CASE
-            WHEN $2::varchar IN ('completed', 'failed') THEN NOW()
+            WHEN $2::varchar IN ('completed', 'failed')
+              AND completed_at IS NULL
+              THEN NOW()
             ELSE completed_at
           END,
           error_message = $3
