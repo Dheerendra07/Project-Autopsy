@@ -1,12 +1,13 @@
 import pg from "pg";
 import { env } from "./env.js";
+import { normalizeDatabaseConnectionString } from "./database-url.js";
 
 const { Pool } = pg;
 
 export const DATABASE_QUERY_TIMEOUT_MS = 120_000;
 
 export const db = new Pool({
-  connectionString: env.DATABASE_URL,
+  connectionString: normalizeDatabaseConnectionString(env.DATABASE_URL),
   max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
