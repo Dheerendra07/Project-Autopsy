@@ -285,7 +285,17 @@ test("report and interpretation endpoints reject limits outside their bounded ra
 
 
 test("repository import rejects invalid branch syntax before queueing work", async () => {
-  for (const branch of ["", "main branch", "main;rm", "main?x", "main#x"]) {
+  for (const branch of [
+    "",
+    "main branch",
+    "main;rm",
+    "main?x",
+    "main#x",
+    "--upload-pack=malicious",
+    "feature/../main",
+    "feature//main",
+    "feature/name."
+  ]) {
     const response = await fetch(baseUrl + "/api/repositories/import", {
       method: "POST",
       headers: {
