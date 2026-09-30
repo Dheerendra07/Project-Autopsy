@@ -211,6 +211,16 @@ test("frontend interview and refactor views match persisted evidence schemas", (
   assert.ok(html.includes("x.committed_at"));
 });
 
+test("frontend AI interpretation keeps validated evidence keys inspectable", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("function grounding(keys)"));
+  assert.ok(html.includes("s.id===parts[0]"));
+  assert.ok(html.includes('inspectButton("Inspect supporting evidence"'));
+  assert.ok(html.includes("Validated report claims referenced by this AI theme."));
+});
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
