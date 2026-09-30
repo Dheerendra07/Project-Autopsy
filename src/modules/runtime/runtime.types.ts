@@ -42,6 +42,14 @@ const attributesSchema = z
   .record(z.string(), z.unknown())
   .default({})
   .superRefine((value, ctx) => {
+    if (exceedsJsonNestingDepth(value)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "attributes nesting depth exceeds the 20 level limit."
+      });
+      return;
+    }
+
     let serialized: string;
 
     try {
