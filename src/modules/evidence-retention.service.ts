@@ -2,6 +2,7 @@ import { db } from "../config/database.js";
 import { env } from "../config/env.js";
 
 export const EVIDENCE_RETENTION_BATCH_SIZE = 5_000;
+export const EVIDENCE_RETENTION_MAX_DELETIONS_PER_SWEEP = 20_000;
 
 export function getEvidenceRetentionCutoff(
   now: Date = new Date(),
@@ -23,11 +24,12 @@ export function getEvidenceRetentionCutoff(
 async function deleteOlderEvidence(
   table: "runtime_telemetry_events" | "deployment_evidence_events",
   timestampColumn: "observed_at" | "occurred_at",
-  cutoff: Date
+  cutoff: Date,
+  maxDeletions: number
 ): Promise<number> {
   let deleted = 0;
 
-  while (true) {
+  while (deleted < maxDeletions) {
     const result = await db.query(
       `WITH expired AS (
         SELECT id
@@ -39,7 +41,13 @@ async function deleteOlderEvidence(
       DELETE FROM ${table}
       WHERE id IN (SELECT id FROM expired)
       RETURNING id`,
-      [cutoff.toISOString(), EVIDENCE_RETENTION_BATCH_SIZE]
+      [
+        cutoff.toISOString(),
+        Math.min(
+          EVIDENCE_RETENTION_BATCH_SIZE,
+          maxDeletions - deleted
+        )
+      ]
     );
 
     deleted += result.rowCount ?? 0;
@@ -48,6 +56,8 @@ async function deleteOlderEvidence(
       return deleted;
     }
   }
+
+  return deleted;
 }
 
 export interface EvidenceRetentionSweepResult {
@@ -56,28 +66,45 @@ export interface EvidenceRetentionSweepResult {
   deploymentEvidenceDeleted: number;
 }
 
+let activeSweep:
+  Promise<EvidenceRetentionSweepResult> | undefined;
+
 export async function runEvidenceRetentionSweep(
   now: Date = new Date()
 ): Promise<EvidenceRetentionSweepResult> {
-  const cutoff = getEvidenceRetentionCutoff(now);
+  if (activeSweep) {
+    return activeSweep;
+  }
 
-  const [runtimeTelemetryDeleted, deploymentEvidenceDeleted] =
-    await Promise.all([
-      deleteOlderEvidence(
-        "runtime_telemetry_events",
-        "observed_at",
-        cutoff
-      ),
-      deleteOlderEvidence(
-        "deployment_evidence_events",
-        "occurred_at",
-        cutoff
-      )
-    ]);
+  activeSweep = (async () => {
+    const cutoff = getEvidenceRetentionCutoff(now);
 
-  return {
-    cutoff: cutoff.toISOString(),
-    runtimeTelemetryDeleted,
-    deploymentEvidenceDeleted
-  };
+    const [runtimeTelemetryDeleted, deploymentEvidenceDeleted] =
+      await Promise.all([
+        deleteOlderEvidence(
+          "runtime_telemetry_events",
+          "observed_at",
+          cutoff,
+          EVIDENCE_RETENTION_MAX_DELETIONS_PER_SWEEP
+        ),
+        deleteOlderEvidence(
+          "deployment_evidence_events",
+          "occurred_at",
+          cutoff,
+          EVIDENCE_RETENTION_MAX_DELETIONS_PER_SWEEP
+        )
+      ]);
+
+    return {
+      cutoff: cutoff.toISOString(),
+      runtimeTelemetryDeleted,
+      deploymentEvidenceDeleted
+    };
+  })();
+
+  try {
+    return await activeSweep;
+  } finally {
+    activeSweep = undefined;
+  }
 }
