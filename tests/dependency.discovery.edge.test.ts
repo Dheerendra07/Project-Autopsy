@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  DependencyManifestTooLargeError,
   isMissingPackageManifestError
 } from "../src/modules/dependencies/dependency.discovery.js";
 
@@ -23,4 +24,14 @@ test("does not classify unrelated Git failures as a missing manifest", () => {
   ]) {
     assert.equal(isMissingPackageManifestError(error), false);
   }
+});
+
+test("uses an explicit error for oversized package manifests", () => {
+  const error = new DependencyManifestTooLargeError();
+
+  assert.equal(
+    error.message,
+    "package.json exceeds the 2 MB dependency-analysis source limit."
+  );
+  assert.equal(error.name, "DependencyManifestTooLargeError");
 });

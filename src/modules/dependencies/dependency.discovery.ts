@@ -1,6 +1,16 @@
 import { simpleGit } from "simple-git";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
 
+const MAX_PACKAGE_MANIFEST_BYTES = 2_000_000;
+
+export class DependencyManifestTooLargeError extends Error {
+  constructor() {
+    super(
+      "package.json exceeds the 2 MB dependency-analysis source limit."
+    );
+    this.name = "DependencyManifestTooLargeError";
+  }
+}
 export type DependencyScope = "dependencies" | "devDependencies";
 export type DependencyChangeType = "added" | "removed" | "changed";
 
@@ -164,8 +174,24 @@ async function readPackageJsonAtCommit(
   git: ReturnType<typeof simpleGit>,
   sha: string
 ): Promise<PackageManifest | null> {
+  const objectSpec = sha + ':package.json';
+
   try {
-    const raw = await git.show([`${sha}:package.json`]);
+    const sizeOutput = await git.raw(["cat-file", "-s", objectSpec]);
+    const sourceBytes = Number.parseInt(sizeOutput.trim(), 10);
+
+    if (
+      !Number.isSafeInteger(sourceBytes) ||
+      sourceBytes < 0
+    ) {
+      throw new Error("Git returned an invalid package.json size.");
+    }
+
+    if (sourceBytes > MAX_PACKAGE_MANIFEST_BYTES) {
+      throw new DependencyManifestTooLargeError();
+    }
+
+    const raw = await git.show([objectSpec]);
     return JSON.parse(raw) as PackageManifest;
   } catch (error) {
     if (isMissingPackageManifestError(error)) {

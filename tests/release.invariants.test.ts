@@ -311,6 +311,20 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("dependency analysis bounds package.json reads before loading content", () => {
+  const discovery = readRepoFile("src/modules/dependencies/dependency.discovery.ts");
+
+  assert.ok(
+    discovery.includes("const MAX_PACKAGE_MANIFEST_BYTES = 2_000_000")
+  );
+  assert.ok(
+    discovery.includes('git.raw(["cat-file", "-s", objectSpec])')
+  );
+  assert.ok(
+    discovery.includes("throw new DependencyManifestTooLargeError()")
+  );
+});
+
 test("telemetry and deployment JSON metadata reject excessive nesting before serialization", () => {
   const runtimeTypes = readRepoFile("src/modules/runtime/runtime.types.ts");
   const deploymentTypes = readRepoFile("src/modules/deployments/deployment.types.ts");
