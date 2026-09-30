@@ -659,3 +659,10 @@ The production blueprint declares the same 25,000-commit ceiling. Package metada
 AI provider configuration now rejects endpoint credentials, query parameters, and fragments, and permits plain HTTP only for localhost development endpoints. Provider HTTP requests explicitly disable redirect following so an operator-configured endpoint cannot silently redirect the API-key-bearing request elsewhere.
 
 Provider failures continue to expose bounded generic messages to the application layer rather than forwarding arbitrary third-party error bodies into API responses.
+
+
+## Launch hardening — repository data lifecycle — 2026-09-30
+
+Repositories now expose an explicit DELETE lifecycle. Deletion is blocked while an analysis is queued or running, preventing workers from writing into a disappearing repository. Once inactive, the exact recorded checkout path is removed first and must remain inside the managed repository-storage root; only then is the repository row deleted, allowing existing database foreign keys to cascade persisted evidence.
+
+The browser workspace exposes this as a clearly separated data-lifecycle action in Settings with explicit confirmation. Successful deletion clears the browser's repository/run state while retaining the saved connection credentials.
