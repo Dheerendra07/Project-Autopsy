@@ -547,3 +547,19 @@ Next product hardening focus:
 - browser-level production smoke with a real user-supplied access key
 - expose remaining high-value evidence drill-downs without weakening evidence/causality semantics
 - final release checkpoint after CI and browser verification
+
+
+## Runtime evidence explorer + analysis diagnostics — 2026-09-30
+
+The static product workspace now exposes the persisted runtime telemetry directly instead of limiting the Runtime view to aggregate cards and historical reconstruction.
+
+Current runtime drill-down:
+- paginated observed telemetry events, 40 per page
+- filters for deployment ID, revision SHA, environment, operation name, and signal type
+- direct evidence inspection for individual telemetry records
+- bounded pagination based on API-reported total pages
+- filter reset without starting a new analysis
+
+The Overview analysis snapshot now also displays persisted run status, target SHA, started/completed timestamps, elapsed duration, and the persisted failure message when available.
+
+These additions remain evidence-first: runtime filters select observed records; they do not establish causality, regression, deployment order, ownership, or impact.
