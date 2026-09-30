@@ -70,6 +70,8 @@ test("product frontend contains the core evidence workflow", () => {
     "function boundedFetch(url,options,timeoutMs)",
     "API returned an invalid JSON response",
     "API returned an invalid response body",
+    "r.status===429",
+    "Retry after '+retrySeconds+' seconds.'",
     "function mapLimited(items,limit,worker)",
     "importButton",
     "S.importing=true",

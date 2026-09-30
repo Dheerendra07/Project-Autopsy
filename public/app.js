@@ -83,6 +83,14 @@
       if(!r.ok){
         if(r.status===401)throw new Error('API access key was rejected. Open Settings and update the key.');
         if(r.status===403)throw new Error((b&&b.error&&b.error.message)||'Access to this API operation was denied.');
+        if(r.status===429){
+          var retryAfter=r.headers.get('retry-after'),retrySeconds=Number(retryAfter||0);
+          var rateLimitMessage=(b&&b.error&&b.error.message)||'Too many requests. Please retry after the current rate-limit window.';
+          throw new Error(
+            rateLimitMessage+
+            (retrySeconds>0?' Retry after '+retrySeconds+' seconds.':'')
+          );
+        }
         throw new Error((b&&b.error&&b.error.message)||'Request failed ('+r.status+').');
       }
       if(!isJson)throw new Error('API returned an invalid JSON response ('+r.status+').');
