@@ -921,3 +921,23 @@ test("API rate limiter remains bounded and fail-open", () => {
   assert.ok(middleware.includes("resolveRateLimitCategory"));
   assert.ok(example.includes("API_RATE_LIMIT_WINDOW_SECONDS=60"));
 });
+
+
+test("environment example stays synchronized with the runtime configuration", () => {
+  const env = readRepoFile("src/config/env.ts");
+  const example = readRepoFile(".env.example");
+  const names = [...env.matchAll(/^\s{4}([A-Z][A-Z0-9_]+):/gm)].map((match) => match[1]);
+  for (const name of names) {
+    assert.ok(
+      new RegExp("^" + name + "=", "m").test(example),
+      "missing environment example entry: " + name
+    );
+  }
+});
+
+test("frontend gives an actionable response for API rate limiting", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("if(r.status===429)"));
+  assert.ok(appJs.includes("retry-after"));
+  assert.ok(appJs.includes("Retry after '+retrySeconds+' seconds."));
+});
