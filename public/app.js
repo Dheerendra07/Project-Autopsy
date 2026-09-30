@@ -132,7 +132,18 @@
         }
         banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)
       }catch(e){
-        if(token===S.workspaceToken&&repoId===S.repoId&&runId===S.runId)banner(true,'Checking analysis status','Retrying status request…','queued')
+        if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
+        var message=e&&e.message?String(e.message):'Analysis status could not be checked.';
+        if(/^API access key was rejected\./.test(message)){
+          clearInterval(S.timer);S.timer=null;banner(true,'Connection rejected','The saved API access key was rejected. Open Settings, update the key, then retry.','failed');toast('API access key was rejected','bad');return
+        }
+        if(/^Access to this API operation was denied\./.test(message)){
+          clearInterval(S.timer);S.timer=null;banner(true,'Access denied','This analysis run is not accessible with the current API credentials.','failed');toast('Analysis access was denied','bad');return
+        }
+        if(/^Request failed \(404\)\./.test(message)){
+          clearInterval(S.timer);S.timer=null;banner(true,'Analysis run unavailable','The saved analysis run no longer exists. Start a fresh analysis from this repository.','failed');toast('Saved analysis run was not found','bad');return
+        }
+        banner(true,'Checking analysis status','Temporary connection problem; retrying status request…','queued')
       }
     };
     tick();S.timer=setInterval(tick,2200)
