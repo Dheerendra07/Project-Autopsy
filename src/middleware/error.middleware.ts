@@ -12,7 +12,20 @@ export function errorMiddleware(
   _next: NextFunction
 ): void {
   const requestId = String(_req.header("x-request-id") ?? "-");
-  console.error(`Request ${requestId} failed:`, error);
+
+  if (isBodyParserError(error)) {
+    console.error(`Request ${requestId} body parsing failed:`, {
+      type: String(error.type),
+      status: error.status
+    });
+  } else if (error instanceof Error) {
+    console.error(`Request ${requestId} failed:`, {
+      name: error.name,
+      message: error.message.slice(0, 2_000)
+    });
+  } else {
+    console.error(`Request ${requestId} failed with a non-Error value.`);
+  }
 
   if (res.headersSent) {
     return;
