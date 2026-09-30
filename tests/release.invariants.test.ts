@@ -967,4 +967,7 @@ test("historical filter state resets when repository or analysis context changes
   const refresh = appJs.slice(refreshStart, refreshEnd);
   assert.ok(refresh.includes("S.historicalFilter=" + defaultFilter));
   assert.ok(refresh.includes("S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"));
+  assert.ok(appJs.includes("$('new').onclick=function(){"));
+  assert.ok(appJs.includes("S.historicalLoading=false;"));
+  assert.ok(appJs.includes("Saved workspace no longer exists"));
 });
