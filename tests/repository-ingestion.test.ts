@@ -291,3 +291,41 @@ test("preserves newline and tab filenames during file churn discovery", async ()
     await rm(repositoryPath, { recursive: true, force: true });
   }
 });
+
+
+test("applies numstat evidence page-by-page without a history-wide stats map", async () => {
+  const repositoryPath = await mkdtemp(
+    path.join(tmpdir(), "project-autopsy-numstat-pages-")
+  );
+
+  try {
+    const git = simpleGit(repositoryPath);
+    await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    for (let index = 0; index < 3; index += 1) {
+      await writeFile(
+        path.join(repositoryPath, "file-" + index + ".ts"),
+        "export const value = " + index + ";\n",
+        "utf8"
+      );
+      await git.add(".");
+      await git.commit("commit " + index);
+    }
+
+    const commits = await discoverCommits(repositoryPath);
+
+    assert.equal(commits.length, 3);
+    assert.deepEqual(
+      commits.map((commit) => [commit.subject, commit.additions, commit.deletions]),
+      [
+        ["commit 0", 1, 0],
+        ["commit 1", 1, 0],
+        ["commit 2", 1, 0]
+      ]
+    );
+  } finally {
+    await rm(repositoryPath, { recursive: true, force: true });
+  }
+});
