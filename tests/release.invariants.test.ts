@@ -311,6 +311,24 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend does not reuse an older run when partial evidence loading fails", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadData()");
+  const end = appJs.indexOf("function shell(", start);
+
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+
+  const loadData = appJs.slice(start, end);
+  assert.ok(loadData.includes("sameSnapshot=S.dataRunId===runId"));
+  assert.ok(
+    loadData.includes(
+      "out[k]=sameSnapshot?(previousData[k]??null):null"
+    )
+  );
+  assert.ok(loadData.includes("S.dataRunId=runId"));
+});
+
 test("frontend clears derived results when a refresh analysis is queued", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function refresh()");
