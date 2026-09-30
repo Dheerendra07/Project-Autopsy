@@ -28,8 +28,10 @@ test("product frontend contains the core evidence workflow", () => {
     'data-view="evidence"',
     'id="evidenceSearch"',
     'id="drawer"',
+    'id="testConnection"',
     "function architectureMap(ar)",
     "function openEvidence(id)",
+    "async function testConnection()",
     "sessionStorage.getItem('autopsy.key')",
     "sessionStorage.setItem('autopsy.aiKey'",
     "/api/repositories/import"
