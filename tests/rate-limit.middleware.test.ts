@@ -57,6 +57,23 @@ test("rate-limit policy places expensive operations in the heavy bucket", () => 
   );
 });
 
+test("consumeRateLimit uses the configured heavy limit", async () => {
+  const redis = new MemoryRedis();
+  const result = await consumeRateLimit(
+    request("/repositories/11111111-1111-4111-8111-111111111111/report", "GET"),
+    redis,
+    {
+      nowMs: 1_000,
+      windowSeconds: 60,
+      maxRequests: 120,
+      heavyMaxRequests: 3
+    }
+  );
+
+  assert.equal(result.limit, 3);
+  assert.equal(result.count, 1);
+});
+
 test("rate-limit middleware emits headers and blocks after the configured limit", async () => {
   const redis = new MemoryRedis();
   const middleware = createRateLimitMiddleware(redis, {
