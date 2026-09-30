@@ -33,6 +33,7 @@ test("product frontend contains the core evidence workflow", () => {
     "function architectureMap(ar)",
     "function openEvidence(id)",
     "function loadProvenance(deploymentId)",
+    "errorMessage: analysis.error_message",
     "function reportHtml(rep)",
     "async function testConnection()",
     "async function reloadData()",
