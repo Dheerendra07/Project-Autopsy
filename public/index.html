@@ -187,7 +187,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25',
       contributors:'/api/repositories/'+id+'/contributors?limit=25'
     };
-    var keys=Object.keys(eps),out={},errs=[];await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null;errs.push({key:k,path:eps[k],message:e.message})}}));S.data=out;S.dataErrors=errs;
+    var keys=Object.keys(eps),out={},errs=[];await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null;errs.push({key:k,path:eps[k],message:e.message})}}));S.data=out;S.runtimeEvents=arr(out.runtimeEvents,'events');S.runtimePagination=out.runtimeEvents&&out.runtimeEvents.pagination||null;S.dataErrors=errs;
     if(errs.length){toast(errs.length+' evidence source'+(errs.length===1?'':'s')+' unavailable; showing the remaining persisted data.','warn')}
   }
   function shell(title,desc,actions){return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'}
