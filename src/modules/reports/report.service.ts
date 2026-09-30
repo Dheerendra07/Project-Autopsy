@@ -689,7 +689,7 @@ export async function generateEvidenceReport(
     runtimeSummary,
     deploymentEvidence
   ] = await Promise.all([
-    listRepositoryCommits(repositoryId, 1, sampleLimit),
+    listRepositoryCommits(repositoryId, 1, sampleLimit, "desc"),
     listRepositoryHotspots(repositoryId, sampleLimit),
     listRepeatedBugAreas(repositoryId, sampleLimit),
     listRepeatedlyModifiedFiles(repositoryId, 3, sampleLimit),

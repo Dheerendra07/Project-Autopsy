@@ -699,12 +699,16 @@ export async function replaceRepositoryCommitHistory(
   }
 }
 
+export type CommitListOrder = "asc" | "desc";
+
 export async function listRepositoryCommits(
   repositoryId: string,
   page: number,
-  limit: number
+  limit: number,
+  order: CommitListOrder = "asc"
 ): Promise<{ commits: StoredCommit[]; total: number }> {
   const offset = (page - 1) * limit;
+  const sortDirection = order === "desc" ? "DESC" : "ASC";
 
   const [rowsResult, countResult] = await Promise.all([
     db.query<StoredCommit>(
@@ -724,7 +728,7 @@ export async function listRepositoryCommits(
           deletions
         FROM commits
         WHERE repository_id = $1
-        ORDER BY committed_at ASC NULLS LAST, sha ASC
+        ORDER BY committed_at ${sortDirection} NULLS LAST, sha ${sortDirection}
         LIMIT $2
         OFFSET $3
       `,

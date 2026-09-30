@@ -117,6 +117,39 @@ test("quality workflow retains the full validation gate", () => {
   }
 });
 
+test("history ordering matches the user-facing timeline semantics", () => {
+  const persistence = readRepoFile("src/modules/repositories/repository.persistence.ts");
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const report = readRepoFile("src/modules/reports/report.service.ts");
+
+  assert.ok(persistence.includes('export type CommitListOrder = "asc" | "desc";'));
+  assert.ok(persistence.includes('const sortDirection = order === "desc" ? "DESC" : "ASC";'));
+  assert.ok(
+    routes.includes(
+      'query.limit,\n      "desc"\n    );'
+    )
+  );
+  assert.ok(
+    routes.includes(
+      'query.limit,\n      "asc"\n    );'
+    )
+  );
+  assert.ok(
+    report.includes(
+      'listRepositoryCommits(repositoryId, 1, sampleLimit, "desc")'
+    )
+  );
+});
+
+
+test("404 responses do not reflect query strings", () => {
+  const middleware = readRepoFile("src/middleware/notFound.middleware.ts");
+
+  assert.ok(middleware.includes("req.path"));
+  assert.doesNotMatch(middleware, /req\.originalUrl/);
+});
+
+
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");

@@ -8,7 +8,7 @@ export function notFoundMiddleware(
     success: false,
     error: {
       code: "ROUTE_NOT_FOUND",
-      message: `Route not found: ${req.method} ${req.originalUrl}`
+      message: `Route not found: ${req.method} ${req.path}`
     }
   });
 }

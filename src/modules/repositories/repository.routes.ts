@@ -381,7 +381,8 @@ router.get("/:repositoryId/commits", async (req, res, next) => {
     const result = await listRepositoryCommits(
       repositoryId,
       query.page,
-      query.limit
+      query.limit,
+      "desc"
     );
 
     const totalPages =
@@ -430,7 +431,8 @@ router.get("/:repositoryId/timeline", async (req, res, next) => {
     const result = await listRepositoryCommits(
       repositoryId,
       query.page,
-      query.limit
+      query.limit,
+      "asc"
     );
 
     const totalPages =
