@@ -636,3 +636,12 @@ Incremental complexity analysis now fails when the base revision tree cannot be 
 Migration and test-evolution Git object readers now distinguish expected missing-path cases from unrelated Git failures. Unrelated object/tree/repository failures propagate to the analysis instead of being silently converted into empty evidence.
 
 Body-parser errors are classified only by explicit parser error type, preventing unrelated application errors that happen to carry HTTP status 400/413/415 from being mislabeled as request parsing failures.
+
+
+## Launch hardening — final analyzer cleanup semantics — 2026-09-30
+
+Clone cleanup now preserves the original repository/clone failure even when cleanup itself fails; cleanup errors are logged separately for operator diagnosis.
+
+Git branch validation is aligned more closely with Git ref rules, including rejection of `@`, dot-prefixed components, and `.lock`-suffixed components.
+
+Complexity, migration, and test-evolution analyzers now preserve or surface source-read failures rather than silently dropping evidence, while cache-only failures remain non-blocking because cache state is not evidence.
