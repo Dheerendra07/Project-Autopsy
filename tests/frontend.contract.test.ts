@@ -48,6 +48,7 @@ test("product frontend contains the core evidence workflow", () => {
     "rtSignal",
     "runtime-more",
     "function runtimeEventsPath(page,limit)",
+    "S.runtimeEvents=arr(out.runtimeEvents,'events')",
     "sessionStorage.getItem('autopsy.key')",
     "sessionStorage.setItem('autopsy.aiKey'",
     "/api/repositories/import"
