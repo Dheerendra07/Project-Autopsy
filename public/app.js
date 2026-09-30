@@ -123,7 +123,16 @@
         if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
         S.analysis=analysis;var st=analysis.status;
         if(st==='completed'){
-          clearInterval(S.timer);S.timer=null;banner(false);await loadData();
+          clearInterval(S.timer);S.timer=null;banner(false);
+          try{
+            var latestRepo=await getRepo(repoId);
+            if(token===S.workspaceToken&&repoId===S.repoId&&runId===S.runId)S.repo=latestRepo;
+          }catch(e){
+            if(token===S.workspaceToken&&repoId===S.repoId&&runId===S.runId){
+              toast('Analysis completed, but repository metadata could not be refreshed.','warn');
+            }
+          }
+          await loadData();
           if(token===S.workspaceToken&&repoId===S.repoId&&runId===S.runId){setView(S.view);toast('Analysis complete','good')}
           return
         }
