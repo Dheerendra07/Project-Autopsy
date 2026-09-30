@@ -119,6 +119,13 @@ export const envSchema = z
       .min(32)
       .optional(),
 
+    EVIDENCE_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(30)
+      .max(365)
+      .default(365),
+
     AI_INTERPRETATION_CACHE_TTL_SECONDS: z.coerce
       .number()
       .int()
