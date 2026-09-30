@@ -32,15 +32,117 @@ export async function prepareRepositoryStorage(
 }
 
 export type RepositoryDeletionResult =
-  | { status: "deleted"; storageDeleted: boolean }
+  | { status: "deleted"; storageDeleted: boolean; cleanupPending: boolean }
   | { status: "not_found" }
   | { status: "blocked"; analysisRunId: string };
+
+type PendingStorageCleanup = {
+  repository_id: string;
+  storage_path: string;
+};
+
+async function recordRepositoryStorageCleanup(
+  client: import("pg").PoolClient,
+  repositoryId: string,
+  storagePath: string
+): Promise<void> {
+  await client.query(
+    `
+      INSERT INTO repository_storage_cleanup (
+        repository_id,
+        storage_path
+      )
+      VALUES ($1, $2)
+      ON CONFLICT (repository_id)
+      DO UPDATE SET
+        storage_path = EXCLUDED.storage_path,
+        requested_at = NOW(),
+        attempts = 0,
+        last_error = NULL,
+        completed_at = NULL
+    `,
+    [repositoryId, storagePath]
+  );
+}
+
+async function markRepositoryStorageCleanupFailed(
+  repositoryId: string,
+  error: unknown
+): Promise<void> {
+  const message = error instanceof Error ? error.message : String(error);
+
+  try {
+    await db.query(
+      `
+        UPDATE repository_storage_cleanup
+        SET
+          attempts = attempts + 1,
+          last_error = $2
+        WHERE repository_id = $1
+          AND completed_at IS NULL
+      `,
+      [repositoryId, message.slice(0, 2_000)]
+    );
+  } catch (persistenceError) {
+    console.error(
+      `Failed to record repository storage cleanup error for ${repositoryId}:`,
+      persistenceError
+    );
+  }
+}
+
+async function completeRepositoryStorageCleanup(
+  repositoryId: string
+): Promise<void> {
+  await db.query(
+    "DELETE FROM repository_storage_cleanup WHERE repository_id = $1",
+    [repositoryId]
+  );
+}
+
+export async function retryRepositoryStorageCleanup(
+  limit = 20
+): Promise<{ attempted: number; cleaned: number; pending: number }> {
+  const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit)));
+
+  const result = await db.query<PendingStorageCleanup>(
+    `
+      SELECT repository_id, storage_path
+      FROM repository_storage_cleanup
+      WHERE completed_at IS NULL
+      ORDER BY requested_at ASC
+      LIMIT $1
+      FOR UPDATE SKIP LOCKED
+    `,
+    [safeLimit]
+  );
+
+  let cleaned = 0;
+
+  for (const item of result.rows) {
+    try {
+      assertManagedRepositoryStoragePath(item.storage_path);
+      await removeRepositoryStoragePath(item.storage_path);
+      await completeRepositoryStorageCleanup(item.repository_id);
+      cleaned += 1;
+    } catch (error) {
+      await markRepositoryStorageCleanupFailed(item.repository_id, error);
+    }
+  }
+
+  return {
+    attempted: result.rows.length,
+    cleaned,
+    pending: result.rows.length - cleaned
+  };
+}
 
 export async function deleteRepositoryWithStorage(
   repositoryId: string
 ): Promise<RepositoryDeletionResult> {
   assertRepositoryId(repositoryId);
   const client = await db.connect();
+  let storagePath: string | null = null;
 
   try {
     await client.query("BEGIN");
@@ -70,8 +172,6 @@ export async function deleteRepositoryWithStorage(
         FROM analysis_runs
         WHERE repository_id = $1
           AND status IN ('queued', 'running')
-        ORDER BY created_at DESC
-        LIMIT 1
       `,
       [repositoryId]
     );
@@ -86,8 +186,11 @@ export async function deleteRepositoryWithStorage(
       };
     }
 
-    if (repository.storage_path) {
-      assertManagedRepositoryStoragePath(repository.storage_path);
+    storagePath = repository.storage_path;
+
+    if (storagePath) {
+      assertManagedRepositoryStoragePath(storagePath);
+      await recordRepositoryStorageCleanup(client, repositoryId, storagePath);
     }
 
     await client.query(
@@ -95,21 +198,39 @@ export async function deleteRepositoryWithStorage(
       [repositoryId]
     );
 
-    if (repository.storage_path) {
-      await removeRepositoryStoragePath(repository.storage_path);
-    }
-
     await client.query("COMMIT");
-
-    return {
-      status: "deleted",
-      storageDeleted: repository.storage_path !== null
-    };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
+  }
+
+  if (!storagePath) {
+    return {
+      status: "deleted",
+      storageDeleted: false,
+      cleanupPending: false
+    };
+  }
+
+  try {
+    await removeRepositoryStoragePath(storagePath);
+    await completeRepositoryStorageCleanup(repositoryId);
+
+    return {
+      status: "deleted",
+      storageDeleted: true,
+      cleanupPending: false
+    };
+  } catch (error) {
+    await markRepositoryStorageCleanupFailed(repositoryId, error);
+
+    return {
+      status: "deleted",
+      storageDeleted: false,
+      cleanupPending: true
+    };
   }
 }
 
