@@ -63,7 +63,6 @@ export async function cloneRepository(
 
   const repositoryPath = await prepareRepositoryStorage(repositoryId);
   const parentPath = path.dirname(repositoryPath);
-  const git = createAnalysisGit(parentPath);
 
   const cloneArgs = ["--no-tags", "--filter=blob:none"];
 
@@ -72,6 +71,7 @@ export async function cloneRepository(
   }
 
   try {
+    const git = createAnalysisGit(parentPath);
     await git.clone(safeUrl.toString(), repositoryPath, cloneArgs);
 
     const sizeBytes = await calculateDirectorySize(repositoryPath);
