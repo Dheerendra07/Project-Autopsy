@@ -187,10 +187,9 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       runtimeEvents:'/api/repositories/'+id+'/runtime/telemetry?page=1&limit=40',
       deployments:'/api/repositories/'+id+'/deployments?limit=50',
       historicalSummary:'/api/repositories/'+id+'/runtime/historical-correlation/summary?limit=25',
-      historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25',
-      contributors:'/api/repositories/'+id+'/contributors?limit=25'
+      historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25'
     };
-    var keys=Object.keys(eps),out={},errs=[];await mapLimited(keys,6,async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null;errs.push({key:k,path:eps[k],message:e.message})}});S.data=out;S.runtimeEvents=arr(out.runtimeEvents,'events');S.runtimePagination=out.runtimeEvents&&out.runtimeEvents.pagination||null;S.dataErrors=errs;
+    var previousData=S.data||{},keys=Object.keys(eps),out={},errs=[];await mapLimited(keys,6,async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=previousData[k]??null;errs.push({key:k,path:eps[k],message:e.message})}});S.data=out;S.runtimeEvents=arr(out.runtimeEvents,'events');S.runtimePagination=out.runtimeEvents&&out.runtimeEvents.pagination||null;S.dataErrors=errs;
     if(errs.length){toast(errs.length+' evidence source'+(errs.length===1?'':'s')+' unavailable; showing the remaining persisted data.','warn')}
   }
   function shell(title,desc,actions){return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'}
@@ -219,8 +218,6 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   function structure(){
     var d=S.data,ar=arr(d.architecture,'events'),de=arr(d.dependencies,'changes'),cx=arr(d.complexity,'events'),co=arr(d.coupling,'pairs');
-    var archRows=ar.slice(0,40).map(function(x){return '<tr><td>'+esc(x.event_type)+'</td><td class="path">'+esc(x.path)+'</td><td class="path">'+esc(x.root_path)+'</td><td class="mono">'+esc(sha(x.sha))+'</td><td>'+inspectButton('Architecture event '+sha(x.sha),'Persisted architecture evolution event.',x)+'</td></tr>'}).join('');
-    var depRows=de.slice(0,40).map(function(x){return '<tr><td class="path">'+esc(x.package_name)+'</td><td>'+esc(x.scope)+'</td><td>'+esc(x.change_type)+'</td><td class="mono">'+esc(x.previous_spec||'—')+'</td><td class="mono">'+esc(x.current_spec||'—')+'</td><td>'+inspectButton('Dependency change: '+x.package_name,'Historical package.json dependency change evidence.',x)+'</td></tr>'}).join('');
     return shell('Structure','Architecture, dependency, complexity and co-change evidence')+
       '<div class="grid g2"><div class="card"><h3>Architecture evolution</h3><div class="sub">Git tree directory snapshots</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Event</th><th>Path</th><th>Root</th><th>Commit</th></tr></thead><tbody>'+ar.slice(0,40).map(function(x){return '<tr><td>'+esc(x.event_type)+'</td><td class="path">'+esc(x.path)+'</td><td class="path">'+esc(x.root_path)+'</td><td class="mono">'+esc(sha(x.sha))+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
       '<div class="card"><h3>Dependency evolution</h3><div class="sub">Historical package.json changes</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Package</th><th>Scope</th><th>Change</th><th>From</th><th>To</th></tr></thead><tbody>'+de.slice(0,40).map(function(x){return '<tr><td class="path">'+esc(x.package_name)+'</td><td>'+esc(x.scope)+'</td><td>'+esc(x.change_type)+'</td><td class="mono">'+esc(x.previous_spec||'—')+'</td><td class="mono">'+esc(x.current_spec||'—')+'</td></tr>'}).join('')+'</tbody></table></div></div></div>'+
@@ -321,7 +318,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
   }
   async function loadReport(){try{var r=await api('/api/repositories/'+S.repoId+'/report?limit=10');S.data.report=r.report;setView('report');toast('Evidence report refreshed','good')}catch(e){toast(e.message,'bad')}}
   async function loadInterview(){try{var r=await api('/api/repositories/'+S.repoId+'/interview-stories?limit=6');S.data.interview=r;setView('interview');toast('Interview stories loaded','good')}catch(e){toast(e.message,'bad')}}
-  async function loadInterpretation(){try{if(!S.aiKey){openSettings(true);throw new Error('Add the AI interpretation access key in settings first.')}var r=await api('/api/repositories/'+S.repoId+'/interpretation?limit=10',{aiKey:true});S.data.interpretation=r;setView('interpretation');toast('AI interpretation generated','good')}catch(e){toast(e.message,'bad')}}
+  async function loadInterpretation(){try{if(!S.aiKey){openSettings();throw new Error('Add the AI interpretation access key in settings first.')}var r=await api('/api/repositories/'+S.repoId+'/interpretation?limit=10',{aiKey:true});S.data.interpretation=r;setView('interpretation');toast('AI interpretation generated','good')}catch(e){toast(e.message,'bad')}}
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){try{var r=await api('/api/repositories/'+S.repoId+'/analyze',{method:'POST',body:'{}'});S.runId=r.analysis.id;S.analysis=null;persist();poll();toast('Refresh analysis queued')}catch(e){toast(e.message,'bad')}}
   function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('modal').hidden=false;$('api').focus()}
