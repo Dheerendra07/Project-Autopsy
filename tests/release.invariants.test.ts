@@ -234,3 +234,16 @@ test("analysis state policy and migration serialization remain explicit", () => 
   assert.ok(constraints.includes("analysis_runs_status_check"));
   assert.ok(constraints.includes("analysis_runs_terminal_timestamp_check"));
 });
+
+
+test("AI provider transport remains bounded and redirect-safe", () => {
+  const source = readRepoFile("src/modules/interpretation/interpretation.service.ts");
+
+  assert.ok(source.includes("const MAX_AI_RESPONSE_BYTES = 256 * 1024;"));
+  assert.ok(source.includes('"redirect": "error"'));
+  assert.ok(
+    source.includes(
+      "AI provider response exceeded the configured size limit."
+    )
+  );
+});
