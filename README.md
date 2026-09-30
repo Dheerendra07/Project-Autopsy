@@ -114,6 +114,8 @@ The response is paginated and exposes persisted engineering evidence; repository
 
 ## Deterministic hotspots
 
+File-churn discovery pages Git history in bounded 500-commit chunks and parses NUL-delimited numstat records so valid filenames containing tabs or newlines remain intact.
+
 GET /api/repositories/:repositoryId/hotspots?limit=20
 
 Hotspots are ordered by commit frequency, then total line churn, then path. Binary files contribute to `binary_changes`; line additions/deletions are not fabricated for them.
