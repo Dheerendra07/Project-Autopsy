@@ -225,76 +225,85 @@ async function discoverNumstat(
       ? [`${range.fromExclusive}..${range.toInclusive}`]
       : ["--all"];
 
-  const output = await git.raw([
-    "log",
-    ...rangeArguments,
-    "--full-history",
-    "--reverse",
-    "--format=%x1e%H",
-    "--numstat",
-    "--no-renames",
-    "-z"
-  ]);
-
+  const commitCount = await countCommits(git, range);
   const result = new Map<string, Map<string, { additions: number; deletions: number }>>();
 
-  for (const rawRecord of output.split(RECORD_SEPARATOR)) {
-    const record = rawRecord.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
-    if (!record) continue;
+  for (
+    let skip = 0;
+    skip < commitCount;
+    skip += GIT_LOG_PAGE_SIZE
+  ) {
+    const output = await git.raw([
+      "log",
+      ...rangeArguments,
+      "--full-history",
+      "--reverse",
+      "--format=%x1e%H",
+      "--numstat",
+      "--no-renames",
+      "-z",
+      `--skip=${skip}`,
+      `--max-count=${GIT_LOG_PAGE_SIZE}`
+    ]);
 
-    const parts = record.split(NUL_SEPARATOR);
-    const sha = (parts.shift() ?? "").trim();
+    for (const rawRecord of output.split(RECORD_SEPARATOR)) {
+      const record = rawRecord.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
+      if (!record) continue;
 
-    if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
-      continue;
+      const parts = record.split(NUL_SEPARATOR);
+      const sha = (parts.shift() ?? "").trim();
+
+      if (!sha || !/^[0-9a-f]{7,64}$/i.test(sha)) {
+        continue;
+      }
+
+      const files = new Map<string, { additions: number; deletions: number }>();
+
+      for (const rawPart of parts) {
+        const line = rawPart.replace(/^\r?\n/, "").replace(/\r$/, "");
+
+        if (!line) {
+          continue;
+        }
+
+        const firstTab = line.indexOf("\t");
+        const secondTab =
+          firstTab >= 0
+            ? line.indexOf("\t", firstTab + 1)
+            : -1;
+
+        if (firstTab <= 0 || secondTab <= firstTab) {
+          continue;
+        }
+
+        const additionsField = line.slice(0, firstTab);
+        const deletionsField = line.slice(firstTab + 1, secondTab);
+        const filePath = line.slice(secondTab + 1);
+
+        if (!additionsField || !deletionsField || !filePath) {
+          continue;
+        }
+
+        if (additionsField === "-" && deletionsField === "-") {
+          files.set(filePath, { additions: 0, deletions: 0 });
+          continue;
+        }
+
+        const additions = Number.parseInt(additionsField, 10);
+        const deletions = Number.parseInt(deletionsField, 10);
+
+        if (
+          Number.isSafeInteger(additions) &&
+          Number.isSafeInteger(deletions) &&
+          additions >= 0 &&
+          deletions >= 0
+        ) {
+          files.set(filePath, { additions, deletions });
+        }
+      }
+
+      result.set(sha, files);
     }
-
-    const files = new Map<string, { additions: number; deletions: number }>();
-
-    for (const rawPart of parts) {
-      const line = rawPart.replace(/^\r?\n/, "").replace(/\r$/, "");
-
-      if (!line) {
-        continue;
-      }
-
-      const firstTab = line.indexOf("\t");
-      const secondTab =
-        firstTab >= 0
-          ? line.indexOf("\t", firstTab + 1)
-          : -1;
-
-      if (firstTab <= 0 || secondTab <= firstTab) {
-        continue;
-      }
-
-      const additionsField = line.slice(0, firstTab);
-      const deletionsField = line.slice(firstTab + 1, secondTab);
-      const filePath = line.slice(secondTab + 1);
-
-      if (!additionsField || !deletionsField || !filePath) {
-        continue;
-      }
-
-      if (additionsField === "-" && deletionsField === "-") {
-        files.set(filePath, { additions: 0, deletions: 0 });
-        continue;
-      }
-
-      const additions = Number.parseInt(additionsField, 10);
-      const deletions = Number.parseInt(deletionsField, 10);
-
-      if (
-        Number.isSafeInteger(additions) &&
-        Number.isSafeInteger(deletions) &&
-        additions >= 0 &&
-        deletions >= 0
-      ) {
-        files.set(filePath, { additions, deletions });
-      }
-    }
-
-    result.set(sha, files);
   }
 
   return result;
