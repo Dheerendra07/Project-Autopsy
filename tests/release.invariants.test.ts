@@ -221,6 +221,19 @@ test("frontend AI interpretation keeps validated evidence keys inspectable", () 
 });
 });
 
+test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(html.includes("API access key was rejected. Open Settings and update the key."));
+  assert.ok(html.includes("Access to this API operation was denied."));
+  assert.ok(html.includes("Saved workspace could not be restored. Reconnect in Settings."));
+  assert.ok(html.includes("Connection settings"));
+  assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
+  assert.ok(
+    html.includes("S.dataErrors.length?'warn':'good'")
+  );
+});
+
 test("frontend retains failure-safe and stale-analysis controls", () => {
   const html = readRepoFile("public/index.html");
 
