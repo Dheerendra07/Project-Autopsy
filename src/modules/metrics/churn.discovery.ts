@@ -16,45 +16,64 @@ export async function discoverFileChurn(
 ): Promise<FileChurnEvidence[]> {
   const git = createAnalysisGit(repositoryPath);
 
-  const output = await git.raw([
-    "log",
+  const countOutput = await git.raw([
+    "rev-list",
     "--all",
-    "--full-history",
-    "--numstat",
-    "--no-renames",
-    "--format="
+    "--count"
   ]);
+  const commitCount = Number.parseInt(countOutput.trim(), 10);
+
+  if (!Number.isSafeInteger(commitCount) || commitCount < 0) {
+    throw new Error("Git returned an invalid commit count.");
+  }
 
   const metrics = new Map<string, FileChurnEvidence>();
 
-  for (const rawLine of output.split(/\r?\n/)) {
-    const line = rawLine.replace(/\r$/, "");
+  for (
+    let skip = 0;
+    skip < commitCount;
+    skip += GIT_LOG_PAGE_SIZE
+  ) {
+    const output = await git.raw([
+      "log",
+      "--all",
+      "--full-history",
+      "--reverse",
+      "--numstat",
+      "--no-renames",
+      "--format=",
+      "-z",
+      `--skip=${skip}`,
+      `--max-count=${GIT_LOG_PAGE_SIZE}`
+    ]);
 
-    if (!line) {
-      continue;
+    for (const record of output.split("\0")) {
+      if (!record) {
+        continue;
+      }
+
+      const parsed = parseNumstatLine(record);
+
+      if (!parsed) {
+        continue;
+      }
+
+      const existing = metrics.get(parsed.path) ?? {
+        path: parsed.path,
+        additions: 0,
+        deletions: 0,
+        binaryChanges: 0
+      };
+
+      if (parsed.binary) {
+        existing.binaryChanges += 1;
+      } else {
+        existing.additions += parsed.additions;
+        existing.deletions += parsed.deletions;
+      }
+
+      metrics.set(parsed.path, existing);
     }
-
-    const parsed = parseNumstatLine(line);
-
-    if (!parsed) {
-      continue;
-    }
-
-    const existing = metrics.get(parsed.path) ?? {
-      path: parsed.path,
-      additions: 0,
-      deletions: 0,
-      binaryChanges: 0
-    };
-
-    if (parsed.binary) {
-      existing.binaryChanges += 1;
-    } else {
-      existing.additions += parsed.additions;
-      existing.deletions += parsed.deletions;
-    }
-
-    metrics.set(parsed.path, existing);
   }
 
   return [...metrics.values()].sort((a, b) =>
