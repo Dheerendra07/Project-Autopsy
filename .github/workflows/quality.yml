@@ -3,7 +3,7 @@ name: quality
 on:
   push:
     branches:
-      - "**"
+      - main
     paths-ignore:
       - "docs/**"
   pull_request:
@@ -23,7 +23,6 @@ jobs:
   typecheck-build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
 
     env:
       NODE_ENV: test
