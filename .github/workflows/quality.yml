@@ -21,45 +21,23 @@ concurrency:
 
 jobs:
   typecheck-build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
-
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: project_autopsy
-          POSTGRES_USER: autopsy
-          POSTGRES_PASSWORD: autopsy_dev_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U autopsy -d project_autopsy"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
 
     env:
       NODE_ENV: test
       PORT: 5000
-      DATABASE_URL: postgresql://autopsy:autopsy_dev_password@127.0.0.1:5432/project_autopsy
-      REDIS_HOST: 127.0.0.1
-      REDIS_PORT: 6379
-      REPOSITORY_STORAGE_PATH: ./storage/repositories
-      MAX_REPOSITORY_SIZE_MB: 500
-      MAX_ANALYSIS_TIME_MINUTES: 30
-
     steps:
+      - name: Runner diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          uname -a
+          cat /etc/os-release
+          node --version
+          npm --version
+      - name: Runner execution probe
+        run: node -e "console.log('Project Autopsy runner probe reached step execution.')"
       - name: Checkout
         uses: actions/checkout@v5
 
