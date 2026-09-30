@@ -609,3 +609,12 @@ Repository storage inspection is symlink-safe: readiness checks do not follow a 
 The static workspace now tags asynchronous repository/data requests with both a workspace token and analysis-run identity. Responses from a previous repository or superseded analysis run are discarded instead of overwriting current state. Runtime pagination loading also keeps its loading lock scoped to the request that owns it.
 
 The corresponding edge/contract tests cover unsafe branch shapes, symlink-safe storage accounting/readiness, frontend stale-response guards, and the existing protected API import boundary.
+
+
+## Launch hardening — HTTP boundary + client transport safety — 2026-09-30
+
+The API access wall now runs before request-body parsing. Unauthenticated API traffic therefore does not enter JSON/urlencoded parsing, while authenticated malformed and oversized payloads receive explicit client error contracts instead of generic 500 responses.
+
+The browser client now treats successful API responses as JSON objects, rejects malformed success payloads, and enforces HTTPS API base URLs except for localhost development targets. API base credentials, query parameters, and fragments are rejected. Browser session-storage access is failure-safe so a restricted storage environment does not crash the workspace.
+
+The corresponding contract coverage protects auth-before-parser ordering, malformed/oversized body behavior, secure API URL handling, session-storage guards, and the existing stale async response protections.
