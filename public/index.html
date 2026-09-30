@@ -166,6 +166,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     var tick=async function(){try{S.analysis=await getRun();var st=S.analysis.status;if(st==='completed'){clearInterval(S.timer);S.timer=null;banner(false);await loadData();setView(S.view);toast('Analysis complete','good');return}if(st==='failed'){clearInterval(S.timer);S.timer=null;banner(true,'Analysis failed',S.analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.','failed');toast('Analysis failed','bad');return}banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)}catch(e){banner(true,'Checking analysis status','Retrying status request…','queued')}};
     tick();S.timer=setInterval(tick,2200)
   }
+  async function mapLimited(items,limit,worker){var out=new Array(items.length),next=0;async function run(){while(true){var i=next++;if(i>=items.length)return;out[i]=await worker(items[i],i)}}var count=Math.min(limit||1,items.length);await Promise.all(Array.from({length:count},run));return out}
   async function loadData(){
     var id=S.repoId,eps={
       commits:'/api/repositories/'+id+'/commits?page=1&limit=50',
@@ -189,7 +190,7 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
       historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25',
       contributors:'/api/repositories/'+id+'/contributors?limit=25'
     };
-    var keys=Object.keys(eps),out={},errs=[];await Promise.all(keys.map(async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null;errs.push({key:k,path:eps[k],message:e.message})}}));S.data=out;S.runtimeEvents=arr(out.runtimeEvents,'events');S.runtimePagination=out.runtimeEvents&&out.runtimeEvents.pagination||null;S.dataErrors=errs;
+    var keys=Object.keys(eps),out={},errs=[];await mapLimited(keys,6,async function(k){try{out[k]=await api(eps[k])}catch(e){out[k]=null;errs.push({key:k,path:eps[k],message:e.message})}});S.data=out;S.runtimeEvents=arr(out.runtimeEvents,'events');S.runtimePagination=out.runtimeEvents&&out.runtimeEvents.pagination||null;S.dataErrors=errs;
     if(errs.length){toast(errs.length+' evidence source'+(errs.length===1?'':'s')+' unavailable; showing the remaining persisted data.','warn')}
   }
   function shell(title,desc,actions){return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'}
