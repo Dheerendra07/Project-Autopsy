@@ -1000,3 +1000,24 @@ test("historical runtime numeric inputs are normalized before API requests", () 
   assert.ok(fn.includes("windowMinutes=60"));
   assert.ok(fn.includes("minSamples=10"));
 });
+
+
+test("analysis history pagination UI uses the bounded backend page", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("async function loadMoreAnalysisRuns()"));
+  assert.ok(appJs.includes("/analysis-runs?page="));
+  assert.ok(appJs.includes("analysis-runs-more"));
+  assert.ok(appJs.includes("Load older analysis runs"));
+});
+
+test("historical runtime filters stay aligned across summary, correlation and source context", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function historicalRuntimePath(kind,page,limit,filter)"));
+  assert.ok(appJs.includes("async function loadHistoricalRuntime()"));
+  assert.ok(appJs.includes("Number.isInteger(windowMinutes)"));
+  assert.ok(appJs.includes("Number.isInteger(minSamples)"));
+  assert.ok(appJs.includes("historicalRuntimePath('summary',1,25,f)"));
+  assert.ok(appJs.includes("historicalRuntimePath('correlation',1,25,f)"));
+  assert.ok(appJs.includes("historicalRuntimePath('source-context',1,25,f)"));
+  assert.ok(appJs.includes("historical-filter"));
+});
