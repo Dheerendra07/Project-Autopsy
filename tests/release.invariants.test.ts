@@ -24,7 +24,15 @@ test("package remains private and exposes bounded production commands", () => {
     "tsc"
   );
   assert.equal(pkg.scripts?.typecheck, "tsc --noEmit");
+  assert.equal(pkg.scripts?.["typecheck:tests"], "tsc -p tsconfig.tests.json --noEmit");
   assert.equal(pkg.scripts?.test, "tsx --test tests/*.test.ts");
+});
+
+test("test TypeScript project includes source and test files", () => {
+  const tsconfig = JSON.parse(readRepoFile("tsconfig.tests.json")) as { include?: string[]; compilerOptions?: { noEmit?: boolean; rootDir?: string } };
+  assert.deepEqual(tsconfig.include, ["src/**/*.ts", "tests/**/*.ts"]);
+  assert.equal(tsconfig.compilerOptions?.noEmit, true);
+  assert.equal(tsconfig.compilerOptions?.rootDir, ".");
 });
 
 test("Render blueprint keeps the free combined runtime and health endpoint", () => {
@@ -67,6 +75,7 @@ test("quality workflow retains the full validation gate", () => {
   for (const marker of [
     "npm ci",
     "npm run typecheck",
+    "npm run typecheck:tests",
     "npm run build",
     "npm run db:migrate",
     "npm test",
