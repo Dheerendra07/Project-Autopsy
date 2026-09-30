@@ -135,3 +135,21 @@ test("frontend retains failure-safe and stale-analysis controls", () => {
     assert.ok(html.includes(marker), "missing frontend invariant: " + marker);
   }
 });
+
+
+test("API authentication is mounted before JSON body parsing", () => {
+  const app = readRepoFile("src/app.ts");
+  const authIndex = app.indexOf("isApiAccessAuthorized(");
+  const jsonParserIndex = app.indexOf('app.use(express.json({ limit: "1mb" }))');
+  const routerIndex = app.indexOf('app.use("/api", router);');
+
+  assert.ok(authIndex >= 0);
+  assert.ok(jsonParserIndex >= 0);
+  assert.ok(routerIndex >= 0);
+  assert.ok(authIndex < jsonParserIndex);
+  assert.ok(jsonParserIndex < routerIndex);
+  assert.equal(
+    (app.match(/app\.use\("\/api", router\);/g) ?? []).length,
+    1
+  );
+});
