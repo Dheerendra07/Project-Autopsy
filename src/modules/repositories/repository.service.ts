@@ -104,36 +104,65 @@ export async function retryRepositoryStorageCleanup(
   limit = 20
 ): Promise<{ attempted: number; cleaned: number; pending: number }> {
   const safeLimit = Math.max(1, Math.min(100, Math.trunc(limit)));
-
-  const result = await db.query<PendingStorageCleanup>(
-    `
-      SELECT repository_id, storage_path
-      FROM repository_storage_cleanup
-      WHERE completed_at IS NULL
-      ORDER BY requested_at ASC
-      LIMIT $1
-      FOR UPDATE SKIP LOCKED
-    `,
-    [safeLimit]
-  );
-
+  const client = await db.connect();
+  let attempted = 0;
   let cleaned = 0;
 
-  for (const item of result.rows) {
-    try {
-      assertManagedRepositoryStoragePath(item.storage_path);
-      await removeRepositoryStoragePath(item.storage_path);
-      await completeRepositoryStorageCleanup(item.repository_id);
-      cleaned += 1;
-    } catch (error) {
-      await markRepositoryStorageCleanupFailed(item.repository_id, error);
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query<PendingStorageCleanup>(
+      `
+        SELECT repository_id, storage_path
+        FROM repository_storage_cleanup
+        WHERE completed_at IS NULL
+        ORDER BY requested_at ASC
+        LIMIT $1
+        FOR UPDATE SKIP LOCKED
+      `,
+      [safeLimit]
+    );
+
+    attempted = result.rows.length;
+
+    for (const item of result.rows) {
+      try {
+        assertManagedRepositoryStoragePath(item.storage_path);
+        await removeRepositoryStoragePath(item.storage_path);
+        await client.query(
+          "DELETE FROM repository_storage_cleanup WHERE repository_id = $1",
+          [item.repository_id]
+        );
+        cleaned += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+
+        await client.query(
+          `
+            UPDATE repository_storage_cleanup
+            SET
+              attempts = attempts + 1,
+              last_error = $2
+            WHERE repository_id = $1
+              AND completed_at IS NULL
+          `,
+          [item.repository_id, message.slice(0, 2_000)]
+        );
+      }
     }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 
   return {
-    attempted: result.rows.length,
+    attempted,
     cleaned,
-    pending: result.rows.length - cleaned
+    pending: attempted - cleaned
   };
 }
 
