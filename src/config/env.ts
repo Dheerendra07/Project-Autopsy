@@ -76,6 +76,27 @@ export const envSchema = z
       .max(100_000)
       .default(25_000),
 
+    API_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(10)
+      .max(3_600)
+      .default(60),
+
+    API_RATE_LIMIT_MAX_REQUESTS: z.coerce
+      .number()
+      .int()
+      .min(10)
+      .max(10_000)
+      .default(120),
+
+    API_RATE_LIMIT_HEAVY_MAX_REQUESTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(1_000)
+      .default(12),
+
     RUNTIME_TELEMETRY_INGEST_KEY: z
       .string()
       .min(32)

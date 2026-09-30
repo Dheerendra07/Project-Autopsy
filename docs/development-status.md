@@ -235,6 +235,8 @@ Release-gap hardening merged in PR #118 includes bounded Git history/numstat pag
 
 Current product hardening adds a bounded analysis-run history endpoint and an overview lifecycle ledger so users can inspect prior full/incremental/check runs without exposing storage paths or unsanitized internal failure details.
 
+API abuse protection is also hardened with Redis-backed per-client-address rate limiting: 120 requests/minute for normal API traffic and 12 requests/minute for expensive analysis/report/AI/runtime/deployment operations. Report and AI interpretation GET requests use the heavy bucket. Limiter failures fail open to preserve service availability.
+
 Current environment verification status:
 - GitHub Actions runs #1223–#1232 for the release-hardening line failed before any repository workflow step executed (`steps: []`). The quality workflow is therefore manual-only until hosted-runner provisioning is demonstrably usable again; the verification commands themselves remain intact and unchanged.
 - The public GitHub status page currently reports Actions as operational, so the cause of those historical pre-step failures cannot be established from repository evidence alone.

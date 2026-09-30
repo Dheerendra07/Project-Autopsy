@@ -337,3 +337,38 @@ test("MAX_ANALYZED_COMMITS is bounded and integer-valued", () => {
     );
   }
 });
+
+
+test("API rate-limit configuration remains bounded", async () => {
+  const { envSchema } = await import("../src/config/env.js");
+  const base = {
+    NODE_ENV: "test",
+    DATABASE_URL: "postgresql://localhost/project_autopsy"
+  };
+
+  assert.equal(
+    envSchema.parse(base).API_RATE_LIMIT_WINDOW_SECONDS,
+    60
+  );
+  assert.equal(
+    envSchema.parse(base).API_RATE_LIMIT_MAX_REQUESTS,
+    120
+  );
+  assert.equal(
+    envSchema.parse(base).API_RATE_LIMIT_HEAVY_MAX_REQUESTS,
+    12
+  );
+
+  for (const [key, value] of [
+    ["API_RATE_LIMIT_WINDOW_SECONDS", "9"],
+    ["API_RATE_LIMIT_WINDOW_SECONDS", "3601"],
+    ["API_RATE_LIMIT_MAX_REQUESTS", "9"],
+    ["API_RATE_LIMIT_MAX_REQUESTS", "10001"],
+    ["API_RATE_LIMIT_HEAVY_MAX_REQUESTS", "0"],
+    ["API_RATE_LIMIT_HEAVY_MAX_REQUESTS", "1001"]
+  ] as const) {
+    assert.throws(
+      () => envSchema.parse({ ...base, [key]: value })
+    );
+  }
+});
