@@ -143,6 +143,33 @@ test("evidence retention is configured, indexed and shutdown-aware", () => {
   assert.ok(render.includes('value: "365"'));
 });
 
+
+
+test("production smoke covers public surface and protected API boundaries", () => {
+  const script = readRepoFile("scripts/production-smoke.mjs");
+  const workflow = readRepoFile(".github/workflows/production-smoke.yml");
+
+  for (const marker of [
+    "AUTOPSY_PRODUCTION_URL",
+    "AUTOPSY_API_ACCESS_KEY",
+    '"/health"',
+    '"/ready"',
+    '"/api/repositories/00000000-0000-0000-0000-000000000000"',
+    "API_ACCESS_UNAUTHORIZED",
+    "REPOSITORY_NOT_FOUND",
+    'redirect: "error"',
+    "AbortSignal.timeout(15_000)"
+  ]) {
+    assert.ok(
+      script.includes(marker) || workflow.includes(marker),
+      "missing production smoke invariant: " + marker
+    );
+  }
+
+  assert.ok(workflow.includes("workflow_dispatch:"));
+  assert.ok(workflow.includes("secrets.AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
+});
 test("quality workflow retains the full validation gate", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
