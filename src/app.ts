@@ -45,8 +45,7 @@ app.use(
           ? requestOrigin ?? true
           : false
       );
-    },
-    credentials: true
+    }
   })
 );
 
