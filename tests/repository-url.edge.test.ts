@@ -205,11 +205,11 @@ test("preserves nested repository paths for hosted Git providers", () => {
   assert.equal(parsed.pathname, "/group/subgroup/repo.git");
 });
 
-test("preserves percent-encoded path characters rather than rewriting them", () => {
+test("preserves non-structural percent-encoded path characters", () => {
   const parsed = validateRemoteRepositoryUrl(
-    "https://github.com/owner/repo%2Farchive"
+    "https://github.com/owner/repo%5Farchive"
   );
 
   assert.equal(parsed.hostname, "github.com");
-  assert.equal(parsed.pathname, "/owner/repo%2Farchive");
+  assert.equal(parsed.pathname, "/owner/repo%5Farchive");
 });
