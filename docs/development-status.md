@@ -675,3 +675,8 @@ Database migrations now use a PostgreSQL advisory lock so concurrent application
 Analysis-run state transitions are explicit and forward-only at the application layer, with terminal states protected from resurrection. Migration 015 adds database constraints for valid statuses/modes and terminal timestamp consistency, while normalizing legacy timestamp anomalies before enforcing the constraints.
 
 Repository deletion uses a database row lock plus a retryable storage-cleanup ledger, preventing delete/refresh races and allowing filesystem cleanup to recover after process interruption.
+
+
+## Launch hardening — private response caching — 2026-09-30
+
+All `/api` responses now carry `Cache-Control: no-store`. Autopsy API payloads can contain repository history, source structure, contributor metadata, runtime telemetry, deployment evidence, and generated reports, so browser/proxy caching is explicitly disabled at the API boundary.
