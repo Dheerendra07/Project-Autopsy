@@ -941,3 +941,16 @@ test("frontend gives an actionable response for API rate limiting", () => {
   assert.ok(appJs.includes("retry-after"));
   assert.ok(appJs.includes("Retry after '+retrySeconds+' seconds."));
 });
+
+
+test("historical source-context UI stays wired to the bounded backend projection", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(
+    appJs.includes(
+      "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'"
+    )
+  );
+  assert.ok(appJs.includes("Historical source-change context"));
+  assert.ok(appJs.includes("sourceContextComplete"));
+  assert.ok(appJs.includes("changedFilesTruncated"));
+});
