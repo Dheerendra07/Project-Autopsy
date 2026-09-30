@@ -264,3 +264,15 @@ test("analysis-state migration keeps executable PostgreSQL dollar quoting", () =
   assert.ok(migration.includes("\nEND $$;"));
   assert.doesNotMatch(migration, /DO \$\nBEGIN/);
 });
+
+
+test("repository cleanup retry loop is bounded and shutdown-aware", () => {
+  const server = readRepoFile("src/server.ts");
+
+  assert.ok(
+    server.includes("REPOSITORY_STORAGE_CLEANUP_INTERVAL_MS = 5 * 60_000")
+  );
+  assert.ok(server.includes("repositoryCleanupTimer = setInterval"));
+  assert.ok(server.includes("clearInterval(repositoryCleanupTimer)"));
+  assert.ok(server.includes("repositoryCleanupTimer.unref()"));
+});
