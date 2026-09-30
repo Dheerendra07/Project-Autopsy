@@ -165,7 +165,7 @@ async function readPackageJsonAtCommit(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
-    if (/path .*package\\.json.* does not exist in/i.test(message)) {
+    if (/path .*package\.json.* does not exist in/i.test(message)) {
       return null;
     }
 
