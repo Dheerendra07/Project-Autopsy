@@ -69,6 +69,13 @@ export const envSchema = z
       )
       .default(30),
 
+    MAX_ANALYZED_COMMITS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100_000)
+      .default(25_000),
+
     RUNTIME_TELEMETRY_INGEST_KEY: z
       .string()
       .min(32)
