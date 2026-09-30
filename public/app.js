@@ -112,7 +112,7 @@
       if(!S.key){openSettings();throw new Error('Add your API access key first.')}
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
-      S.workspaceToken+=1;
+      S.workspaceToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;
       S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};persist();workspace();setView('overview');poll();
     }catch(e){
       if(token===S.workspaceToken){$('formerr').textContent=e.message;$('formerr').hidden=false}
@@ -362,7 +362,7 @@
     try{
       var r=await api('/api/repositories/'+id,{method:'DELETE'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
-      S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;
+      S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;
       S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.evidence=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalLoading=false;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};
       persist();closeSettings();landing();toast(r.cleanupPending?'Repository deleted; storage cleanup is pending and will be retried automatically.':'Repository data deleted','good');
     }catch(e){
@@ -371,7 +371,7 @@
   }
   $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
-  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
+  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false)}
   async function boot(){
@@ -397,6 +397,8 @@
         if(message.indexOf('Request failed (404).')===0){
           S.workspaceToken+=1;
           S.commitLoadToken+=1;
+          S.analysisRunsLoading=false;
+          S.analysisRunsLoadToken+=1;
           clearInterval(S.timer);
           S.timer=null;
           S.repoId='';
