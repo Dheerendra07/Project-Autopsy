@@ -132,7 +132,7 @@ Dependency API: GET /api/repositories/:repositoryId/dependencies?limit=100
 
 Architecture API: GET /api/repositories/:repositoryId/architecture?limit=100
 
-Dependency history is derived from historical package.json snapshots. Architecture history currently tracks repository top-level directories and top-level directories under src. These are structural signals, not claims about runtime architecture.
+Dependency history is derived from historical package.json snapshots. Architecture history currently tracks repository top-level directories and top-level directories under src. Discovery reads only the relevant top-level Git tree entries rather than recursively scanning every file in each commit. These are structural signals, not claims about runtime architecture.
 
 ## Refactor signals
 

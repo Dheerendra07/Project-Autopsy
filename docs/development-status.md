@@ -233,7 +233,7 @@ Authoritative current state:
 
 Release-gap hardening merged in PR #118 includes bounded Git history/numstat paging, bounded evidence retention with indexed cleanup, explicit retention configuration, hardened GitHub Actions setup, a manual production-smoke workflow, and corresponding release invariants.
 
-Current product hardening adds a bounded analysis-run history endpoint and an overview lifecycle ledger so users can inspect prior full/incremental/check runs without exposing storage paths or unsanitized internal failure details. File-churn discovery is also paged in 500-commit chunks with NUL-delimited numstat parsing to keep large-history reads bounded and preserve unusual valid filenames.
+Current product hardening adds a bounded analysis-run history endpoint and an overview lifecycle ledger so users can inspect prior full/incremental/check runs without exposing storage paths or unsanitized internal failure details. File-churn discovery is also paged in 500-commit chunks with NUL-delimited numstat parsing to keep large-history reads bounded and preserve unusual valid filenames. Architecture discovery now uses non-recursive Git tree reads because it only needs top-level directory entries.
 
 API abuse protection is also hardened with Redis-backed per-client-address rate limiting: 120 requests/minute for normal API traffic and 12 requests/minute for expensive analysis/report/AI/runtime/deployment operations. Report and AI interpretation GET requests use the heavy bucket. Limiter failures fail open to preserve service availability.
 

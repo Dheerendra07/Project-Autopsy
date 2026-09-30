@@ -1034,3 +1034,13 @@ test("file churn discovery paginates full Git history and uses NUL-delimited num
   assert.ok(churn.includes('output.split("\\0")'));
   assert.ok(churn.includes("[\\s\\S]+"));
 });
+
+
+test("architecture discovery reads only bounded directory trees", () => {
+  const architecture = readRepoFile("src/modules/architecture/architecture.discovery.ts");
+  assert.ok(architecture.includes('"ls-tree",'));
+  assert.ok(architecture.includes('"--name-only",'));
+  assert.ok(architecture.includes('"-d",'));
+  assert.ok(architecture.includes("const treeish = rootPath ? sha + ":" + rootPath : sha;"));
+  assert.doesNotMatch(architecture, /"ls-tree", "-r"/);
+});

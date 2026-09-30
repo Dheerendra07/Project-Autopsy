@@ -110,3 +110,47 @@ test("seeds dependency evolution from the base head", async () => {
     await rm(repositoryPath, { recursive: true, force: true });
   }
 });
+
+test("lists only immediate architecture directories without recursive tree reads", async () => {
+  const repositoryPath = await mkdtemp(
+    path.join(tmpdir(), "project-autopsy-architecture-tree-")
+  );
+
+  try {
+    const git = simpleGit(repositoryPath);
+    await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    await mkdir(path.join(repositoryPath, "src", "foo", "nested"), { recursive: true });
+    await mkdir(path.join(repositoryPath, "docs", "nested"), { recursive: true });
+    await writeFile(path.join(repositoryPath, "src", "foo", "nested", "a.ts"), "export const a = 1;\n", "utf8");
+    await writeFile(path.join(repositoryPath, "docs", "nested", "readme.md"), "docs\n", "utf8");
+    await git.add(".");
+    await git.commit("architecture tree");
+
+    const head = (await git.revparse(["HEAD"])).trim();
+    const { discoverArchitectureEvolution } =
+      await import("../src/modules/architecture/architecture.discovery.js");
+
+    const result = await discoverArchitectureEvolution(
+      repositoryPath,
+      [{ sha: head }]
+    );
+
+    assert.deepEqual(result.snapshots, [
+      {
+        sha: head,
+        rootPath: "root",
+        directories: ["docs", "src"]
+      },
+      {
+        sha: head,
+        rootPath: "src",
+        directories: ["foo"]
+      }
+    ]);
+  } finally {
+    await rm(repositoryPath, { recursive: true, force: true });
+  }
+});
