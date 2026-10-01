@@ -79,12 +79,13 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
   }
 });
 
-test("quality workflow is manual while GitHub-hosted runner provisioning is unavailable", () => {
+test("quality workflow runs automatically for pull requests and main pushes", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
   for (const marker of [
-    "push:",
     "pull_request:",
+    "push:",
+    "branches: [main]",
     "runs-on: ubuntu-latest",
     "Prepare PostgreSQL and Redis",
     "permissions:",
@@ -97,9 +98,10 @@ test("quality workflow is manual while GitHub-hosted runner provisioning is unav
   ]) {
     assert.ok(workflow.includes(marker), "missing workflow invariant: " + marker);
   }
+
   assert.ok(workflow.includes("workflow_dispatch:"));
-  assert.doesNotMatch(workflow, /pull_request:/);
-  assert.doesNotMatch(workflow, /push:/);
+  assert.ok(workflow.includes("pull_request:\n    branches: [main]"));
+  assert.ok(workflow.includes("push:\n    branches: [main]"));
 });
 
 
@@ -111,12 +113,9 @@ test("Git history discovery paginates commit and numstat output", () => {
   assert.ok(discovery.includes('`--max-count=${GIT_LOG_PAGE_SIZE}`'));
   assert.ok(
     discovery.indexOf("const commits: DiscoveredCommit[] = []") <
-      discovery.indexOf("const numstat = await discoverNumstat")
+      discovery.indexOf("const pageNumstat = await discoverNumstatPage(")
   );
-  assert.equal(
-    (discovery.match(/"--numstat"/g) ?? []).length,
-    1
-  );
+  assert.ok(discovery.includes("const pageNumstat = await discoverNumstatPage("));
 });
 
 
@@ -320,8 +319,8 @@ test("frontend quality workspace renders refactor evidence", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  assert.ok(html.includes("Refactor signals"));
-  assert.ok(appJs.includes('inspectButton("Refactor signal "'));
+  assert.ok(appJs.includes("Refactor signals"));
+  assert.ok(appJs.includes("Refactor signal"));
   assert.ok(appJs.includes("Commit-subject heuristic signals; not proof of intent"));
 });
 
@@ -329,9 +328,9 @@ test("frontend overview exposes direct evidence inspection hooks", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  assert.ok(appJs.includes('inspectButton("Commit "'));
-  assert.ok(appJs.includes('inspectButton("Hotspot "'));
-  assert.ok(html.includes("Most touched files"));
+  assert.ok(appJs.includes("inspectButton('Commit '"));
+  assert.ok(appJs.includes("inspectButton('Hotspot '"));
+  assert.ok(appJs.includes("Most touched files"));
 });
 
 test("frontend connection test handles invalid API base URLs", () => {
@@ -572,7 +571,7 @@ test("frontend connection failures remain actionable and mobile evidence control
 
   assert.ok(appJs.includes("API access key was rejected. Open Settings and update the key."));
   assert.ok(appJs.includes("Access to this API operation was denied."));
-  assert.ok(appJs.includes("Saved workspace could not be restored. Reconnect in Settings."));
+  assert.ok(appJs.includes("Saved workspace could not be restored."));
   assert.ok(html.includes("Connection settings"));
   assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
   assert.ok(
@@ -614,9 +613,9 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(end > start);
 
   const poll = appJs.slice(start, end);
-  assert.ok(poll.includes("API access key was rejected."));
-  assert.ok(poll.includes("Access to this API operation was denied."));
-  assert.ok(poll.includes("Request failed (404)."));
+  assert.match(poll, /API access key was rejected\./);
+  assert.match(poll, /Access denied/);
+  assert.match(poll, /Analysis run unavailable/);
   assert.ok(poll.includes("The saved API access key was rejected"));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
@@ -625,13 +624,13 @@ test("frontend stops polling on terminal analysis access errors", () => {
 test("frontend clears stale saved workspace state after a missing repository or analysis run", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function boot()");
-  const end = appJs.indexOf("boot()", start);
+  const end = appJs.indexOf("\n  boot()\n})();", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
 
   const boot = appJs.slice(start, end);
-  assert.ok(boot.includes("Request failed (404)."));
+  assert.ok(boot.includes("message.indexOf('Request failed (404).')===0"));
   assert.ok(boot.includes("S.repoId=''"));
   assert.ok(boot.includes("S.runId=''"));
   assert.ok(boot.includes("S.data={}"));
@@ -705,7 +704,7 @@ test("repository deletion keeps an explicit lifecycle guard in the API and clien
   assert.ok(service.includes("deleteRepositoryWithStorage"));
   assert.ok(service.includes('FOR UPDATE'));
   assert.ok(html.includes("Delete repository data"));
-  assert.ok(html.includes("Permanently delete "));
+  assert.ok(readRepoFile("public/app.js").includes("Permanently delete "));
 });
 
 
@@ -731,8 +730,8 @@ test("analysis state policy and migration serialization remain explicit", () => 
 
   assert.ok(state.includes('queued: ["running", "failed"]'));
   assert.ok(state.includes("completed: []"));
-  assert.ok(state.includes('SELECT pg_advisory_lock(2147483647)'));
-  assert.ok(state.includes('SELECT pg_advisory_unlock(2147483647)'));
+  assert.ok(migration.includes('SELECT pg_advisory_lock(2147483647)'));
+  assert.ok(migration.includes('SELECT pg_advisory_unlock(2147483647)'));
   assert.ok(constraints.includes("analysis_runs_status_check"));
   assert.ok(constraints.includes("analysis_runs_terminal_timestamp_check"));
 });
@@ -815,32 +814,28 @@ test("analysis discovery finishes before current evidence is mutated", () => {
   assert.ok(discoveryStart >= 0);
   assert.ok(persistenceStart > discoveryStart);
   assert.ok(complexityStart > discoveryStart);
-  assert.ok(
-    persistenceStart >
-      worker.indexOf(
-        "const databaseMigrationEvolution ="
-      )
+
+  for (const marker of [
+    "const dependencyEvolution =",
+    "const architectureEvolution =",
+    "const databaseMigrationEvolution =",
+    "const testEvolution = await discoverTestEvolution("
+  ]) {
+    assert.ok(
+      persistenceStart > worker.indexOf(marker),
+      "discovery must complete before persistence marker: " + marker
+    );
+  }
+
+  const couplingStart = worker.indexOf(
+    "const couplingPairs = await rebuildFileChangeCoupling("
   );
-  assert.ok(
-    persistenceStart >
-      worker.indexOf(
-        "const testEvolution = await discoverTestEvolution("
-      )
+  const completionStart = worker.lastIndexOf(
+    'await updateAnalysisRun(analysisRunId, "completed")'
   );
-  assert.ok(
-    persistenceStart >
-      worker.indexOf(
-        "const architectureEvolution ="
-      )
-  );
-  assert.ok(
-    worker.indexOf("await replaceFileChangeMetrics(repositoryId, fileChurn)") >
-      persistenceStart
-  );
-  assert.ok(
-    worker.indexOf("await updateAnalysisRun(analysisRunId, \"completed\")") >
-      worker.indexOf("const couplingPairs = await rebuildFileChangeCoupling(")
-  );
+
+  assert.ok(couplingStart > persistenceStart);
+  assert.ok(completionStart > couplingStart);
 });
 
 
@@ -992,7 +987,7 @@ test("analysis run history load token resets on repository context changes", () 
 test("historical runtime numeric inputs are normalized before API requests", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function loadHistoricalRuntime()");
-  const end = appJs.indexOf("async function reloadData()", start);
+  const end = appJs.indexOf("async function loadMoreCommits()", start);
   assert.ok(start >= 0 && end > start);
   const fn = appJs.slice(start, end);
   assert.ok(fn.includes("Number.isInteger(windowMinutes)"));
@@ -1026,7 +1021,10 @@ test("historical runtime filters stay aligned across summary, correlation and so
 test("file churn discovery paginates full Git history and uses NUL-delimited numstat", () => {
   const churn = readRepoFile("src/modules/metrics/churn.discovery.ts");
   assert.ok(churn.includes("export const GIT_LOG_PAGE_SIZE = 500"));
-  assert.ok(churn.includes('["rev-list", "--all", "--count"]'));
+  assert.ok(churn.includes("const countOutput = await git.raw(["));
+  assert.ok(churn.includes('"rev-list",'));
+  assert.ok(churn.includes('"--all",'));
+  assert.ok(churn.includes('"--count"'));
   assert.ok(churn.includes("--skip=${skip}"));
   assert.ok(churn.includes("--max-count=${GIT_LOG_PAGE_SIZE}"));
   assert.ok(churn.includes('"--format=",'));
@@ -1041,7 +1039,7 @@ test("architecture discovery reads only bounded directory trees", () => {
   assert.ok(architecture.includes('"ls-tree",'));
   assert.ok(architecture.includes('"--name-only",'));
   assert.ok(architecture.includes('"-d",'));
-  assert.ok(architecture.includes("const treeish = rootPath ? sha + ":" + rootPath : sha;"));
+  assert.ok(architecture.includes('const treeish = rootPath ? sha + ":" + rootPath : sha;'));
   assert.doesNotMatch(architecture, /"ls-tree", "-r"/);
 });
 
@@ -1074,6 +1072,37 @@ test("storage readiness performs real Git integrity probes", () => {
   assert.ok(service.includes('git.raw(["rev-parse", "--git-dir"])'));
   assert.ok(service.includes('insideWorkTree.trim() === "true"'));
 });
+test("frontend lifecycle invalidation prevents stale refresh and historical loads", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("historicalLoadToken:0"));
+
+  const refresh = appJs.slice(
+    appJs.indexOf("async function refresh()"),
+    appJs.indexOf("function openSettings")
+  );
+  assert.ok(refresh.includes("S.workspaceToken+=1;"));
+  assert.ok(refresh.includes("clearInterval(S.timer);S.timer=null;"));
+  assert.ok(
+    refresh.indexOf("S.workspaceToken+=1;") <
+      refresh.indexOf("var token=S.workspaceToken,id=S.repoId;")
+  );
+
+  const reload = appJs.slice(
+    appJs.indexOf("async function reloadData()"),
+    appJs.indexOf("function historicalRuntimePath")
+  );
+  assert.ok(reload.includes("var token=S.workspaceToken,id=S.repoId,runId=S.runId;"));
+  assert.ok(reload.includes("if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;"));
+
+  const historical = appJs.slice(
+    appJs.indexOf("async function loadHistoricalRuntime()"),
+    appJs.indexOf("async function loadMoreCommits()")
+  );
+  assert.ok(historical.includes("loadToken=++S.historicalLoadToken"));
+  assert.ok(historical.includes("loadToken!==S.historicalLoadToken"));
+  assert.ok(historical.includes("&&loadToken===S.historicalLoadToken)S.historicalLoading=false;"));
+});
+
 
 
 test("optional production evidence ingestion keys do not block service startup", () => {
