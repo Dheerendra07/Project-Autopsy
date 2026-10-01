@@ -578,7 +578,7 @@ test("frontend does not reuse an older run when partial evidence loading fails",
 test("frontend clears derived results when a refresh analysis is queued", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function refresh()");
-  const end = appJs.indexOf("function openSettings()", start);
+  const end = appJs.indexOf("function openSettings(", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
@@ -1036,7 +1036,7 @@ test("historical filter state resets when repository or analysis context changes
   const defaultFilter = "{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''}";
   assert.ok(appJs.includes("S.historicalFilter=" + defaultFilter));
   const refreshStart = appJs.indexOf("async function refresh()");
-  const refreshEnd = appJs.indexOf("function openSettings()", refreshStart);
+  const refreshEnd = appJs.indexOf("function openSettings(", refreshStart);
   assert.ok(refreshStart >= 0);
   assert.ok(refreshEnd > refreshStart);
   const refresh = appJs.slice(refreshStart, refreshEnd);
