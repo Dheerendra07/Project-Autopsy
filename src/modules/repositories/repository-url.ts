@@ -2,6 +2,13 @@ import { z } from "zod";
 
 const repositoryUrlSchema = z.string().url();
 
+export class RepositoryUrlValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RepositoryUrlValidationError";
+  }
+}
+
 const ALLOWED_GIT_HOSTS = new Set([
   "github.com",
   "gitlab.com",
@@ -13,13 +20,13 @@ export function validateRemoteRepositoryUrl(value: string): URL {
   const url = new URL(parsed);
 
   if (url.protocol !== "https:") {
-    throw new Error("Only HTTPS repository URLs are allowed.");
+    throw new RepositoryUrlValidationError("Only HTTPS repository URLs are allowed.");
   }
 
   const hostname = url.hostname.toLowerCase();
 
   if (!ALLOWED_GIT_HOSTS.has(hostname)) {
-    throw new Error("Repository host is not supported.");
+    throw new RepositoryUrlValidationError("Repository host is not supported.");
   }
 
   let segments: string[];
@@ -28,31 +35,31 @@ export function validateRemoteRepositoryUrl(value: string): URL {
       .split("/")
       .filter(Boolean);
   } catch {
-    throw new Error("Repository path contains invalid URL encoding.");
+    throw new RepositoryUrlValidationError("Repository path contains invalid URL encoding.");
   }
 
   const expectedMinimumSegments = 2;
 
   if (segments.length < expectedMinimumSegments) {
-    throw new Error("Repository URL must include an owner/group and repository name.");
+    throw new RepositoryUrlValidationError("Repository URL must include an owner/group and repository name.");
   }
 
   if ((hostname === "github.com" || hostname === "bitbucket.org") && segments.length !== 2) {
-    throw new Error("Repository URL has an invalid path for its Git provider.");
+    throw new RepositoryUrlValidationError("Repository URL has an invalid path for its Git provider.");
   }
 
   if (segments.some((segment) => segment === "." || segment === "..")) {
-    throw new Error("Repository URL contains an invalid path segment.");
+    throw new RepositoryUrlValidationError("Repository URL contains an invalid path segment.");
   }
 
   if (url.username || url.password) {
-    throw new Error(
+    throw new RepositoryUrlValidationError(
       "Repository credentials must not be embedded in the repository URL."
     );
   }
 
   if (url.search || url.hash) {
-    throw new Error(
+    throw new RepositoryUrlValidationError(
       "Repository URLs must not contain query parameters or fragments."
     );
   }
