@@ -1474,3 +1474,25 @@ test("frontend restores settings focus and moves evidence inspector focus on ope
   assert.ok(appJs.includes("requestAnimationFrame(function(){$('drawerClose').focus()})"));
   assert.ok(appJs.includes("$('settings').onclick=function(){openSettings(this)};"));
 });
+
+test("frontend keeps browser history API unshadowed by the History view renderer", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function historyView()"));
+  assert.ok(appJs.includes("history.pushState(null,'','#'+v)"));
+  assert.doesNotMatch(appJs, /function history\(\)\{/);
+});
+
+test("frontend prevents duplicate analysis refresh and connection probes", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("refreshLoading:false"));
+  assert.ok(appJs.includes("if(S.refreshLoading)return"));
+  assert.ok(appJs.includes("refreshButton.disabled=true"));
+  assert.ok(appJs.includes("connectionTesting:false"));
+  assert.ok(appJs.includes("if(S.connectionTesting)return"));
+  assert.ok(appJs.includes("verifyButton.disabled=true"));
+});
+
+test("frontend prevents duplicate destructive confirmation requests", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("if(S.confirmResolver)return Promise.resolve(false);"));
+});
