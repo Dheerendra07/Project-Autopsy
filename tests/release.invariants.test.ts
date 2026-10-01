@@ -1684,6 +1684,7 @@ test("private repository access stays encrypted, server-side and outside queue p
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
   const render = readRepoFile("render.yaml");
+  const errorMiddleware = readRepoFile("src/middleware/error.middleware.ts");
 
   assert.ok(env.includes("REPOSITORY_CREDENTIAL_ENCRYPTION_KEY"));
   assert.ok(credentials.includes("aes-256-gcm"));
@@ -1714,4 +1715,7 @@ test("private repository access stays encrypted, server-side and outside queue p
   assert.ok(html.includes('id="clearRepoAccess"'));
   assert.ok(appJs.includes("/access"));
   assert.ok(render.includes("REPOSITORY_CREDENTIAL_ENCRYPTION_KEY"));
+  assert.ok(
+    errorMiddleware.includes("REPOSITORY_ACCESS_NOT_CONFIGURED")
+  );
 });
