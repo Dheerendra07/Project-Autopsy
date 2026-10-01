@@ -6,7 +6,7 @@
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -46,6 +46,8 @@
   function actionBusy(action,busy,busyLabel){document.querySelectorAll('#root [data-action="'+action+'"]').forEach(function(el){if(busy){if(el._autopsyBusy)return;el._autopsyBusy=true;el._autopsyIdleText=el.textContent;el.disabled=true;el.setAttribute('aria-busy','true');if(busyLabel)el.textContent=busyLabel}else if(el._autopsyBusy){el._autopsyBusy=false;el.disabled=false;el.removeAttribute('aria-busy');if(el._autopsyIdleText)el.textContent=el._autopsyIdleText;delete el._autopsyIdleText}})}
   function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.key',S.key);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
   function connected(state){var c=$('conn');var verified=state==='verified',configured=state==='configured',rejected=state==='rejected';c.textContent=verified?'Verified':rejected?'Access rejected':configured?'Access saved':'Not connected';c.className='pill '+(verified?'good':rejected?'bad':configured?'warn':'')}
+  function syncAnalysisRefreshControl(){var b=$('refresh'),running=!!(S.analysis&&['queued','running'].indexOf(S.analysis.status)>=0);if(!b)return;b.disabled=running||S.refreshLoading;b.setAttribute('aria-busy',running||S.refreshLoading?'true':'false');b.textContent=S.refreshLoading?'Refreshing…':running?'Analysis running…':'Refresh analysis'}
+  function trapFocus(container,event){if(!container||event.key!=='Tab'||container.hidden)return;var focusable=Array.prototype.slice.call(container.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')).filter(function(el){return !el.hidden&&el.getClientRects().length>0});if(!focusable.length){event.preventDefault();return}var first=focusable[0],last=focusable[focusable.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
   function resetEvidence(){S.evidence=[];S.evidenceSeq=0}
   function addEvidence(label,basis,payload){var id=++S.evidenceSeq;S.evidence.push({id:id,label:label,basis:basis,payload:payload});return id}
   function inspectButton(label,basis,payload){return '<button class="inspect" data-evidence-id="'+addEvidence(label,basis,payload)+'">Inspect</button>'}
@@ -174,9 +176,9 @@
       try{
         var analysis=await getRun(repoId,runId);
         if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
-        S.analysis=analysis;var st=analysis.status;
+        S.analysis=analysis;syncAnalysisRefreshControl();var st=analysis.status;
         if(st==='completed'){
-          clearInterval(S.timer);S.timer=null;banner(false);
+          clearInterval(S.timer);S.timer=null;banner(false);syncAnalysisRefreshControl();
           try{
             var latestRepo=await getRepo(repoId);
             if(token===S.workspaceToken&&repoId===S.repoId&&runId===S.runId)S.repo=latestRepo;
@@ -190,7 +192,7 @@
           return
         }
         if(st==='failed'){
-          clearInterval(S.timer);S.timer=null;banner(true,'Analysis failed',analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.','failed');toast('Analysis failed','bad');return
+          clearInterval(S.timer);S.timer=null;syncAnalysisRefreshControl();banner(true,'Analysis failed',analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.','failed');toast('Analysis failed','bad');return
         }
         banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)
       }catch(e){
@@ -601,6 +603,8 @@
     finally{if(loadToken===S.commitLoadToken)S.commitLoading=false}
   }
   async function loadProvenance(deploymentId,trigger){
+    if(S.provenanceLoading)return;
+    S.provenanceLoading=true;
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     try{
       var r=await api('/api/repositories/'+id+'/deployments/provenance?deploymentId='+encodeURIComponent(deploymentId));
@@ -612,6 +616,7 @@
       $('drawer').hidden=false;
       requestAnimationFrame(function(){$('drawerClose').focus()});
     }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
+    finally{S.provenanceLoading=false}
   }
   async function loadReport(){
     if(S.reportLoading)return;
@@ -693,7 +698,7 @@
     try{
       var r=await api('/api/repositories/'+id+'/analyze',{method:'POST',body:'{}'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
-      S.runId=r.analysis.id;S.analysis=r.analysis;
+      S.runId=r.analysis.id;S.analysis=r.analysis;syncAnalysisRefreshControl();
       S.data.report=null;S.data.interview=null;S.data.interpretation=null;
       persist();poll();toast('Refresh analysis queued')
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
@@ -719,6 +724,7 @@
   }
   async function deleteRepository(){
     if(!S.repoId||S.importing)return;
+    if(S.analysis&&['queued','running'].indexOf(S.analysis.status)>=0){toast('Analysis is already running. Wait for it to finish before starting another refresh.','warn');syncAnalysisRefreshControl();return}
     var token=S.workspaceToken,id=S.repoId,name=(S.repo&&S.repo.name)||'this repository';
     if(!await confirmDelete(name))return;
     try{
@@ -734,6 +740,7 @@
   $('settings').onclick=function(){openSettings(this)};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   document.addEventListener('keydown',function(e){
+    if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
     var target=e.target;
     if(e.key==='/'&&$('viewSearch')&&target&&['INPUT','TEXTAREA','SELECT'].indexOf(target.tagName)<0&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
       e.preventDefault();$('viewSearch').focus();return;
