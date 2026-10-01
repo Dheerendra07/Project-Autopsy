@@ -1265,3 +1265,11 @@ test("frontend renders explicit empty states for empty evidence tables", () => {
   assert.ok(appJs.includes("if(row.getAttribute('data-empty-state')==='true'){row.hidden=true;return}"));
   assert.ok(appJs.includes("ensureTableEmptyStates();"));
 });
+
+
+test("frontend navigation writes browser history for user-driven view changes", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);"));
+  assert.ok(appJs.includes("window.addEventListener('hashchange'"));
+  assert.doesNotMatch(appJs, /if\(!options\.fromHash&&location\.hash!==\'#\'\+v\)history\.replaceState/);
+});
