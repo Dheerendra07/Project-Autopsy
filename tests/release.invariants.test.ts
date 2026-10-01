@@ -258,6 +258,11 @@ test("frontend product surface stays guided, progressive and evidence-readable",
     "/api/observability/summary",
     "acceptStatuses:[503]",
     "operationalLoadToken",
+    "operationalTimer",
+    "operationalPollMs",
+    "function stopOperationsMonitoring()",
+    "function scheduleOperationsMonitoring()",
+    "visibilitychange",
     "analysisQueue"
   ]) {
     assert.ok(appJs.includes(marker), "missing product interaction marker: " + marker);
