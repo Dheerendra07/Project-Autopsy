@@ -1074,3 +1074,22 @@ test("storage readiness performs real Git integrity probes", () => {
   assert.ok(service.includes('git.raw(["rev-parse", "--git-dir"])'));
   assert.ok(service.includes('insideWorkTree.trim() === "true"'));
 });
+
+
+test("optional production evidence ingestion keys do not block service startup", () => {
+  const env = readRepoFile("src/config/env.ts");
+  const render = readRepoFile("render.yaml");
+
+  assert.ok(env.includes("RUNTIME_TELEMETRY_INGEST_KEY"));
+  assert.ok(env.includes("DEPLOYMENT_EVIDENCE_INGEST_KEY"));
+  assert.doesNotMatch(
+    env,
+    /RUNTIME_TELEMETRY_INGEST_KEY is required in production/
+  );
+  assert.doesNotMatch(
+    env,
+    /DEPLOYMENT_EVIDENCE_INGEST_KEY is required in production/
+  );
+  assert.ok(render.includes("RUNTIME_TELEMETRY_INGEST_KEY"));
+  assert.ok(render.includes("DEPLOYMENT_EVIDENCE_INGEST_KEY"));
+});
