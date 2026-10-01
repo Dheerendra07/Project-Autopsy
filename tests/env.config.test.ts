@@ -56,17 +56,16 @@ test("worker production role does not require web ingestion, API, or AI access s
   assert.equal(config.AUTOPSY_SERVICE_ROLE, "worker");
 });
 
-test("requires deployment ingestion credentials in production", () => {
-  assert.throws(
-    () =>
-      parseEnvironment(
-        baseEnvironment({
-          NODE_ENV: "production",
-          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32)
-        })
-      ),
-    /DEPLOYMENT_EVIDENCE_INGEST_KEY/
+test("production web configuration allows optional ingestion credentials", () => {
+  const config = parseEnvironment(
+    baseEnvironment({
+      NODE_ENV: "production",
+      AUTOPSY_API_ACCESS_KEY: "a".repeat(32)
+    })
   );
+
+  assert.equal(config.RUNTIME_TELEMETRY_INGEST_KEY, undefined);
+  assert.equal(config.DEPLOYMENT_EVIDENCE_INGEST_KEY, undefined);
 });
 
 test("requires the API access key in production", () => {

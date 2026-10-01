@@ -38,16 +38,14 @@ test("production web configuration fails closed when the API key is missing", ()
   );
 });
 
-test("production web configuration requires runtime and deployment ingestion keys", () => {
-  assert.throws(
-    () =>
-      parseEnvironment({
-        ...base,
-        NODE_ENV: "production",
-        AUTOPSY_SERVICE_ROLE: "web",
-        AUTOPSY_API_ACCESS_KEY: productionKeys.AUTOPSY_API_ACCESS_KEY
-      }),
-    /RUNTIME_TELEMETRY_INGEST_KEY|DEPLOYMENT_EVIDENCE_INGEST_KEY/
+test("production web configuration allows runtime and deployment ingestion keys to remain unset", () => {
+  assert.doesNotThrow(() =>
+    parseEnvironment({
+      ...base,
+      NODE_ENV: "production",
+      AUTOPSY_SERVICE_ROLE: "web",
+      AUTOPSY_API_ACCESS_KEY: productionKeys.AUTOPSY_API_ACCESS_KEY
+    })
   );
 });
 
