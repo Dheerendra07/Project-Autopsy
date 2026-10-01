@@ -6,7 +6,7 @@
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,historicalLoading:false,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{}
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{}
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -307,11 +307,12 @@
       '<div class="card"><h3>Most touched files</h3><div class="sub">Historical activity signal — not a quality ranking</div><div class="bars" style="margin-top:15px">'+h.slice(0,8).map(function(x){return '<div class="bar"><span title="'+esc(x.path)+'">'+esc(x.path)+'</span><div class="track"><div class="fill" style="width:'+(Number(x.commits_touched||0)/max*100)+'%"></div></div><b>'+n(x.commits_touched)+'</b>'+inspectButton('Hotspot '+(x.path||'file'),'Historical file-activity signal from persisted commit evidence.',x)+'</div>'}).join('')||'<div class="empty">No hotspot evidence.</div>'+'</div></div></div>';
   }
   function history(){
-    var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events'),total=Number(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length);
-    var action=total>c.length?'<button class="btn" data-action="more-commits">Load next 50</button>':'';
+    var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events'),commitPagination=d.commits&&d.commits.pagination||{},timelinePagination=d.timeline&&d.timeline.pagination||{},total=Number(commitPagination.total||c.length);
+    var actions=[];if(commitPagination.totalPages&&commitPagination.page<commitPagination.totalPages)actions.push('<button class="btn" data-action="more-commits">'+(S.commitLoading?'Loading…':'Load next 50 commits')+'</button>');if(timelinePagination.totalPages&&timelinePagination.page<timelinePagination.totalPages)actions.push('<button class="btn" data-action="more-timeline">'+(S.timelineLoading?'Loading…':'Load next 50 timeline events')+'</button>');
+    var action=actions.join('');
     return shell('History','Chronological Git evidence with descriptive event classification.',action)+
-      '<div class="grid g2"><div class="card"><h3>Timeline signals</h3><div class="sub">Commit-subject keyword heuristics</div><div class="timeline" style="margin-top:15px">'+t.slice(0,25).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+'</p><div style="margin-top:7px">'+inspectButton('Timeline '+sha(x.sha),'Commit-subject classification evidence from the timeline projection.',x)+'</div></div>'}).join('')||'<div class="empty">No timeline evidence.</div>'+'</div></div>'+
-      '<div class="card"><h3>Commit ledger</h3><div class="sub">Persisted metadata and numstat evidence</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Commit</th><th>Subject</th><th>Files</th><th>+</th><th>−</th><th>When</th><th></th></tr></thead><tbody>'+c.slice(0,35).map(function(x){return '<tr><td class="mono">'+esc(sha(x.sha))+'</td><td>'+esc(x.subject)+'</td><td>'+n(x.files_changed)+'</td><td>'+n(x.additions)+'</td><td>'+n(x.deletions)+'</td><td>'+esc(date(x.committed_at))+'</td><td>'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+      '<div class="grid g2"><div class="card"><h3>Timeline signals</h3><div class="sub">Commit-subject keyword heuristics</div><div class="timeline" style="margin-top:15px">'+t.slice(0,50).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+'</p><div style="margin-top:7px">'+inspectButton('Timeline '+sha(x.sha),'Commit-subject classification evidence from the timeline projection.',x)+'</div></div>'}).join('')||'<div class="empty">No timeline evidence.</div>'+'</div></div>'+
+      '<div class="card"><h3>Commit ledger</h3><div class="sub">Persisted metadata and numstat evidence</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Commit</th><th>Subject</th><th>Files</th><th>+</th><th>−</th><th>When</th><th></th></tr></thead><tbody>'+c.slice(0,50).map(function(x){return '<tr><td class="mono">'+esc(sha(x.sha))+'</td><td>'+esc(x.subject)+'</td><td>'+n(x.files_changed)+'</td><td>'+n(x.additions)+'</td><td>'+n(x.deletions)+'</td><td>'+esc(date(x.committed_at))+'</td><td>'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
   }
   function structure(){
     var d=S.data,ar=arr(d.architecture,'events'),de=arr(d.dependencies,'changes'),cx=arr(d.complexity,'events'),co=arr(d.coupling,'pairs');
@@ -493,6 +494,25 @@
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.historicalLoadToken)S.historicalLoading=false;
     }
   }
+  async function loadMoreTimeline(){
+    if(S.timelineLoading)return;
+    var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.timelineLoadToken;
+    S.timelineLoading=true;
+    try{
+      var current=arr(S.data.timeline,'events'),pagination=S.data.timeline&&S.data.timeline.pagination||{},page=Number(pagination.page||1)+1;
+      if(!pagination.totalPages||page>pagination.totalPages)return;
+      var r=await api('/api/repositories/'+id+'/timeline?page='+page+'&limit='+(pagination.limit||50));
+      if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||loadToken!==S.timelineLoadToken)return;
+      var next=arr(r,'events');
+      S.data.timeline={events:current.concat(next),pagination:r.pagination};
+      setView('history');
+      toast(next.length?'Loaded next timeline page':'No more timeline evidence','good');
+    }catch(e){
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.timelineLoadToken)toast(e.message||'Timeline evidence could not be loaded','bad');
+    }finally{
+      if(loadToken===S.timelineLoadToken)S.timelineLoading=false;
+    }
+  }
   async function loadMoreCommits(){
     if(S.commitLoading)return;
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.commitLoadToken;
@@ -595,7 +615,7 @@
     try{
       var r=await api('/api/repositories/'+id,{method:'DELETE'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
-      S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;
+      S.workspaceToken+=1;S.commitLoadToken+=1;S.timelineLoading=false;S.timelineLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;
       S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.evidence=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalLoading=false;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};
       persist();closeSettings();landing();toast(r.cleanupPending?'Repository deleted; storage cleanup is pending and will be retried automatically.':'Repository data deleted','good');
     }catch(e){
@@ -616,9 +636,9 @@
       if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings()
     }
   });
-  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};persist();landing()}
+  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.timelineLoading=false;S.timelineLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))};window.addEventListener('hashchange',function(){setView(viewFromHash(),{fromHash:true})})
-  $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
+  $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='more-timeline')loadMoreTimeline();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
   async function boot(){
     S.connectionState=S.key?'configured':'unknown';connected(S.connectionState);
     if(S.repoId&&S.runId&&S.key){
