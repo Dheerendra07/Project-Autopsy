@@ -6,7 +6,7 @@
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,focusReturn:null,currentEvidence:null,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,focusReturn:null,currentEvidence:null,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -90,7 +90,7 @@
     return '<div class="card section"><div class="arch-title"><div><h3>Observed structure map</h3><div class="sub">A visual index of directory surfaces seen in persisted architecture events; it is not a runtime dependency graph.</div></div><span class="tag">'+n(keys.length)+' surfaces</span></div><div class="archmap section"><div class="archcore"><strong>'+esc((S.repo&&S.repo.name)||'Repository')+'</strong><small>persisted Git tree evidence</small></div><div class="archnodes">'+keys.map(function(k){var count=groups[k],sample=ar.filter(function(x){return (x.root_path||x.rootPath||x.path||'(root)')===k}).slice(-3);return '<div class="archnode"><b title="'+esc(k)+'">'+esc(k)+'</b><small>'+n(count)+' structural events</small>'+inspectButton('Architecture surface: '+k,'Observed directory/root-path evidence from the architecture endpoint.',{surface:k,eventCount:count,recentEvents:sample})+'</div>'}).join('')+'</div></div></div>';
   }
   async function boundedFetch(url,options,timeoutMs){var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},timeoutMs||10000),request=Object.assign({},options||{},{signal:controller.signal});try{return await fetch(url,request)}catch(e){if(e&&e.name==='AbortError')throw new Error('Connection test timed out.');throw e}finally{clearTimeout(timer)}}
-  async function testConnection(){
+  async function testConnection(){if(S.connectionTesting)return;S.connectionTesting=true;var verifyButton=$('testConnection'),verifyLabel=verifyButton&&verifyButton.textContent;if(verifyButton){verifyButton.disabled=true;verifyButton.setAttribute('aria-busy','true');verifyButton.textContent='Verifying…'}
     var base;
     var key=$('key').value.trim();
     try{
@@ -113,6 +113,7 @@
       connected('verified');
       toast('API, database, Redis and access key are working','good');
     }catch(e){var rejected=e&&e.message==='API key rejected by protected API';S.connectionState=rejected?'rejected':'configured';connected(S.connectionState);toast(e.message||'Connection test failed','bad')}
+    finally{S.connectionTesting=false;if(verifyButton){verifyButton.disabled=false;verifyButton.removeAttribute('aria-busy');if(verifyLabel)verifyButton.textContent=verifyLabel}}
   }
   async function api(path,opt){
     var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
@@ -368,7 +369,7 @@
       '<div class="card section"><h3>Analysis run history</h3><div class="sub">Persisted analysis lifecycle records; failures show sanitized diagnostics only.</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Status</th><th>Mode</th><th>Target</th><th>Started</th><th>Completed</th><th></th></tr></thead><tbody>'+arr(d.analysisRuns,'runs').slice(0,20).map(function(x){return '<tr><td><span class="pill '+cls(x.status)+'">'+esc(x.status||'unknown')+'</span></td><td>'+esc(x.mode||'—')+'</td><td class="mono">'+esc(sha(x.targetHeadSha))+'</td><td>'+esc(date(x.startedAt))+'</td><td>'+esc(date(x.completedAt))+'</td><td>'+((x.errorMessage)?inspectButton("Analysis run "+sha(x.id),"Sanitized analysis failure diagnostics.",x):inspectButton("Analysis run "+sha(x.id),"Persisted analysis lifecycle record.",x))+'</td></tr>'}).join('')||'<tr><td colspan="6" class="dim">No analysis runs persisted.</td></tr>'+'</tbody></table></div>'+(d.analysisRuns&&d.analysisRuns.pagination&&d.analysisRuns.pagination.page<d.analysisRuns.pagination.totalPages?'<div style="margin-top:12px"><button class="btn" data-action="analysis-runs-more">'+(S.analysisRunsLoading?'Loading…':'Load older analysis runs')+'</button></div>':'')+'</div></div></div><div class="grid g2 section"><div class="card"><h3>Recent history</h3><div class="sub">Latest persisted commit evidence</div><div class="timeline">'+c.slice(0,7).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+' · '+n(x.files_changed)+' files</p><div style="margin-top:7px">'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</div></div>'}).join('')||'<div class="empty">No commit evidence.</div>'+'</div></div>'+
       '<div class="card"><h3>Most touched files</h3><div class="sub">Historical activity signal — not a quality ranking</div><div class="bars" style="margin-top:15px">'+h.slice(0,8).map(function(x){return '<div class="bar"><span title="'+esc(x.path)+'">'+esc(x.path)+'</span><div class="track"><div class="fill" style="width:'+(Number(x.commits_touched||0)/max*100)+'%"></div></div><b>'+n(x.commits_touched)+'</b>'+inspectButton('Hotspot '+(x.path||'file'),'Historical file-activity signal from persisted commit evidence.',x)+'</div>'}).join('')||'<div class="empty">No hotspot evidence.</div>'+'</div></div></div>';
   }
-  function history(){
+  function historyView(){
     var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events'),commitPagination=d.commits&&d.commits.pagination||{},timelinePagination=d.timeline&&d.timeline.pagination||{},total=Number(commitPagination.total||c.length);
     var actions=[];if(commitPagination.totalPages&&commitPagination.page<commitPagination.totalPages)actions.push('<button class="btn" data-action="more-commits">'+(S.commitLoading?'Loading…':'Load next 50 commits')+'</button>');if(timelinePagination.totalPages&&timelinePagination.page<timelinePagination.totalPages)actions.push('<button class="btn" data-action="more-timeline">'+(S.timelineLoading?'Loading…':'Load next 50 timeline events')+'</button>');
     var action=actions.join('');
@@ -462,7 +463,7 @@
     if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);
     resetEvidence();
     document.querySelectorAll('#nav button').forEach(function(b){var active=b.getAttribute('data-view')===v;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});document.title='Project Autopsy — '+(VIEW_TITLES[v]||'Workspace');
-    var h=v==='history'?history():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():v==='interpretation'?interpretation():v==='evidence'?evidencePage():v==='contributors'?contributors():overview();
+    var h=v==='history'?historyView():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():v==='interpretation'?interpretation():v==='evidence'?evidencePage():v==='contributors'?contributors():overview();
     $('root').innerHTML=h;
     var restore=S.viewScroll[v]||0;
     requestAnimationFrame(function(){window.scrollTo(0,restore)});
@@ -686,7 +687,7 @@
     }
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
-  async function refresh(){
+  async function refresh(){if(S.refreshLoading)return;S.refreshLoading=true;var refreshButton=$('refresh'),refreshLabel=refreshButton&&refreshButton.textContent;if(refreshButton){refreshButton.disabled=true;refreshButton.setAttribute('aria-busy','true');refreshButton.textContent='Refreshing…'}
     S.workspaceToken+=1;clearInterval(S.timer);S.timer=null;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};
     var token=S.workspaceToken,id=S.repoId;
     try{
@@ -696,6 +697,7 @@
       S.data.report=null;S.data.interview=null;S.data.interpretation=null;
       persist();poll();toast('Refresh analysis queued')
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
+    finally{S.refreshLoading=false;if(refreshButton){refreshButton.disabled=false;refreshButton.removeAttribute('aria-busy');if(refreshLabel)refreshButton.textContent=refreshLabel}}
   }
   function openSettings(trigger){S.settingsFocus=trigger||document.activeElement;$('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;$('key').focus()}
   function closeSettings(){ $('modal').hidden=true;var focus=S.settingsFocus;S.settingsFocus=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
@@ -706,6 +708,7 @@
     if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}});
   }
   function confirmDelete(name){
+    if(S.confirmResolver)return Promise.resolve(false);
     return new Promise(function(resolve){
       S.confirmResolver=resolve;S.confirmFocus=document.activeElement;
       $('confirmTitle').textContent='Delete '+(name||'repository')+'?';
