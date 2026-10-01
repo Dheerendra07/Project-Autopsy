@@ -1399,3 +1399,13 @@ test("frontend distinguishes evidence refresh from full analysis reruns", () => 
   assert.ok(appJs.includes("if(!options.force&&hasViewData(view))"));
   assert.doesNotMatch(appJs, /RELOADABLE_VIEWS=\[.*runtime/);
 });
+
+
+test("frontend view loading is single-flight and workspace-safe", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("viewLoading:{}"));
+  assert.ok(appJs.includes("||S.viewLoading[view])return"));
+  assert.ok(appJs.includes("S.viewLoading[view]=loadToken"));
+  assert.ok(appJs.includes("if(S.viewLoading[view]===loadToken)delete S.viewLoading[view]"));
+  assert.ok(appJs.includes("S.viewFilter={};S.tableSort={};S.viewLoading={};"));
+});
