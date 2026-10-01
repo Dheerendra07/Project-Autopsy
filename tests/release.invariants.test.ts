@@ -1623,6 +1623,37 @@ test("frontend runtime surface exposes an explicit provenance posture", () => {
 });
 
 
+test("frontend report surface exposes a claim and evidence posture", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("var sections=Array.isArray(rep.sections)?rep.sections:[],claims=0,evidenceRefs=0,limited=0"));
+  assert.ok(appJs.includes("Evidence posture"));
+  assert.ok(appJs.includes("Report map"));
+  assert.ok(indexHtml.includes(".report-posture"));
+  assert.ok(indexHtml.includes(".report-index-row"));
+});
+
+test("frontend interview surface exposes evidence and verification posture", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("var evidenceLinked=0,verificationNotes=0"));
+  assert.ok(appJs.includes("Interview evidence map"));
+  assert.ok(appJs.includes("truth-first"));
+  assert.ok(indexHtml.includes(".interview-posture"));
+  assert.ok(indexHtml.includes(".story-topline"));
+});
+
+test("frontend insights surface exposes explicit grounding posture", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("var themeRefs=themes.reduce"));
+  assert.ok(appJs.includes("Grounding posture"));
+  assert.ok(appJs.includes("limitations kept visible"));
+  assert.ok(indexHtml.includes(".insight-posture"));
+  assert.ok(indexHtml.includes(".insight-posture-grid"));
+});
+
+
 test("frontend distinguishes evidence refresh from full analysis reruns", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
