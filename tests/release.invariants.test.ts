@@ -1390,10 +1390,10 @@ test("frontend navigation exposes accessible active state and deterministic brow
 
 test("frontend distinguishes evidence refresh from full analysis reruns", () => {
   const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['history','structure','quality','evidence','contributors'];"));
+  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
   assert.ok(appJs.includes("async function reloadCurrentView()"));
   assert.ok(appJs.includes("await loadViewData(view,{force:true})"));
-  assert.ok(appJs.includes("data-action="reload-view""));
+  assert.ok(appJs.includes("data-action=\"reload-view\""));
   assert.ok(appJs.includes("data-action==='reload-view'"));
   assert.ok(appJs.includes("Refresh data"));
   assert.ok(appJs.includes("if(!options.force&&hasViewData(view))"));
@@ -1438,7 +1438,39 @@ test("frontend shows targeted evidence refresh progress and disables duplicate r
   const appJs = readRepoFile("public/app.js");
   const indexHtml = readRepoFile("public/index.html");
   assert.ok(appJs.includes("loading=!!S.viewLoading[S.view]"));
-  assert.ok(appJs.includes("disabled aria-busy="true""));
+  assert.ok(appJs.includes("disabled aria-busy=\"true\""));
   assert.ok(appJs.includes("loading?'Refreshing…':'Refresh data'"));
   assert.ok(indexHtml.includes("button:disabled{opacity:.55;cursor:wait"));
+});
+
+test("frontend clears targeted refresh state before rerendering the completed view", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadViewData(view,options)");
+  const end = appJs.indexOf("function metric(", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(
+    fn.indexOf(
+      "if(S.viewLoading[view]===loadToken)delete S.viewLoading[view];setView(view,{skipLoad:true})"
+    ) >= 0
+  );
+  assert.ok(fn.includes("actionBusy('reload-view',false)"));
+});
+
+test("frontend gives generated evidence actions single-flight busy feedback", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("reportLoading:false"));
+  assert.ok(appJs.includes("interviewLoading:false"));
+  assert.ok(appJs.includes("interpretationLoading:false"));
+  assert.ok(appJs.includes("actionBusy('report',true,'Generating…')"));
+  assert.ok(appJs.includes("actionBusy('interview',true,'Loading…')"));
+  assert.ok(appJs.includes("actionBusy('interpretation',true,'Generating…')"));
+});
+
+test("frontend restores settings focus and moves evidence inspector focus on open", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("settingsFocus:null"));
+  assert.ok(appJs.includes("function openSettings(trigger)"));
+  assert.ok(appJs.includes("requestAnimationFrame(function(){$('drawerClose').focus()})"));
+  assert.ok(appJs.includes("$('settings').onclick=function(){openSettings(this)};"));
 });
