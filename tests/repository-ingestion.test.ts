@@ -9,7 +9,7 @@ import {
   discoverCommits,
   parseCommitRecord
 } from "../src/modules/commits/commit.discovery.js";
-import { parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
+import { discoverFileChurn, parseNumstatLine } from "../src/modules/metrics/churn.discovery.js";
 import { isBugSignalSubject } from "../src/modules/metrics/bug-signals.js";
 import { validateRemoteRepositoryUrl } from "../src/modules/repositories/repository-url.js";
 
