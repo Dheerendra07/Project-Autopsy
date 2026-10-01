@@ -1281,3 +1281,14 @@ test("frontend marks rejected API credentials instead of leaving a stale verifie
   assert.ok(appJs.includes("Access rejected"));
   assert.ok(appJs.includes("S.connectionState='rejected';connected('rejected');"));
 });
+
+
+test("frontend connection verification preserves explicit rejected credential state", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function testConnection()");
+  const end = appJs.indexOf("async function api(", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("rejected=e&&e.message==='API key rejected by protected API'"));
+  assert.ok(fn.includes("S.connectionState=rejected?'rejected':'configured'"));
+});
