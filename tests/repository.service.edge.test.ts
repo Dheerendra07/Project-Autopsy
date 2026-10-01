@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { simpleGit } from "simple-git";
 
 import {
   assertRepositoryId,
@@ -141,7 +142,8 @@ test("requires an actual .git directory for ready repository storage", async () 
   const root = await makeTempDirectory("git-dir-");
 
   try {
-    await mkdir(path.join(root, ".git"));
+    const git = simpleGit(root);
+    await git.init();
     assert.equal(await isRepositoryStorageReady(root), true);
 
     const gitStat = await lstat(path.join(root, ".git"));
