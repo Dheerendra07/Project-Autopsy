@@ -9,6 +9,12 @@ import {
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import {
+  saveRepositoryAccessCredential,
+  deleteRepositoryAccessCredential,
+  hasRepositoryAccessCredential
+} from "./repository-credentials.persistence.js";
+import { encryptRepositoryAccessToken } from "./repository-credentials.js";
+import {
   createAnalysisRunForRepository,
   createPendingRepositoryWithAnalysis,
   createRepositoryWithAnalysis,
@@ -51,6 +57,16 @@ import type {
 
 const router = Router();
 
+const repositoryAccessTokenSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(2_048)
+  .refine(
+    (value) => !/[\r\n\t\0]/.test(value),
+    "Repository access credential is invalid."
+  );
+
 const importSchema = z.object({
   url: z.string().url(),
   branch: z
@@ -59,7 +75,10 @@ const importSchema = z.object({
     .min(1)
     .max(255)
     .refine(isSafeBranchName, "Repository branch is invalid.")
+    .optional(),
+  accessToken: repositoryAccessTokenSchema
     .optional()
+    .transform((value) => value || undefined)
 });
 
 router.post("/import", async (req, res, next) => {
@@ -67,6 +86,9 @@ router.post("/import", async (req, res, next) => {
     const input = importSchema.parse(req.body);
     const safeUrl = validateRemoteRepositoryUrl(input.url);
     const repositoryId = randomUUID();
+    const encryptedAccessCredential = input.accessToken
+      ? encryptRepositoryAccessToken(input.accessToken)
+      : null;
 
     const repository = await createPendingRepositoryWithAnalysis(
       {
@@ -81,6 +103,13 @@ router.post("/import", async (req, res, next) => {
     );
 
     try {
+      if (encryptedAccessCredential) {
+        await saveRepositoryAccessCredential(
+          repository.repositoryId,
+          encryptedAccessCredential
+        );
+      }
+
       const jobId = await enqueueRepositoryImport(
         repository.repositoryId,
         repository.analysisRunId,
@@ -94,7 +123,8 @@ router.post("/import", async (req, res, next) => {
           id: repository.repositoryId,
           source: safeUrl.toString(),
           name: getRepositoryNameFromUrl(safeUrl),
-          trackedBranch: input.branch ?? null
+          trackedBranch: input.branch ?? null,
+          accessConfigured: Boolean(encryptedAccessCredential)
         },
         analysis: {
           id: repository.analysisRunId,
@@ -265,6 +295,69 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
   }
 });
 
+router.put("/:repositoryId/access", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    const body = z.object({
+      accessToken: repositoryAccessTokenSchema
+    }).parse(req.body);
+
+    await saveRepositoryAccessCredential(
+      repositoryId,
+      encryptRepositoryAccessToken(body.accessToken)
+    );
+
+    res.json({
+      success: true,
+      repositoryId,
+      configured: true
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:repositoryId/access", async (req, res, next) => {
+  try {
+    const repositoryId = z.string().uuid().parse(req.params.repositoryId);
+    const repository = await getRepositoryById(repositoryId);
+
+    if (!repository) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: "REPOSITORY_NOT_FOUND",
+          message: "Repository not found."
+        }
+      });
+      return;
+    }
+
+    await deleteRepositoryAccessCredential(repositoryId);
+
+    res.json({
+      success: true,
+      repositoryId,
+      configured: false
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/:repositoryId/analysis-runs", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
@@ -424,10 +517,14 @@ router.get("/:repositoryId", async (req, res, next) => {
     }
 
     const { storage_path: _storagePath, ...publicRepository } = repository;
+    const accessConfigured = await hasRepositoryAccessCredential(repositoryId);
 
     res.json({
       success: true,
-      repository: publicRepository
+      repository: {
+        ...publicRepository,
+        accessConfigured
+      }
     });
   } catch (error) {
     next(error);

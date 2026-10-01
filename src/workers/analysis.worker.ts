@@ -60,6 +60,12 @@ import {
   getRepositoryStoragePath
 } from "../modules/repositories/repository.service.js";
 import {
+  getRepositoryAccessCredential
+} from "../modules/repositories/repository-credentials.persistence.js";
+import {
+  decryptRepositoryAccessToken
+} from "../modules/repositories/repository-credentials.js";
+import {
   enqueueRepositoryAnalysis
 } from "../modules/analysis/analysis.queue.js";
 import { planAnalysisRun } from "../modules/analysis/analysis-planner.js";
@@ -173,10 +179,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
         await removeRepositoryStorage(repositoryId);
 
+        const encryptedCredential =
+          await getRepositoryAccessCredential(repositoryId);
+        const accessToken = encryptedCredential
+          ? decryptRepositoryAccessToken(encryptedCredential)
+          : undefined;
+
         const metadata = await cloneRepository(
           repositoryId,
           job.data.remoteUrl,
-          job.data.branch
+          job.data.branch,
+          accessToken
         );
 
         const trackedBranch =
@@ -248,16 +261,24 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           await removeRepositoryStorage(repository.id);
         }
 
+        const encryptedCredential =
+          await getRepositoryAccessCredential(repository.id);
+        const accessToken = encryptedCredential
+          ? decryptRepositoryAccessToken(encryptedCredential)
+          : undefined;
+
         const metadata = storageReady
           ? await refreshRepository(
               repository.id,
               repository.source_url,
-              repository.tracked_branch
+              repository.tracked_branch,
+              accessToken
             )
           : await cloneRepository(
               repository.id,
               repository.source_url,
-              repository.tracked_branch
+              repository.tracked_branch,
+              accessToken
             );
 
         await updateRepositoryImportMetadata(

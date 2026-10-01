@@ -115,6 +115,10 @@ Never commit `.env`, API keys, OAuth tokens, database passwords, private reposit
 
 Repository import is restricted to HTTPS and an allowlist of supported Git hosts in the current implementation.
 
+Private repositories are supported for GitHub, GitLab, and Bitbucket HTTPS remotes. The optional repository access token is accepted during import or can be rotated later from the workspace Settings. The token is encrypted at rest with REPOSITORY_CREDENTIAL_ENCRYPTION_KEY, is never returned by the API, and is not included in BullMQ job payloads. Configure the encryption key before using private-repository credentials in production.
+
+Use a repository token with read-only access to the source repository. The UI never persists the repository token in sessionStorage.
+
 Production API access requires AUTOPSY_API_ACCESS_KEY. The key is accepted through x-autopsy-api-key or a Bearer authorization header. The /health endpoint remains public for hosting health checks. Runtime telemetry and deployment evidence ingestion additionally require their dedicated production ingestion keys.
 
 ## Stored commit evidence

@@ -5,6 +5,7 @@ import type {
 } from "express";
 import { z } from "zod";
 import { RepositoryUrlValidationError } from "../modules/repositories/repository-url.js";
+import { RepositoryCredentialConfigurationError } from "../modules/repositories/repository-credentials.js";
 
 export function errorMiddleware(
   error: unknown,
@@ -50,6 +51,17 @@ export function errorMiddleware(
             : status === 415
               ? "Request uses an unsupported content encoding."
               : "Request body could not be parsed."
+      }
+    });
+    return;
+  }
+
+  if (error instanceof RepositoryCredentialConfigurationError) {
+    res.status(503).json({
+      success: false,
+      error: {
+        code: "REPOSITORY_ACCESS_NOT_CONFIGURED",
+        message: error.message
       }
     });
     return;
