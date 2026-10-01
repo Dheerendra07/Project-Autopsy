@@ -79,12 +79,13 @@ test("Render blueprint keeps the free combined runtime and health endpoint", () 
   }
 });
 
-test("quality workflow is manual while GitHub-hosted runner provisioning is unavailable", () => {
+test("quality workflow runs automatically for pull requests and main pushes", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
   for (const marker of [
-    "push:",
     "pull_request:",
+    "push:",
+    "branches: [main]",
     "runs-on: ubuntu-latest",
     "Prepare PostgreSQL and Redis",
     "permissions:",
@@ -97,9 +98,10 @@ test("quality workflow is manual while GitHub-hosted runner provisioning is unav
   ]) {
     assert.ok(workflow.includes(marker), "missing workflow invariant: " + marker);
   }
+
   assert.ok(workflow.includes("workflow_dispatch:"));
-  assert.doesNotMatch(workflow, /pull_request:/);
-  assert.doesNotMatch(workflow, /push:/);
+  assert.ok(workflow.includes("pull_request:\n    branches: [main]"));
+  assert.ok(workflow.includes("push:\n    branches: [main]"));
 });
 
 
