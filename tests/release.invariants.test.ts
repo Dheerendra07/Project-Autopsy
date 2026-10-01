@@ -1337,3 +1337,16 @@ test("frontend deployment provenance participates in evidence inspector copy and
   assert.ok(appJs.includes("S.currentEvidence={label:'Provenance · '+deploymentId"));
   assert.ok(appJs.includes("loadProvenance(pd.getAttribute('data-deployment-id'),pd)"));
 });
+
+
+test("frontend loaded evidence tables support stable keyboard-accessible sorting", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("tableSort:{}"));
+  assert.ok(appJs.includes("function sortableValue(text)"));
+  assert.ok(appJs.includes("function sortTable(table,index,direction)"));
+  assert.ok(appJs.includes("function bindTableSorts()"));
+  assert.ok(appJs.includes("aria-sort"));
+  assert.ok(appJs.includes("th.onkeydown"));
+  assert.ok(appJs.includes("sortTable(table,column,next)"));
+  assert.ok(appJs.includes("S.tableSort={};"));
+});
