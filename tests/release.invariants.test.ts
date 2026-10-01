@@ -1195,7 +1195,7 @@ test("frontend loads evidence by active workspace view", () => {
   assert.ok(appJs.includes("runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext']"));
   assert.ok(appJs.includes("async function loadViewData(view,options)"));
   assert.ok(appJs.includes("if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v)"));
-  assert.ok(appJs.includes("await loadViewData('overview')"));
+  assert.ok(appJs.includes("await loadViewData(initialView)"));
   assert.ok(appJs.includes("setView(view,{skipLoad:true})"));
 });
 
@@ -1398,7 +1398,7 @@ test("frontend distinguishes evidence refresh from full analysis reruns", () => 
   assert.ok(appJs.includes("data-action=\"reload-view\""));
   assert.ok(appJs.includes("a.getAttribute('data-action')==='reload-view'"));
   assert.ok(appJs.includes("Refresh data"));
-  assert.ok(appJs.includes("if(!options.force&&hasViewData(view))"));
+  assert.ok(appJs.includes("!options.force&&hasViewData(view)"));
   assert.doesNotMatch(appJs, /RELOADABLE_VIEWS=\[.*runtime/);
 });
 
@@ -1418,7 +1418,7 @@ test("frontend keeps the newly queued analysis run visible during refresh", () =
   const importStart = appJs.indexOf("async function importRepo()");
   const importEnd = appJs.indexOf("async function getRepo", importStart);
   const refreshStart = appJs.indexOf("async function refresh()");
-  const refreshEnd = appJs.indexOf("function openSettings", refreshStart);
+  const refreshEnd = appJs.indexOf("function openSettings(", refreshStart);
   assert.ok(importStart >= 0 && importEnd > importStart);
   assert.ok(refreshStart >= 0 && refreshEnd > refreshStart);
   assert.ok(appJs.slice(importStart, importEnd).includes("S.analysis=r.analysis"));
