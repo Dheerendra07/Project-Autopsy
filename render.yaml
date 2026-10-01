@@ -36,6 +36,8 @@ services:
         sync: false
       - key: AUTOPSY_API_ACCESS_KEY
         sync: false
+      - key: REPOSITORY_CREDENTIAL_ENCRYPTION_KEY
+        sync: false
       - key: AI_API_KEY
         sync: false
       - key: AI_INTERPRETATION_ACCESS_KEY
