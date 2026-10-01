@@ -1255,3 +1255,13 @@ test("frontend validates runtime filter ranges and revision format before reques
   assert.ok(fn.includes("new Date(f.from).getTime()>=new Date(f.to).getTime()"));
   assert.ok(fn.includes("/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/"));
 });
+
+
+test("frontend renders explicit empty states for empty evidence tables", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function ensureTableEmptyStates()"));
+  assert.ok(appJs.includes("No evidence is available in this table."));
+  assert.ok(appJs.includes("data-empty-state"));
+  assert.ok(appJs.includes("if(row.getAttribute('data-empty-state')==='true'){row.hidden=true;return}"));
+  assert.ok(appJs.includes("ensureTableEmptyStates();"));
+});
