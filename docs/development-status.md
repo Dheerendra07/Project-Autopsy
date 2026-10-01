@@ -226,7 +226,7 @@ Preserve all existing API routes, evidence models, migrations, deterministic ana
 ## Final release checkpoint — 2026-10-01
 
 Authoritative current state:
-- Current `main` HEAD: `76590364afceedcb7ca8b38bcfde9efeba5dff88` (PR #131).
+- Current `main` HEAD: `fda08e55f3bb62795e72c085fc418adec2dda3e3` (PR #143 squash merge; includes PR #142 product UI hardening).
 - PR #118 introduced the release-gap production hardening baseline; PRs #119–#122 synchronized the release/CI state, including the manual quality workflow while hosted-runner provisioning is unavailable.
 - PR #123 added bounded analysis-run history, PR #124 added API rate limiting, PR #125 completed environment-example parity and 429 UX, PR #126 exposed historical runtime source context, PR #128 hardened historical-filter lifecycle resets, PR #129 invalidated analysis-history load races, PR #130 normalized historical numeric filter inputs, and PR #131 restored the missing history/filter UI layers on the current main frontend.
 - Open pull requests: 0.
@@ -260,3 +260,19 @@ Continuation rule:
 - PR #129 — analysis-history load-token invalidation across repository context changes.
 - PR #130 — historical runtime numeric-filter normalization.
 - PR #131 — restored analysis-history pagination and configurable historical-runtime filter UI on current main.
+
+
+## Final verified checkpoint — 2026-10-01
+
+This is the current release-verification checkpoint for main.
+
+- PR #142 merged the product UI/interaction hardening layer: evidence navigation, inspectable evidence drawers, workspace-safe loading, stale-request protection, progressive runtime/historical filters, single-flight actions, safer destructive confirmation, navigation-state preservation, keyboard/focus handling, and clearer current-snapshot gating.
+- PR #143 synchronized the release invariants with the intentional PR #142 frontend contracts and added regression coverage for the historical filter busy-state cleanup.
+- Current main HEAD is `fda08e55f3bb62795e72c085fc418adec2dda3e3`.
+- GitHub Actions quality run #1322 completed successfully on the post-merge main commit. The gate passed dependency setup, TypeScript application/test typechecks, build, migrations, the full 486-test suite, real import -> analysis -> report E2E acceptance, migration idempotency, API startup, combined API/worker startup, and worker startup/shutdown smoke tests.
+- The previous GitHub Actions runner/provisioning blocker is closed. The current quality workflow executes repository steps successfully using the hardened runner/setup path.
+- Hosted Render verification was independently rechecked on 2026-10-01: `/` returned HTTP 200 and the production workspace HTML loaded; `/health` returned HTTP 200 with healthy status; `/ready` returned HTTP 200 with PostgreSQL and Redis both ready; unauthenticated `/api/` returned HTTP 401 with the expected `API_ACCESS_UNAUTHORIZED` contract.
+- Render Blueprint parity is currently aligned: single Free web service, compiled migration before combined runtime, `/health` health check, `autoDeployTrigger: commit`, external database/Redis connection strings, bounded analysis limits, evidence retention, API/ingestion/AI credentials, and production CORS configuration.
+- No product code change remains blocked by the earlier CI runner issue. Remaining work is operational/observability expansion rather than a missing core analysis workflow; external runtime/deployment evidence sources remain optional integrations and require their real production credentials when enabled.
+
+Continuation rule: treat this section as the newest authoritative checkpoint. Preserve the evidence-first semantics, deterministic report fingerprints, security boundaries, bounded execution, explicit evidence gaps, and zero-cost Render deployment contract.
