@@ -76,7 +76,7 @@ test("product frontend contains the core evidence workflow", () => {
     "Load older analysis runs",
     "analysis-runs-more",
     "loadMoreAnalysisRuns",
-    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25',
+    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'",
     "function runtimeFilterDate(value)",
     "function sameRevision(a,b)",
     "function safeApiBase(value)",
