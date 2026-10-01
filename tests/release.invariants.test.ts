@@ -1508,3 +1508,11 @@ test("frontend gates output actions against the current evidence snapshot", () =
   assert.ok(appJs.includes("ready?'<button class=\"btn\" data-action=\"interview\">"));
   assert.ok(appJs.includes("ready?'<button class=\"btn primary\" data-action=\"interpretation\">"));
 });
+
+test("frontend locks runtime and historical reset controls during active filters", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("actionBusy('runtime-clear-filter',true,'Clear')"));
+  assert.ok(appJs.includes("actionBusy('runtime-clear-filter',false)"));
+  assert.ok(appJs.includes("actionBusy('historical-clear-filter',true,'Reset')"));
+  assert.ok(appJs.includes("actionBusy('historical-clear-filter',false)"));
+});
