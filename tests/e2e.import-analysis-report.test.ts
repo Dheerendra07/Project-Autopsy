@@ -139,6 +139,8 @@ test(
       NODE_ENV: "test",
       PORT: String(E2E_PORT),
       AUTOPSY_API_ACCESS_KEY: TEST_API_KEY,
+      API_RATE_LIMIT_MAX_REQUESTS: "1000",
+      API_RATE_LIMIT_HEAVY_MAX_REQUESTS: "1000",
       E2E_PORT: undefined
     };
 
