@@ -12,7 +12,7 @@ test("repository access credentials round-trip through authenticated encryption"
   const encrypted = encryptRepositoryAccessToken(token, TEST_KEY);
 
   assert.notEqual(encrypted, token);
-  assert.match(encrypted, /^v1\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$/);
+  assert.match(encrypted, /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
   assert.equal(decryptRepositoryAccessToken(encrypted, TEST_KEY), token);
 });
 
