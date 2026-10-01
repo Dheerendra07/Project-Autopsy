@@ -365,12 +365,9 @@ test("frontend quality workspace exposes an evidence matrix", () => {
   for (const marker of [
     "quality-map",
     "quality-map-card",
-    "quality-mini-list",
-    "HISTORICAL SIGNALS",
-    "TEST EVIDENCE",
-    "SCHEMA EVIDENCE"
+    "quality-mini-list"
   ]) {
-    assert.ok(html.includes(marker), "missing quality UI marker: " + marker);
+    assert.ok(html.includes(marker), "missing quality UI style marker: " + marker);
   }
 
   const start = appJs.indexOf("function quality()");
@@ -378,6 +375,9 @@ test("frontend quality workspace exposes an evidence matrix", () => {
   assert.ok(start >= 0);
   assert.ok(end > start);
   const quality = appJs.slice(start, end);
+  assert.ok(quality.includes("HISTORICAL SIGNALS"));
+  assert.ok(quality.includes("TEST EVIDENCE"));
+  assert.ok(quality.includes("SCHEMA EVIDENCE"));
   assert.ok(quality.includes("signalTotal"));
   assert.ok(quality.includes("migrationOps"));
   assert.ok(quality.includes("testDelta"));
