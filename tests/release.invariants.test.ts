@@ -1074,3 +1074,34 @@ test("storage readiness performs real Git integrity probes", () => {
   assert.ok(service.includes('git.raw(["rev-parse", "--git-dir"])'));
   assert.ok(service.includes('insideWorkTree.trim() === "true"'));
 });
+test("frontend lifecycle invalidation prevents stale refresh and historical loads", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("historicalLoadToken:0"));
+
+  const refresh = appJs.slice(
+    appJs.indexOf("async function refresh()"),
+    appJs.indexOf("function openSettings")
+  );
+  assert.ok(refresh.includes("S.workspaceToken+=1;"));
+  assert.ok(refresh.includes("clearInterval(S.timer);S.timer=null;"));
+  assert.ok(
+    refresh.indexOf("S.workspaceToken+=1;") <
+      refresh.indexOf("var token=S.workspaceToken,id=S.repoId;")
+  );
+
+  const reload = appJs.slice(
+    appJs.indexOf("async function reloadData()"),
+    appJs.indexOf("function historicalRuntimePath")
+  );
+  assert.ok(reload.includes("var token=S.workspaceToken,id=S.repoId,runId=S.runId;"));
+  assert.ok(reload.includes("if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;"));
+
+  const historical = appJs.slice(
+    appJs.indexOf("async function loadHistoricalRuntime()"),
+    appJs.indexOf("async function loadMoreCommits()")
+  );
+  assert.ok(historical.includes("loadToken=++S.historicalLoadToken"));
+  assert.ok(historical.includes("loadToken!==S.historicalLoadToken"));
+  assert.ok(historical.includes("&&loadToken===S.historicalLoadToken)S.historicalLoading=false;"));
+});
+
