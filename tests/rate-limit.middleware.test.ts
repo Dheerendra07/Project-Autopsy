@@ -123,7 +123,7 @@ test("rate-limit middleware emits headers and blocks after the configured limit"
 
   const second = response();
   await new Promise<void>((resolve, reject) => {
-    middleware(request("/repositories/11111111-1111-4111-8111-111111111111/commits"), second, resolve);
+    middleware(request("/repositories/11111111-1111-4111-8111-111111111111/commits"), second, () => resolve());
     setTimeout(() => reject(new Error("middleware did not call next")), 1_000);
   });
   assert.equal(second.headers.get("x-ratelimit-remaining"), "0");
