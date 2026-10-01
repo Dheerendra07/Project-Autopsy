@@ -112,6 +112,14 @@ export const envSchema = z
       .min(32)
       .optional(),
 
+    REPOSITORY_CREDENTIAL_ENCRYPTION_KEY: z
+      .string()
+      .regex(
+        /^[0-9a-f]{64}$/i,
+        "REPOSITORY_CREDENTIAL_ENCRYPTION_KEY must be exactly 64 hexadecimal characters."
+      )
+      .optional(),
+
     AI_API_KEY: z
       .string()
       .min(1)
