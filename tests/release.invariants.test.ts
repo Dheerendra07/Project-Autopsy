@@ -235,6 +235,8 @@ test("frontend product surface stays guided, progressive and evidence-readable",
     "Insights",
     "class=\"getting-started\"",
     "Advanced connection settings",
+    "data-view=\"operations\"",
+    "Operations",
     "id=\"drawerSummary\"",
     "id=\"drawerRaw\""
   ]) {
@@ -251,7 +253,12 @@ test("frontend product surface stays guided, progressive and evidence-readable",
     "S.view!=='interview'",
     "S.view!=='interpretation'",
     "e.key==='Escape'",
-    "Try again"
+    "Try again",
+    "function loadOperations(force)",
+    "/api/observability/summary",
+    "acceptStatuses:[503]",
+    "operationalLoadToken",
+    "analysisQueue"
   ]) {
     assert.ok(appJs.includes(marker), "missing product interaction marker: " + marker);
   }
