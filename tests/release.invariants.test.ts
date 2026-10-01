@@ -1658,3 +1658,60 @@ test("frontend preserves generated-action busy state across rerenders", () => {
   assert.ok(appJs.includes("S.interpretationLoading?'Generating…'"));
   assert.ok(appJs.includes("disabled aria-busy=\"true\""));
 });
+
+
+test("private repository access stays encrypted, server-side and outside queue payloads", () => {
+  const env = readRepoFile("src/config/env.ts");
+  const credentials = readRepoFile("src/modules/repositories/repository-credentials.ts");
+  const credentialPersistence = readRepoFile(
+    "src/modules/repositories/repository-credentials.persistence.ts"
+  );
+  const repositoryRoutes = readRepoFile(
+    "src/modules/repositories/repository.routes.ts"
+  );
+  const repositoryService = readRepoFile(
+    "src/modules/repositories/repository.service.ts"
+  );
+  const gitAuth = readRepoFile(
+    "src/modules/repositories/repository-git-auth.ts"
+  );
+  const analysisGit = readRepoFile("src/modules/analysis/analysis-git.ts");
+  const worker = readRepoFile("src/workers/analysis.worker.ts");
+  const queue = readRepoFile("src/modules/analysis/analysis.queue.ts");
+  const migration = readRepoFile(
+    "database/migrations/017_repository_access_credentials.sql"
+  );
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const render = readRepoFile("render.yaml");
+
+  assert.ok(env.includes("REPOSITORY_CREDENTIAL_ENCRYPTION_KEY"));
+  assert.ok(credentials.includes("aes-256-gcm"));
+  assert.ok(credentials.includes("createCipheriv"));
+  assert.ok(credentials.includes("createDecipheriv"));
+  assert.ok(credentialPersistence.includes("repository_access_credentials"));
+  assert.ok(migration.includes("ON DELETE CASCADE"));
+  assert.ok(repositoryRoutes.includes('router.put("/:repositoryId/access"'));
+  assert.ok(repositoryRoutes.includes('router.delete("/:repositoryId/access"'));
+  assert.ok(repositoryRoutes.includes("encryptRepositoryAccessToken(input.accessToken)"));
+  assert.ok(repositoryService.includes("withRepositoryAccess"));
+  assert.ok(gitAuth.includes("GIT_ASKPASS"));
+  assert.ok(gitAuth.includes("AUTOPSY_GIT_ACCESS_TOKEN"));
+  assert.ok(analysisGit.includes("allowEnvironment"));
+  assert.ok(worker.includes("getRepositoryAccessCredential"));
+  assert.ok(worker.includes("decryptRepositoryAccessToken"));
+  assert.equal(queue.includes("accessToken"), false);
+  assert.equal(
+    html.includes("storageSet('autopsy.repoAccessToken'"),
+    false
+  );
+  assert.equal(
+    appJs.includes("storageSet('autopsy.repoAccessToken'"),
+    false
+  );
+  assert.ok(html.includes('id="repoAccessToken"'));
+  assert.ok(html.includes('id="saveRepoAccess"'));
+  assert.ok(html.includes('id="clearRepoAccess"'));
+  assert.ok(appJs.includes("/access"));
+  assert.ok(render.includes("REPOSITORY_CREDENTIAL_ENCRYPTION_KEY"));
+});
