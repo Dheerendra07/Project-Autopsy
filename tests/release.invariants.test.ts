@@ -1350,3 +1350,12 @@ test("frontend loaded evidence tables support stable keyboard-accessible sorting
   assert.ok(appJs.includes("sortTable(table,column,next)"));
   assert.ok(appJs.includes("S.tableSort={};"));
 });
+
+
+test("frontend runtime datetime filters round-trip between local inputs and API-safe timestamps", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function runtimeInputDate(value)"));
+  assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.from))"));
+  assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.to))"));
+  assert.ok(appJs.includes("['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation']"));
+});
