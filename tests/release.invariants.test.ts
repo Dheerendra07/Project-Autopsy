@@ -1329,3 +1329,11 @@ test("frontend evidence inspector supports copy and returns focus to the invokin
   assert.ok(indexHtml.includes('id="drawerCopy"'));
   assert.ok(indexHtml.includes('role="dialog" aria-modal="true"'));
 });
+
+
+test("frontend deployment provenance participates in evidence inspector copy and focus restoration", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("async function loadProvenance(deploymentId,trigger)"));
+  assert.ok(appJs.includes("S.currentEvidence={label:'Provenance · '+deploymentId"));
+  assert.ok(appJs.includes("loadProvenance(pd.getAttribute('data-deployment-id'),pd)"));
+});
