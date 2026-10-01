@@ -34,7 +34,7 @@
   function storageSet(key,value){try{sessionStorage.setItem(key,value);return true}catch(e){return false}}
   function toast(msg,tone){var x=$('toast');x.textContent=msg;x.style.borderColor=tone==='bad'?'#5b302c':tone==='good'?'#35523d':'#303028';x.hidden=false;clearTimeout(x._t);x._t=setTimeout(function(){x.hidden=true},3200)}
   function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.key',S.key);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
-  function connected(state){var c=$('conn');var verified=state==='verified',configured=state==='configured';c.textContent=verified?'Verified':configured?'Access saved':'Not connected';c.className='pill '+(verified?'good':configured?'warn':'')}
+  function connected(state){var c=$('conn');var verified=state==='verified',configured=state==='configured',rejected=state==='rejected';c.textContent=verified?'Verified':rejected?'Access rejected':configured?'Access saved':'Not connected';c.className='pill '+(verified?'good':rejected?'bad':configured?'warn':'')}
   function resetEvidence(){S.evidence=[];S.evidenceSeq=0}
   function addEvidence(label,basis,payload){var id=++S.evidenceSeq;S.evidence.push({id:id,label:label,basis:basis,payload:payload});return id}
   function inspectButton(label,basis,payload){return '<button class="inspect" data-evidence-id="'+addEvidence(label,basis,payload)+'">Inspect</button>'}
@@ -110,7 +110,7 @@
       var t=await r.text(),b=null,isJson=true;
       try{b=t?JSON.parse(t):null}catch(e){isJson=false}
       if(!r.ok){
-        if(r.status===401)throw new Error('API access key was rejected. Open Settings and update the key.');
+        if(r.status===401){S.connectionState='rejected';connected('rejected');throw new Error('API access key was rejected. Open Settings and update the key.');}
         if(r.status===403)throw new Error((b&&b.error&&b.error.message)||'Access to this API operation was denied.');
         if(r.status===429){
           var retryAfter=r.headers.get('retry-after'),retrySeconds=Number(retryAfter||0);
