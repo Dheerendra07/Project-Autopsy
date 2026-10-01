@@ -1223,7 +1223,7 @@ test("operational observability remains authenticated and bounded", () => {
   assert.ok(service.includes("OPERATIONAL_CHECK_TIMEOUT_MS = 2_000"));
   assert.ok(service.includes("process.uptime"));
   assert.ok(service.includes("analysisQueue"));
-  assert.ok(service.includes('status: "degraded"'));
+  assert.ok(service.includes('? "healthy" : "degraded"'));
 });
 
 test("optional production evidence ingestion keys do not block service startup", () => {
