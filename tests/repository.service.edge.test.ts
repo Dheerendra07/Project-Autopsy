@@ -218,10 +218,12 @@ test("repository storage deletion accepts only paths inside the managed root", (
     assertManagedRepositoryStoragePath(path.join(managed, "nested"))
   );
 
+  const filesystemRoot = path.parse(managed).root;
+
   for (const value of [
-    path.resolve(managed, ".."),
-    path.resolve(managed, "../other-repository"),
-    path.resolve(managed, "../../outside"),
+    filesystemRoot,
+    path.join(filesystemRoot, "project-autopsy-outside"),
+    path.resolve(managed, "../.."),
     path.resolve(managed, "../../outside/nested")
   ]) {
     assert.throws(
