@@ -84,12 +84,25 @@ async function listDirectoriesAtCommit(
   rootPath: string
 ): Promise<string[]> {
   const treeish = rootPath ? sha + ":" + rootPath : sha;
-  const output = await git.raw([
-    "ls-tree",
-    "--name-only",
-    "-d",
-    treeish
-  ]);
+  let output: string;
+  try {
+    output = await git.raw([
+      "ls-tree",
+      "--name-only",
+      "-d",
+      treeish
+    ]);
+  } catch (error) {
+    if (
+      rootPath === "src" &&
+      error instanceof Error &&
+      /not a valid object name .*:src/i.test(error.message)
+    ) {
+      return [];
+    }
+
+    throw error;
+  }
 
   return output
     .split(/\r?\n/)
