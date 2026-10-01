@@ -898,6 +898,33 @@ test("analysis run history endpoint is bounded and release-visible", () => {
 });
 
 
+test("E2E child processes receive isolated generous rate limits", () => {
+  const e2e = readRepoFile("tests/e2e.import-analysis-report.test.ts");
+
+  assert.ok(
+    e2e.includes(
+      'const E2E_API_RATE_LIMIT_MAX_REQUESTS = "1000";'
+    )
+  );
+  assert.ok(
+    e2e.includes(
+      'const E2E_API_RATE_LIMIT_HEAVY_MAX_REQUESTS = "1000";'
+    )
+  );
+  assert.ok(
+    e2e.includes(
+      "API_RATE_LIMIT_MAX_REQUESTS: E2E_API_RATE_LIMIT_MAX_REQUESTS"
+    )
+  );
+  assert.ok(
+    e2e.includes(
+      "API_RATE_LIMIT_HEAVY_MAX_REQUESTS: E2E_API_RATE_LIMIT_HEAVY_MAX_REQUESTS"
+    )
+  );
+  assert.ok(e2e.includes("delete childEnv.E2E_PORT;"));
+});
+
+
 test("API rate limiter remains bounded and fail-open", () => {
   const env = readRepoFile("src/config/env.ts");
   const middleware = readRepoFile("src/middleware/rate-limit.middleware.ts");
