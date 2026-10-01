@@ -1,6 +1,8 @@
 import { simpleGit } from "simple-git";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
 
+export const GIT_LOG_PAGE_SIZE = 500;
+
 export interface FileChurnEvidence {
   path: string;
   additions: number;
