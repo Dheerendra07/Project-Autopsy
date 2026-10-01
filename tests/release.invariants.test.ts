@@ -254,10 +254,18 @@ test("frontend product surface stays guided, progressive and evidence-readable",
     "S.view!=='interpretation'",
     "e.key==='Escape'",
     "Try again",
-    "function loadOperations(force)",
+    "async function loadOperations(force,silent)",
     "/api/observability/summary",
     "acceptStatuses:[503]",
     "operationalLoadToken",
+    "operationalTimer",
+    "operationalPollMs",
+    "preserveScroll:true",
+    "options.preserveScroll",
+
+    "function stopOperationsMonitoring()",
+    "function scheduleOperationsMonitoring()",
+    "visibilitychange",
     "analysisQueue"
   ]) {
     assert.ok(appJs.includes(marker), "missing product interaction marker: " + marker);
@@ -278,6 +286,86 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 
   assert.ok(appJs.includes("if($('drawerSummary'))$('drawerSummary').innerHTML"));
   assert.ok(appJs.includes("if($('drawerRaw'))$('drawerRaw').open=false"));
+  const css = html.match(/<style>([\s\S]*?)<\/style>/i)?.[1] || "";
+  assert.ok(css.includes(".drawer-actions{display:flex;gap:7px;align-items:center;flex:0 0 auto}"));
+  assert.equal(css.includes("}gap:7px;"), false);
+
+});
+
+
+test("frontend controls have explicit handlers and every workspace view is wired", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const id of [
+    "settings",
+    "refresh",
+    "new",
+    "close",
+    "deleteRepository",
+    "testConnection",
+    "save",
+    "confirmCancel",
+    "confirmConfirm",
+    "drawerCopy",
+    "drawerClose"
+  ]) {
+    assert.ok(
+      appJs.includes("$('" + id + "')"),
+      "missing handler reference for static control: " + id
+    );
+  }
+
+  assert.ok(appJs.includes("$('form').onsubmit=function"));
+  assert.ok(appJs.includes("$('nav').onclick=function"));
+  assert.ok(appJs.includes("$('root').onclick=function"));
+
+  for (const view of [
+    "overview",
+    "history",
+    "structure",
+    "quality",
+    "runtime",
+    "report",
+    "interview",
+    "interpretation",
+    "evidence",
+    "contributors",
+    "operations"
+  ]) {
+    assert.ok(
+      html.includes('data-view="' + view + '"'),
+      "missing navigation control for view: " + view
+    );
+    assert.ok(
+      appJs.includes("'" + view + "'"),
+      "missing frontend contract for view: " + view
+    );
+  }
+
+  for (const action of [
+    "report",
+    "interview",
+    "interpretation",
+    "download",
+    "more-commits",
+    "more-timeline",
+    "analysis-runs-more",
+    "reload-data",
+    "reload-view",
+    "runtime-filter",
+    "runtime-clear-filter",
+    "runtime-more",
+    "historical-filter",
+    "historical-clear-filter",
+    "operations-refresh",
+    "operations-retry"
+  ]) {
+    assert.ok(
+      appJs.includes("===" + "'" + action + "'"),
+      "missing delegated action handler: " + action
+    );
+  }
 });
 
 
