@@ -60,6 +60,7 @@ const router = Router();
 const repositoryAccessTokenSchema = z
   .string()
   .trim()
+  .min(1)
   .max(2_048)
   .refine(
     (value) => !/[\r\n\t\0]/.test(value),
