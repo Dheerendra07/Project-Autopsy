@@ -1501,3 +1501,10 @@ test("frontend evidence explorer search has an explicit accessible name", () => 
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes('id="evidenceSearch" class="search" aria-label="Filter evidence records"'));
 });
+
+test("frontend gates output actions against the current evidence snapshot", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("actions=current?'<button class=\"btn\" data-action=\"download\">Download JSON</button><button class=\"btn\" data-action=\"interpretation\">Generate insights</button>':''"));
+  assert.ok(appJs.includes("ready?'<button class=\"btn\" data-action=\"interview\">"));
+  assert.ok(appJs.includes("ready?'<button class=\"btn primary\" data-action=\"interpretation\">"));
+});
