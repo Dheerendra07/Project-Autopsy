@@ -805,7 +805,7 @@
       if(token!==S.workspaceToken||id!==S.repoId)return;
       S.runId=r.analysis.id;S.analysis=r.analysis;syncAnalysisRefreshControl();
       S.data.report=null;S.data.interview=null;S.data.interpretation=null;
-      persist();poll();toast('Refresh analysis queued')
+      persist();poll();syncOperationsMonitoring();toast('Refresh analysis queued')
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
     finally{S.refreshLoading=false;if(refreshButton){refreshButton.disabled=false;refreshButton.removeAttribute('aria-busy');if(refreshLabel)refreshButton.textContent=refreshLabel}}
   }
