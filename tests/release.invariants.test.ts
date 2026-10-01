@@ -265,6 +265,7 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 
     "function stopOperationsMonitoring()",
     "function scheduleOperationsMonitoring()",
+    "syncOperationsMonitoring();toast('Refresh analysis queued')",
     "visibilitychange",
     "analysisQueue"
   ]) {
