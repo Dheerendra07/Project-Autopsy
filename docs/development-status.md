@@ -293,3 +293,21 @@ PR #145 is merged and the operational observability layer is verified.
 - No open pull requests remain after this checkpoint unless new roadmap work is started.
 
 Continuation rule: start subsequent work from main at `39e13f079292a31641b6fc5c38667cb70b6cafca`, preserve the evidence-first boundary, and keep new operational endpoints behind the established API authentication and bounded execution contracts.
+
+
+## UI production audit checkpoint — 2026-10-01
+
+This checkpoint records the latest product-UI hardening after the operational observability integration.
+
+- Current main HEAD: `52a25d9befc48f61eb3010a13ae28657e3bc56cd`.
+- PR #148 added live Operations monitoring and completed quality run #1347: application/test typecheck, build, migrations, 491-test suite, real import -> analysis -> report E2E acceptance, migration idempotency, API startup, combined API/worker startup, and worker startup/shutdown smoke.
+- PR #149 fixed the remaining Operations lifecycle edge case: analysis refresh now resumes live Operations monitoring. Quality run #1349 passed the complete same repository gate.
+- The UI audit added release contracts for static control wiring, delegated generated actions, all 11 workspace views, Operations monitoring lifecycle, scroll preservation, and malformed drawer CSS prevention.
+- Live browser verification on Render confirmed Settings opens and closes without submitting credentials or starting analysis.
+- Live mobile inspection at approximately 386px viewport width found no horizontal overflow for the landing header, repository form, or getting-started content.
+- Render served the current Operations navigation and the `Operate` navigation group after deployment.
+- No open repository issues or pull requests remain after PR #149.
+
+Product boundary: the core workspace continues to preserve evidence-first semantics. Operational telemetry remains separate from persisted repository evidence. Authentication and protected API actions remain gated; production credentials are never embedded in source or documentation.
+
+Continuation rule: begin subsequent work from main at `52a25d9befc48f61eb3010a13ae2866d9ad4b511cb`. Keep the existing evidence-first, bounded-execution, security, stale-state, focus-management, mobile-layout, and release-invariant contracts intact.
