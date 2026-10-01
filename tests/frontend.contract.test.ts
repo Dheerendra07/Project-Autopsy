@@ -62,7 +62,7 @@ test("product frontend contains the core evidence workflow", () => {
     "Observed runtime telemetry event.",
     "Historical repeated-modification evidence.",
     "Historical source-change context",
-    "Clear historical filters",
+    "data-action=\"historical-clear-filter\"",
     "Apply historical filters",
     "histSamples",
     "histWindow",
