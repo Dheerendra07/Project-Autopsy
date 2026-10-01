@@ -1242,3 +1242,16 @@ test("frontend view filters provide local search state without extra API traffic
   assert.ok(appJs.includes("document.activeElement===$('viewSearch')"));
   assert.ok(appJs.includes("S.viewFilter={}"));
 });
+
+
+test("frontend validates runtime filter ranges and revision format before requests", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadRuntimeEvents(");
+  const end = appJs.indexOf("async function loadMoreAnalysisRuns()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("From must be earlier than To."));
+  assert.ok(fn.includes("Revision SHA must be exactly 40 or 64 hexadecimal characters."));
+  assert.ok(fn.includes("new Date(f.from).getTime()>=new Date(f.to).getTime()"));
+  assert.ok(fn.includes("/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/"));
+});
