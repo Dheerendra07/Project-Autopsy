@@ -98,7 +98,7 @@
       S.connectionState='verified';
       connected('verified');
       toast('API, database, Redis and access key are working','good');
-    }catch(e){S.connectionState='configured';connected('configured');toast(e.message||'Connection test failed','bad')}
+    }catch(e){var rejected=e&&e.message==='API key rejected by protected API';S.connectionState=rejected?'rejected':'configured';connected(S.connectionState);toast(e.message||'Connection test failed','bad')}
   }
   async function api(path,opt){
     var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
