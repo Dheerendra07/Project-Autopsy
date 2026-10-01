@@ -289,6 +289,82 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 });
 
 
+test("frontend controls have explicit handlers and every workspace view is wired", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const id of [
+    "settings",
+    "refresh",
+    "new",
+    "close",
+    "deleteRepository",
+    "testConnection",
+    "save",
+    "confirmCancel",
+    "confirmConfirm",
+    "drawerCopy",
+    "drawerClose"
+  ]) {
+    assert.ok(
+      appJs.includes("$('" + id + "')"),
+      "missing handler reference for static control: " + id
+    );
+  }
+
+  assert.ok(appJs.includes("$('form').onsubmit=function"));
+  assert.ok(appJs.includes("$('nav').onclick=function"));
+  assert.ok(appJs.includes("$('root').onclick=function"));
+
+  for (const view of [
+    "overview",
+    "history",
+    "structure",
+    "quality",
+    "runtime",
+    "report",
+    "interview",
+    "interpretation",
+    "evidence",
+    "contributors",
+    "operations"
+  ]) {
+    assert.ok(
+      html.includes('data-view="' + view + '"'),
+      "missing navigation control for view: " + view
+    );
+    assert.ok(
+      appJs.includes("'" + view + "'"),
+      "missing frontend contract for view: " + view
+    );
+  }
+
+  for (const action of [
+    "report",
+    "interview",
+    "interpretation",
+    "download",
+    "more-commits",
+    "more-timeline",
+    "analysis-runs-more",
+    "reload-data",
+    "reload-view",
+    "runtime-filter",
+    "runtime-clear-filter",
+    "runtime-more",
+    "historical-filter",
+    "historical-clear-filter",
+    "operations-refresh",
+    "operations-retry"
+  ]) {
+    assert.ok(
+      appJs.includes("===" + "'" + action + "'"),
+      "missing delegated action handler: " + action
+    );
+  }
+});
+
+
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
