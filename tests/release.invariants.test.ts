@@ -1304,3 +1304,14 @@ test("frontend history renders full loaded pages and paginates timeline evidence
   assert.ok(appJs.includes("Load next 50 timeline events"));
   assert.ok(appJs.includes("timelineLoadToken"));
 });
+
+
+test("frontend labels snapshot freshness consistently across workspace views", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function snapshotState()"));
+  assert.ok(appJs.includes("Snapshot current"));
+  assert.ok(appJs.includes("Snapshot stale"));
+  assert.ok(appJs.includes("Analysis updating"));
+  assert.ok(appJs.includes("function shell(title,desc,actions){var toolbar=viewFilterMarkup(),snap=snapshotState()"));
+  assert.ok(appJs.includes("snapshot-pill"));
+});
