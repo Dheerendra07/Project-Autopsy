@@ -6,7 +6,7 @@
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,focusReturn:null,currentEvidence:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},focusReturn:null,currentEvidence:null
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,focusReturn:null,currentEvidence:null,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},focusReturn:null,currentEvidence:null
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -669,10 +669,25 @@
   }
   function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;$('key').focus()}
   function closeSettings(){ $('modal').hidden=true}
+  function finishConfirm(result){
+    var resolve=S.confirmResolver,focus=S.confirmFocus;
+    S.confirmResolver=null;S.confirmFocus=null;$('confirmModal').hidden=true;
+    if(resolve)resolve(result);
+    if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}});
+  }
+  function confirmDelete(name){
+    return new Promise(function(resolve){
+      S.confirmResolver=resolve;S.confirmFocus=document.activeElement;
+      $('confirmTitle').textContent='Delete '+(name||'repository')+'?';
+      $('confirmText').textContent='This permanently removes the imported repository and its persisted Autopsy evidence. This action cannot be undone.';
+      $('confirmModal').hidden=false;
+      requestAnimationFrame(function(){$('confirmCancel').focus()});
+    });
+  }
   async function deleteRepository(){
     if(!S.repoId||S.importing)return;
     var token=S.workspaceToken,id=S.repoId,name=(S.repo&&S.repo.name)||'this repository';
-    if(!window.confirm('Permanently delete '+name+' and all persisted Autopsy evidence?'))return;
+    if(!await confirmDelete(name))return;
     try{
       var r=await api('/api/repositories/'+id,{method:'DELETE'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
@@ -683,7 +698,7 @@
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
     }
   }
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   document.addEventListener('keydown',function(e){
     var target=e.target;
@@ -691,6 +706,7 @@
       e.preventDefault();$('viewSearch').focus();return;
     }
     if(e.key==='Escape'){
+      if(!$('confirmModal').hidden){e.preventDefault();finishConfirm(false);return}
       if($('viewSearch')&&document.activeElement===$('viewSearch')&&$('viewSearch').value){
         e.preventDefault();$('viewSearch').value='';S.viewFilter[S.view]='';applyViewFilter();return;
       }
