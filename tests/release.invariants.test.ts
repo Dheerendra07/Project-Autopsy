@@ -1198,6 +1198,18 @@ test("frontend loads evidence by active workspace view", () => {
 });
 
 
+test("frontend preserves developer navigation state across view changes and refresh", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const VALID_VIEWS="));
+  assert.ok(appJs.includes("function viewFromHash()"));
+  assert.ok(appJs.includes("S.viewScroll[previous]=window.scrollY||0"));
+  assert.ok(appJs.includes("history.replaceState(null,'','#'+v)"));
+  assert.ok(appJs.includes("window.addEventListener('hashchange'"));
+  assert.ok(appJs.includes("var initialView=viewFromHash()"));
+  assert.ok(appJs.includes("requestAnimationFrame(function(){window.scrollTo(0,restore)})"));
+});
+
+
 test("optional production evidence ingestion keys do not block service startup", () => {
   const env = readRepoFile("src/config/env.ts");
   const render = readRepoFile("render.yaml");
