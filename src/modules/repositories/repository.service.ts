@@ -6,6 +6,7 @@ import type { RepositoryMetadata } from "./repository.types.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
 import { assertAnalysisDeadline } from "../analysis/analysis-deadline.js";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
+import { withRepositoryAccess } from "./repository-git-auth.js";
 
 const REPOSITORY_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -323,7 +324,8 @@ export async function isRepositoryStorageReady(
 export async function cloneRepository(
   repositoryId: string,
   remoteUrl: string,
-  branch?: string
+  branch?: string,
+  accessToken?: string
 ): Promise<RepositoryMetadata> {
   const safeUrl = validateRemoteRepositoryUrl(remoteUrl);
 
@@ -342,7 +344,17 @@ export async function cloneRepository(
 
   try {
     const git = createAnalysisGit(parentPath);
-    await git.clone(safeUrl.toString(), repositoryPath, cloneArgs);
+    await withRepositoryAccess(
+      git,
+      safeUrl,
+      accessToken,
+      (authenticatedGit) =>
+        authenticatedGit.clone(
+          safeUrl.toString(),
+          repositoryPath,
+          cloneArgs
+        )
+    );
 
     const sizeBytes = await calculateDirectorySize(repositoryPath);
     const maxBytes = env.MAX_REPOSITORY_SIZE_MB * 1024 * 1024;
@@ -424,7 +436,8 @@ function assertValidSha(sha: string): void {
 export async function refreshRepository(
   repositoryId: string,
   remoteUrl: string,
-  branch: string
+  branch: string,
+  accessToken?: string
 ): Promise<RepositoryMetadata> {
   const safeUrl = validateRemoteRepositoryUrl(remoteUrl);
   assertSafeBranchName(branch);
@@ -433,33 +446,40 @@ export async function refreshRepository(
   const git = createAnalysisGit(repositoryPath);
 
   try {
-    await git.raw([
-      "check-ref-format",
-      "--branch",
-      branch
-    ]);
+    await withRepositoryAccess(
+      git,
+      safeUrl,
+      accessToken,
+      async (authenticatedGit) => {
+        await authenticatedGit.raw([
+          "check-ref-format",
+          "--branch",
+          branch
+        ]);
 
-    await git.raw([
-      "remote",
-      "set-url",
-      "origin",
-      safeUrl.toString()
-    ]);
+        await authenticatedGit.raw([
+          "remote",
+          "set-url",
+          "origin",
+          safeUrl.toString()
+        ]);
 
-    await git.raw([
-      "fetch",
-      "origin",
-      "--prune",
-      "--no-tags",
-      `refs/heads/${branch}:refs/remotes/origin/${branch}`
-    ]);
+        await authenticatedGit.raw([
+          "fetch",
+          "origin",
+          "--prune",
+          "--no-tags",
+          `refs/heads/${branch}:refs/remotes/origin/${branch}`
+        ]);
 
-    await git.raw([
-      "checkout",
-      "-B",
-      branch,
-      `origin/${branch}`
-    ]);
+        await authenticatedGit.raw([
+          "checkout",
+          "-B",
+          branch,
+          `origin/${branch}`
+        ]);
+      }
+    );
 
     const sizeBytes = await calculateDirectorySize(repositoryPath);
     const maxBytes = env.MAX_REPOSITORY_SIZE_MB * 1024 * 1024;
