@@ -1509,6 +1509,16 @@ test("frontend gates output actions against the current evidence snapshot", () =
   assert.ok(appJs.includes("ready?'<button class=\"btn primary\" data-action=\"interpretation\">"));
 });
 
+test("frontend releases historical filter controls on success and failure", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadHistoricalRuntime()");
+  const end = appJs.indexOf("async function loadMoreTimeline()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("actionBusy('historical-filter',false);"));
+  assert.ok(fn.includes("actionBusy('historical-clear-filter',false);"));
+});
+
 test("frontend locks runtime and historical reset controls during active filters", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("actionBusy('runtime-clear-filter',true,'Clear')"));
