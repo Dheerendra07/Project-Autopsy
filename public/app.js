@@ -538,14 +538,13 @@
       if(token!==S.workspaceToken||loadToken!==S.operationalLoadToken||S.view!=='operations')return;
       S.data.operational=r;
       S.operationalLoading=false;
-      setView('operations',{skipLoad:true});
+      setView('operations',{skipLoad:true,preserveScroll:true});
       if(!silent)toast(r.status==='healthy'?'Operational status is healthy':'Operational status is degraded',r.status==='healthy'?'good':'warn');
     }catch(e){
       if(token===S.workspaceToken&&loadToken===S.operationalLoadToken&&S.view==='operations'){
         if(silent&&S.data.operational){
-          S.data.operational.lastError=e.message;
           S.operationalLoading=false;
-          setView('operations',{skipLoad:true});
+          setView('operations',{skipLoad:true,preserveScroll:true});
           toast('Operational status refresh failed; showing the last known snapshot','warn');
         }else{
           $('root').innerHTML=errorPage('Operations',e.message||'Operational status could not be loaded.','Retry status','operations-retry');
@@ -563,7 +562,7 @@
   function setView(v,options){
     options=options||{};
     var previous=S.view;
-    if(previous&&previous!==v)S.viewScroll[previous]=window.scrollY||0;
+    if(previous&&(previous!==v||options.preserveScroll))S.viewScroll[previous]=window.scrollY||0;
     S.view=v;
     if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);
     resetEvidence();
