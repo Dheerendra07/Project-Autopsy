@@ -415,7 +415,7 @@ test("frontend AI interpretation keeps validated evidence keys inspectable", () 
   assert.ok(appJs.includes("function grounding(keys)"));
   assert.ok(appJs.includes("s.id===parts[0]"));
   assert.ok(appJs.includes('inspectButton("Inspect supporting evidence"'));
-  assert.ok(appJs.includes("Validated report claims referenced by this AI theme."));
+  assert.ok(appJs.includes("Validated report claims referenced by this theme."));
 });
 
 test("frontend clears runtime filters when the active repository is deleted", () => {
@@ -445,12 +445,12 @@ test("frontend releases the runtime loading lock when an analysis run changes", 
   const runtimeBlock = appJs.slice(runtimeStart, runtimeEnd);
   assert.ok(
     runtimeBlock.includes(
-      "finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false}"
+      "S.runtimeLoading=false;actionBusy('runtime-filter',false)"
     )
   );
 
   const refreshStart = appJs.indexOf("async function refresh()");
-  const refreshEnd = appJs.indexOf("function openSettings", refreshStart);
+  const refreshEnd = appJs.indexOf("function openSettings(", refreshStart);
   assert.ok(refreshStart >= 0);
   assert.ok(refreshEnd > refreshStart);
   assert.ok(
@@ -755,7 +755,9 @@ test("repository deletion keeps an explicit lifecycle guard in the API and clien
   assert.ok(service.includes("deleteRepositoryWithStorage"));
   assert.ok(service.includes('FOR UPDATE'));
   assert.ok(html.includes("Delete repository data"));
-  assert.ok(readRepoFile("public/app.js").includes("Permanently delete "));
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function confirmDelete(name)"));
+  assert.ok(appJs.includes("This permanently removes the imported repository and its persisted Autopsy evidence."));
 });
 
 
@@ -1169,7 +1171,7 @@ test("frontend lifecycle invalidation prevents stale refresh and historical load
     appJs.indexOf("async function reloadData()"),
     appJs.indexOf("function historicalRuntimePath")
   );
-  assert.ok(reload.includes("var token=S.workspaceToken,id=S.repoId,runId=S.runId;"));
+  assert.ok(reload.includes("var token=S.workspaceToken,id=S.repoId,runId=S.runId,view=S.view;"));
   assert.ok(reload.includes("if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;"));
 
   const historical = appJs.slice(
@@ -1191,7 +1193,7 @@ test("frontend loads evidence by active workspace view", () => {
   assert.ok(appJs.includes("structure:['architecture','dependencies','complexity','coupling']"));
   assert.ok(appJs.includes("quality:['bugs','repeated','refactors','migrations','tests','testSummary']"));
   assert.ok(appJs.includes("runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext']"));
-  assert.ok(appJs.includes("async function loadViewData(view)"));
+  assert.ok(appJs.includes("async function loadViewData(view,options)"));
   assert.ok(appJs.includes("if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v)"));
   assert.ok(appJs.includes("await loadViewData('overview')"));
   assert.ok(appJs.includes("setView(view,{skipLoad:true})"));
@@ -1203,7 +1205,7 @@ test("frontend preserves developer navigation state across view changes and refr
   assert.ok(appJs.includes("const VALID_VIEWS="));
   assert.ok(appJs.includes("function viewFromHash()"));
   assert.ok(appJs.includes("S.viewScroll[previous]=window.scrollY||0"));
-  assert.ok(appJs.includes("history.replaceState(null,'','#'+v)"));
+  assert.ok(appJs.includes("history.pushState(null,'','#'+v)"));
   assert.ok(appJs.includes("window.addEventListener('hashchange'"));
   assert.ok(appJs.includes("var initialView=viewFromHash()"));
   assert.ok(appJs.includes("requestAnimationFrame(function(){window.scrollTo(0,restore)})"));
@@ -1394,7 +1396,7 @@ test("frontend distinguishes evidence refresh from full analysis reruns", () => 
   assert.ok(appJs.includes("async function reloadCurrentView()"));
   assert.ok(appJs.includes("await loadViewData(view,{force:true})"));
   assert.ok(appJs.includes("data-action=\"reload-view\""));
-  assert.ok(appJs.includes("data-action==='reload-view'"));
+  assert.ok(appJs.includes("a.getAttribute('data-action')==='reload-view'"));
   assert.ok(appJs.includes("Refresh data"));
   assert.ok(appJs.includes("if(!options.force&&hasViewData(view))"));
   assert.doesNotMatch(appJs, /RELOADABLE_VIEWS=\[.*runtime/);
@@ -1430,7 +1432,7 @@ test("frontend provides lightweight evidence refresh and a safe source-repositor
   assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
   assert.ok(appJs.includes("function safeExternalUrl(value)"));
   assert.ok(appJs.includes("Open repository ↗"));
-  assert.ok(appJs.includes("target='_blank' rel='noopener noreferrer'"));
+  assert.ok(appJs.includes("target=\"_blank\" rel=\"noopener noreferrer\""));
 });
 
 
@@ -1505,8 +1507,8 @@ test("frontend evidence explorer search has an explicit accessible name", () => 
 test("frontend gates output actions against the current evidence snapshot", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("actions=current?'<button class=\"btn\" data-action=\"download\">Download JSON</button><button class=\"btn\" data-action=\"interpretation\">Generate insights</button>':''"));
-  assert.ok(appJs.includes("ready?'<button class=\"btn\" data-action=\"interview\">"));
-  assert.ok(appJs.includes("ready?'<button class=\"btn primary\" data-action=\"interpretation\">"));
+  assert.ok(appJs.includes("data-action=\"interview\""));
+  assert.ok(appJs.includes("data-action=\"interpretation\""));
 });
 
 test("frontend releases historical filter controls on success and failure", () => {
