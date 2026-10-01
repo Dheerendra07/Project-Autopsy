@@ -120,7 +120,9 @@
   async function api(path,opt){
     var h=new Headers(opt&&opt.headers||{});h.set('Accept','application/json');if(opt&&opt.body)h.set('Content-Type','application/json');if(S.key)h.set('x-autopsy-api-key',S.key);if(opt&&opt.aiKey)h.set('x-autopsy-ai-access-key',S.aiKey);
     var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},20000);
-    var request=Object.assign({},opt||{},{headers:h,signal:controller.signal});
+    var requestOptions=Object.assign({},opt||{});
+    delete requestOptions.acceptStatuses;
+    var request=Object.assign(requestOptions,{headers:h,signal:controller.signal});
     try{
       var base=safeApiBase(S.api);
       var r=await fetch(base+path,request);
@@ -513,6 +515,7 @@
       var r=await api('/api/observability/summary',{acceptStatuses:[503]});
       if(token!==S.workspaceToken||loadToken!==S.operationalLoadToken||S.view!=='operations')return;
       S.data.operational=r;
+      S.operationalLoading=false;
       setView('operations',{skipLoad:true});
       toast(r.status==='healthy'?'Operational status is healthy':'Operational status is degraded',r.status==='healthy'?'good':'warn');
     }catch(e){
