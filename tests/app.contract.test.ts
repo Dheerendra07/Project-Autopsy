@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { AddressInfo, Server } from "node:http";
+import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import test, { after, before } from "node:test";
 
 const TEST_API_KEY = "test-api-access-key-12345678901234567890";
