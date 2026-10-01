@@ -226,7 +226,7 @@ Preserve all existing API routes, evidence models, migrations, deterministic ana
 ## Final release checkpoint — 2026-10-01
 
 Authoritative current state:
-- Current `main` HEAD: `fda08e55f3bb62795e72c085fc418adec2dda3e3` (PR #143 squash merge; includes PR #142 product UI hardening).
+- Current `main` HEAD: `39e13f079292a31641b6fc5c38667cb70b6cafca` (PR #145 squash merge; includes PRs #142/#143 and operational observability).
 - PR #118 introduced the release-gap production hardening baseline; PRs #119–#122 synchronized the release/CI state, including the manual quality workflow while hosted-runner provisioning is unavailable.
 - PR #123 added bounded analysis-run history, PR #124 added API rate limiting, PR #125 completed environment-example parity and 429 UX, PR #126 exposed historical runtime source context, PR #128 hardened historical-filter lifecycle resets, PR #129 invalidated analysis-history load races, PR #130 normalized historical numeric filter inputs, and PR #131 restored the missing history/filter UI layers on the current main frontend.
 - Open pull requests: 0.
@@ -276,3 +276,20 @@ This is the current release-verification checkpoint for main.
 - No product code change remains blocked by the earlier CI runner issue. Remaining work is operational/observability expansion rather than a missing core analysis workflow; external runtime/deployment evidence sources remain optional integrations and require their real production credentials when enabled.
 
 Continuation rule: treat this section as the newest authoritative checkpoint. Preserve the evidence-first semantics, deterministic report fingerprints, security boundaries, bounded execution, explicit evidence gaps, and zero-cost Render deployment contract.
+
+
+## Next working checkpoint — 2026-10-01
+
+PR #145 is merged and the operational observability layer is verified.
+
+- `GET /api/observability/summary` is an authenticated operational endpoint under the existing `/api` access boundary.
+- The snapshot reports bounded PostgreSQL/Redis dependency readiness and latency, BullMQ analysis queue counts, process uptime, Node.js version, and bounded RSS/heap usage.
+- Dependency and queue inspection failures produce a degraded snapshot with no internal error details exposed to clients.
+- Operational dependency probes are lazy-loaded so merely importing the observability service does not initialize database, Redis, or BullMQ clients in test code that supplies injected dependencies.
+- PR #145 quality run #1331 passed: application/test typecheck, build, full test suite (491 tests; 489 passed with 1 intentionally skipped), E2E import -> analysis -> report acceptance, migration idempotency, server startup, combined API/worker startup, and worker startup/shutdown smoke tests.
+- Post-merge main quality run #1332 also completed successfully with the same full gate.
+- Hosted Render was rechecked after deployment on 2026-10-01: the workspace root and `/health` returned HTTP 200; unauthenticated `/api/observability/summary` returned HTTP 401 with the expected `API_ACCESS_UNAUTHORIZED` contract.
+- README now documents the observability endpoint and its bounded/security semantics.
+- No open pull requests remain after this checkpoint unless new roadmap work is started.
+
+Continuation rule: start subsequent work from main at `39e13f079292a31641b6fc5c38667cb70b6cafca`, preserve the evidence-first boundary, and keep new operational endpoints behind the established API authentication and bounded execution contracts.
