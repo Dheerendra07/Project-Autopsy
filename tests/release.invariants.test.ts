@@ -1315,3 +1315,17 @@ test("frontend labels snapshot freshness consistently across workspace views", (
   assert.ok(appJs.includes("function shell(title,desc,actions){var toolbar=viewFilterMarkup(),snap=snapshotState()"));
   assert.ok(appJs.includes("snapshot-pill"));
 });
+
+
+test("frontend evidence inspector supports copy and returns focus to the invoking control", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("currentEvidence:null"));
+  assert.ok(appJs.includes("function copyEvidence()"));
+  assert.ok(appJs.includes("navigator.clipboard.writeText(JSON.stringify(x.payload,null,2))"));
+  assert.ok(appJs.includes("openEvidence(ev.getAttribute('data-evidence-id'),ev)"));
+  assert.ok(appJs.includes("S.focusReturn=trigger||document.activeElement"));
+  assert.ok(appJs.includes("requestAnimationFrame(function(){try{focus.focus()}catch(e){}})"));
+  assert.ok(indexHtml.includes('id="drawerCopy"'));
+  assert.ok(indexHtml.includes('role="dialog" aria-modal="true"'));
+});
