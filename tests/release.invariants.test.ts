@@ -1292,3 +1292,15 @@ test("frontend connection verification preserves explicit rejected credential st
   assert.ok(fn.includes("rejected=e&&e.message==='API key rejected by protected API'"));
   assert.ok(fn.includes("S.connectionState=rejected?'rejected':'configured'"));
 });
+
+
+test("frontend history renders full loaded pages and paginates timeline evidence", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("t.slice(0,50).map(function(x)"));
+  assert.ok(appJs.includes("c.slice(0,50).map(function(x)"));
+  assert.ok(appJs.includes("async function loadMoreTimeline()"));
+  assert.ok(appJs.includes("/timeline?page="));
+  assert.ok(appJs.includes("more-timeline"));
+  assert.ok(appJs.includes("Load next 50 timeline events"));
+  assert.ok(appJs.includes("timelineLoadToken"));
+});
