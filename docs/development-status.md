@@ -311,3 +311,19 @@ This checkpoint records the latest product-UI hardening after the operational ob
 Product boundary: the core workspace continues to preserve evidence-first semantics. Operational telemetry remains separate from persisted repository evidence. Authentication and protected API actions remain gated; production credentials are never embedded in source or documentation.
 
 Continuation rule: begin subsequent work from main at `52a25d9befc48f61eb3010a13ae2866d9ad4b511cb`. Keep the existing evidence-first, bounded-execution, security, stale-state, focus-management, mobile-layout, and release-invariant contracts intact.
+
+## Private repository access checkpoint — 2026-10-01
+
+PR #151 is merged on main at `98d996d86f7c90ff3252f09cdac7624384dfee9b`.
+
+- Private GitHub, GitLab, and Bitbucket HTTPS repositories now accept an optional read-only repository access token.
+- Repository access credentials are encrypted at rest with AES-256-GCM and are never returned by repository APIs.
+- Repository tokens are kept out of BullMQ job payloads and are supplied to Git through a scoped askpass environment only for the clone/fetch operation.
+- Settings supports repository credential replacement and removal without revealing the current token.
+- Repository access credential storage is deleted with the repository through the database foreign-key cascade.
+- Missing private-repository encryption configuration returns an actionable `REPOSITORY_ACCESS_NOT_CONFIGURED` response instead of exposing internal errors.
+- Quality run #1358 passed the complete release gate: application/test typecheck, build, migrations, 497 tests, real import -> analysis -> report E2E acceptance, migration idempotency, server startup, combined API/worker startup, and worker startup/shutdown smoke.
+- Production Render was rechecked after merge: `/` returned HTTP 200 with the updated private-repository access UI; `/health` returned HTTP 200 with service status healthy.
+- The private-repository encryption key is a production secret and must be configured before private-repository credentials can be stored. Public repositories remain usable without that optional secret.
+
+Continuation rule: treat this section as the newest authoritative checkpoint. Preserve the evidence-first boundary, protected API access, bounded execution, secret non-disclosure, credential server-side storage, and existing 11-view product UI.
