@@ -333,6 +333,31 @@ test("frontend overview exposes command-center snapshot context", () => {
 });
 
 
+test("frontend structure workspace exposes the architecture map surface", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const marker of [
+    "structure-summary",
+    "dep-pulse",
+    "structure-footnote",
+    "ARCHITECTURE MAP",
+    "DEPENDENCY PULSE"
+  ]) {
+    assert.ok(html.includes(marker), "missing structure UI marker: " + marker);
+  }
+
+  const start = appJs.indexOf("function structure()");
+  const end = appJs.indexOf("function quality()", start);
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+  const structure = appJs.slice(start, end);
+  assert.ok(structure.includes("architectureMap(ar)"));
+  assert.ok(structure.includes("dependencyKinds"));
+  assert.ok(structure.includes("complexityDelta"));
+});
+
+
 test("frontend controls have explicit handlers and every workspace view is wired", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
