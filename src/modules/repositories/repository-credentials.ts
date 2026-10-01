@@ -45,7 +45,7 @@ export function encryptRepositoryAccessToken(
 ): string {
   const token = accessToken.trim();
 
-  if (!token || /[\\r\\n\\t\\0]/.test(token)) {
+  if (!token || /[\r\n\t\0]/.test(token)) {
     throw new Error("Repository access credential is invalid.");
   }
 
