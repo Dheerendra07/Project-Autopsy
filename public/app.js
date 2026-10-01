@@ -153,7 +153,7 @@
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;clearInterval(S.timer);S.timer=null;
-      S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};persist();workspace();setView('overview');poll();
+      S.repoId=r.repository.id;S.runId=r.analysis.id;S.analysis=r.analysis;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};persist();workspace();setView('overview');poll();
     }catch(e){
       if(token===S.workspaceToken){$('formerr').textContent=e.message;$('formerr').hidden=false}
     }finally{
@@ -669,7 +669,7 @@
     try{
       var r=await api('/api/repositories/'+id+'/analyze',{method:'POST',body:'{}'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
-      S.runId=r.analysis.id;S.analysis=null;
+      S.runId=r.analysis.id;S.analysis=r.analysis;
       S.data.report=null;S.data.interview=null;S.data.interpretation=null;
       persist();poll();toast('Refresh analysis queued')
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
