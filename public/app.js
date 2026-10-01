@@ -153,10 +153,22 @@
     }finally{clearTimeout(timer)}
   }
   function landing(){ $('landing').hidden=false;$('workspace').hidden=true;document.title='Project Autopsy — Engineering Evidence' }
-  function workspace(){ $('landing').hidden=true;$('workspace').hidden=false;$('repoName').textContent=S.repo&&S.repo.name||'Repository';$('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';connected(S.connectionState);syncAnalysisRefreshControl()}
+  function syncRepositoryAccessSettings(){
+    var zone=$('repoAccessZone'),status=$('repoAccessStatus'),tokenInput=$('repoToken'),clearButton=$('clearRepoAccess');
+    if(!zone)return;
+    zone.hidden=!S.repoId;
+    if(!S.repoId)return;
+    var configured=!!(S.repo&&S.repo.accessConfigured);
+    if(status)status.textContent=configured?'A repository credential is configured on the server. The current value is never shown.':'No repository credential is stored for this workspace.';
+    if(tokenInput)tokenInput.value='';
+    if(clearButton)clearButton.disabled=!configured;
+  }
+  function workspace(){ $('landing').hidden=true;$('workspace').hidden=false;$('repoName').textContent=S.repo&&S.repo.name||'Repository';$('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';connected(S.connectionState);syncAnalysisRefreshControl();syncRepositoryAccessSettings()}
   function banner(show,title,sub,status){$('banner').hidden=!show;if(!show)return;$('btitle').textContent=title;$('bsub').textContent=sub;var x=$('bstatus');x.textContent=status;x.className='pill '+cls(status)}
   async function importRepo(){
     if(S.importing)return;var u=$('url').value.trim(),b=$('branch').value.trim(),payload={url:u};if(b)payload.branch=b;
+    var accessToken=$('repoAccessToken')&&$('repoAccessToken').value.trim();
+    if(accessToken)payload.accessToken=accessToken;
     var token=S.workspaceToken;
     try{
       $('formerr').hidden=true;$('importButton').disabled=true;S.importing=true;
@@ -164,7 +176,7 @@
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;clearInterval(S.timer);S.timer=null;
-      S.repoId=r.repository.id;S.runId=r.analysis.id;S.analysis=r.analysis;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};persist();workspace();setView('overview');poll();
+      S.repoId=r.repository.id;S.runId=r.analysis.id;S.analysis=r.analysis;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch,accessConfigured:!!r.repository.accessConfigured};if($('repoAccessToken'))$('repoAccessToken').value='';S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};persist();workspace();setView('overview');poll();
     }catch(e){
       if(token===S.workspaceToken){$('formerr').textContent=e.message;$('formerr').hidden=false}
     }finally{
@@ -809,8 +821,33 @@
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
     finally{S.refreshLoading=false;if(refreshButton){refreshButton.disabled=false;refreshButton.removeAttribute('aria-busy');if(refreshLabel)refreshButton.textContent=refreshLabel}}
   }
-  function openSettings(trigger){S.settingsFocus=trigger||document.activeElement;$('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;$('key').focus()}
+  function openSettings(trigger){S.settingsFocus=trigger||document.activeElement;$('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;if($('repoToken'))$('repoToken').value='';$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;syncRepositoryAccessSettings();$('key').focus()}
   function closeSettings(){ $('modal').hidden=true;var focus=S.settingsFocus;S.settingsFocus=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
+  async function saveRepositoryAccess(clearCredential){
+    if(!S.repoId)return;
+    var token=S.workspaceToken,id=S.repoId,button=clearCredential?$('clearRepoAccess'):$('saveRepoAccess');
+    if(button){button.disabled=true;button.setAttribute('aria-busy','true')}
+    try{
+      var request={method:clearCredential?'DELETE':'PUT'};
+      if(!clearCredential){
+        var value=$('repoToken').value.trim();
+        if(!value)throw new Error('Enter a repository access token before saving.');
+        request.body=JSON.stringify({accessToken:value});
+      }
+      var r=await api('/api/repositories/'+id+'/access',request);
+      if(token!==S.workspaceToken||id!==S.repoId)return;
+      S.repo=S.repo||{};
+      S.repo.accessConfigured=!!r.configured;
+      $('repoToken').value='';
+      syncRepositoryAccessSettings();
+      toast(clearCredential?'Repository credential cleared':'Repository credential updated','good');
+    }catch(e){
+      if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository credential update failed','bad');
+    }finally{
+      if(button){button.disabled=false;button.removeAttribute('aria-busy')}
+      syncRepositoryAccessSettings();
+    }
+  }
   function finishConfirm(result){
     var resolve=S.confirmResolver,focus=S.confirmFocus;
     S.confirmResolver=null;S.confirmFocus=null;$('confirmModal').hidden=true;
@@ -843,7 +880,7 @@
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
     }
   }
-  $('settings').onclick=function(){openSettings(this)};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
+  $('settings').onclick=function(){openSettings(this)};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('saveRepoAccess').onclick=function(){saveRepositoryAccess(false)};$('clearRepoAccess').onclick=function(){saveRepositoryAccess(true)};$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   document.addEventListener('keydown',function(e){
     if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
