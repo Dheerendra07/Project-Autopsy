@@ -565,6 +565,8 @@
       }
     }finally{
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.historicalLoadToken)S.historicalLoading=false;
+      actionBusy('historical-filter',false);
+      actionBusy('historical-clear-filter',false);
     }
   }
   async function loadMoreTimeline(){
