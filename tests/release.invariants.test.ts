@@ -1592,6 +1592,37 @@ test("frontend navigation exposes accessible active state and deterministic brow
 });
 
 
+test("frontend evidence explorer exposes an evidence-family index", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("var families=["));
+  assert.ok(appJs.includes("loaded sample"));
+  assert.ok(appJs.includes("Counts describe the loaded UI sample, not repository totals."));
+  assert.ok(indexHtml.includes(".evidence-overview"));
+  assert.ok(indexHtml.includes(".evidence-families"));
+});
+
+test("frontend contributors surface exposes a descriptive activity pulse", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("var pulse=items.slice().sort"));
+  assert.ok(appJs.includes("Activity pulse"));
+  assert.ok(appJs.includes("Ownership / effort / intent"));
+  assert.ok(indexHtml.includes(".contributor-overview"));
+  assert.ok(indexHtml.includes(".contrib-track"));
+});
+
+test("frontend runtime surface exposes an explicit provenance posture", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("var runtimePosture=["));
+  assert.ok(appJs.includes("provenance kept explicit"));
+  assert.ok(appJs.includes("direct runtime samples"));
+  assert.ok(indexHtml.includes(".runtime-posture"));
+  assert.ok(indexHtml.includes(".runtime-posture-grid"));
+});
+
+
 test("frontend distinguishes evidence refresh from full analysis reruns", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
