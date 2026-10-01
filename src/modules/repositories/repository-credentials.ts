@@ -39,6 +39,13 @@ function decode(value: string, label: string): Buffer {
   }
 }
 
+export class RepositoryCredentialConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RepositoryCredentialConfigurationError";
+  }
+}
+
 export function encryptRepositoryAccessToken(
   accessToken: string,
   rawKey = env.REPOSITORY_CREDENTIAL_ENCRYPTION_KEY
@@ -47,6 +54,12 @@ export function encryptRepositoryAccessToken(
 
   if (!token || /[\r\n\t\0]/.test(token)) {
     throw new Error("Repository access credential is invalid.");
+  }
+
+  if (!rawKey) {
+    throw new RepositoryCredentialConfigurationError(
+      "Private repository access is not configured on this service."
+    );
   }
 
   const iv = randomBytes(IV_BYTES);
