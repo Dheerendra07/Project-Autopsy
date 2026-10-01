@@ -115,6 +115,7 @@ function reconstruction(): HistoricalRuntimeReconstruction {
             ...readyCorrelation.changeContext,
             commitSha: "a".repeat(40),
             subject: "first",
+            committedAt: "2026-09-29T00:00:00.000Z",
             parentRevisionSha: null,
             filesChanged: 1,
             additions: 2,
