@@ -7,10 +7,13 @@ import {
 import type {
   HistoricalRuntimeReconstruction
 } from "../src/modules/runtime/historical-correlation.service.js";
+import type {
+  RuntimeCorrelationEvidence
+} from "../src/modules/runtime/correlation.types.js";
 
 function reconstruction(): HistoricalRuntimeReconstruction {
   const repositoryId = "00000000-0000-0000-0000-000000000001";
-  const readyCorrelation = {
+  const readyCorrelation: RuntimeCorrelationEvidence = {
     status: "ready",
     repositoryId,
     targetRevisionSha: "b".repeat(40),
@@ -55,7 +58,7 @@ function reconstruction(): HistoricalRuntimeReconstruction {
     target: null,
     observedDelta: { avgDurationMs: 5, p95DurationMs: 8, errorRate: 0.01 },
     evidencePolicy: ["observational"]
-  } as const;
+  };
 
   return {
     repositoryId,
@@ -112,6 +115,7 @@ function reconstruction(): HistoricalRuntimeReconstruction {
             ...readyCorrelation.changeContext,
             commitSha: "a".repeat(40),
             subject: "first",
+            committedAt: "2026-09-29T00:00:00.000Z",
             parentRevisionSha: null,
             filesChanged: 1,
             additions: 2,

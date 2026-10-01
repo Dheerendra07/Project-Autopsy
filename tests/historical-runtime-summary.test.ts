@@ -7,6 +7,9 @@ import {
 import type {
   HistoricalRuntimeReconstruction
 } from "../src/modules/runtime/historical-correlation.service.js";
+import type {
+  RuntimeCorrelationEvidence
+} from "../src/modules/runtime/correlation.types.js";
 
 function reconstruction(): HistoricalRuntimeReconstruction {
   const base = {
@@ -36,9 +39,9 @@ function reconstruction(): HistoricalRuntimeReconstruction {
         insufficient_target_samples: 1
       }
     }
-  } as const;
+  };
 
-  const ready = {
+  const ready: RuntimeCorrelationEvidence = {
     status: "ready",
     repositoryId: base.repositoryId,
     targetRevisionSha: "b".repeat(40),

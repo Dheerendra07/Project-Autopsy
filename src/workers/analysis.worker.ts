@@ -8,7 +8,6 @@ import {
   getAnalysisRunById,
   getLatestCompletedAnalysisRun,
   getRepositoryById,
-  getRepositoryStoragePath,
   persistCommitBatch,
   setAnalysisRunPlan,
   setAnalysisRunTargetHead,
@@ -57,7 +56,8 @@ import {
   isCommitAncestor,
   isRepositoryStorageReady,
   refreshRepository,
-  removeRepositoryStorage
+  removeRepositoryStorage,
+  getRepositoryStoragePath
 } from "../modules/repositories/repository.service.js";
 import {
   enqueueRepositoryAnalysis

@@ -4,6 +4,7 @@ import type {
   Response
 } from "express";
 import { z } from "zod";
+import { RepositoryUrlValidationError } from "../modules/repositories/repository-url.js";
 
 export function errorMiddleware(
   error: unknown,
@@ -49,6 +50,17 @@ export function errorMiddleware(
             : status === 415
               ? "Request uses an unsupported content encoding."
               : "Request body could not be parsed."
+      }
+    });
+    return;
+  }
+
+  if (error instanceof RepositoryUrlValidationError) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: "VALIDATION_ERROR",
+        message: error.message
       }
     });
     return;

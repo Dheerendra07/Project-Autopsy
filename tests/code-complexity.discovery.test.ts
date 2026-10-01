@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { simpleGit } from "simple-git";
@@ -157,6 +157,8 @@ test("preserves exact blob lookup for unusual filenames", async () => {
     await git.init();
     await git.addConfig("user.name", "Project Autopsy Test");
     await git.addConfig("user.email", "project-autopsy-test@example.com");
+
+    await mkdir(path.join(repositoryPath, "src"), { recursive: true });
 
     const paths = [
       "src/a*.ts",

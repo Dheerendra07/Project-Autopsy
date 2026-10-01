@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { buildEvidenceReport } from "../src/modules/reports/report.service.js";
+import type { ReportBuildInput } from "../src/modules/reports/report.types.js";
 
-function baseInput() {
+function baseInput(): ReportBuildInput {
   return {
     repository: {
       id: "00000000-0000-4000-8000-000000000001",

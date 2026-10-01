@@ -1,6 +1,8 @@
 import { simpleGit } from "simple-git";
 import { createAnalysisGit } from "../analysis/analysis-git.js";
 
+export const GIT_LOG_PAGE_SIZE = 500;
+
 export interface FileChurnEvidence {
   path: string;
   additions: number;
@@ -9,7 +11,7 @@ export interface FileChurnEvidence {
 }
 
 const NUMSTAT_LINE =
-  /^(\d+|-)\t(\d+|-)\t(.+)$/;
+  /^(\d+|-)\t(\d+|-)\t([\s\S]+)$/;
 
 export async function discoverFileChurn(
   repositoryPath: string

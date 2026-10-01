@@ -76,7 +76,7 @@ test("product frontend contains the core evidence workflow", () => {
     "Load older analysis runs",
     "analysis-runs-more",
     "loadMoreAnalysisRuns",
-    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25',
+    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'",
     "function runtimeFilterDate(value)",
     "function sameRevision(a,b)",
     "function safeApiBase(value)",
@@ -103,8 +103,8 @@ test("product frontend contains the core evidence workflow", () => {
     "loadToken!==S.commitLoadToken",
     "function runtimeEventsPath(page,limit)",
     "S.runtimeEvents=arr(out.runtimeEvents,'events')",
-    "sessionStorage.getItem('autopsy.key')",
-    "sessionStorage.setItem('autopsy.aiKey'",
+    "function storageGet(key)",
+    "function storageSet(key,value)",
     "/api/repositories/import"
   ]) {
     assert.ok(

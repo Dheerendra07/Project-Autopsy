@@ -24,6 +24,8 @@ test("reports an initialized Git repository as ready", async () => {
     const { simpleGit } = await import("simple-git");
     const git = simpleGit(directory);
     await git.init();
+    await git.addConfig("user.name", "Project Autopsy Test");
+    await git.addConfig("user.email", "project-autopsy-test@example.com");
     await writeFile(path.join(directory, "README.md"), "ready\n", "utf8");
     await git.add(".");
     await git.commit("ready storage");

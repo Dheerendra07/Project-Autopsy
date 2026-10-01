@@ -3,6 +3,7 @@ import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import test, { after, before } from "node:test";
 
 const TEST_API_KEY = "test-api-access-key-12345678901234567890";
@@ -14,6 +15,8 @@ process.env.DATABASE_URL =
 process.env.REDIS_HOST = process.env.REDIS_HOST ?? "127.0.0.1";
 process.env.REDIS_PORT = process.env.REDIS_PORT ?? "6379";
 process.env.AUTOPSY_API_ACCESS_KEY = TEST_API_KEY;
+process.env.API_RATE_LIMIT_MAX_REQUESTS = "1000";
+process.env.API_RATE_LIMIT_HEAVY_MAX_REQUESTS = "1000";
 
 let server: Server;
 let baseUrl: string;
@@ -32,7 +35,8 @@ before(async () => {
   assert.ok(address);
   assert.equal(typeof address, "object");
 
-  baseUrl = `http://127.0.0.1:${address.port}`;
+  const info = address as AddressInfo;
+  baseUrl = `http://127.0.0.1:${info.port}`;
 });
 
 after(async () => {
@@ -617,9 +621,9 @@ test("analysis status hides internal failure paths from API consumers", async ()
   await db.query(
     `
       INSERT INTO analysis_runs (
-        id, repository_id, analyzer_version, analysis_mode, status, error_message
+        id, repository_id, analyzer_version, analysis_mode, status, error_message, completed_at
       )
-      VALUES ($1, $2, 'test', 'full', 'failed', $3)
+      VALUES ($1, $2, 'test', 'full', 'failed', $3, NOW())
     `,
     [analysisRunId, repositoryId, `Git clone failed at ${internalPath}: ${"x".repeat(1_200)}`]
   );

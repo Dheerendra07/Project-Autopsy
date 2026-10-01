@@ -183,7 +183,7 @@ test("rejects dot path traversal segments after URL decoding", () => {
       () => validateRemoteRepositoryUrl(
         "https://github.com/owner/" + segment
       ),
-      /invalid path segment|invalid path for its Git provider/
+      /owner\/group and repository name|invalid path segment|invalid path for its Git provider/
     );
   }
 });

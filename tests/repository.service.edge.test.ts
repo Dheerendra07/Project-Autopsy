@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { simpleGit } from "simple-git";
 
 import {
   assertRepositoryId,
@@ -141,7 +142,8 @@ test("requires an actual .git directory for ready repository storage", async () 
   const root = await makeTempDirectory("git-dir-");
 
   try {
-    await mkdir(path.join(root, ".git"));
+    const git = simpleGit(root);
+    await git.init();
     assert.equal(await isRepositoryStorageReady(root), true);
 
     const gitStat = await lstat(path.join(root, ".git"));
@@ -216,11 +218,13 @@ test("repository storage deletion accepts only paths inside the managed root", (
     assertManagedRepositoryStoragePath(path.join(managed, "nested"))
   );
 
+  const filesystemRoot = path.parse(managed).root;
+
   for (const value of [
-    path.dirname(managed),
-    path.join(path.dirname(managed), "other-repository"),
-    path.resolve(process.cwd(), ".."),
-    "../escape"
+    filesystemRoot,
+    path.join(filesystemRoot, "project-autopsy-outside"),
+    path.resolve(managed, "../.."),
+    path.resolve(managed, "../../outside/nested")
   ]) {
     assert.throws(
       () => assertManagedRepositoryStoragePath(value),
