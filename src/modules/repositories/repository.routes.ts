@@ -62,7 +62,7 @@ const repositoryAccessTokenSchema = z
   .trim()
   .max(2_048)
   .refine(
-    (value) => !/[\\r\\n\\t\\0]/.test(value),
+    (value) => !/[\r\n\t\0]/.test(value),
     "Repository access credential is invalid."
   );
 
