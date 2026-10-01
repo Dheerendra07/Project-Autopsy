@@ -1359,3 +1359,17 @@ test("frontend runtime datetime filters round-trip between local inputs and API-
   assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.to))"));
   assert.ok(appJs.includes("['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation']"));
 });
+
+
+test("frontend destructive actions use an in-product confirmation flow", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("function confirmDelete(name)"));
+  assert.ok(appJs.includes("if(!await confirmDelete(name))return;"));
+  assert.doesNotMatch(appJs, /window\.confirm\('Permanently delete/);
+  assert.ok(appJs.includes("finishConfirm(false)"));
+  assert.ok(appJs.includes("confirmResolver:null"));
+  assert.ok(indexHtml.includes('id="confirmModal"'));
+  assert.ok(indexHtml.includes('id="confirmCancel"'));
+  assert.ok(indexHtml.includes('id="confirmConfirm"'));
+});
