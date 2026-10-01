@@ -474,14 +474,14 @@
     }
     if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v)
   }
-  async function loadRuntimeEvents(reset){if(S.runtimeLoading)return;var token=S.workspaceToken,id=S.repoId,runId=S.runId;S.runtimeLoading=true;var previousEvents=S.runtimeEvents,previousPage=S.runtimePagination,previousFilter=S.runtimeFilter;try{var f={from:($('rtFrom')&&$('rtFrom').value)||S.runtimeFilter.from||'',to:($('rtTo')&&$('rtTo').value)||S.runtimeFilter.to||'',deploymentId:($('rtDeployment')&&$('rtDeployment').value.trim())||S.runtimeFilter.deploymentId||'',revisionSha:($('rtRevision')&&$('rtRevision').value.trim())||S.runtimeFilter.revisionSha||'',environment:($('rtEnvironment')&&$('rtEnvironment').value.trim())||S.runtimeFilter.environment||'',operationName:($('rtOperation')&&$('rtOperation').value.trim())||S.runtimeFilter.operationName||'',signalType:($('rtSignal')&&$('rtSignal').value)||S.runtimeFilter.signalType||''};var page=reset?1:Number(S.runtimePagination&&S.runtimePagination.page||1)+1;if(f.from&&f.to&&new Date(f.from).getTime()>=new Date(f.to).getTime())throw new Error('From must be earlier than To.');if(f.revisionSha&&!/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(f.revisionSha))throw new Error('Revision SHA must be exactly 40 or 64 hexadecimal characters.');var r=await api(runtimeEventsPathWithFilter(page,40,f));if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;var next=arr(r,'events');S.runtimeFilter=f;S.runtimeEvents=reset?next:previousEvents.concat(next);S.runtimePagination=r.pagination;S.data.runtimeEvents=r;S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='runtimeEvents'});setView('runtime');toast(next.length?'Runtime evidence loaded':'No runtime events matched the filters','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId){S.runtimeEvents=previousEvents;S.runtimePagination=previousPage;S.runtimeFilter=previousFilter;toast(e.message||'Runtime evidence load failed','bad')}}finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false}}
+  async function loadRuntimeEvents(reset){if(S.runtimeLoading)return;var token=S.workspaceToken,id=S.repoId,runId=S.runId;S.runtimeLoading=true;actionBusy(reset?'runtime-filter':'runtime-more',true,reset?'Applying…':'Loading…');var previousEvents=S.runtimeEvents,previousPage=S.runtimePagination,previousFilter=S.runtimeFilter;try{var f={from:($('rtFrom')&&$('rtFrom').value)||S.runtimeFilter.from||'',to:($('rtTo')&&$('rtTo').value)||S.runtimeFilter.to||'',deploymentId:($('rtDeployment')&&$('rtDeployment').value.trim())||S.runtimeFilter.deploymentId||'',revisionSha:($('rtRevision')&&$('rtRevision').value.trim())||S.runtimeFilter.revisionSha||'',environment:($('rtEnvironment')&&$('rtEnvironment').value.trim())||S.runtimeFilter.environment||'',operationName:($('rtOperation')&&$('rtOperation').value.trim())||S.runtimeFilter.operationName||'',signalType:($('rtSignal')&&$('rtSignal').value)||S.runtimeFilter.signalType||''};var page=reset?1:Number(S.runtimePagination&&S.runtimePagination.page||1)+1;if(f.from&&f.to&&new Date(f.from).getTime()>=new Date(f.to).getTime())throw new Error('From must be earlier than To.');if(f.revisionSha&&!/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(f.revisionSha))throw new Error('Revision SHA must be exactly 40 or 64 hexadecimal characters.');var r=await api(runtimeEventsPathWithFilter(page,40,f));if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;var next=arr(r,'events');S.runtimeFilter=f;S.runtimeEvents=reset?next:previousEvents.concat(next);S.runtimePagination=r.pagination;S.data.runtimeEvents=r;S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='runtimeEvents'});setView('runtime');toast(next.length?'Runtime evidence loaded':'No runtime events matched the filters','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId){S.runtimeEvents=previousEvents;S.runtimePagination=previousPage;S.runtimeFilter=previousFilter;toast(e.message||'Runtime evidence load failed','bad')}}finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false;actionBusy('runtime-filter',false);actionBusy('runtime-more',false)}}
   async function reloadCurrentView(){
     var view=S.view;
     if(RELOADABLE_VIEWS.indexOf(view)<0||!S.repoId)return;
     await loadViewData(view,{force:true});
   }
   async function loadMoreAnalysisRuns(){
-    if(S.analysisRunsLoading)return;
+    if(S.analysisRunsLoading)return;actionBusy('analysis-runs-more',true,'Loading…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.analysisRunsLoadToken;
     var current=arr(S.data.analysisRuns,'runs'),pagination=S.data.analysisRuns&&S.data.analysisRuns.pagination||{},page=Number(pagination.page||1)+1;
     if(!pagination.totalPages||page>pagination.totalPages)return;
@@ -497,7 +497,7 @@
         toast(e.message||'Analysis history could not be loaded','bad');
       }
     }finally{
-      if(loadToken===S.analysisRunsLoadToken)S.analysisRunsLoading=false;
+      if(loadToken===S.analysisRunsLoadToken)S.analysisRunsLoading=false;actionBusy('analysis-runs-more',false);
     }
   }
   async function reloadData(){
@@ -519,7 +519,7 @@
     return base+'?'+q.join('&');
   }
   async function loadHistoricalRuntime(){
-    if(S.historicalLoading)return;
+    if(S.historicalLoading)return;actionBusy('historical-filter',true,'Applying…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.historicalLoadToken,previousFilter=S.historicalFilter,previousSummary=S.data.historicalSummary,previousCorrelation=S.data.historicalCorrelation,previousSourceContext=S.data.historicalSourceContext;
     S.historicalLoading=true;
     try{
@@ -564,7 +564,7 @@
     }
   }
   async function loadMoreTimeline(){
-    if(S.timelineLoading)return;
+    if(S.timelineLoading)return;actionBusy('more-timeline',true,'Loading…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.timelineLoadToken;
     S.timelineLoading=true;
     try{
@@ -583,7 +583,7 @@
     }
   }
   async function loadMoreCommits(){
-    if(S.commitLoading)return;
+    if(S.commitLoading)return;actionBusy('more-commits',true,'Loading…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.commitLoadToken;
     S.commitLoading=true;
     try{
