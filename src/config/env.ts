@@ -158,32 +158,6 @@ export const envSchema = z
     if (
       value.NODE_ENV === "production" &&
       value.AUTOPSY_SERVICE_ROLE === "web" &&
-      !value.RUNTIME_TELEMETRY_INGEST_KEY
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["RUNTIME_TELEMETRY_INGEST_KEY"],
-        message:
-          "RUNTIME_TELEMETRY_INGEST_KEY is required in production."
-      });
-    }
-
-    if (
-      value.NODE_ENV === "production" &&
-      value.AUTOPSY_SERVICE_ROLE === "web" &&
-      !value.DEPLOYMENT_EVIDENCE_INGEST_KEY
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["DEPLOYMENT_EVIDENCE_INGEST_KEY"],
-        message:
-          "DEPLOYMENT_EVIDENCE_INGEST_KEY is required in production."
-      });
-    }
-
-    if (
-      value.NODE_ENV === "production" &&
-      value.AUTOPSY_SERVICE_ROLE === "web" &&
       !value.AUTOPSY_API_ACCESS_KEY
     ) {
       ctx.addIssue({
