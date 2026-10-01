@@ -103,8 +103,8 @@ test("product frontend contains the core evidence workflow", () => {
     "loadToken!==S.commitLoadToken",
     "function runtimeEventsPath(page,limit)",
     "S.runtimeEvents=arr(out.runtimeEvents,'events')",
-    "sessionStorage.getItem('autopsy.key')",
-    "sessionStorage.setItem('autopsy.aiKey'",
+    "function storageGet(key)",
+    "function storageSet(key,value)",
     "/api/repositories/import"
   ]) {
     assert.ok(
