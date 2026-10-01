@@ -86,6 +86,17 @@ Poll a specific asynchronous analysis run with `GET /api/repositories/:repositor
 
 List the bounded analysis-run history with `GET /api/repositories/:repositoryId/analysis-runs?page=1&limit=20`. The response is ordered newest-first and exposes the persisted lifecycle state and sanitized failure diagnostics without exposing worker-local storage paths. The frontend overview can load older analysis runs without starting a new analysis.
 
+
+## Operational observability
+
+Authenticated operators can inspect a bounded service snapshot without exposing repository storage paths or internal error details:
+
+GET /api/observability/summary
+
+The response includes PostgreSQL and Redis dependency readiness/latency, BullMQ analysis queue counts, process uptime, Node.js version, and bounded RSS/heap usage. Dependency and queue inspection are time-bounded; the endpoint returns HTTP 503 with `status: "degraded"` when a required operational check is unavailable.
+
+The endpoint is protected by the same production API access boundary as other `/api` routes and is subject to the normal API rate-limit bucket.
+
 ## Evidence policy
 
 Project Autopsy separates observed evidence from interpretation.
