@@ -1432,3 +1432,13 @@ test("frontend provides lightweight evidence refresh and a safe source-repositor
   assert.ok(appJs.includes("Open repository ↗"));
   assert.ok(appJs.includes("target='_blank' rel='noopener noreferrer'"));
 });
+
+
+test("frontend shows targeted evidence refresh progress and disables duplicate reload interaction", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("loading=!!S.viewLoading[S.view]"));
+  assert.ok(appJs.includes("disabled aria-busy="true""));
+  assert.ok(appJs.includes("loading?'Refreshing…':'Refresh data'"));
+  assert.ok(indexHtml.includes("button:disabled{opacity:.55;cursor:wait"));
+});
