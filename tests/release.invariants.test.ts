@@ -1496,3 +1496,8 @@ test("frontend prevents duplicate destructive confirmation requests", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("if(S.confirmResolver)return Promise.resolve(false);"));
 });
+
+test("frontend evidence explorer search has an explicit accessible name", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes('id="evidenceSearch" class="search" aria-label="Filter evidence records"'));
+});
