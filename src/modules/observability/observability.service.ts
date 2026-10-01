@@ -46,10 +46,25 @@ export interface OperationalDependencies {
   nodeVersion: string;
 }
 
+async function getAnalysisQueueCounts(): Promise<QueueCounts> {
+  const counts = await analysisQueue.getJobCounts();
+
+  return {
+    active: counts.active ?? 0,
+    completed: counts.completed ?? 0,
+    delayed: counts.delayed ?? 0,
+    failed: counts.failed ?? 0,
+    prioritized: counts.prioritized ?? 0,
+    paused: counts.paused ?? 0,
+    waiting: counts.waiting ?? 0,
+    "waiting-children": counts["waiting-children"] ?? 0
+  };
+}
+
 const DEFAULT_DEPENDENCIES: OperationalDependencies = {
   checkDatabase: checkDatabaseConnection,
   checkRedis: checkRedisConnection,
-  getQueueCounts: () => analysisQueue.getJobCounts(),
+  getQueueCounts: getAnalysisQueueCounts,
   now: Date.now,
   uptimeSeconds: process.uptime,
   memoryUsage: process.memoryUsage,
