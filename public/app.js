@@ -683,7 +683,7 @@
       }
     }finally{
       S.interpretationLoading=false;
-      if(S.view==='interpretation')actionBusy('interpretation',false);
+      actionBusy('interpretation',false);
     }
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
