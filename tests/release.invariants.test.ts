@@ -1409,3 +1409,17 @@ test("frontend view loading is single-flight and workspace-safe", () => {
   assert.ok(appJs.includes("if(S.viewLoading[view]===loadToken)delete S.viewLoading[view]"));
   assert.ok(appJs.includes("S.viewFilter={};S.tableSort={};S.viewLoading={};"));
 });
+
+
+test("frontend keeps the newly queued analysis run visible during refresh", () => {
+  const appJs = readRepoFile("public/app.js");
+  const importStart = appJs.indexOf("async function importRepo()");
+  const importEnd = appJs.indexOf("async function getRepo", importStart);
+  const refreshStart = appJs.indexOf("async function refresh()");
+  const refreshEnd = appJs.indexOf("function openSettings", refreshStart);
+  assert.ok(importStart >= 0 && importEnd > importStart);
+  assert.ok(refreshStart >= 0 && refreshEnd > refreshStart);
+  assert.ok(appJs.slice(importStart, importEnd).includes("S.analysis=r.analysis"));
+  assert.ok(appJs.slice(refreshStart, refreshEnd).includes("S.runId=r.analysis.id;S.analysis=r.analysis;"));
+  assert.doesNotMatch(appJs.slice(refreshStart, refreshEnd), /S\.analysis=null;/);
+});
