@@ -1227,3 +1227,18 @@ test("optional production evidence ingestion keys do not block service startup",
   assert.ok(render.includes("RUNTIME_TELEMETRY_INGEST_KEY"));
   assert.ok(render.includes("DEPLOYMENT_EVIDENCE_INGEST_KEY"));
 });
+
+
+test("frontend view filters provide local search state without extra API traffic", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("viewFilter:{}"));
+  assert.ok(appJs.includes("function viewFilterMarkup()"));
+  assert.ok(appJs.includes("function applyViewFilter()"));
+  assert.ok(appJs.includes("function bindViewSearch()"));
+  assert.ok(appJs.includes("Filters the already-loaded evidence locally"));
+  assert.ok(appJs.includes("S.viewFilter[S.view]=input.value"));
+  assert.ok(appJs.includes("e.key==='/'"));
+  assert.ok(appJs.includes("document.activeElement===$('viewSearch')"));
+  assert.ok(appJs.includes("S.viewFilter={}"));
+});
