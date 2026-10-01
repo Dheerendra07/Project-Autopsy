@@ -394,7 +394,7 @@
     var previous=S.view;
     if(previous&&previous!==v)S.viewScroll[previous]=window.scrollY||0;
     S.view=v;
-    if(!options.fromHash&&location.hash!=='#'+v)history.replaceState(null,'','#'+v);
+    if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);
     resetEvidence();
     document.querySelectorAll('#nav button').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-view')===v)});
     var h=v==='history'?history():v==='structure'?structure():v==='quality'?quality():v==='runtime'?runtime():v==='report'?reportPage():v==='interview'?interview():v==='interpretation'?interpretation():v==='evidence'?evidencePage():v==='contributors'?contributors():overview();
