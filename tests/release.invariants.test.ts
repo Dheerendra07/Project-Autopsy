@@ -1527,3 +1527,11 @@ test("frontend releases the insights action state on early failure", () => {
   assert.ok(fn.includes("openSettings()"));
   assert.ok(fn.includes("actionBusy('interpretation',false);"));
 });
+
+test("frontend preserves generated-action busy state across rerenders", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("S.reportLoading?'Generating…'"));
+  assert.ok(appJs.includes("S.interviewLoading?'Loading…'"));
+  assert.ok(appJs.includes("S.interpretationLoading?'Generating…'"));
+  assert.ok(appJs.includes("disabled aria-busy=\"true\""));
+});
