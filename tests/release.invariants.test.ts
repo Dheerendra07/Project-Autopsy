@@ -1373,3 +1373,16 @@ test("frontend destructive actions use an in-product confirmation flow", () => {
   assert.ok(indexHtml.includes('id="confirmCancel"'));
   assert.ok(indexHtml.includes('id="confirmConfirm"'));
 });
+
+
+test("frontend navigation exposes accessible active state and deterministic browser titles", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("const VIEW_TITLES="));
+  assert.ok(appJs.includes("b.setAttribute('aria-current','page')"));
+  assert.ok(appJs.includes("document.title='Project Autopsy — '+(VIEW_TITLES[v]||'Workspace')"));
+  assert.ok(appJs.includes("document.title='Project Autopsy — Engineering Evidence'"));
+  assert.ok(indexHtml.includes('href="#overview" aria-label="Project Autopsy overview"'));
+  assert.ok(indexHtml.includes('class="skip-link" href="#root"'));
+  assert.ok(indexHtml.includes('id="root" tabindex="-1"'));
+});
