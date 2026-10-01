@@ -1183,6 +1183,21 @@ test("frontend lifecycle invalidation prevents stale refresh and historical load
 
 
 
+test("frontend loads evidence by active workspace view", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const VIEW_DATA="));
+  assert.ok(appJs.includes("overview:['commits','analysisRuns','hotspots','contributors']"));
+  assert.ok(appJs.includes("history:['commits','timeline']"));
+  assert.ok(appJs.includes("structure:['architecture','dependencies','complexity','coupling']"));
+  assert.ok(appJs.includes("quality:['bugs','repeated','refactors','migrations','tests','testSummary']"));
+  assert.ok(appJs.includes("runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext']"));
+  assert.ok(appJs.includes("async function loadViewData(view)"));
+  assert.ok(appJs.includes("if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v)"));
+  assert.ok(appJs.includes("await loadViewData('overview')"));
+  assert.ok(appJs.includes("setView(view,{skipLoad:true})"));
+});
+
+
 test("optional production evidence ingestion keys do not block service startup", () => {
   const env = readRepoFile("src/config/env.ts");
   const render = readRepoFile("render.yaml");
