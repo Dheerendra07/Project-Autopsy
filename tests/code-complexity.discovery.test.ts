@@ -158,6 +158,8 @@ test("preserves exact blob lookup for unusual filenames", async () => {
     await git.addConfig("user.name", "Project Autopsy Test");
     await git.addConfig("user.email", "project-autopsy-test@example.com");
 
+    await mkdir(path.join(repositoryPath, "src"), { recursive: true });
+
     const paths = [
       "src/a*.ts",
       "src/file\twith\ttab.ts",
