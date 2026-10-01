@@ -704,7 +704,7 @@ test("repository deletion keeps an explicit lifecycle guard in the API and clien
   assert.ok(service.includes("deleteRepositoryWithStorage"));
   assert.ok(service.includes('FOR UPDATE'));
   assert.ok(html.includes("Delete repository data"));
-  assert.ok(html.includes("Permanently delete "));
+  assert.ok(readRepoFile("public/app.js").includes("Permanently delete "));
 });
 
 
