@@ -79,6 +79,7 @@
     $('drawerJson').textContent=JSON.stringify(x.payload,null,2);
     if($('drawerRaw'))$('drawerRaw').open=false;
     $('drawer').hidden=false;
+    requestAnimationFrame(function(){$('drawerClose').focus()});
   }
   function closeEvidence(){$('drawer').hidden=true;var focus=S.focusReturn;S.focusReturn=null;S.currentEvidence=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
   async function copyEvidence(){var x=S.currentEvidence;if(!x){toast('No evidence record is open','bad');return}try{await navigator.clipboard.writeText(JSON.stringify(x.payload,null,2));toast('Evidence JSON copied','good')}catch(e){toast('Clipboard access is unavailable in this browser','bad')}}
@@ -607,6 +608,7 @@
       $('drawerBasis').textContent=S.currentEvidence.basis;
       $('drawerJson').textContent=JSON.stringify(r,null,2);
       $('drawer').hidden=false;
+      requestAnimationFrame(function(){$('drawerClose').focus()});
     }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
   }
   async function loadReport(){
@@ -694,8 +696,8 @@
       persist();poll();toast('Refresh analysis queued')
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
   }
-  function openSettings(){ $('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;$('key').focus()}
-  function closeSettings(){ $('modal').hidden=true}
+  function openSettings(trigger){S.settingsFocus=trigger||document.activeElement;$('api').value=S.api;$('key').value=S.key;$('aikey').value=S.aiKey;$('dangerZone').hidden=!S.repoId;$('modal').hidden=false;$('key').focus()}
+  function closeSettings(){ $('modal').hidden=true;var focus=S.settingsFocus;S.settingsFocus=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
   function finishConfirm(result){
     var resolve=S.confirmResolver,focus=S.confirmFocus;
     S.confirmResolver=null;S.confirmFocus=null;$('confirmModal').hidden=true;
@@ -725,7 +727,7 @@
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
     }
   }
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
+  $('settings').onclick=function(){openSettings(this)};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   document.addEventListener('keydown',function(e){
     var target=e.target;
