@@ -231,6 +231,9 @@
   function loadingPage(title,message){
     return shell(title,message,'')+'<div class="card loading-state"><div class="loading-orb"><span></span></div><div><strong>Working through the current evidence</strong><p>Nothing new is being inferred while this loads. Your existing snapshot stays intact.</p></div></div>';
   }
+  function errorPage(title,message,actionLabel,action){
+    return shell(title,'The workspace could not complete this action. The existing evidence snapshot is unchanged.','')+'<div class="card error-state"><div class="error-mark">!</div><div><strong>'+esc(message)+'</strong><p>Retry the operation without starting a new repository analysis.</p><button class="btn primary" data-action="'+esc(action)+'">'+esc(actionLabel||'Try again')+'</button></div></div>';
+  }
   function overview(){
     var r=S.repo||{},a=S.analysis||{},d=S.data,c=arr(d.commits,'commits'),h=arr(d.hotspots,'hotspots');
     var max=1;h.slice(0,8).forEach(function(x){max=Math.max(max,Number(x.commits_touched||0))});
@@ -448,7 +451,10 @@
       setView('report');
       toast('Evidence report refreshed','good');
     }catch(e){
-      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='report')toast(e.message,'bad');
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='report'){
+        $('root').innerHTML=errorPage('Evidence report',e.message||'The report could not be generated.','Try again','report');
+        toast(e.message,'bad');
+      }
     }
   }
   async function loadInterview(){
@@ -462,25 +468,31 @@
       setView('interview');
       toast('Interview stories loaded','good');
     }catch(e){
-      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interview')toast(e.message,'bad');
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interview'){
+        $('root').innerHTML=errorPage('Interview',e.message||'Interview stories could not be generated.','Try again','interview');
+        toast(e.message,'bad');
+      }
     }
   }
   async function loadInterpretation(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
-    setView('interpretation');
-    $('root').innerHTML=loadingPage('Engineering insights','Grounding the current report into themes, questions and uncertainties.');
     try{
       if(!S.aiKey){
         openSettings();
         throw new Error('Add the Insights access key in advanced settings first.');
       }
+      setView('interpretation');
+      $('root').innerHTML=loadingPage('Engineering insights','Grounding the current report into themes, questions and uncertainties.');
       var r=await api('/api/repositories/'+id+'/interpretation?limit=10',{aiKey:true});
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='interpretation')return;
       S.data.interpretation=r;
       setView('interpretation');
       toast('Insights refreshed','good');
     }catch(e){
-      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interpretation')toast(e.message,'bad');
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interpretation'){
+        $('root').innerHTML=errorPage('Engineering insights',e.message||'Insights could not be generated.','Try again','interpretation');
+        toast(e.message,'bad');
+      }
     }
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
