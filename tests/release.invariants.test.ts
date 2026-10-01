@@ -1273,3 +1273,11 @@ test("frontend navigation writes browser history for user-driven view changes", 
   assert.ok(appJs.includes("window.addEventListener('hashchange'"));
   assert.doesNotMatch(appJs, /if\(!options\.fromHash&&location\.hash!==\'#\'\+v\)history\.replaceState/);
 });
+
+
+test("frontend marks rejected API credentials instead of leaving a stale verified state", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("state==='rejected'"));
+  assert.ok(appJs.includes("Access rejected"));
+  assert.ok(appJs.includes("S.connectionState='rejected';connected('rejected');"));
+});
