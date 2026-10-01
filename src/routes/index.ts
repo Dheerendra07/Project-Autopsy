@@ -6,6 +6,7 @@ import { interviewRouter } from "../modules/interview/interview.routes.js";
 import { interpretationRouter } from "../modules/interpretation/interpretation.routes.js";
 import { deploymentRouter } from "../modules/deployments/deployment.routes.js";
 import contributorEvolutionRouter from "../modules/contributors/contributor-evolution.routes.js";
+import observabilityRouter from "../modules/observability/observability.routes.js";
 
 export const router = Router();
 
@@ -24,3 +25,4 @@ router.use("/repositories/:repositoryId/report", reportRouter);
 router.use("/repositories/:repositoryId/interview-stories", interviewRouter);
 router.use("/repositories/:repositoryId/interpretation", interpretationRouter);
 router.use("/repositories/:repositoryId/contributors", contributorEvolutionRouter);
+router.use("/observability", observabilityRouter);
