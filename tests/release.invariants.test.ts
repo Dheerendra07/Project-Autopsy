@@ -1423,3 +1423,12 @@ test("frontend keeps the newly queued analysis run visible during refresh", () =
   assert.ok(appJs.slice(refreshStart, refreshEnd).includes("S.runId=r.analysis.id;S.analysis=r.analysis;"));
   assert.doesNotMatch(appJs.slice(refreshStart, refreshEnd), /S\.analysis=null;/);
 });
+
+
+test("frontend provides lightweight evidence refresh and a safe source-repository shortcut", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
+  assert.ok(appJs.includes("function safeExternalUrl(value)"));
+  assert.ok(appJs.includes("Open repository ↗"));
+  assert.ok(appJs.includes("target='_blank' rel='noopener noreferrer'"));
+});
