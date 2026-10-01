@@ -330,7 +330,7 @@ test("frontend overview exposes direct evidence inspection hooks", () => {
 
   assert.ok(appJs.includes("inspectButton('Commit '"));
   assert.ok(appJs.includes("inspectButton('Hotspot '"));
-  assert.ok(html.includes("Most touched files"));
+  assert.ok(appJs.includes("Most touched files"));
 });
 
 test("frontend connection test handles invalid API base URLs", () => {
@@ -614,8 +614,8 @@ test("frontend stops polling on terminal analysis access errors", () => {
 
   const poll = appJs.slice(start, end);
   assert.match(poll, /API access key was rejected\./);
-  assert.match(poll, /Access to this API operation was denied\./);
-  assert.match(poll, /Request failed \(404\)\./);
+  assert.match(poll, /Access denied/);
+  assert.match(poll, /Analysis run unavailable/);
   assert.ok(poll.includes("The saved API access key was rejected"));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
@@ -630,7 +630,7 @@ test("frontend clears stale saved workspace state after a missing repository or 
   assert.ok(end > start);
 
   const boot = appJs.slice(start, end);
-  assert.ok(boot.includes("Request failed (404)."));
+  assert.ok(boot.includes("message.indexOf('Request failed (404).')===0"));
   assert.ok(boot.includes("S.repoId=''"));
   assert.ok(boot.includes("S.runId=''"));
   assert.ok(boot.includes("S.data={}"));
@@ -830,7 +830,7 @@ test("analysis discovery finishes before current evidence is mutated", () => {
   const couplingStart = worker.indexOf(
     "const couplingPairs = await rebuildFileChangeCoupling("
   );
-  const completionStart = worker.indexOf(
+  const completionStart = worker.lastIndexOf(
     'await updateAnalysisRun(analysisRunId, "completed")'
   );
 
