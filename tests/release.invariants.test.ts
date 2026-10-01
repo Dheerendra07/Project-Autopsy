@@ -358,6 +358,33 @@ test("frontend structure workspace exposes the architecture map surface", () => 
 });
 
 
+test("frontend quality workspace exposes an evidence matrix", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const marker of [
+    "quality-map",
+    "quality-map-card",
+    "quality-mini-list"
+  ]) {
+    assert.ok(html.includes(marker), "missing quality UI style marker: " + marker);
+  }
+
+  const start = appJs.indexOf("function quality()");
+  const end = appJs.indexOf("function runtimeFilterDate", start);
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+  const quality = appJs.slice(start, end);
+  assert.ok(quality.includes("HISTORICAL SIGNALS"));
+  assert.ok(quality.includes("TEST EVIDENCE"));
+  assert.ok(quality.includes("SCHEMA EVIDENCE"));
+  assert.ok(quality.includes("signalTotal"));
+  assert.ok(quality.includes("migrationOps"));
+  assert.ok(quality.includes("testDelta"));
+  assert.ok(quality.includes("Subject-based historical bug/fix signal"));
+});
+
+
 test("frontend controls have explicit handlers and every workspace view is wired", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
