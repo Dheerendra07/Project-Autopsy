@@ -1,5 +1,3 @@
-import { checkDatabaseConnection } from "../../config/database.js";
-import { checkRedisConnection } from "../../config/redis.js";
 
 export interface QueueCounts {
   active: number;
@@ -62,8 +60,14 @@ async function getAnalysisQueueCounts(): Promise<QueueCounts> {
 }
 
 const DEFAULT_DEPENDENCIES: OperationalDependencies = {
-  checkDatabase: checkDatabaseConnection,
-  checkRedis: checkRedisConnection,
+  checkDatabase: async () => {
+    const { checkDatabaseConnection } = await import("../../config/database.js");
+    return checkDatabaseConnection();
+  },
+  checkRedis: async () => {
+    const { checkRedisConnection } = await import("../../config/redis.js");
+    return checkRedisConnection();
+  },
   getQueueCounts: getAnalysisQueueCounts,
   now: Date.now,
   uptimeSeconds: process.uptime,
