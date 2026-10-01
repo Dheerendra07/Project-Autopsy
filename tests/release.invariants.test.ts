@@ -1386,3 +1386,16 @@ test("frontend navigation exposes accessible active state and deterministic brow
   assert.ok(indexHtml.includes('class="skip-link" href="#root"'));
   assert.ok(indexHtml.includes('id="root" tabindex="-1"'));
 });
+
+
+test("frontend distinguishes evidence refresh from full analysis reruns", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['history','structure','quality','evidence','contributors'];"));
+  assert.ok(appJs.includes("async function reloadCurrentView()"));
+  assert.ok(appJs.includes("await loadViewData(view,{force:true})"));
+  assert.ok(appJs.includes("data-action="reload-view""));
+  assert.ok(appJs.includes("data-action==='reload-view'"));
+  assert.ok(appJs.includes("Refresh data"));
+  assert.ok(appJs.includes("if(!options.force&&hasViewData(view))"));
+  assert.doesNotMatch(appJs, /RELOADABLE_VIEWS=\[.*runtime/);
+});
