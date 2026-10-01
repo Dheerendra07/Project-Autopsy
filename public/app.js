@@ -482,11 +482,11 @@
     await loadViewData(view,{force:true});
   }
   async function loadMoreAnalysisRuns(){
-    if(S.analysisRunsLoading)return;actionBusy('analysis-runs-more',true,'Loading…');
+    if(S.analysisRunsLoading)return;
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.analysisRunsLoadToken;
     var current=arr(S.data.analysisRuns,'runs'),pagination=S.data.analysisRuns&&S.data.analysisRuns.pagination||{},page=Number(pagination.page||1)+1;
     if(!pagination.totalPages||page>pagination.totalPages)return;
-    S.analysisRunsLoading=true;
+    S.analysisRunsLoading=true;actionBusy('analysis-runs-more',true,'Loading…');
     try{
       var r=await api('/api/repositories/'+id+'/analysis-runs?page='+page+'&limit='+(pagination.limit||20));
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||loadToken!==S.analysisRunsLoadToken)return;
@@ -565,12 +565,13 @@
     }
   }
   async function loadMoreTimeline(){
-    if(S.timelineLoading)return;actionBusy('more-timeline',true,'Loading…');
+    if(S.timelineLoading)return;
     var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.timelineLoadToken;
     S.timelineLoading=true;
     try{
       var current=arr(S.data.timeline,'events'),pagination=S.data.timeline&&S.data.timeline.pagination||{},page=Number(pagination.page||1)+1;
       if(!pagination.totalPages||page>pagination.totalPages)return;
+      actionBusy('more-timeline',true,'Loading…');
       var r=await api('/api/repositories/'+id+'/timeline?page='+page+'&limit='+(pagination.limit||50));
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||loadToken!==S.timelineLoadToken)return;
       var next=arr(r,'events');
