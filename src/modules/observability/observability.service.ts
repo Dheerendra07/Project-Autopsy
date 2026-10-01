@@ -1,4 +1,3 @@
-import { analysisQueue } from "../analysis/analysis.queue.js";
 import { checkDatabaseConnection } from "../../config/database.js";
 import { checkRedisConnection } from "../../config/redis.js";
 
@@ -47,6 +46,7 @@ export interface OperationalDependencies {
 }
 
 async function getAnalysisQueueCounts(): Promise<QueueCounts> {
+  const { analysisQueue } = await import("../analysis/analysis.queue.js");
   const counts = await analysisQueue.getJobCounts();
 
   return {
