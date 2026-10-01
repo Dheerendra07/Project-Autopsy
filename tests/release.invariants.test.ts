@@ -1043,7 +1043,7 @@ test("architecture discovery reads only bounded directory trees", () => {
   assert.ok(architecture.includes('"ls-tree",'));
   assert.ok(architecture.includes('"--name-only",'));
   assert.ok(architecture.includes('"-d",'));
-  assert.ok(architecture.includes("const treeish = rootPath ? sha + ":" + rootPath : sha;"));
+  assert.ok(architecture.includes('const treeish = rootPath ? sha + ":" + rootPath : sha;'));
   assert.doesNotMatch(architecture, /"ls-tree", "-r"/);
 });
 
