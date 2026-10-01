@@ -223,6 +223,57 @@ test("404 responses do not reflect query strings", () => {
 });
 
 
+test("frontend product surface stays guided, progressive and evidence-readable", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const marker of [
+    "Understand",
+    "Validate",
+    "Outputs",
+    "Explore",
+    "Insights",
+    "class=\"getting-started\"",
+    "Advanced connection settings",
+    "id=\"drawerSummary\"",
+    "id=\"drawerRaw\""
+  ]) {
+    assert.ok(html.includes(marker), "missing product UI marker: " + marker);
+  }
+
+  for (const marker of [
+    "function loadingPage(title,message)",
+    "function errorPage(title,message,actionLabel,action)",
+    "function evidenceSummary(payload)",
+    "Advanced filters",
+    "Advanced identity filters",
+    "S.view!=='report'",
+    "S.view!=='interview'",
+    "S.view!=='interpretation'",
+    "e.key==='Escape'",
+    "Try again"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing product interaction marker: " + marker);
+  }
+
+  for (const legacyLabel of [
+    "Interpret with AI",
+    "Generate interpretation",
+    "AI interpretation",
+    "AI theme"
+  ]) {
+    assert.equal(
+      html.includes(legacyLabel) || appJs.includes(legacyLabel),
+      false,
+      "legacy AI-first UI label still present: " + legacyLabel
+    );
+  }
+
+  assert.ok(appJs.includes("if($('drawerSummary'))$('drawerSummary').innerHTML"));
+  assert.ok(appJs.includes("if($('drawerRaw'))$('drawerRaw').open=false"));
+});
+
+
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
@@ -1132,6 +1183,33 @@ test("frontend lifecycle invalidation prevents stale refresh and historical load
 
 
 
+test("frontend loads evidence by active workspace view", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const VIEW_DATA="));
+  assert.ok(appJs.includes("overview:['commits','analysisRuns','hotspots','contributors']"));
+  assert.ok(appJs.includes("history:['commits','timeline']"));
+  assert.ok(appJs.includes("structure:['architecture','dependencies','complexity','coupling']"));
+  assert.ok(appJs.includes("quality:['bugs','repeated','refactors','migrations','tests','testSummary']"));
+  assert.ok(appJs.includes("runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext']"));
+  assert.ok(appJs.includes("async function loadViewData(view)"));
+  assert.ok(appJs.includes("if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v)"));
+  assert.ok(appJs.includes("await loadViewData('overview')"));
+  assert.ok(appJs.includes("setView(view,{skipLoad:true})"));
+});
+
+
+test("frontend preserves developer navigation state across view changes and refresh", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const VALID_VIEWS="));
+  assert.ok(appJs.includes("function viewFromHash()"));
+  assert.ok(appJs.includes("S.viewScroll[previous]=window.scrollY||0"));
+  assert.ok(appJs.includes("history.replaceState(null,'','#'+v)"));
+  assert.ok(appJs.includes("window.addEventListener('hashchange'"));
+  assert.ok(appJs.includes("var initialView=viewFromHash()"));
+  assert.ok(appJs.includes("requestAnimationFrame(function(){window.scrollTo(0,restore)})"));
+});
+
+
 test("optional production evidence ingestion keys do not block service startup", () => {
   const env = readRepoFile("src/config/env.ts");
   const render = readRepoFile("render.yaml");
@@ -1148,4 +1226,322 @@ test("optional production evidence ingestion keys do not block service startup",
   );
   assert.ok(render.includes("RUNTIME_TELEMETRY_INGEST_KEY"));
   assert.ok(render.includes("DEPLOYMENT_EVIDENCE_INGEST_KEY"));
+});
+
+
+test("frontend view filters provide local search state without extra API traffic", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("viewFilter:{}"));
+  assert.ok(appJs.includes("function viewFilterMarkup()"));
+  assert.ok(appJs.includes("function applyViewFilter()"));
+  assert.ok(appJs.includes("function bindViewSearch()"));
+  assert.ok(appJs.includes("Filters the already-loaded evidence locally"));
+  assert.ok(appJs.includes("S.viewFilter[S.view]=input.value"));
+  assert.ok(appJs.includes("e.key==='/'"));
+  assert.ok(appJs.includes("document.activeElement===$('viewSearch')"));
+  assert.ok(appJs.includes("S.viewFilter={}"));
+});
+
+
+test("frontend validates runtime filter ranges and revision format before requests", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadRuntimeEvents(");
+  const end = appJs.indexOf("async function loadMoreAnalysisRuns()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("From must be earlier than To."));
+  assert.ok(fn.includes("Revision SHA must be exactly 40 or 64 hexadecimal characters."));
+  assert.ok(fn.includes("new Date(f.from).getTime()>=new Date(f.to).getTime()"));
+  assert.ok(fn.includes("/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/"));
+});
+
+
+test("frontend renders explicit empty states for empty evidence tables", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function ensureTableEmptyStates()"));
+  assert.ok(appJs.includes("No evidence is available in this table."));
+  assert.ok(appJs.includes("data-empty-state"));
+  assert.ok(appJs.includes("if(row.getAttribute('data-empty-state')==='true'){row.hidden=true;return}"));
+  assert.ok(appJs.includes("ensureTableEmptyStates();"));
+});
+
+
+test("frontend navigation writes browser history for user-driven view changes", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);"));
+  assert.ok(appJs.includes("window.addEventListener('hashchange'"));
+  assert.doesNotMatch(appJs, /if\(!options\.fromHash&&location\.hash!==\'#\'\+v\)history\.replaceState/);
+});
+
+
+test("frontend marks rejected API credentials instead of leaving a stale verified state", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("state==='rejected'"));
+  assert.ok(appJs.includes("Access rejected"));
+  assert.ok(appJs.includes("S.connectionState='rejected';connected('rejected');"));
+});
+
+
+test("frontend connection verification preserves explicit rejected credential state", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function testConnection()");
+  const end = appJs.indexOf("async function api(", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("rejected=e&&e.message==='API key rejected by protected API'"));
+  assert.ok(fn.includes("S.connectionState=rejected?'rejected':'configured'"));
+});
+
+
+test("frontend history renders full loaded pages and paginates timeline evidence", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("t.slice(0,50).map(function(x)"));
+  assert.ok(appJs.includes("c.slice(0,50).map(function(x)"));
+  assert.ok(appJs.includes("async function loadMoreTimeline()"));
+  assert.ok(appJs.includes("/timeline?page="));
+  assert.ok(appJs.includes("more-timeline"));
+  assert.ok(appJs.includes("Load next 50 timeline events"));
+  assert.ok(appJs.includes("timelineLoadToken"));
+});
+
+
+test("frontend labels snapshot freshness consistently across workspace views", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function snapshotState()"));
+  assert.ok(appJs.includes("Snapshot current"));
+  assert.ok(appJs.includes("Snapshot stale"));
+  assert.ok(appJs.includes("Analysis updating"));
+  assert.ok(appJs.includes("function shell(title,desc,actions){var toolbar=viewFilterMarkup(),snap=snapshotState()"));
+  assert.ok(appJs.includes("snapshot-pill"));
+});
+
+
+test("frontend evidence inspector supports copy and returns focus to the invoking control", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("currentEvidence:null"));
+  assert.ok(appJs.includes("function copyEvidence()"));
+  assert.ok(appJs.includes("navigator.clipboard.writeText(JSON.stringify(x.payload,null,2))"));
+  assert.ok(appJs.includes("openEvidence(ev.getAttribute('data-evidence-id'),ev)"));
+  assert.ok(appJs.includes("S.focusReturn=trigger||document.activeElement"));
+  assert.ok(appJs.includes("requestAnimationFrame(function(){try{focus.focus()}catch(e){}})"));
+  assert.ok(indexHtml.includes('id="drawerCopy"'));
+  assert.ok(indexHtml.includes('role="dialog" aria-modal="true"'));
+});
+
+
+test("frontend deployment provenance participates in evidence inspector copy and focus restoration", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("async function loadProvenance(deploymentId,trigger)"));
+  assert.ok(appJs.includes("S.currentEvidence={label:'Provenance · '+deploymentId"));
+  assert.ok(appJs.includes("loadProvenance(pd.getAttribute('data-deployment-id'),pd)"));
+});
+
+
+test("frontend loaded evidence tables support stable keyboard-accessible sorting", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("tableSort:{}"));
+  assert.ok(appJs.includes("function sortableValue(text)"));
+  assert.ok(appJs.includes("function sortTable(table,index,direction)"));
+  assert.ok(appJs.includes("function bindTableSorts()"));
+  assert.ok(appJs.includes("aria-sort"));
+  assert.ok(appJs.includes("th.onkeydown"));
+  assert.ok(appJs.includes("sortTable(table,column,next)"));
+  assert.ok(appJs.includes("S.tableSort={};"));
+});
+
+
+test("frontend runtime datetime filters round-trip between local inputs and API-safe timestamps", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function runtimeInputDate(value)"));
+  assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.from))"));
+  assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.to))"));
+  assert.ok(appJs.includes("['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation']"));
+});
+
+
+test("frontend destructive actions use an in-product confirmation flow", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("function confirmDelete(name)"));
+  assert.ok(appJs.includes("if(!await confirmDelete(name))return;"));
+  assert.doesNotMatch(appJs, /window\.confirm\('Permanently delete/);
+  assert.ok(appJs.includes("finishConfirm(false)"));
+  assert.ok(appJs.includes("confirmResolver:null"));
+  assert.ok(indexHtml.includes('id="confirmModal"'));
+  assert.ok(indexHtml.includes('id="confirmCancel"'));
+  assert.ok(indexHtml.includes('id="confirmConfirm"'));
+});
+
+
+test("frontend navigation exposes accessible active state and deterministic browser titles", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("const VIEW_TITLES="));
+  assert.ok(appJs.includes("b.setAttribute('aria-current','page')"));
+  assert.ok(appJs.includes("document.title='Project Autopsy — '+(VIEW_TITLES[v]||'Workspace')"));
+  assert.ok(appJs.includes("document.title='Project Autopsy — Engineering Evidence'"));
+  assert.ok(indexHtml.includes('href="#overview" aria-label="Project Autopsy overview"'));
+  assert.ok(indexHtml.includes('class="skip-link" href="#root"'));
+  assert.ok(indexHtml.includes('id="root" tabindex="-1"'));
+});
+
+
+test("frontend distinguishes evidence refresh from full analysis reruns", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
+  assert.ok(appJs.includes("async function reloadCurrentView()"));
+  assert.ok(appJs.includes("await loadViewData(view,{force:true})"));
+  assert.ok(appJs.includes("data-action=\"reload-view\""));
+  assert.ok(appJs.includes("data-action==='reload-view'"));
+  assert.ok(appJs.includes("Refresh data"));
+  assert.ok(appJs.includes("if(!options.force&&hasViewData(view))"));
+  assert.doesNotMatch(appJs, /RELOADABLE_VIEWS=\[.*runtime/);
+});
+
+
+test("frontend view loading is single-flight and workspace-safe", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("viewLoading:{}"));
+  assert.ok(appJs.includes("||S.viewLoading[view])return"));
+  assert.ok(appJs.includes("S.viewLoading[view]=loadToken"));
+  assert.ok(appJs.includes("if(S.viewLoading[view]===loadToken)delete S.viewLoading[view]"));
+  assert.ok(appJs.includes("S.viewFilter={};S.tableSort={};S.viewLoading={};"));
+});
+
+
+test("frontend keeps the newly queued analysis run visible during refresh", () => {
+  const appJs = readRepoFile("public/app.js");
+  const importStart = appJs.indexOf("async function importRepo()");
+  const importEnd = appJs.indexOf("async function getRepo", importStart);
+  const refreshStart = appJs.indexOf("async function refresh()");
+  const refreshEnd = appJs.indexOf("function openSettings", refreshStart);
+  assert.ok(importStart >= 0 && importEnd > importStart);
+  assert.ok(refreshStart >= 0 && refreshEnd > refreshStart);
+  assert.ok(appJs.slice(importStart, importEnd).includes("S.analysis=r.analysis"));
+  assert.ok(appJs.slice(refreshStart, refreshEnd).includes("S.runId=r.analysis.id;S.analysis=r.analysis;"));
+  assert.doesNotMatch(appJs.slice(refreshStart, refreshEnd), /S\.analysis=null;/);
+});
+
+
+test("frontend provides lightweight evidence refresh and a safe source-repository shortcut", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
+  assert.ok(appJs.includes("function safeExternalUrl(value)"));
+  assert.ok(appJs.includes("Open repository ↗"));
+  assert.ok(appJs.includes("target='_blank' rel='noopener noreferrer'"));
+});
+
+
+test("frontend shows targeted evidence refresh progress and disables duplicate reload interaction", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("loading=!!S.viewLoading[S.view]"));
+  assert.ok(appJs.includes("disabled aria-busy=\"true\""));
+  assert.ok(appJs.includes("loading?'Refreshing…':'Refresh data'"));
+  assert.ok(indexHtml.includes("button:disabled{opacity:.55;cursor:wait"));
+});
+
+test("frontend clears targeted refresh state before rerendering the completed view", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadViewData(view,options)");
+  const end = appJs.indexOf("function metric(", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(
+    fn.indexOf(
+      "if(S.viewLoading[view]===loadToken)delete S.viewLoading[view];setView(view,{skipLoad:true})"
+    ) >= 0
+  );
+  assert.ok(fn.includes("actionBusy('reload-view',false)"));
+});
+
+test("frontend gives generated evidence actions single-flight busy feedback", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("reportLoading:false"));
+  assert.ok(appJs.includes("interviewLoading:false"));
+  assert.ok(appJs.includes("interpretationLoading:false"));
+  assert.ok(appJs.includes("actionBusy('report',true,'Generating…')"));
+  assert.ok(appJs.includes("actionBusy('interview',true,'Loading…')"));
+  assert.ok(appJs.includes("actionBusy('interpretation',true,'Generating…')"));
+});
+
+test("frontend restores settings focus and moves evidence inspector focus on open", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("settingsFocus:null"));
+  assert.ok(appJs.includes("function openSettings(trigger)"));
+  assert.ok(appJs.includes("requestAnimationFrame(function(){$('drawerClose').focus()})"));
+  assert.ok(appJs.includes("$('settings').onclick=function(){openSettings(this)};"));
+});
+
+test("frontend keeps browser history API unshadowed by the History view renderer", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function historyView()"));
+  assert.ok(appJs.includes("history.pushState(null,'','#'+v)"));
+  assert.doesNotMatch(appJs, /function history\(\)\{/);
+});
+
+test("frontend prevents duplicate analysis refresh and connection probes", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("refreshLoading:false"));
+  assert.ok(appJs.includes("if(S.refreshLoading)return"));
+  assert.ok(appJs.includes("refreshButton.disabled=true"));
+  assert.ok(appJs.includes("connectionTesting:false"));
+  assert.ok(appJs.includes("if(S.connectionTesting)return"));
+  assert.ok(appJs.includes("verifyButton.disabled=true"));
+});
+
+test("frontend prevents duplicate destructive confirmation requests", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("if(S.confirmResolver)return Promise.resolve(false);"));
+});
+
+test("frontend evidence explorer search has an explicit accessible name", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes('id="evidenceSearch" class="search" aria-label="Filter evidence records"'));
+});
+
+test("frontend gates output actions against the current evidence snapshot", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("actions=current?'<button class=\"btn\" data-action=\"download\">Download JSON</button><button class=\"btn\" data-action=\"interpretation\">Generate insights</button>':''"));
+  assert.ok(appJs.includes("ready?'<button class=\"btn\" data-action=\"interview\">"));
+  assert.ok(appJs.includes("ready?'<button class=\"btn primary\" data-action=\"interpretation\">"));
+});
+
+test("frontend releases historical filter controls on success and failure", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadHistoricalRuntime()");
+  const end = appJs.indexOf("async function loadMoreTimeline()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("actionBusy('historical-filter',false);"));
+  assert.ok(fn.includes("actionBusy('historical-clear-filter',false);"));
+});
+
+test("frontend locks runtime and historical reset controls during active filters", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("actionBusy('runtime-clear-filter',true,'Clear')"));
+  assert.ok(appJs.includes("actionBusy('runtime-clear-filter',false)"));
+  assert.ok(appJs.includes("actionBusy('historical-clear-filter',true,'Reset')"));
+  assert.ok(appJs.includes("actionBusy('historical-clear-filter',false)"));
+});
+
+test("frontend releases the insights action state on early failure", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadInterpretation()");
+  const end = appJs.indexOf("function downloadReport()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("if(!S.aiKey)"));
+  assert.ok(fn.includes("openSettings()"));
+  assert.ok(fn.includes("actionBusy('interpretation',false);"));
+});
+
+test("frontend preserves generated-action busy state across rerenders", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("S.reportLoading?'Generating…'"));
+  assert.ok(appJs.includes("S.interviewLoading?'Loading…'"));
+  assert.ok(appJs.includes("S.interpretationLoading?'Generating…'"));
+  assert.ok(appJs.includes("disabled aria-busy=\"true\""));
 });

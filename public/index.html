@@ -26,17 +26,116 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
 .empty{border:1px dashed #302f28;border-radius:12px;padding:28px;text-align:center;color:var(--dim);font-size:10px}.empty strong{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
 .report{border:1px solid #262620;border-radius:13px;overflow:hidden;margin-bottom:9px;background:#181815}.report-head{padding:13px;border-bottom:1px solid #262620}.report-head strong{font-size:11px}.report-head small{display:block;color:var(--dim);font-size:8px;margin-top:3px}.claim{padding:12px 13px;border-bottom:1px solid #24241f}.claim:last-child{border-bottom:0}.claim p{margin:0;color:#ddd8ce;font-size:10px;line-height:1.55}.claim .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.claim .limit{margin-top:7px;color:var(--dim);font-size:9px;line-height:1.45}
 .story{border:1px solid #262620;border-radius:13px;padding:15px;background:#181815}.story h3{font-size:13px;margin:0 0 13px}.story block{display:block;margin-top:11px}.story label{font:600 8px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--gold)}.story div{font-size:10px;color:var(--muted);line-height:1.55;margin-top:4px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:grid;place-items:center;padding:18px;z-index:50}.modal>div{width:min(470px,100%);background:#181815;border:1px solid #3b3930;border-radius:16px;padding:18px}.modal h3{margin:7px 0 16px}.modal .field+ .field{margin-top:12px}.modal-actions{display:flex;justify-content:flex-end;margin-top:18px}.toast{position:fixed;right:16px;bottom:16px;background:#1e1e19;border:1px solid var(--line);padding:11px 13px;border-radius:11px;font-size:10px;z-index:80;box-shadow:0 15px 40px rgba(0,0,0,.3)}.cell-link{border:0;background:none;padding:0;color:var(--gold);font:600 9px var(--mono);text-decoration:underline;text-underline-offset:3px}.inspect{border:1px solid #35342c;background:#151512;color:var(--muted);border-radius:8px;padding:5px 7px;font:600 8px var(--mono);text-transform:uppercase;letter-spacing:.06em}.inspect:hover{border-color:#5c5647;color:var(--text)}.archmap{border:1px solid #262620;border-radius:14px;padding:16px;background:linear-gradient(180deg,#191914,#141411)}.archcore{width:min(230px,100%);margin:0 auto;border:1px solid #5b523f;background:#211f18;border-radius:12px;padding:13px;text-align:center}.archcore strong{display:block;font-size:11px}.archcore small{display:block;margin-top:4px;color:var(--dim);font-size:8px;line-height:1.4}.archnodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:18px;position:relative}.archnode{position:relative;border:1px solid #302f28;background:#181815;border-radius:11px;padding:10px;text-align:left}.archnode:before{content:"";position:absolute;width:1px;height:13px;background:#4a4538;left:50%;top:-14px}.archnode b{display:block;font:600 9px var(--mono);color:#e0cf9e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.archnode small{display:block;margin-top:5px;color:var(--dim);font-size:8px}.drawer{position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:70;display:flex;justify-content:flex-end}.drawer-panel{width:min(620px,100%);height:100%;background:#171714;border-left:1px solid #3a382f;padding:20px;overflow:auto;box-shadow:-20px 0 70px rgba(0,0,0,.3)}.drawer-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.drawer-head h3{margin:7px 0 0;font-size:18px}.drawer-basis{margin-top:14px;border:1px solid #2a2923;border-radius:10px;padding:10px;color:var(--muted);font-size:9px;line-height:1.55}.json{margin-top:12px;border:1px solid #292821;border-radius:10px;background:#10100e;padding:12px;overflow:auto;color:#d8d1c3;font:9px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word}.search{width:100%;background:#11110f;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px;font-size:10px}.evidence-list{display:grid;gap:7px;margin-top:12px}.evidence-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border:1px solid #282720;background:#161612;border-radius:11px;padding:10px 11px}.evidence-row strong{display:block;font-size:10px}.evidence-row small{display:block;margin-top:4px;color:var(--dim);font:8px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.evidence-empty{margin-top:12px}.arch-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.arch-title .tag{margin-left:auto}@media(max-width:680px){.drawer-panel{border-left:0}.archnodes{grid-template-columns:1fr 1fr}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:grid;place-items:center;padding:18px;z-index:50}.modal>div{width:min(470px,100%);background:#181815;border:1px solid #3b3930;border-radius:16px;padding:18px}.modal h3{margin:7px 0 16px}.modal .field+ .field{margin-top:12px}.modal-actions{display:flex;justify-content:flex-end;margin-top:18px}.toast{position:fixed;right:16px;bottom:16px;background:#1e1e19;border:1px solid var(--line);padding:11px 13px;border-radius:11px;font-size:10px;z-index:80;box-shadow:0 15px 40px rgba(0,0,0,.3)}.cell-link{border:0;background:none;padding:0;color:var(--gold);font:600 9px var(--mono);text-decoration:underline;text-underline-offset:3px}.inspect{border:1px solid #35342c;background:#151512;color:var(--muted);border-radius:8px;padding:5px 7px;font:600 8px var(--mono);text-transform:uppercase;letter-spacing:.06em}.inspect:hover{border-color:#5c5647;color:var(--text)}.archmap{border:1px solid #262620;border-radius:14px;padding:16px;background:linear-gradient(180deg,#191914,#141411)}.archcore{width:min(230px,100%);margin:0 auto;border:1px solid #5b523f;background:#211f18;border-radius:12px;padding:13px;text-align:center}.archcore strong{display:block;font-size:11px}.archcore small{display:block;margin-top:4px;color:var(--dim);font-size:8px;line-height:1.4}.archnodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:18px;position:relative}.archnode{position:relative;border:1px solid #302f28;background:#181815;border-radius:11px;padding:10px;text-align:left}.archnode:before{content:"";position:absolute;width:1px;height:13px;background:#4a4538;left:50%;top:-14px}.archnode b{display:block;font:600 9px var(--mono);color:#e0cf9e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.archnode small{display:block;margin-top:5px;color:var(--dim);font-size:8px}.drawer{position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:70;display:flex;justify-content:flex-end}.drawer-panel{width:min(620px,100%);height:100%;background:#171714;border-left:1px solid #3a382f;padding:20px;overflow:auto;box-shadow:-20px 0 70px rgba(0,0,0,.3)}.drawer-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.drawer-actions{display:flex;}.confirm-text{margin:0;color:var(--muted);font-size:11px;line-height:1.6}.confirm-warning{margin-top:12px;border:1px solid #4d2f2a;background:#1b1412;border-radius:10px;padding:10px;color:#c2a49d;font-size:10px;line-height:1.5}gap:7px;align-items:center;flex:0 0 auto}.drawer-head h3{margin:7px 0 0;font-size:18px}.drawer-basis{margin-top:14px;border:1px solid #2a2923;border-radius:10px;padding:10px;color:var(--muted);font-size:9px;line-height:1.55}.json{margin-top:12px;border:1px solid #292821;border-radius:10px;background:#10100e;padding:12px;overflow:auto;color:#d8d1c3;font:9px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word}.search{width:100%;background:#11110f;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px;font-size:10px}.evidence-list{display:grid;gap:7px;margin-top:12px}.evidence-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border:1px solid #282720;background:#161612;border-radius:11px;padding:10px 11px}.evidence-row strong{display:block;font-size:10px}.evidence-row small{display:block;margin-top:4px;color:var(--dim);font:8px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.evidence-empty{margin-top:12px}.arch-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.arch-title .tag{margin-left:auto}@media(max-width:680px){.drawer-panel{border-left:0}.archnodes{grid-template-columns:1fr 1fr}}
 @media(max-width:1000px){.workspace{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid #24241f}.nav{grid-template-columns:repeat(4,1fr)}.sidefoot{margin-top:15px;grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.top{padding:0 13px}.brand small{display:none}.landing{padding:66px 16px 45px}.lead{font-size:15px}.import{grid-template-columns:1fr}.content{padding:18px 14px 45px}.nav{grid-template-columns:repeat(2,1fr)}.sidefoot{grid-template-columns:1fr}.g3,.g2{grid-template-columns:1fr}.head{align-items:flex-start;flex-direction:column}.bar{grid-template-columns:110px 1fr 30px auto;gap:6px}}
+
+/* Product UI hardening */
+:root{
+  --bg:#0d0e0c;--panel:#141613;--panel2:#1a1d18;--panel3:#10120f;
+  --line:#2b3029;--line-strong:#3b4138;--text:#f5f4ee;--muted:#b8b9ae;--dim:#7f8378;
+  --gold:#d8c28b;--gold-soft:#8f7b4f;--good:#8fd0a1;--bad:#e08a7e;--warn:#d4b16d;
+}
+html{background:var(--bg);scroll-behavior:smooth}
+body{background:
+  radial-gradient(900px 500px at 80% -12%,rgba(216,194,139,.10),transparent 60%),
+  radial-gradient(700px 500px at -10% 20%,rgba(93,107,86,.08),transparent 58%),
+  var(--bg);font-size:14px;line-height:1.5;letter-spacing:-.005em}
+button,input,select{font:inherit}
+button{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}button:disabled{opacity:.55;cursor:wait;transform:none;box-shadow:none}
+.top{height:68px;padding:0 28px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(13,14,12,.86);box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.brand{gap:12px}.mark{width:32px;height:32px;border-radius:10px;background:rgba(216,194,139,.07);border-color:#62583f;color:var(--gold);font-size:11px}.brand b{font-size:14px;letter-spacing:-.02em}.brand small{font-size:9px;color:#7c8176}
+.top .btn{min-height:38px;padding:9px 12px}
+.top .btn[aria-label]{font-size:12px}
+main{max-width:1680px}
+.landing{padding:96px 28px 72px;max-width:1180px}
+.eyebrow,.kicker{font-size:10px;letter-spacing:.14em}
+h1{font-size:clamp(48px,6.5vw,78px);line-height:.94;max-width:960px;margin:20px 0 22px}
+.lead{max-width:800px;font-size:18px;line-height:1.68;color:#bfc1b7}
+.card{background:linear-gradient(180deg,rgba(23,26,22,.96),rgba(18,20,17,.96));border-color:var(--line);box-shadow:0 12px 36px rgba(0,0,0,.13)}
+.card:hover{border-color:#343a31}
+.import{grid-template-columns:minmax(0,1fr) 180px auto;gap:12px;margin-top:24px}
+.field{font-size:11px;color:#aeb0a5}
+.field input,.field select{min-height:44px;background:#0f120e;border-color:#30352d;color:var(--text);padding:11px 12px;border-radius:11px}
+.field input::placeholder{color:#60665c}
+.btn{min-height:42px;border-color:#353a32;background:#1a1d18;color:#efeee7;border-radius:11px;padding:10px 14px;font-size:12px;font-weight:600}
+.btn:hover{background:#21251f;border-color:#4a5146;box-shadow:0 8px 20px rgba(0,0,0,.16)}
+.btn.primary{background:linear-gradient(180deg,#ddc892,#c9b477);color:#181711;border-color:#ddc892;box-shadow:0 8px 22px rgba(216,194,139,.12)}
+.btn.primary:hover{background:linear-gradient(180deg,#e5d19d,#cfbd7c);border-color:#ead7a4}
+.btn.link{font-size:11px}.btn.danger{background:#221715}
+.strip{margin-top:18px}.tag,.pill{font-size:10px;padding:6px 9px}
+.note{font-size:11px;max-width:850px}
+.getting-started{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}
+.getting-step{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border:1px solid rgba(255,255,255,.06);background:rgba(18,20,17,.7);border-radius:12px}
+.getting-step b{display:block;font-size:11px}.getting-step small{display:block;color:var(--dim);font-size:10px;line-height:1.45;margin-top:2px}
+.step-num{width:24px;height:24px;display:grid;place-items:center;border:1px solid #4b4638;border-radius:8px;color:var(--gold);font:700 9px var(--mono);flex:0 0 auto}
+.workspace{grid-template-columns:248px 1fr;min-height:calc(100vh - 68px)}
+.side{top:68px;height:calc(100vh - 68px);padding:20px 14px;background:rgba(12,14,11,.38);backdrop-filter:blur(10px)}
+.repo-meta{padding:8px 10px 18px;margin-bottom:12px}
+.repo-meta strong{font-size:13px}.repo-meta span:last-child{font-size:10px;color:#787d72}
+.nav{gap:2px}.nav-group{margin:15px 7px 6px;color:#686d63;font:700 9px var(--mono);letter-spacing:.11em;text-transform:uppercase}
+.nav button{min-height:40px;padding:9px 11px;font-size:12px;border:1px solid transparent}
+.nav button span{font-size:9px;color:#62675e;min-width:20px;display:inline-block}
+.nav button:hover{background:#171a15;border-color:#252a23}
+.nav button.active{background:linear-gradient(90deg,rgba(216,194,139,.12),rgba(216,194,139,.04));border-color:#514a37;color:#fff}
+.nav button.active span{color:var(--gold)}
+.sidefoot{gap:8px}.sidefoot .btn{width:100%}
+.content{padding:30px 34px 72px}
+.banner{min-height:54px;margin-bottom:24px;padding:12px 14px;background:rgba(31,29,22,.84);border-color:#514832;box-shadow:0 10px 26px rgba(0,0,0,.10)}
+.head{margin-bottom:26px;align-items:flex-end}.head h2{font-size:34px}.head p{font-size:12px;line-height:1.6;color:#9da197}
+.actions{gap:8px}
+.grid{gap:14px}.section{margin-top:26px}
+.metric{font-size:27px;margin-top:11px}.metric-label{font-size:9px;color:#7d8278}
+.metric.card{min-height:108px}
+.table{border-color:#2b3029;background:#11130f}
+.table table{min-width:720px}.table th{font-size:9px;background:#151815;color:#80857b;position:sticky;top:0;z-index:1}
+.table th,.table td{padding:12px 12px;font-size:11px}
+.table tbody tr{transition:background .15s ease}.table tbody tr:hover{background:rgba(216,194,139,.035)}
+.path{color:#dac997}
+.timeline{padding-top:4px}.item{padding-bottom:20px}.item strong{font-size:12px}.item p{font-size:10px;color:#92978d}
+.item i{background:var(--gold);box-shadow:0 0 0 3px rgba(13,14,12,.9),0 0 0 4px #39362a}
+.callout{background:#10120f;border-color:#292e27;color:#aeb1a7;font-size:11px}
+.empty{border-color:#30352d;background:rgba(16,18,15,.45);padding:36px 24px;font-size:11px}
+.empty strong{font-size:12px;color:#c9c9c0}
+.report,.story{background:linear-gradient(180deg,#181b17,#141713);border-color:#2a3028;box-shadow:0 10px 28px rgba(0,0,0,.12)}
+.report-head{padding:16px}.claim{padding:14px 16px}.claim p{font-size:11px;line-height:1.65;color:#e0dfd7}
+.story{padding:17px}.story h3{font-size:14px}.story div{font-size:11px}
+.inspect,.cell-link{font-size:9px;padding:6px 8px;border-radius:8px}
+.inspect:hover{background:#1e211c;border-color:#5c604f;color:#fff}
+.archmap{background:linear-gradient(180deg,#171a15,#10130f);border-color:#2b3028}
+.archcore{background:#211f18;box-shadow:0 10px 30px rgba(0,0,0,.14)}
+.archnode{background:#151814}.archnode:hover{border-color:#4a503f;background:#191d18}
+.search{min-height:44px;font-size:11px}
+.evidence-list{gap:8px}.evidence-row{padding:12px 13px;background:#151814}.evidence-row:hover{background:#1b1f1a;border-color:#3b4237}
+.modal{background:rgba(3,4,3,.76);backdrop-filter:blur(8px)}
+.modal>div{width:min(560px,100%);background:#151814;border-color:#3b4137;box-shadow:0 30px 90px rgba(0,0,0,.48);padding:22px}
+.modal h3,.drawer-head h3{font-size:20px}
+.drawer{background:rgba(3,4,3,.72);backdrop-filter:blur(5px)}
+.drawer-panel{background:#121511;border-left-color:#3a4036;width:min(700px,100%);padding:22px;box-shadow:-30px 0 80px rgba(0,0,0,.35)}
+.drawer-basis{background:#171a15;border-color:#30362e;font-size:10px}
+.json{background:#0b0d0a;color:#cbc8bd;font-size:10px}
+.toast{background:#171a15;border-color:#363c33;font-size:11px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+@media(max-width:1000px){.workspace{grid-template-columns:1fr}.side{top:auto;height:auto;padding:14px;border-bottom-color:#252a23}.nav{grid-template-columns:repeat(2,minmax(0,1fr));display:grid}.getting-started{grid-template-columns:1fr}.content{padding:24px 20px 56px}}
+@media(max-width:680px){.top{padding:0 14px}.landing{padding:66px 16px 48px}.lead{font-size:16px}.import{grid-template-columns:1fr}.content{padding:18px 14px 46px}.nav{grid-template-columns:1fr 1fr}.nav-group{grid-column:1/-1;margin:12px 4px 4px}.head h2{font-size:28px}.getting-started{grid-template-columns:1fr}.table table{min-width:700px}.modal{padding:10px}.modal>div{padding:18px}.drawer-panel{width:100%;padding:16px}.metric.card{min-height:auto}}
+
+
+.evidence-summary{display:grid;gap:7px;margin-top:14px}.evidence-detail{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)}.evidence-detail:last-child{border-bottom:0}.evidence-detail span{font:600 9px var(--mono);color:#73786e;text-transform:uppercase;letter-spacing:.08em}.evidence-detail strong{font-size:11px;color:#e7e5dc;word-break:break-word}.raw-evidence{margin-top:14px;border:1px solid #2b3028;border-radius:11px;background:#0d100c}.raw-evidence summary{cursor:pointer;padding:10px 12px;color:#9da297;font:600 9px var(--mono);letter-spacing:.05em;text-transform:uppercase}.raw-evidence[open] summary{border-bottom:1px solid #262b24}.raw-evidence .json{margin:0;border:0;border-radius:0}.loading-state{min-height:220px;display:flex;align-items:center;justify-content:center;gap:18px;text-align:left}.loading-state strong{display:block;font-size:13px}.loading-state p{max-width:480px;margin:5px 0 0;color:var(--dim);font-size:11px;line-height:1.55}.loading-orb{width:34px;height:34px;border:1px solid #494331;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(216,194,139,.03)}.loading-orb:before{content:"";width:8px;height:8px;background:var(--gold);border-radius:50%;animation:pulse 1.2s ease-in-out infinite}.loading-orb span{display:none}@keyframes pulse{0%,100%{transform:scale(.55);opacity:.55}50%{transform:scale(1);opacity:1}}.nav-group+button{}.field select{appearance:auto}
+@media(max-width:680px){.loading-state{flex-direction:column;text-align:center}.evidence-detail{grid-template-columns:95px 1fr}}
+.head-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.snapshot-pill{display:inline-flex;align-items:center;border:1px solid #3a3e35;border-radius:999px;padding:5px 8px;font:600 9px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#141713}.snapshot-pill.good{color:var(--good);border-color:#35523d}.snapshot-pill.warn{color:var(--warn);border-color:#57472a}.snapshot-pill.bad{color:var(--bad);border-color:#5b302c}
+.view-filter{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:-8px 0 20px;padding:12px 14px}.view-filter .field{min-width:0;flex:1}.view-filter .field span{font:600 9px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:#858b80}.view-filter-hint{display:block;margin-top:6px;color:var(--dim);font-size:9px}.view-filter-tools{display:flex;align-items:center;gap:8px;flex:0 0 auto}.view-search-empty{margin:-8px 0 20px}.view-filter .search{min-height:40px}.view-filter .btn{min-height:40px}.skip-link{position:fixed;left:14px;top:-60px;z-index:100;padding:10px 13px;border:1px solid #4a5146;border-radius:10px;background:#171a15;color:var(--text);font-size:11px;text-decoration:none;box-shadow:0 10px 30px rgba(0,0,0,.35)}.skip-link:focus{top:12px}
+.sortable-head{cursor:pointer;user-select:none}.sortable-head:after{content:'↕';margin-left:6px;color:#5f665c;font-size:9px}.sortable-head[aria-sort='ascending']:after{content:'↑';color:var(--gold)}.sortable-head[aria-sort='descending']:after{content:'↓';color:var(--gold)}@media(max-width:680px){.view-filter{align-items:stretch;flex-direction:column}.view-filter-tools{justify-content:space-between}.view-filter .btn{width:auto}}
+.filter-panel{border:1px solid #2b3028;background:#121511;border-radius:13px;padding:14px}.filter-head{display:flex;align-items:center;justify-content:space-between;gap:14px}.filter-head b{display:block;font-size:12px}.filter-head small{display:block;margin-top:2px;color:var(--dim);font-size:10px}.filter-actions{display:flex;gap:7px}.filter-grid{margin-top:12px}.filter-advanced{margin-top:12px;border-top:1px solid #262b24;padding-top:10px}.filter-advanced summary{cursor:pointer;color:#8e9489;font:600 9px var(--mono);letter-spacing:.08em;text-transform:uppercase}.filter-advanced[open] summary{color:var(--gold);margin-bottom:10px}@media(max-width:680px){.filter-head{align-items:flex-start;flex-direction:column}.filter-actions{width:100%}.filter-actions .btn{flex:1}}
+.error-state{min-height:220px;display:flex;align-items:center;justify-content:center;gap:16px}.error-state strong{display:block;font-size:13px;color:#eee9de}.error-state p{max-width:480px;margin:5px 0 12px;color:var(--dim);font-size:11px;line-height:1.55}.error-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid #5a3933;border-radius:50%;color:var(--bad);font:700 14px var(--mono);background:rgba(224,138,126,.06)}@media(max-width:680px){.error-state{flex-direction:column;text-align:center}}
 </style>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#"><span class="mark">A</span><span><b>Project Autopsy</b><small>engineering evidence workspace</small></span></a>
-  <div style="display:flex;gap:8px;align-items:center"><span id="conn" class="pill">not connected</span><button id="settings" class="btn" aria-label="Open connection settings" title="Connection settings">⚙</button></div>
+  <a class="brand" href="#overview" aria-label="Project Autopsy overview"><span class="mark">A</span><span><b>Project Autopsy</b><small>engineering evidence workspace</small></span></a>
+  <div style="display:flex;gap:9px;align-items:center"><span id="conn" class="pill">not connected</span><button id="settings" class="btn" aria-label="Open connection settings" title="Connection settings">Settings</button></div>
 </header>
-<main>
+<a class="skip-link" href="#root">Skip to workspace</a><main>
 <section id="landing" class="landing">
   <div class="eyebrow">EVIDENCE-FIRST ENGINEERING HISTORY</div>
   <h1>See how a codebase <em>actually evolved.</em></h1>
@@ -50,33 +149,46 @@ main{max-width:1500px;margin:0 auto}.landing{padding:100px 24px 60px;max-width:1
     </form>
     <div id="formerr" class="bad" style="font-size:10px;margin-top:10px" hidden></div>
   </div>
-  <div class="strip"><span class="tag">Git history</span><span class="tag">Complexity</span><span class="tag">Architecture</span><span class="tag">Schema</span><span class="tag">Runtime</span><span class="tag">Deployments</span></div>
-  <p class="note">Autopsy separates observed evidence from interpretation. Signals are not presented as proof of intent, causality, regressions or impact.</p>
+  <div class="strip"><span class="tag">Git history</span><span class="tag">Architecture</span><span class="tag">Code quality</span><span class="tag">Runtime</span><span class="tag">Deployments</span></div>
+  <div class="getting-started">
+    <div class="getting-step"><span class="step-num">01</span><div><b>Connect</b><small>Use your repository access credentials once.</small></div></div>
+    <div class="getting-step"><span class="step-num">02</span><div><b>Analyze</b><small>Autopsy builds a bounded evidence snapshot in the background.</small></div></div>
+    <div class="getting-step"><span class="step-num">03</span><div><b>Explore</b><small>Move from signals to the exact evidence behind them.</small></div></div>
+  </div>
+  <p class="note">Observed evidence stays separate from interpretation. The workspace never turns a heuristic into a claim of intent, causality or impact.</p>
 </section>
 
 <section id="workspace" class="workspace" hidden>
   <aside class="side">
     <div class="repo-meta"><div class="repo-label kicker">CURRENT REPOSITORY</div><strong id="repoName">—</strong><span id="repoBranch">—</span></div>
-    <nav id="nav" class="nav">
+    <nav id="nav" class="nav" aria-label="Workspace sections">
+      <div class="nav-group">Understand</div>
       <button class="active" data-view="overview"><span>01</span>Overview</button>
       <button data-view="history"><span>02</span>History</button>
       <button data-view="structure"><span>03</span>Structure</button>
+      <div class="nav-group">Validate</div>
       <button data-view="quality"><span>04</span>Quality</button>
-      <button data-view="runtime"><span>05</span>Runtime</button>
+      <button data-view="runtime"><span>05</span>Runtime & provenance</button>
+      <div class="nav-group">Outputs</div>
       <button data-view="report"><span>06</span>Report</button>
-      <button data-view="interview"><span>07</span>Interview</button><button data-view="interpretation"><span>08</span>Interpretation</button><button data-view="evidence"><span>09</span>Evidence explorer</button><button data-view="contributors"><span>10</span>Contributors</button>
+      <button data-view="interview"><span>07</span>Interview</button>
+      <button data-view="interpretation"><span>08</span>Insights</button>
+      <div class="nav-group">Explore</div>
+      <button data-view="evidence"><span>09</span>Evidence explorer</button>
+      <button data-view="contributors"><span>10</span>Contributors</button>
     </nav>
     <div class="sidefoot"><button id="refresh" class="btn">Refresh analysis</button><button id="new" class="btn link">← Analyze another repository</button></div>
   </aside>
   <div class="content">
-    <div id="banner" class="banner" hidden><div class="spinner"></div><div><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div><span id="bstatus" class="pill warn">queued</span></div>
-    <div id="root"></div>
+    <div id="banner" class="banner" role="status" aria-live="polite" hidden><div class="spinner"></div><div><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div><span id="bstatus" class="pill warn">queued</span></div>
+    <div id="root" tabindex="-1"></div>
   </div>
 </section>
 </main>
 
-<div id="modal" class="modal" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3>Connect the workspace</h3></div><button id="close" class="btn">×</button></div><label class="field">API base URL<input id="api" type="url"></label><label class="field">API access key<input id="key" type="password" autocomplete="off"></label><label class="field">AI interpretation access key<input id="aikey" type="password" autocomplete="off"></label><p class="dim" style="font-size:9px;line-height:1.5;margin:12px 0 0">Stored in this browser session only. Never committed to the repository.</p><div id="dangerZone" hidden style="margin-top:18px;padding-top:16px;border-top:1px solid #302f28"><div class="kicker" style="color:var(--bad)">DATA LIFECYCLE</div><div style="font-size:10px;margin-top:7px">Permanently remove this imported repository and its persisted evidence.</div><button id="deleteRepository" class="btn danger" style="margin-top:10px;width:100%">Delete repository data</button></div><div class="modal-actions"><button id="testConnection" class="btn">Test connection</button><button id="save" class="btn primary">Save connection</button></div></div></div>
-<div id="toast" class="toast" hidden></div><div id="drawer" class="drawer" hidden><div class="drawer-panel"><div class="drawer-head"><div><div class="kicker">EVIDENCE INSPECTOR</div><h3 id="drawerTitle">Evidence</h3></div><button id="drawerClose" class="btn">×</button></div><div id="drawerBasis" class="drawer-basis"></div><pre id="drawerJson" class="json"></pre></div></div>
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">CONNECTION</div><h3 id="settingsTitle">Workspace access</h3><div class="sub">Credentials stay in this browser session and are never committed.</div></div><button id="close" class="btn" aria-label="Close settings">Close</button></div><label class="field" style="margin-top:18px">API access key<input id="key" type="password" autocomplete="off" placeholder="Paste your workspace access key"></label><details style="margin-top:14px"><summary class="btn link">Advanced connection settings</summary><label class="field" style="margin-top:12px">API base URL<input id="api" type="url"></label><label class="field" style="margin-top:12px">Insights access key<input id="aikey" type="password" autocomplete="off" placeholder="Optional"></label></details><div id="dangerZone" hidden style="margin-top:18px;padding-top:16px;border-top:1px solid #302f28"><div class="kicker" style="color:var(--bad)">DATA LIFECYCLE</div><div style="font-size:10px;margin-top:7px">Permanently remove this imported repository and its persisted evidence.</div><button id="deleteRepository" class="btn danger" style="margin-top:10px;width:100%">Delete repository data</button></div><div class="modal-actions"><button id="testConnection" class="btn">Verify connection</button><button id="save" class="btn primary">Save access</button></div></div></div>
+<div id="confirmModal" class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden><div><div class="kicker" style="color:var(--bad)">DESTRUCTIVE ACTION</div><h3 id="confirmTitle">Confirm deletion</h3><p id="confirmText" class="confirm-text"></p><div class="confirm-warning">This removes the repository data stored by Autopsy. Your source repository is not modified.</div><div class="modal-actions"><button id="confirmCancel" class="btn">Cancel</button><button id="confirmConfirm" class="btn danger">Delete repository data</button></div></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div><div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden><div class="drawer-panel"><div class="drawer-head"><div><div class="kicker">EVIDENCE INSPECTOR</div><h3 id="drawerTitle">Evidence</h3></div><div class="drawer-actions"><button id="drawerCopy" class="btn">Copy JSON</button><button id="drawerClose" class="btn" aria-label="Close evidence inspector">Close</button></div></div><div id="drawerBasis" class="drawer-basis"></div><div id="drawerSummary" class="evidence-summary"></div><details id="drawerRaw" class="raw-evidence"><summary>View raw evidence record</summary><pre id="drawerJson" class="json"></pre></details></div></div>
 
 <script src="app.js" defer></script>
 </body>
