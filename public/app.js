@@ -395,8 +395,10 @@
       S.data.historicalCorrelation=results[1];
       S.data.historicalSourceContext=results[2];
       S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='historicalSummary'&&e.key!=='historicalCorrelation'&&e.key!=='historicalSourceContext'});
-      setView('runtime');
-      toast('Historical runtime evidence refreshed','good');
+      if(S.view==='runtime'){
+        setView('runtime');
+        toast('Historical runtime evidence refreshed','good');
+      }
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.historicalLoadToken){
         S.historicalFilter=previousFilter;
@@ -437,18 +439,49 @@
   }
   async function loadReport(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
+    setView('report');
     $('root').innerHTML=loadingPage('Evidence report','Building a readable report from the current completed evidence snapshot.');
-    try{var r=await api('/api/repositories/'+id+'/report?limit=10');if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.report=r.report;setView('report');toast('Evidence report refreshed','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
+    try{
+      var r=await api('/api/repositories/'+id+'/report?limit=10');
+      if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='report')return;
+      S.data.report=r.report;
+      setView('report');
+      toast('Evidence report refreshed','good');
+    }catch(e){
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='report')toast(e.message,'bad');
+    }
   }
   async function loadInterview(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
+    setView('interview');
     $('root').innerHTML=loadingPage('Interview','Turning the evidence snapshot into verifiable talking points.');
-    try{var r=await api('/api/repositories/'+id+'/interview-stories?limit=6');if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.interview=r;setView('interview');toast('Interview stories loaded','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
+    try{
+      var r=await api('/api/repositories/'+id+'/interview-stories?limit=6');
+      if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='interview')return;
+      S.data.interview=r;
+      setView('interview');
+      toast('Interview stories loaded','good');
+    }catch(e){
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interview')toast(e.message,'bad');
+    }
   }
   async function loadInterpretation(){
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
+    setView('interpretation');
     $('root').innerHTML=loadingPage('Engineering insights','Grounding the current report into themes, questions and uncertainties.');
-    try{if(!S.aiKey){openSettings();throw new Error('Add the Insights access key in advanced settings first.')}var r=await api('/api/repositories/'+id+'/interpretation?limit=10',{aiKey:true});if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;S.data.interpretation=r;setView('interpretation');toast('AI interpretation generated','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
+    try{
+      if(!S.aiKey){
+        openSettings();
+        throw new Error('Add the Insights access key in advanced settings first.');
+      }
+      var r=await api('/api/repositories/'+id+'/interpretation?limit=10',{aiKey:true});
+      if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='interpretation')return;
+      S.data.interpretation=r;
+      setView('interpretation');
+      toast('Insights refreshed','good');
+    }catch(e){
+      if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interpretation')toast(e.message,'bad');
+    }
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){
@@ -478,8 +511,9 @@
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
     }
   }
-  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
+  $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings()}});
   $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))}
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
