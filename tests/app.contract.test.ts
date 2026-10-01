@@ -621,7 +621,7 @@ test("analysis status hides internal failure paths from API consumers", async ()
   await db.query(
     `
       INSERT INTO analysis_runs (
-        id, repository_id, analyzer_version, analysis_mode, status, error_message
+        id, repository_id, analyzer_version, analysis_mode, status, error_message, completed_at
       )
       VALUES ($1, $2, 'test', 'full', 'failed', $3, NOW())
     `,
