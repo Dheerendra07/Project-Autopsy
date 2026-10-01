@@ -1516,3 +1516,14 @@ test("frontend locks runtime and historical reset controls during active filters
   assert.ok(appJs.includes("actionBusy('historical-clear-filter',true,'Reset')"));
   assert.ok(appJs.includes("actionBusy('historical-clear-filter',false)"));
 });
+
+test("frontend releases the insights action state on early failure", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function loadInterpretation()");
+  const end = appJs.indexOf("function downloadReport()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("if(!S.aiKey)"));
+  assert.ok(fn.includes("openSettings()"));
+  assert.ok(fn.includes("actionBusy('interpretation',false);"));
+});
