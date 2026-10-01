@@ -413,7 +413,7 @@
       '<div class="card section"><div class="arch-title"><div><h3>Historical source-change context</h3><div class="sub">Exact changed-file evidence attached to each historical runtime comparison. Files remain evidence for the commit as a whole.</div></div><div class="grid g4">'+metric('Context available',n(sc.sourceContextAvailable))+metric('Complete',n(sc.sourceContextComplete))+metric('Truncated',n(sc.sourceContextTruncated))+metric('Files reported',n(sc.totalChangedFilesReported))+'</div></div><div class="table section"><table><thead><tr><th>Commit</th><th>Source context</th><th>Files</th><th>Change</th><th>Runtime</th><th></th></tr></thead><tbody>'+sci.slice(0,20).map(function(x){var c=x.commit||{},s=x.sourceContext||{},r=x.runtimeEvidence||{};return '<tr><td class="mono">'+esc(sha(c.sha))+'</td><td>'+esc(s.status||'—')+'<div class="sub">'+n(s.filesReported)+' reported</div></td><td>'+(Array.isArray(s.changedFiles)&&s.changedFiles.length?s.changedFiles.slice(0,5).map(function(f){return '<div class="path">'+esc(f.path)+'</div>'}).join(''):'<span class="dim">No changed-file context</span>')+(s.changedFilesTruncated?'<div class="sub">Additional files omitted by bound.</div>':'')+'</td><td>'+n(c.filesChanged)+' files · +'+n(c.additions)+' / −'+n(c.deletions)+'</td><td><span class="pill '+cls(r.status)+'">'+esc(r.status||'—')+'</span></td><td>'+inspectButton('Source context '+sha(c.sha),'Persisted changed-file context paired with the historical runtime evidence.',x)+'</td></tr>'}).join('')||'<tr><td colspan="6" class="dim">No historical source-context records returned.</td></tr>'+'</tbody></table></div></div>'+
       '<div class="callout section">Source context shows what changed in the persisted commit. Autopsy does not attribute runtime measurements to individual files or infer causality.</div>';
   }
-  function reportPage(){var rep=S.data.report,a=S.analysis||{},current=!!(rep&&currentAnalysisSnapshot()&&rep.analysis&&rep.analysis.runId===S.runId&&sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha));return shell('Evidence report','A bounded report generated from the latest completed analysis snapshot','<div class="actions"><button class="btn" data-action="download">Download JSON</button><button class="btn" data-action="interpretation">Generate insights</button><button class="btn primary" data-action="report">Generate / refresh</button></div>')+'<div id="reportBox" class="section">'+(current?reportHtml(rep):'<div class="empty"><strong>Report requires a current analysis</strong>Refresh the analysis before using a report from an older repository snapshot.</div>')+'</div>'}
+  function reportPage(){var rep=S.data.report,a=S.analysis||{},current=!!(rep&&currentAnalysisSnapshot()&&rep.analysis&&rep.analysis.runId===S.runId&&sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha));return shell('Evidence report','A bounded report generated from the latest completed analysis snapshot','<button class="btn" data-action="download">Download JSON</button><button class="btn" data-action="interpretation">Generate insights</button><button class="btn primary" data-action="report">Generate / refresh</button>')+'<div id="reportBox" class="section">'+(current?reportHtml(rep):'<div class="empty"><strong>Report requires a current analysis</strong>Refresh the analysis before using a report from an older repository snapshot.</div>')+'</div>'}
   function reportHtml(rep){return '<div class="grid g4">'+metric('Report version',rep.reportVersion)+metric('Persisted commits',n(rep.coverage&&rep.coverage.persistedCommits))+metric('Evidence sections',n(rep.coverage&&rep.coverage.sectionsWithEvidence))+metric('Fingerprint',sha(rep.fingerprint))+'</div><div class="callout section">Generated '+esc(date(rep.generatedAt))+' · fingerprint <span class="mono">'+esc(rep.fingerprint)+'</span></div><div class="section">'+(rep.sections||[]).map(function(s){return '<div class="report"><div class="report-head"><strong>'+esc(s.title)+'</strong><small>'+esc(s.evidenceBasis)+' · '+n((s.claims||[]).length)+' claims</small></div>'+(s.claims||[]).map(function(c){return '<div class="claim"><p>'+esc(c.statement)+'</p><div class="tags">'+(c.evidence||[]).slice(0,6).map(function(e){return '<span class="tag">'+esc(e.source)+':'+esc(e.key)+'</span>'}).join('')+'</div><div class="limit">'+esc(c.limitation)+'</div><div style="margin-top:8px">'+inspectButton('Inspect claim evidence','Claim statement, cited evidence references and limitation.',c)+'</div></div>'}).join('')+'</div>'}).join('')+'</div>'}
   function interpretation(){var rep=S.data.report,i=S.data.interpretation,a=S.analysis||{},current=!!(rep&&currentAnalysisSnapshot()&&rep.analysis&&rep.analysis.runId===S.runId&&sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha)&&i&&i.result&&i.result.reportFingerprint===rep.fingerprint);return shell('Engineering insights','Evidence-grounded interpretation of the current report. The system keeps cited claims and uncertainties visible.','<button class="btn primary" data-action="interpretation">Generate insights</button>')+'<div id="aiBox" class="section">'+(current?interpretationHtml(i):'<div class="empty"><strong>Insights need a current report</strong>Generate the latest report before using insights from an older snapshot.</div>')+'</div>'}
   function interpretationHtml(x){var r=x&&x.result||x||{},i=r.interpretation||{},rep=S.data.report||{},sections=Array.isArray(rep.sections)?rep.sections:[];function grounding(keys){var out=[];(Array.isArray(keys)?keys:[]).forEach(function(k){var parts=String(k).split("/"),sec=sections.find(function(s){return s.id===parts[0]}),claim=sec&&Array.isArray(sec.claims)?sec.claims.find(function(c){return c.id===parts.slice(1).join("/")||c.id===parts[1]}):null;if(sec&&claim)out.push({evidenceKey:k,sectionId:sec.id,sectionTitle:sec.title,claim:claim})});return out}function inspectGrounding(keys,basis){var rows=grounding(keys);return rows.length?inspectButton("Inspect supporting evidence",basis,rows):'<span class="dim">No matching grounding claim available.</span>'}return '<div class="grid g3">'+metric('Grounding claims',n(r.groundingClaimCount))+metric('Coverage','Evidence-linked','Themes point back to report claims')+metric('Refresh',r.cacheHit?'Cached':'Fresh')+'</div><div class="card section"><h3>Executive summary</h3><div class="callout">'+esc(i.executiveSummary||'No executive summary returned.')+'</div></div><div class="grid g2 section"><div class="card"><h3>Themes</h3><div class="section">'+(i.themes||[]).map(function(t){return '<div class="story"><h3>'+esc(t.title)+'</h3><p style="font-size:10px;line-height:1.55;color:var(--muted)">'+esc(t.analysis)+'</p><div class="tags">'+(t.evidenceKeys||[]).map(function(k){return '<span class="tag">'+esc(k)+'</span>'}).join('')+'</div><div style="margin-top:8px">'+inspectGrounding(t.evidenceKeys,'Validated report claims referenced by this theme.')+'</div></div>'}).join('')||'<div class="empty">No themes returned.</div>'+'</div></div><div class="card"><h3>Investigation questions</h3><div class="section">'+(i.investigationQuestions||[]).map(function(q){return '<div class="callout"><strong>'+esc(q.question)+'</strong><div class="tags" style="margin-top:7px">'+(q.evidenceKeys||[]).map(function(k){return '<span class="tag">'+esc(k)+'</span>'}).join('')+'</div><div style="margin-top:8px">'+inspectGrounding(q.evidenceKeys,'Validated report claims supporting this investigation question.')+'</div></div>'}).join('')||'<div class="empty">No investigation questions returned.</div>'+'</div></div></div><div class="card section"><h3>Uncertainties</h3><div class="section">'+(i.uncertainties||[]).map(function(u){return '<div class="callout">'+esc(u)+'</div>'}).join('')||'<div class="empty">No uncertainties returned.</div>'+'</div></div>'}
@@ -610,6 +610,9 @@
     }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId)toast(e.message,'bad')}
   }
   async function loadReport(){
+    if(S.reportLoading)return;
+    S.reportLoading=true;
+    actionBusy('report',true,'Generating…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     setView('report');
     $('root').innerHTML=loadingPage('Evidence report','Building a readable report from the current completed evidence snapshot.');
@@ -624,9 +627,15 @@
         $('root').innerHTML=errorPage('Evidence report',e.message||'The report could not be generated.','Try again','report');
         toast(e.message,'bad');
       }
+    }finally{
+      S.reportLoading=false;
+      if(S.view==='report')actionBusy('report',false);
     }
   }
   async function loadInterview(){
+    if(S.interviewLoading)return;
+    S.interviewLoading=true;
+    actionBusy('interview',true,'Loading…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     setView('interview');
     $('root').innerHTML=loadingPage('Interview','Turning the evidence snapshot into verifiable talking points.');
@@ -641,9 +650,15 @@
         $('root').innerHTML=errorPage('Interview',e.message||'Interview stories could not be generated.','Try again','interview');
         toast(e.message,'bad');
       }
+    }finally{
+      S.interviewLoading=false;
+      if(S.view==='interview')actionBusy('interview',false);
     }
   }
   async function loadInterpretation(){
+    if(S.interpretationLoading)return;
+    S.interpretationLoading=true;
+    actionBusy('interpretation',true,'Generating…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     try{
       if(!S.aiKey){
@@ -662,6 +677,9 @@
         $('root').innerHTML=errorPage('Engineering insights',e.message||'Insights could not be generated.','Try again','interpretation');
         toast(e.message,'bad');
       }
+    }finally{
+      S.interpretationLoading=false;
+      if(S.view==='interpretation')actionBusy('interpretation',false);
     }
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
