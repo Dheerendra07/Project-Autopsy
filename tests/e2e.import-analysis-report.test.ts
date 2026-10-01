@@ -5,6 +5,8 @@ import test from "node:test";
 
 const E2E_ENABLED = process.env.AUTOPSY_E2E === "1";
 const TEST_API_KEY = "e2e-api-access-key-12345678901234567890";
+const E2E_API_RATE_LIMIT_MAX_REQUESTS = "1000";
+const E2E_API_RATE_LIMIT_HEAVY_MAX_REQUESTS = "1000";
 const E2E_PORT = Number.parseInt(process.env.E2E_PORT ?? "5101", 10);
 const TEST_REPOSITORY_URL =
   process.env.AUTOPSY_E2E_REPOSITORY_URL ??
@@ -139,10 +141,10 @@ test(
       NODE_ENV: "test",
       PORT: String(E2E_PORT),
       AUTOPSY_API_ACCESS_KEY: TEST_API_KEY,
-      API_RATE_LIMIT_MAX_REQUESTS: "1000",
-      API_RATE_LIMIT_HEAVY_MAX_REQUESTS: "1000",
-      E2E_PORT: undefined
+      API_RATE_LIMIT_MAX_REQUESTS: E2E_API_RATE_LIMIT_MAX_REQUESTS,
+      API_RATE_LIMIT_HEAVY_MAX_REQUESTS: E2E_API_RATE_LIMIT_HEAVY_MAX_REQUESTS
     };
+    delete childEnv.E2E_PORT;
 
     const server = spawn(process.execPath, ["dist/server.js"], {
       env: childEnv,
