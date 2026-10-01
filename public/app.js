@@ -6,7 +6,7 @@
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,historicalLoading:false,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{}
+    repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,historicalLoading:false,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{}
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -142,7 +142,7 @@
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;clearInterval(S.timer);S.timer=null;
-      S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};persist();workspace();setView('overview');poll();
+      S.repoId=r.repository.id;S.runId=r.analysis.id;S.repo={id:r.repository.id,name:r.repository.name,source_url:r.repository.source,tracked_branch:r.repository.trackedBranch};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};persist();workspace();setView('overview');poll();
     }catch(e){
       if(token===S.workspaceToken){$('formerr').textContent=e.message;$('formerr').hidden=false}
     }finally{
@@ -226,7 +226,45 @@
     S.data=out;S.dataRunId=runId;S.runtimeEvents=arr(out.runtimeEvents,'events');S.runtimePagination=out.runtimeEvents&&out.runtimeEvents.pagination||null;S.dataErrors=errs;
     if(errs.length){toast(errs.length+' evidence source'+(errs.length===1?'':'s')+' unavailable; showing the remaining persisted data.','warn')}
   }
-  function shell(title,desc,actions){return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'}
+  function viewFilterMarkup(){
+    var labels={history:'Filter commits, messages and timeline events…',structure:'Filter paths, packages and change surfaces…',quality:'Filter quality, test and migration evidence…',contributors:'Filter authors, paths and contribution metrics…'};
+    if(!labels[S.view])return'';
+    var value=S.viewFilter[S.view]||'';
+    return '<div class="view-filter card"><div><label class="field"><span>Filter current view</span><input id="viewSearch" class="search" value="'+esc(value)+'" placeholder="'+esc(labels[S.view])+'" autocomplete="off" spellcheck="false" aria-controls="viewSearchResults"></label><small class="view-filter-hint">Filters the already-loaded evidence locally. It does not issue new API requests.</small></div><div class="view-filter-tools"><span id="viewSearchCount" class="tag" aria-live="polite"></span><button id="viewSearchClear" class="btn" type="button">Clear</button></div></div>';
+  }
+  function applyViewFilter(){
+    var input=$('viewSearch'),term=input?input.value.trim().toLowerCase():'';
+    if(input)S.viewFilter[S.view]=input.value;
+    var rows=Array.prototype.slice.call(document.querySelectorAll('#root tbody tr,#root .timeline .item'));
+    var shown=0;
+    rows.forEach(function(row){
+      var text=String(row.textContent||'').toLowerCase();
+      var match=!term||text.indexOf(term)>=0;
+      row.hidden=!match;
+      if(match)shown++;
+    });
+    var count=$('viewSearchCount');
+    if(count)count.textContent=term?(shown+' match'+(shown===1?'':'es')):shown+' visible rows';
+    var empty=$('viewSearchEmpty');
+    if(empty)empty.hidden=shown!==0||!term;
+  }
+  function bindViewSearch(){
+    var input=$('viewSearch'),clear=$('viewSearchClear');
+    if(!input)return;
+    input.oninput=applyViewFilter;
+    if(clear)clear.onclick=function(){input.value='';S.viewFilter[S.view]='';applyViewFilter();input.focus()};
+    var wrap=input.closest('.view-filter');
+    if(wrap&&!$('viewSearchEmpty')){
+      var empty=document.createElement('div');
+      empty.id='viewSearchEmpty';
+      empty.className='empty view-search-empty';
+      empty.hidden=true;
+      empty.textContent='No loaded rows match this filter.';
+      wrap.parentNode.insertBefore(empty,wrap.nextSibling);
+    }
+    applyViewFilter();
+  }
+  function shell(title,desc,actions){var toolbar=viewFilterMarkup();return '<div class="head"><div><div class="kicker">WORKSPACE</div><h2>'+esc(title)+'</h2><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+'</div></div>'+toolbar}
   const VIEW_DATA={overview:['commits','analysisRuns','hotspots','contributors'],history:['commits','timeline'],structure:['architecture','dependencies','complexity','coupling'],quality:['bugs','repeated','refactors','migrations','tests','testSummary'],runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext'],evidence:['commits','timeline','hotspots','architecture','dependencies','complexity','coupling','bugs','repeated','refactors','migrations','tests','testSummary','runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext'],contributors:['contributors']};
   const VIEW_LABELS={overview:['Engineering overview','Loading the workspace evidence needed for the overview…'],history:['History','Loading chronological repository evidence…'],structure:['Structure','Loading architecture and codebase-structure evidence…'],quality:['Quality evidence','Loading historical quality signals…'],runtime:['Runtime & provenance','Loading runtime and deployment evidence…'],evidence:['Evidence explorer','Loading the evidence index…'],contributors:['Contributors','Loading contributor history…']};
   function viewEndpoints(id){return {commits:'/api/repositories/'+id+'/commits?page=1&limit=50',analysisRuns:'/api/repositories/'+id+'/analysis-runs?page=1&limit=20',timeline:'/api/repositories/'+id+'/timeline?page=1&limit=50',hotspots:'/api/repositories/'+id+'/hotspots?limit=20',repeated:'/api/repositories/'+id+'/repeatedly-modified-files?minTouches=3&limit=20',bugs:'/api/repositories/'+id+'/repeated-bug-areas?limit=20',coupling:'/api/repositories/'+id+'/coupling?minCoChanges=2&limit=50',refactors:'/api/repositories/'+id+'/refactors?limit=20',dependencies:'/api/repositories/'+id+'/dependencies?limit=100',architecture:'/api/repositories/'+id+'/architecture?limit=100',migrations:'/api/repositories/'+id+'/database-migrations?limit=100',tests:'/api/repositories/'+id+'/test-evolution?limit=100',testSummary:'/api/repositories/'+id+'/test-evolution/summary',complexity:'/api/repositories/'+id+'/complexity?limit=100',contributors:'/api/repositories/'+id+'/contributors?limit=25',runtime:'/api/repositories/'+id+'/runtime/telemetry/summary',runtimeEvents:'/api/repositories/'+id+'/runtime/telemetry?page=1&limit=40',deployments:'/api/repositories/'+id+'/deployments?limit=50',historicalSummary:'/api/repositories/'+id+'/runtime/historical-correlation/summary?limit=25',historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25',historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'};}
@@ -349,6 +387,7 @@
     $('root').innerHTML=h;
     var restore=S.viewScroll[v]||0;
     requestAnimationFrame(function(){window.scrollTo(0,restore)});
+    bindViewSearch();
     if(v==='evidence'){
       var q=$('evidenceSearch');
       if(q)q.oninput=function(){var term=q.value.trim().toLowerCase(),shown=0;document.querySelectorAll('.evidence-row').forEach(function(row){var ok=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;row.hidden=!ok;if(ok)shown++});var empty=$('evidenceEmpty');if(empty)empty.hidden=shown!==0}
@@ -522,7 +561,7 @@
   }
   function downloadReport(){if(!S.data.report){toast('Generate the report first','bad');return}var blob=new Blob([JSON.stringify(S.data.report,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='project-autopsy-report.json';a.click();URL.revokeObjectURL(url);toast('Report JSON exported','good')}
   async function refresh(){
-    S.workspaceToken+=1;clearInterval(S.timer);S.timer=null;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};
+    S.workspaceToken+=1;clearInterval(S.timer);S.timer=null;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.viewFilter={};
     var token=S.workspaceToken,id=S.repoId;
     try{
       var r=await api('/api/repositories/'+id+'/analyze',{method:'POST',body:'{}'});
@@ -542,7 +581,7 @@
       var r=await api('/api/repositories/'+id,{method:'DELETE'});
       if(token!==S.workspaceToken||id!==S.repoId)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;
-      S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.evidence=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalLoading=false;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};
+      S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.evidence=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalLoading=false;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};
       persist();closeSettings();landing();toast(r.cleanupPending?'Repository deleted; storage cleanup is pending and will be retried automatically.':'Repository data deleted','good');
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
@@ -550,8 +589,19 @@
   }
   $('settings').onclick=openSettings;$('close').onclick=closeSettings;$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('save').onclick=function(){try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}S.key=$('key').value.trim();S.aiKey=$('aikey').value.trim();storageSet('autopsy.aiKey',S.aiKey);S.connectionState=S.key?'configured':'unknown';persist();closeSettings();connected(S.connectionState);toast('Connection settings saved. Test the connection to verify the credentials.','good')}
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings()}});
-  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};persist();landing()}
+  document.addEventListener('keydown',function(e){
+    var target=e.target;
+    if(e.key==='/'&&$('viewSearch')&&target&&['INPUT','TEXTAREA','SELECT'].indexOf(target.tagName)<0&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      e.preventDefault();$('viewSearch').focus();return;
+    }
+    if(e.key==='Escape'){
+      if($('viewSearch')&&document.activeElement===$('viewSearch')&&$('viewSearch').value){
+        e.preventDefault();$('viewSearch').value='';S.viewFilter[S.view]='';applyViewFilter();return;
+      }
+      if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings()
+    }
+  });
+  $('new').onclick=function(){S.workspaceToken+=1;S.commitLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))};window.addEventListener('hashchange',function(){setView(viewFromHash(),{fromHash:true})})
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'));return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'));return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
   async function boot(){
