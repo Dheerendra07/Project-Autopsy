@@ -129,6 +129,28 @@ h1{font-size:clamp(48px,6.5vw,78px);line-height:.94;max-width:960px;margin:20px 
 .sortable-head{cursor:pointer;user-select:none}.sortable-head:after{content:'↕';margin-left:6px;color:#5f665c;font-size:9px}.sortable-head[aria-sort='ascending']:after{content:'↑';color:var(--gold)}.sortable-head[aria-sort='descending']:after{content:'↓';color:var(--gold)}@media(max-width:680px){.view-filter{align-items:stretch;flex-direction:column}.view-filter-tools{justify-content:space-between}.view-filter .btn{width:auto}}
 .filter-panel{border:1px solid #2b3028;background:#121511;border-radius:13px;padding:14px}.filter-head{display:flex;align-items:center;justify-content:space-between;gap:14px}.filter-head b{display:block;font-size:12px}.filter-head small{display:block;margin-top:2px;color:var(--dim);font-size:10px}.filter-actions{display:flex;gap:7px}.filter-grid{margin-top:12px}.filter-advanced{margin-top:12px;border-top:1px solid #262b24;padding-top:10px}.filter-advanced summary{cursor:pointer;color:#8e9489;font:600 9px var(--mono);letter-spacing:.08em;text-transform:uppercase}.filter-advanced[open] summary{color:var(--gold);margin-bottom:10px}@media(max-width:680px){.filter-head{align-items:flex-start;flex-direction:column}.filter-actions{width:100%}.filter-actions .btn{flex:1}}
 .error-state{min-height:220px;display:flex;align-items:center;justify-content:center;gap:16px}.error-state strong{display:block;font-size:13px;color:#eee9de}.error-state p{max-width:480px;margin:5px 0 12px;color:var(--dim);font-size:11px;line-height:1.55}.error-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid #5a3933;border-radius:50%;color:var(--bad);font:700 14px var(--mono);background:rgba(224,138,126,.06)}@media(max-width:680px){.error-state{flex-direction:column;text-align:center}}
+
+/* Production landing surface */
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(420px,.98fr);gap:18px;align-items:stretch;margin-top:8px}
+.hero-copy{min-width:0}
+.workspace-preview{position:relative;min-height:500px;overflow:hidden;border:1px solid #30362d;border-radius:18px;background:
+  radial-gradient(450px 240px at 80% 0%,rgba(216,194,139,.09),transparent 62%),
+  linear-gradient(180deg,#171a15 0%,#10130f 100%);box-shadow:0 24px 70px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.03)}
+.workspace-preview:before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 92%);pointer-events:none}
+.workspace-preview:after{content:"";position:absolute;left:16%;right:10%;top:57%;height:1px;background:linear-gradient(90deg,transparent,#6a624d,transparent);opacity:.35;filter:blur(.2px);animation:preview-scan 4.8s ease-in-out infinite}
+@keyframes preview-scan{0%,100%{transform:translateY(-125px);opacity:0}20%,78%{opacity:.5}50%{transform:translateY(120px);opacity:.8}}
+.preview-chrome{height:42px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:6px;padding:0 13px;position:relative;z-index:1;background:rgba(10,12,9,.42)}
+.preview-dot{width:6px;height:6px;border-radius:50%;border:1px solid #575a4e;background:#232720}.preview-label{margin-left:8px;font:700 8px var(--mono);letter-spacing:.12em;color:#6f746a}.preview-state{margin-left:auto;border:1px solid #3a4136;border-radius:999px;padding:5px 7px;color:#a9a99d;font:700 7px var(--mono);letter-spacing:.09em}
+.preview-grid{position:relative;z-index:1;display:grid;grid-template-columns:112px 1fr;min-height:458px}.preview-nav{border-right:1px solid rgba(255,255,255,.06);padding:16px 10px;background:rgba(10,12,9,.28)}
+.preview-nav-brand{display:flex;align-items:center;gap:7px;color:#e6e3d9;font-size:9px;font-weight:700;padding:0 2px 17px}.preview-mark{width:19px;height:19px;display:grid;place-items:center;border:1px solid #59513d;border-radius:6px;color:var(--gold);font:700 8px var(--mono);background:rgba(216,194,139,.06)}
+.preview-nav-group{margin:14px 4px 5px;color:#676c62;font:700 7px var(--mono);letter-spacing:.1em}.preview-nav-item{display:flex;align-items:center;gap:6px;border:1px solid transparent;border-radius:7px;padding:7px 6px;color:#858a80;font-size:8px}.preview-nav-item span{min-width:17px;color:#5c6258;font:700 7px var(--mono)}.preview-nav-item.active{background:rgba(216,194,139,.08);border-color:#4a4538;color:#eeeae0}.preview-nav-item.active span{color:var(--gold)}
+.preview-main{padding:17px 15px 15px;min-width:0}.preview-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.preview-kicker{display:block;color:#73786e;font:700 7px var(--mono);letter-spacing:.12em}.preview-head strong{display:block;margin-top:4px;color:#ece9df;font-size:14px;letter-spacing:-.02em}.preview-head .snapshot-pill{font-size:7px;padding:5px 7px;white-space:nowrap}
+.preview-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:15px}.preview-metrics>div{min-height:70px;border:1px solid rgba(255,255,255,.06);border-radius:10px;background:rgba(20,23,18,.72);padding:9px}.preview-metrics span{display:block;color:#666b62;font:700 7px var(--mono)}.preview-metrics b{display:block;margin-top:5px;color:#dedbd1;font-size:9px}.preview-metrics small{display:block;margin-top:2px;color:#70766c;font-size:7px;line-height:1.35}
+.preview-panel{margin-top:9px;border:1px solid rgba(255,255,255,.06);border-radius:11px;background:rgba(11,13,10,.55);overflow:hidden}.preview-panel-head{display:flex;justify-content:space-between;gap:8px;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:#94998f;font:700 8px var(--mono)}.preview-panel-head span:last-child{color:#c0aa70}.preview-line{display:grid;grid-template-columns:7px 1fr auto;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04)}.preview-line:last-child{border-bottom:0}.preview-line i{width:7px;height:7px;border-radius:50%;border:1px solid #5f553d;background:#2c2a22;box-shadow:0 0 0 3px rgba(216,194,139,.03)}.preview-line b{display:block;color:#d5d3ca;font-size:8px}.preview-line small{display:block;margin-top:2px;color:#686e64;font-size:7px}.preview-line em{font-style:normal;color:#747b70;font:700 7px var(--mono);text-transform:uppercase}.preview-footline{display:grid;grid-template-columns:8px 1fr;column-gap:8px;align-items:start;margin-top:12px;padding:9px 10px;border:1px solid rgba(216,194,139,.11);border-radius:10px;background:rgba(216,194,139,.035)}.preview-footline>span{width:7px;height:7px;margin-top:3px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(216,194,139,.06)}.preview-footline b{font-size:8px;color:#d2ccbb}.preview-footline small{grid-column:2;margin-top:3px;color:#74796f;font-size:7px;line-height:1.45}
+.hero-grid+.strip{margin-top:18px}
+.getting-started{position:relative}.getting-step{background:linear-gradient(180deg,rgba(20,23,18,.82),rgba(14,16,13,.72));box-shadow:0 8px 22px rgba(0,0,0,.08)}
+@media(max-width:1080px){.hero-grid{grid-template-columns:1fr}.workspace-preview{min-height:430px}.preview-grid{min-height:388px}.hero-copy{order:1}.workspace-preview{order:2}}
+@media(max-width:680px){.workspace-preview{min-height:380px;border-radius:15px}.preview-grid{grid-template-columns:92px 1fr;min-height:338px}.preview-nav{padding:13px 8px}.preview-nav-item{font-size:7px;padding:7px 5px}.preview-nav-group{font-size:6px}.preview-main{padding:13px 11px}.preview-head strong{font-size:12px}.preview-metrics{gap:5px}.preview-metrics>div{min-height:62px;padding:8px}.preview-state{display:none}.preview-line{grid-template-columns:7px 1fr}.preview-line em{display:none}.hero-grid{gap:12px}}
 </style>
 </head>
 <body>
@@ -141,6 +163,8 @@ h1{font-size:clamp(48px,6.5vw,78px);line-height:.94;max-width:960px;margin:20px 
   <div class="eyebrow">EVIDENCE-FIRST ENGINEERING HISTORY</div>
   <h1>See how a codebase <em>actually evolved.</em></h1>
   <p class="lead">Import a repository and reconstruct its engineering journey from commits, code structure, dependencies, tests, schema changes, runtime evidence and deployment records.</p>
+  <div class="hero-grid">
+    <div class="hero-copy">
   <div class="card">
     <div class="import-head"><div><div class="kicker">Start an analysis</div><h2>Bring a repository into the workspace.</h2></div><span class="tag">HTTPS sources</span></div>
     <form id="form" class="import">
@@ -154,6 +178,48 @@ h1{font-size:clamp(48px,6.5vw,78px);line-height:.94;max-width:960px;margin:20px 
       <div class="repo-access-note">Needed only when the repository is private. The token is encrypted on the server, is never returned to the browser, and is not written into analysis evidence.</div>
     </details>
     <div id="formerr" class="bad" style="font-size:10px;margin-top:10px" hidden></div>
+  </div>
+    </div>
+    <aside class="workspace-preview" aria-label="Workspace preview">
+      <div class="preview-chrome">
+        <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
+        <span class="preview-label">PROJECT AUTOPSY / WORKSPACE</span>
+        <span class="preview-state">EVIDENCE MODE</span>
+      </div>
+      <div class="preview-grid">
+        <div class="preview-nav">
+          <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
+          <div class="preview-nav-group">UNDERSTAND</div>
+          <div class="preview-nav-item active"><span>01</span>Overview</div>
+          <div class="preview-nav-item"><span>02</span>History</div>
+          <div class="preview-nav-item"><span>03</span>Structure</div>
+          <div class="preview-nav-group">VALIDATE</div>
+          <div class="preview-nav-item"><span>04</span>Quality</div>
+          <div class="preview-nav-item"><span>05</span>Runtime</div>
+          <div class="preview-nav-group">EXPLORE</div>
+          <div class="preview-nav-item"><span>09</span>Evidence</div>
+        </div>
+        <div class="preview-main">
+          <div class="preview-head">
+            <div><span class="preview-kicker">ENGINEERING EVIDENCE</span><strong>Repository evolution</strong></div>
+            <span class="snapshot-pill good">Snapshot current</span>
+          </div>
+          <div class="preview-metrics">
+            <div><span>01</span><b>Commit trail</b><small>Observed change history</small></div>
+            <div><span>02</span><b>Structure</b><small>Historical code shape</small></div>
+            <div><span>03</span><b>Quality</b><small>Evidence-backed signals</small></div>
+            <div><span>04</span><b>Runtime</b><small>Observed telemetry</small></div>
+          </div>
+          <div class="preview-panel">
+            <div class="preview-panel-head"><span>Evidence trail</span><span>Inspect →</span></div>
+            <div class="preview-line"><i></i><div><b>Commit evidence</b><small>Changed files + revision identity</small></div><em>observed</em></div>
+            <div class="preview-line"><i></i><div><b>Change signal</b><small>Deterministic historical metric</small></div><em>derived</em></div>
+            <div class="preview-line"><i></i><div><b>Interpretation</b><small>Separated from source evidence</small></div><em>scoped</em></div>
+          </div>
+          <div class="preview-footline"><span></span><b>Evidence → analysis → inspection</b><small>No heuristic presented as intent or causality.</small></div>
+        </div>
+      </div>
+    </aside>
   </div>
   <div class="strip"><span class="tag">Git history</span><span class="tag">Architecture</span><span class="tag">Code quality</span><span class="tag">Runtime</span><span class="tag">Deployments</span></div>
   <div class="getting-started">
