@@ -624,7 +624,9 @@ test("frontend stops polling on terminal analysis access errors", () => {
 test("frontend clears stale saved workspace state after a missing repository or analysis run", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function boot()");
-  const end = appJs.indexOf("boot()", start);
+  const end = appJs.indexOf("
+  boot()
+})();", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
