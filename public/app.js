@@ -232,12 +232,26 @@
     var value=S.viewFilter[S.view]||'';
     return '<div class="view-filter card"><div><label class="field"><span>Filter current view</span><input id="viewSearch" class="search" value="'+esc(value)+'" placeholder="'+esc(labels[S.view])+'" autocomplete="off" spellcheck="false" ></label><small class="view-filter-hint">Filters the already-loaded evidence locally. It does not issue new API requests.</small></div><div class="view-filter-tools"><span id="viewSearchCount" class="tag" aria-live="polite"></span><button id="viewSearchClear" class="btn" type="button">Clear</button></div></div>';
   }
+  function ensureTableEmptyStates(){
+    document.querySelectorAll('#root .table table').forEach(function(table){
+      var body=table.tBodies&&table.tBodies[0];
+      if(!body||body.rows.length)return;
+      var row=document.createElement('tr');
+      row.setAttribute('data-empty-state','true');
+      var cell=document.createElement('td');
+      cell.colSpan=Math.max(1,table.tHead&&table.tHead.rows.length?table.tHead.rows[0].cells.length:1);
+      cell.className='dim';
+      cell.textContent='No evidence is available in this table.';
+      row.appendChild(cell);body.appendChild(row);
+    });
+  }
   function applyViewFilter(){
     var input=$('viewSearch'),term=input?input.value.trim().toLowerCase():'';
     if(input)S.viewFilter[S.view]=input.value;
     var rows=Array.prototype.slice.call(document.querySelectorAll('#root tbody tr,#root .timeline .item'));
     var shown=0;
     rows.forEach(function(row){
+      if(row.getAttribute('data-empty-state')==='true'){row.hidden=true;return}
       var text=String(row.textContent||'').toLowerCase();
       var match=!term||text.indexOf(term)>=0;
       row.hidden=!match;
@@ -387,6 +401,7 @@
     $('root').innerHTML=h;
     var restore=S.viewScroll[v]||0;
     requestAnimationFrame(function(){window.scrollTo(0,restore)});
+    ensureTableEmptyStates();
     bindViewSearch();
     if(v==='evidence'){
       var q=$('evidenceSearch');
