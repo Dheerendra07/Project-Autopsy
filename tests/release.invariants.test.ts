@@ -223,6 +223,57 @@ test("404 responses do not reflect query strings", () => {
 });
 
 
+test("frontend product surface stays guided, progressive and evidence-readable", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const marker of [
+    "Understand",
+    "Validate",
+    "Outputs",
+    "Explore",
+    "Insights",
+    "class=\"getting-started\"",
+    "Advanced connection settings",
+    "id=\"drawerSummary\"",
+    "id=\"drawerRaw\""
+  ]) {
+    assert.ok(html.includes(marker), "missing product UI marker: " + marker);
+  }
+
+  for (const marker of [
+    "function loadingPage(title,message)",
+    "function errorPage(title,message,actionLabel,action)",
+    "function evidenceSummary(payload)",
+    "Advanced filters",
+    "Advanced identity filters",
+    "S.view!=='report'",
+    "S.view!=='interview'",
+    "S.view!=='interpretation'",
+    "e.key==='Escape'",
+    "Try again"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing product interaction marker: " + marker);
+  }
+
+  for (const legacyLabel of [
+    "Interpret with AI",
+    "Generate interpretation",
+    "AI interpretation",
+    "AI theme"
+  ]) {
+    assert.equal(
+      html.includes(legacyLabel) || appJs.includes(legacyLabel),
+      false,
+      "legacy AI-first UI label still present: " + legacyLabel
+    );
+  }
+
+  assert.ok(appJs.includes("if($('drawerSummary'))$('drawerSummary').innerHTML"));
+  assert.ok(appJs.includes("if($('drawerRaw'))$('drawerRaw').open=false"));
+});
+
+
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
