@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { Server } from "node:http";
+import type { AddressInfo, Server } from "node:http";
 import test, { after, before } from "node:test";
 
 const TEST_API_KEY = "test-api-access-key-12345678901234567890";
@@ -32,7 +32,8 @@ before(async () => {
   assert.ok(address);
   assert.equal(typeof address, "object");
 
-  baseUrl = `http://127.0.0.1:${address.port}`;
+  const info = address as AddressInfo;
+  baseUrl = `http://127.0.0.1:${info.port}`;
 });
 
 after(async () => {
