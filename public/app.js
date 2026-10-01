@@ -376,17 +376,62 @@
   }
   function overview(){
     var r=S.repo||{},a=S.analysis||{},d=S.data,c=arr(d.commits,'commits'),h=arr(d.hotspots,'hotspots');
-    var max=1;h.slice(0,8).forEach(function(x){max=Math.max(max,Number(x.commits_touched||0))});
-    return shell('Engineering overview','A compact, evidence-backed map of how this repository has changed.','<button class="btn" data-action="report">Generate report</button>')+
-      '<div class="grid g4">'+metric('Persisted commits',n(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length),'stored Git history')+metric('Change hotspots',n(h.length),'top file activity')+metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+'</div>'+(
-        S.dataErrors.length
-          ? '<div class="callout section"><strong>Partial evidence load</strong><br>'+n(S.dataErrors.length)+' endpoint'+(S.dataErrors.length===1?'':'s')+' could not be loaded. Existing persisted data remains visible; retry the evidence load without starting a new analysis.</div><div style="margin-top:10px"><button class="btn" data-action="reload-data">Retry evidence load</button></div>'
-          : ''
-      )+
-      '<div class="grid g2 section"><div class="card"><h3>Repository identity</h3><div class="sub">Persisted metadata</div><div class="callout"><strong>'+esc(r.name)+'</strong><br><span class="mono">'+esc(r.source_url||r.sourceUrl||'Source unavailable')+'</span><br>branch <span class="mono">'+esc(r.tracked_branch||r.trackedBranch||'—')+'</span> · head <span class="mono">'+esc(sha(r.head_sha||r.headSha))+'</span>'+(a.targetHeadSha&&!sameRevision(r.head_sha||r.headSha,a.targetHeadSha)?'<br><span style="color:var(--warn)">Repository head differs from the analyzed target. Refresh analysis to inspect the newer head.</span>':'')+'</div></div>'+
-      '<div class="card"><h3>Analysis snapshot</h3><div class="sub">Persisted run state and exact analysis target</div><div class="callout">run <span class="mono">'+esc(sha(a.id))+'</span><br>status <span class="pill '+cls(a.status)+'">'+esc(a.status||'unknown')+'</span><br>target <span class="mono">'+esc(sha(a.targetHeadSha))+'</span><br>started <span class="mono">'+esc(date(a.startedAt))+'</span><br>completed <span class="mono">'+esc(date(a.completedAt))+'</span><br>duration <span class="mono">'+esc(elapsed(a.startedAt,a.completedAt))+'</span>'+(a.errorMessage?'<br><span style="color:var(--bad)">failure: '+esc(a.errorMessage)+'</span>':'')+'</div></div></div>'+
-      '<div class="card section"><h3>Analysis run history</h3><div class="sub">Persisted analysis lifecycle records; failures show sanitized diagnostics only.</div><div class="table" style="margin-top:15px"><table><thead><tr><th>Status</th><th>Mode</th><th>Target</th><th>Started</th><th>Completed</th><th></th></tr></thead><tbody>'+arr(d.analysisRuns,'runs').slice(0,20).map(function(x){return '<tr><td><span class="pill '+cls(x.status)+'">'+esc(x.status||'unknown')+'</span></td><td>'+esc(x.mode||'—')+'</td><td class="mono">'+esc(sha(x.targetHeadSha))+'</td><td>'+esc(date(x.startedAt))+'</td><td>'+esc(date(x.completedAt))+'</td><td>'+((x.errorMessage)?inspectButton("Analysis run "+sha(x.id),"Sanitized analysis failure diagnostics.",x):inspectButton("Analysis run "+sha(x.id),"Persisted analysis lifecycle record.",x))+'</td></tr>'}).join('')||'<tr><td colspan="6" class="dim">No analysis runs persisted.</td></tr>'+'</tbody></table></div>'+(d.analysisRuns&&d.analysisRuns.pagination&&d.analysisRuns.pagination.page<d.analysisRuns.pagination.totalPages?'<div style="margin-top:12px"><button class="btn" data-action="analysis-runs-more">'+(S.analysisRunsLoading?'Loading…':'Load older analysis runs')+'</button></div>':'')+'</div></div></div><div class="grid g2 section"><div class="card"><h3>Recent history</h3><div class="sub">Latest persisted commit evidence</div><div class="timeline">'+c.slice(0,7).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+' · '+n(x.files_changed)+' files</p><div style="margin-top:7px">'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</div></div>'}).join('')||'<div class="empty">No commit evidence.</div>'+'</div></div>'+
-      '<div class="card"><h3>Most touched files</h3><div class="sub">Historical activity signal — not a quality ranking</div><div class="bars" style="margin-top:15px">'+h.slice(0,8).map(function(x){return '<div class="bar"><span title="'+esc(x.path)+'">'+esc(x.path)+'</span><div class="track"><div class="fill" style="width:'+(Number(x.commits_touched||0)/max*100)+'%"></div></div><b>'+n(x.commits_touched)+'</b>'+inspectButton('Hotspot '+(x.path||'file'),'Historical file-activity signal from persisted commit evidence.',x)+'</div>'}).join('')||'<div class="empty">No hotspot evidence.</div>'+'</div></div></div>';
+    var max=1;
+    h.slice(0,8).forEach(function(x){max=Math.max(max,Number(x.commits_touched||0))});
+    var repoName=r.name||'Repository',branchName=r.tracked_branch||r.trackedBranch||r.default_branch||r.defaultBranch||'branch unavailable';
+    var head=r.head_sha||r.headSha||'',target=a.targetHeadSha||'';
+    var snapshot=snapshotState(),current=currentAnalysisSnapshot();
+    var mode=a.mode||'full',status=a.status||'unknown';
+    var journey=[
+      ['01','Imported','Repository metadata persisted'],
+      ['02','Analyzed',status==='completed'?'Evidence snapshot completed':'Analysis '+status],
+      ['03','Mapped',n(c.length)+' commits in this page'],
+      ['04','Inspectable',current?'Current snapshot ready':'Refresh to inspect latest head']
+    ];
+    return shell('Engineering overview','A compact, evidence-backed command center for the current repository snapshot.','<button class="btn" data-action="report">Generate report</button>')+
+      '<div class="overview-context card">'+
+        '<div class="overview-context-main">'+
+          '<div class="kicker">CURRENT SNAPSHOT</div>'+
+          '<div class="overview-context-title"><h3>'+esc(repoName)+'</h3><span class="snapshot-pill '+esc(snapshot.tone)+'">'+esc(snapshot.label)+'</span></div>'+
+          '<div class="overview-context-source"><span class="mono">'+esc(branchName)+'</span><span>·</span><span class="mono">'+esc(head?sha(head):'head unavailable')+'</span><span>·</span><span>'+esc(mode)+' analysis</span></div>'+
+        '</div>'+
+        '<div class="overview-journey">'+journey.map(function(x,i){return '<div class="journey-step '+(i===0||i===1&&status==='completed'||i===2&&c.length||i===3&&current?'done':'')+'"><span>'+x[0]+'</span><div><b>'+x[1]+'</b><small>'+x[2]+'</small></div></div>'}).join('')+'</div>'+
+      '</div>'+
+      '<div class="grid g4 overview-metrics">'+
+        metric('Persisted commits',n(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length),'stored Git history')+
+        metric('Change hotspots',n(h.length),'historical activity signals')+
+        metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+
+        metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+
+      '</div>'+
+      (S.dataErrors.length
+        ? '<div class="callout section"><strong>Partial evidence load</strong><br>'+n(S.dataErrors.length)+' endpoint'+(S.dataErrors.length===1?'':'s')+' could not be loaded. Existing persisted data remains visible; retry the evidence load without starting a new analysis.</div><div style="margin-top:10px"><button class="btn" data-action="reload-data">Retry evidence load</button></div>'
+        : '')+
+      '<div class="overview-insight-grid section">'+
+        '<div class="card overview-evidence-card">'+
+          '<div class="overview-card-head"><div><div class="kicker">EVIDENCE POSTURE</div><h3>What this snapshot can support</h3><div class="sub">The workspace keeps observations, derived signals and interpretation separate.</div></div><span class="tag">'+(current?'CURRENT':'REVIEW')+'</span></div>'+
+          '<div class="posture-list">'+
+            '<div class="posture-row"><span class="posture-icon">01</span><div><b>Observed</b><small>Commit, source-structure and repository metadata persisted from the analyzed target.</small></div><span class="posture-state good">SUPPORTED</span></div>'+
+            '<div class="posture-row"><span class="posture-icon">02</span><div><b>Derived</b><small>Hotspots, coupling and heuristic classifications remain labelled as signals.</small></div><span class="posture-state">DERIVED</span></div>'+
+            '<div class="posture-row"><span class="posture-icon">03</span><div><b>Interpretation</b><small>Reports and insights must point back to evidence instead of replacing it.</small></div><span class="posture-state">SCOPED</span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="card overview-target-card">'+
+          '<div class="overview-card-head"><div><div class="kicker">ANALYSIS TARGET</div><h3>Exact run boundary</h3><div class="sub">Useful context when a repository moves while evidence is being reviewed.</div></div></div>'+
+          '<div class="target-stack">'+
+            '<div><span>RUN</span><b class="mono">'+esc(sha(a.id))+'</b></div>'+
+            '<div><span>TARGET</span><b class="mono">'+esc(sha(target))+'</b></div>'+
+            '<div><span>STARTED</span><b>'+esc(date(a.startedAt))+'</b></div>'+
+            '<div><span>COMPLETED</span><b>'+esc(date(a.completedAt))+'</b></div>'+
+            '<div><span>DURATION</span><b>'+esc(elapsed(a.startedAt,a.completedAt))+'</b></div>'+
+          '</div>'+
+          (!current&&status==='completed'
+            ? '<div class="overview-warning"><span>!</span><div><b>Repository head differs from this snapshot.</b><small>Refresh analysis before using derived outputs as current.</small></div></div>'
+            : '')+
+        '</div>'+
+      '</div>'+
+      '<div class="card section"><div class="overview-card-head"><div><div class="kicker">ANALYSIS HISTORY</div><h3>Run ledger</h3><div class="sub">Persisted lifecycle records; failure details remain sanitized.</div></div><span class="tag">'+n(arr(d.analysisRuns,'runs').length)+' shown</span></div><div class="table section"><table><thead><tr><th>Status</th><th>Mode</th><th>Target</th><th>Started</th><th>Completed</th><th></th></tr></thead><tbody>'+arr(d.analysisRuns,'runs').slice(0,20).map(function(x){return '<tr><td><span class="pill '+cls(x.status)+'">'+esc(x.status||'unknown')+'</span></td><td>'+esc(x.mode||'—')+'</td><td class="mono">'+esc(sha(x.targetHeadSha))+'</td><td>'+esc(date(x.startedAt))+'</td><td>'+esc(date(x.completedAt))+'</td><td>'+((x.errorMessage)?inspectButton("Analysis run "+sha(x.id),"Sanitized analysis failure diagnostics.",x):inspectButton("Analysis run "+sha(x.id),"Persisted analysis lifecycle record.",x))+'</td></tr>'}).join('')||'<tr><td colspan="6" class="dim">No analysis runs persisted.</td></tr>'+'</tbody></table></div>'+(d.analysisRuns&&d.analysisRuns.pagination&&d.analysisRuns.pagination.page<d.analysisRuns.pagination.totalPages?'<div style="margin-top:12px"><button class="btn" data-action="analysis-runs-more">'+(S.analysisRunsLoading?'Loading…':'Load older analysis runs')+'</button></div>':'')+'</div>'+
+      '<div class="grid g2 section"><div class="card"><div class="overview-card-head"><div><div class="kicker">RECENT HISTORY</div><h3>Latest persisted changes</h3><div class="sub">Newest commits first; inspect the source evidence behind each item.</div></div></div><div class="timeline">'+c.slice(0,7).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+' · '+n(x.files_changed)+' files</p><div style="margin-top:7px">'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</div></div>'}).join('')||'<div class="empty">No commit evidence.</div>'+'</div></div>'+
+      '<div class="card"><div class="overview-card-head"><div><div class="kicker">ACTIVITY SIGNAL</div><h3>Most touched files</h3><div class="sub">Historical activity signal — not a quality ranking.</div></div></div><div class="bars" style="margin-top:15px">'+h.slice(0,8).map(function(x){return '<div class="bar"><span title="'+esc(x.path)+'">'+esc(x.path)+'</span><div class="track"><div class="fill" style="width:'+(Number(x.commits_touched||0)/max*100)+'%"></div></div><b>'+n(x.commits_touched)+'</b>'+inspectButton('Hotspot '+(x.path||'file'),'Historical file-activity signal from persisted commit evidence.',x)+'</div>'}).join('')||'<div class="empty">No hotspot evidence.</div>'+'</div></div></div>';
   }
   function historyView(){
     var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events'),commitPagination=d.commits&&d.commits.pagination||{},timelinePagination=d.timeline&&d.timeline.pagination||{},total=Number(commitPagination.total||c.length);

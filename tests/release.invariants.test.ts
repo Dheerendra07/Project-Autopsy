@@ -294,6 +294,45 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 });
 
 
+test("frontend overview exposes command-center snapshot context", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const marker of [
+    "overview-context",
+    "overview-journey",
+    "journey-step",
+    "overview-insight-grid",
+    "posture-list",
+    "target-stack",
+    "CURRENT SNAPSHOT"
+  ]) {
+    assert.ok(html.includes(marker), "missing overview UI style marker: " + marker);
+  }
+
+  for (const marker of [
+    "CURRENT SNAPSHOT",
+    "Exact run boundary",
+    "Evidence posture",
+    "What this snapshot can support",
+    "Evidence → analysis → inspection"
+  ]) {
+    assert.ok(
+      html.includes(marker) || appJs.includes(marker),
+      "missing overview command-center marker: " + marker
+    );
+  }
+
+  const overviewStart = appJs.indexOf("function overview()");
+  const overviewEnd = appJs.indexOf("function historyView()", overviewStart);
+  assert.ok(overviewStart >= 0);
+  assert.ok(overviewEnd > overviewStart);
+  assert.ok(appJs.slice(overviewStart, overviewEnd).includes("currentAnalysisSnapshot()"));
+  assert.ok(appJs.slice(overviewStart, overviewEnd).includes("snapshotState()"));
+  assert.ok(appJs.slice(overviewStart, overviewEnd).includes("a.targetHeadSha"));
+});
+
+
 test("frontend controls have explicit handlers and every workspace view is wired", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
