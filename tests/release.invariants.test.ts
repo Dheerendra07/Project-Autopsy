@@ -190,6 +190,15 @@ test("production smoke covers public surface and protected API boundaries", () =
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
 });
+test("API CORS allows credentialed browser sessions for the split UI origin", () => {
+  const app = readRepoFile("src/app.ts");
+
+  assert.ok(
+    app.includes("cors({") &&
+      app.includes("credentials: true,")
+  );
+});
+
 test("Render production CORS contract includes both canonical and dedicated UI origins", () => {
   const render = readRepoFile("render.yaml");
 
