@@ -48,6 +48,7 @@ const configuredCorsOrigins = parseCorsOrigins(
 
 app.use(
   cors({
+    credentials: true,
     origin: (requestOrigin, callback) => {
       callback(
         null,
