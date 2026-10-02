@@ -892,7 +892,7 @@ test("frontend history pagination releases busy state on every exit path", () =>
     appJs.includes("No timeline evidence.</div>')+'</div></div>")
   );
   assert.ok(
-    appJs.includes("<tbody>' +(c.map(function(x)")
+    appJs.includes("<tbody>'+(c.map(function(x)")
   );
   assert.ok(
     appJs.includes("No commit evidence.</td></tr>')+'</tbody>")
