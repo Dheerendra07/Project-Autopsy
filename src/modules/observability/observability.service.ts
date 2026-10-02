@@ -111,6 +111,42 @@ async function timedCheck(
   }
 }
 
+async function timedQueueCheck(
+  getCounts: () => Promise<QueueCounts>,
+  timeoutMs = OPERATIONAL_CHECK_TIMEOUT_MS
+): Promise<{
+  status: "ready" | "unavailable";
+  counts: QueueCounts | null;
+}> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    const counts = await Promise.race([
+      getCounts(),
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(new Error("Operational queue check timed out."));
+        }, timeoutMs);
+      })
+    ]);
+
+    return {
+      status: "ready",
+      counts
+    };
+  } catch {
+    return {
+      status: "unavailable",
+      counts: null
+    };
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
+
+
 export async function collectOperationalSnapshot(
   overrides: Partial<OperationalDependencies> = {}
 ): Promise<OperationalSnapshot> {
@@ -130,10 +166,10 @@ export async function collectOperationalSnapshot(
       OPERATIONAL_CHECK_TIMEOUT_MS,
       dependencies.now
     ),
-    dependencies
-      .getQueueCounts()
-      .then((counts) => ({ status: "ready" as const, counts }))
-      .catch(() => ({ status: "unavailable" as const, counts: null }))
+    timedQueueCheck(
+      dependencies.getQueueCounts,
+      OPERATIONAL_CHECK_TIMEOUT_MS
+    )
   ]);
 
   const dependencyHealthy =
