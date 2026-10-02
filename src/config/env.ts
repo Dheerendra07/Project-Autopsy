@@ -125,6 +125,23 @@ export const envSchema = z
       .min(32)
       .optional(),
 
+    RESEND_API_KEY: z
+      .string()
+      .min(1)
+      .optional(),
+
+    AUTOPSY_EMAIL_FROM: z
+      .string()
+      .trim()
+      .min(3)
+      .optional(),
+
+    AUTOPSY_PUBLIC_URL: z
+      .string()
+      .trim()
+      .url()
+      .optional(),
+
     REPOSITORY_CREDENTIAL_ENCRYPTION_KEY: z
       .string()
       .regex(
@@ -185,6 +202,37 @@ export const envSchema = z
         message:
           "AUTOPSY_BOOTSTRAP_EMAIL and AUTOPSY_BOOTSTRAP_PASSWORD must be configured together."
       });
+    }
+
+    const hasEmailProviderKey = Boolean(value.RESEND_API_KEY);
+    const hasEmailFrom = Boolean(value.AUTOPSY_EMAIL_FROM);
+    const hasPublicUrl = Boolean(value.AUTOPSY_PUBLIC_URL);
+
+    if (hasEmailProviderKey || hasEmailFrom || hasPublicUrl) {
+      if (!hasEmailProviderKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["RESEND_API_KEY"],
+          message:
+            "RESEND_API_KEY is required when transactional email is configured."
+        });
+      }
+      if (!hasEmailFrom) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["AUTOPSY_EMAIL_FROM"],
+          message:
+            "AUTOPSY_EMAIL_FROM is required when transactional email is configured."
+        });
+      }
+      if (!hasPublicUrl) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["AUTOPSY_PUBLIC_URL"],
+          message:
+            "AUTOPSY_PUBLIC_URL is required when transactional email is configured."
+        });
+      }
     }
 
   });
