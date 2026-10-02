@@ -41,6 +41,15 @@ const credentialsSchema = z.object({
     .max(PASSWORD_MAX_LENGTH)
 });
 
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23505"
+  );
+}
+
 function publicUser(user: {
   id: string;
   email: string;
@@ -92,11 +101,26 @@ authRouter.post("/register", async (request, response, next) => {
       return;
     }
 
-    const user = await createUser(
-      randomUUID(),
-      input.email,
-      await hashPassword(input.password)
-    );
+    let user;
+    try {
+      user = await createUser(
+        randomUUID(),
+        input.email,
+        await hashPassword(input.password)
+      );
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        response.status(409).json({
+          success: false,
+          error: {
+            code: "ACCOUNT_EXISTS",
+            message: "An account already exists for that email address."
+          }
+        });
+        return;
+      }
+      throw error;
+    }
 
     await startSession(request, response, user);
 
