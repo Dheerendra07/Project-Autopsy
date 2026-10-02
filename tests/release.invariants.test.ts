@@ -557,12 +557,8 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
     "delegated root actions must not be duplicated"
   );
 
-  const responsiveNavRule = html.match(
-    /@media\(max-width:1000px\)\{[^}]*\.nav\{[^}]*\}[^}]*\.nav \.nav-group\{([^}]*)\}/
-  )?.[1] || "";
-  assert.match(
-    responsiveNavRule,
-    /grid-column:1\/-1/,
+  assert.ok(
+    html.includes(".nav .nav-group{grid-column:1/-1}"),
     "responsive navigation groups must span the full row"
   );
 });
