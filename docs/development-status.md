@@ -371,3 +371,19 @@ The production smoke workflow is now both manually dispatchable and scheduled ev
 The smoke now checks the public HTML/app asset surface, both favicon routes, a valid `X-Request-Id` on health responses, dependency readiness, the unauthenticated API wall, authenticated session establishment, session listing, CSRF rejection, protected-route ownership boundary, and smoke-session cleanup.
 
 The schedule intentionally runs the existing bounded smoke only; it does not import repositories or mutate repository evidence. Bootstrap credentials remain GitHub Actions secrets and are not stored in source.
+
+
+## UI production audit checkpoint — 2026-10-02
+
+PR #178 is merged on main at `bcac9aa14cf8b05aab31eefd8006b3b5538d8049`.
+
+- Responsive workspace navigation now keeps section labels on their own full-width grid rows at tablet/mobile widths; view buttons remain the only interactive navigation controls in those rows.
+- Frontend release invariants now lock unique static DOM IDs, exactly one navigation control and renderer for each of the 11 workspace views, complete delegated root-action coverage without duplicates, and the responsive navigation grouping contract.
+- The release gate was exercised to completion on the PR after correcting only test-contract assumptions; the final PR quality run passed application/test typecheck, build, migrations, the full test suite, real import -> analysis -> report E2E acceptance, migration idempotency, API startup, combined API/worker startup, and worker startup/shutdown smoke checks.
+- The post-merge main quality run `#1474` also completed all substantive repository checks successfully.
+- Render API deploy `dep-davskm5ckfvc73c5jb80` and static UI deploy `dep-davskm5ckfvc73c5jbjg` are live on `bcac9aa...`.
+- The production deploy completed migrations and connected PostgreSQL and Redis before serving the updated application. The deploy window had no application error or warning logs.
+- Live production surface was re-scraped after deployment; the canonical page remains the evidence-first Project Autopsy product surface and its app asset is served from the hosted application.
+- Open pull requests: 0.
+
+Continuation rule: treat `bcac9aa...` as the newest verified main baseline. Preserve the existing 11-view information architecture, one-place navigation model, evidence-first semantics, stale-state handling, focus management, mobile layout contracts, protected API boundary, and bounded execution contracts. Do not re-introduce duplicate navigation surfaces or parallel renderer/action wiring.
