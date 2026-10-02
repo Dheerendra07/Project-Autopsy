@@ -2,20 +2,21 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
-import { env } from "../../config/env.js";
 import {
   createOpaqueToken,
   createSessionExpiry,
   hashOpaqueToken,
   hashPassword,
   PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH
+  PASSWORD_MIN_LENGTH,
+  verifyPassword
 } from "./auth.crypto.js";
 import {
   createSession,
   createUser,
   getPasswordHashByUserId,
   getUserByEmail,
+  revokeAllUserSessions,
   revokeSession,
   updateLastLogin
 } from "./auth.persistence.js";
@@ -30,20 +31,26 @@ import {
 export const authRouter = Router();
 
 const credentialsSchema = z.object({
-  email: z.string().trim().email().max(320).transform((value) => value.toLowerCase()),
-  password: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH)
+  email: z.string()
+    .trim()
+    .email()
+    .max(320)
+    .transform((value) => value.toLowerCase()),
+  password: z.string()
+    .min(PASSWORD_MIN_LENGTH)
+    .max(PASSWORD_MAX_LENGTH)
 });
 
 function publicUser(user: {
   id: string;
   email: string;
-  created_at: string;
+  created_at?: string;
   last_login_at: string | null;
 }) {
   return {
     id: user.id,
     email: user.email,
-    createdAt: user.created_at,
+    ...(user.created_at ? { createdAt: user.created_at } : {}),
     lastLoginAt: user.last_login_at
   };
 }
@@ -120,9 +127,7 @@ authRouter.post("/login", async (request, response, next) => {
 
     const passwordHash = await getPasswordHashByUserId(user.id);
     const valid = passwordHash
-      ? await import("./auth.crypto.js").then(({ verifyPassword }) =>
-          verifyPassword(input.password, passwordHash)
-        )
+      ? await verifyPassword(input.password, passwordHash)
       : false;
 
     if (!valid) {
@@ -197,9 +202,9 @@ authRouter.post(
   async (request, response, next) => {
     try {
       const auth = getAuthContext(request);
+
       if (!auth) return;
 
-      const { revokeAllUserSessions } = await import("./auth.persistence.js");
       await revokeAllUserSessions(auth.userId);
       clearAuthCookies(response);
 
@@ -209,5 +214,3 @@ authRouter.post(
     }
   }
 );
-
-void env;
