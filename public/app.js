@@ -1241,7 +1241,7 @@
   $('forgotForm').onsubmit=function(e){e.preventDefault();submitForgotPassword()};
   $('resetForm').onsubmit=function(e){e.preventDefault();resetPasswordFromLink()};
   $('verifySubmit').onclick=verifyEmail;
-  $('authForgotLink').onclick=function(){setAuthMode('forgot');$('forgotEmail').value=$('authEmail').value.trim();$('forgotEmail').focus()};
+  $('authForgotLink').onclick=function(){$('forgotEmail').value=$('authEmail').value.trim();setAuthMode('forgot');$('forgotEmail').focus()};
   $('resendVerification').onclick=resendVerification;
   $('passwordForm').onsubmit=function(e){e.preventDefault();changePassword()};
   $('sessionsList').onclick=function(e){
@@ -1292,7 +1292,17 @@
     $('resetForm').hidden=!reset;
     $('verifyPanel').hidden=!verify;
     $('authTitle').textContent=migrating?'Move your existing workspace':forgot?'Reset your password':reset?'Choose a new password':verify?'Verify your email':'Sign in to Project Autopsy';
-    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Your private engineering workspace starts with one account.':forgot?'We willfunction openAuth(mode){
+    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Your private engineering workspace starts with one account.':forgot?'We will send a one-time password reset link to your account email.':reset?'Choose a new password for your account.':verify?'Use the one-time link from your email to confirm this address.':'Use the account that owns your Autopsy repositories.';
+    $('authSubmit').textContent=migrating?'Migrate & sign in':S.authMode==='register'?'Create account':'Sign in';
+    $('authModeToggle').textContent=migrating?'Use normal sign in instead':S.authMode==='register'?'Already have an account? Sign in':(forgot||reset||verify)?'Back to sign in':'New here? Create an account';
+    $('authModeToggle').hidden=!(standard||forgot);
+    $('authForgotLink').hidden=S.authMode!=='login';
+    $('resendVerification').hidden=!['login','register'].includes(S.authMode);
+    $('authPassword').setAttribute('autocomplete',S.authMode==='register'?'new-password':'current-password');
+    if($('resetPassword'))$('resetPassword').setAttribute('autocomplete','new-password');
+    if($('resetPasswordConfirm'))$('resetPasswordConfirm').setAttribute('autocomplete','new-password');
+  }
+  function openAuth(mode){
     S.authMode=mode||'login';
     setAuthMode(S.authMode);
     $('authError').hidden=true;
@@ -1304,9 +1314,7 @@
     $('forgotEmail').value=$('authEmail').value||'';
     $('authPassword').value='';
     if(mode!=='reset'&&mode!=='verify')S.authToken='';
-    if(mode==='migrate'){
-      $('authModeToggle').hidden=!S.legacyMigrationKey;
-    }
+    if(mode==='migrate')$('authModeToggle').hidden=!S.legacyMigrationKey;
     $('authModal').hidden=false;
     requestAnimationFrame(function(){
       if(mode==='forgot')$('forgotEmail').focus();
@@ -1341,9 +1349,7 @@
     try{
       var path=mode==='migrate'?'/api/auth/migrate-legacy':mode==='register'?'/api/auth/register':'/api/auth/login';
       var options={method:'POST',body:JSON.stringify({email:email,password:password})};
-      if(mode==='migrate'&&S.legacyMigrationKey){
-        options.headers={'x-autopsy-api-key':S.legacyMigrationKey};
-      }
+      if(mode==='migrate'&&S.legacyMigrationKey)options.headers={'x-autopsy-api-key':S.legacyMigrationKey};
       var result=await api(path,options);
       if(mode==='migrate')S.legacyMigrationKey='';
       if(mode==='register'&&result.requiresEmailVerification){
@@ -1445,19 +1451,18 @@
     button.textContent='Verifying…';
     try{
       var result=await api('/api/auth/verify-email',{method:'POST',body:JSON.stringify({token:S.authToken})});
-      $('authNotice').textContent=result.message||'Email verified. You can now sign in.';
-      $('authNotice').hidden=false;
-      $('verifyPanel').hidden=true;
       S.authToken='';
       setAuthMode('login');
-      $('authPassword').value='';
+      $('authNotice').textContent=result.message||'Email verified. You can now sign in.';
+      $('authNotice').hidden=false;
+      $('authPassword').focus();
       toast('Email verified.','good');
     }catch(e){
       status.textContent=e.message||'Email verification failed.';
-      button.disabled=false;
     }finally{
+      button.disabled=false;
       button.removeAttribute('aria-busy');
-      if(button.textContent==='Verifying…')button.textContent='Verify email';
+      button.textContent='Verify email';
     }
   }
   async function resetPasswordFromLink(){
@@ -1493,7 +1498,6 @@
       openAuth('login');
       $('authNotice').textContent=result.message||'Password reset. You can now sign in.';
       $('authNotice').hidden=false;
-      $('authPassword').focus();
       toast('Password reset successfully.','good');
     }catch(e){
       error.textContent=e.message||'Password reset failed.';
