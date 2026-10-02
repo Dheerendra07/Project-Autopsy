@@ -190,6 +190,20 @@ test("production smoke covers public surface and protected API boundaries", () =
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
 });
+test("Operations queue health checks are bounded by the operational timeout", () => {
+  const service = readRepoFile("src/modules/observability/observability.service.ts");
+
+  assert.ok(service.includes("async function timedQueueCheck("));
+  assert.ok(service.includes("OPERATIONAL_CHECK_TIMEOUT_MS"));
+  assert.ok(
+    service.includes("timedQueueCheck(") &&
+      service.includes("dependencies.getQueueCounts")
+  );
+  assert.ok(
+    service.includes("Operational queue check timed out.")
+  );
+});
+
 test("API CORS allows credentialed browser sessions for the split UI origin", () => {
   const app = readRepoFile("src/app.ts");
 
