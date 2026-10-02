@@ -74,6 +74,7 @@ function publicUser(user: {
   email: string;
   created_at?: string;
   last_login_at: string | null;
+  email_verified_at: string | null;
 }) {
   return {
     id: user.id,
@@ -261,7 +262,7 @@ authRouter.post("/register", async (request, response, next) => {
         await sendVerificationEmail(
           user.email,
           verificationToken,
-          `email-verification/${user.id}`
+          `email-verification/${user.id}/${hashOpaqueToken(verificationToken)}`
         );
       } catch (error) {
         await deleteUser(user.id);
@@ -509,7 +510,7 @@ authRouter.post("/forgot-password", async (request, response, next) => {
         await sendPasswordResetEmail(
           user.email,
           resetToken,
-          `password-reset/${user.id}`
+          `password-reset/${user.id}/${hashOpaqueToken(resetToken)}`
         );
       } catch (error) {
         response.status(502).json({
