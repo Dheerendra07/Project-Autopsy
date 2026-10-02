@@ -17,10 +17,10 @@ process.env.API_RATE_LIMIT_HEAVY_MAX_REQUESTS = "1000";
 
 let server: Server;
 let baseUrl: string;
-let testUserId: string;
-let testUserEmail: string;
-let authCookie: string;
-let csrfToken: string;
+let testUserId = "";
+let testUserEmail = "";
+let authCookie = "";
+let csrfToken = "";
 
 function authHeaders(
   extra: Record<string, string> = {}
@@ -33,11 +33,9 @@ function authHeaders(
 }
 
 function parseCookie(header: string, name: string): string {
-  const match = header.match(new RegExp(
-    "(?:^|,\\s*)" + name.replace(/[.*+?^\${}()|[\]\\\\]/g, "\\let server: Server;
-let baseUrl: string;
-") + "=([^;]+)"
-  ));
+  const match = header.match(
+    new RegExp("(?:^|;\\s*|,\\s*)" + name + "=([^;]+)")
+  );
   return match?.[1] ?? "";
 }
 
@@ -61,15 +59,12 @@ before(async () => {
   testUserEmail = "contract-" + randomUUID() + "@example.com";
   const registerResponse = await fetch(baseUrl + "/api/auth/register", {
     method: "POST",
-    headers: {
-      "content-type": "application/json"
-    },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({
       email: testUserEmail,
       password: "Contract-test-password-123456"
     })
   });
-
   assert.equal(registerResponse.status, 201);
   const registerBody = await registerResponse.json() as {
     user: { id: string };
@@ -77,7 +72,6 @@ before(async () => {
   };
   assert.ok(registerBody.user?.id);
   assert.equal(registerBody.requiresEmailVerification, false);
-
   const setCookie = registerResponse.headers.get("set-cookie") ?? "";
   authCookie = parseCookie(setCookie, "autopsy_session");
   csrfToken = parseCookie(setCookie, "autopsy_csrf");
@@ -199,8 +193,10 @@ test("API routes reject requests without a signed-in account", async () => {
       message: "A signed-in account is required."
     }
   });
-});test("API root accepts the authenticated account session", async () => {
-  const response = await fetch(`${baseUrl}/api/`, {
+});
+
+test("API root accepts the authenticated account session", async () => {
+  const response = await fetch(baseUrl + "/api/", {
     headers: authHeaders()
   });
 
@@ -210,14 +206,12 @@ test("API routes reject requests without a signed-in account", async () => {
     service: "Project Autopsy API",
     version: "0.1.0"
   });
-});
-
-test("authenticated unknown API routes do not reflect query strings", async () => {
+});test("authenticated unknown API routes do not reflect query strings", async () => {
   const response = await fetch(
     baseUrl + "/api/not-a-real-route?secret=should-not-echo",
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -236,7 +230,7 @@ test("authenticated unknown API routes do not reflect query strings", async () =
 test("authenticated unknown API routes reach the API not-found contract", async () => {
   const response = await fetch(`${baseUrl}/api/not-a-real-route`, {
     headers: {
-      
+      "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
     }
   });
 
@@ -257,7 +251,7 @@ test("protected repository routes reject malformed UUIDs with the validation con
     baseUrl + "/api/repositories/not-a-uuid/commits",
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -280,7 +274,7 @@ test("commit pagination rejects zero and oversized limits before persistence acc
       baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/commits?" + query,
       {
         headers: {
-          
+          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
         }
       }
     );
@@ -327,7 +321,7 @@ test("commit history is newest-first while the timeline remains chronological", 
   try {
     const commitsResponse = await fetch(
       baseUrl + "/api/repositories/" + repositoryId + "/commits?page=1&limit=3",
-      { headers: {  } }
+      { headers: { "cookie": authCookie, "x-autopsy-csrf-token": csrfToken } }
     );
     assert.equal(commitsResponse.status, 200);
     const commitsBody = await commitsResponse.json() as {
@@ -340,7 +334,7 @@ test("commit history is newest-first while the timeline remains chronological", 
 
     const timelineResponse = await fetch(
       baseUrl + "/api/repositories/" + repositoryId + "/timeline?page=1&limit=3",
-      { headers: {  } }
+      { headers: { "cookie": authCookie, "x-autopsy-csrf-token": csrfToken } }
     );
     assert.equal(timelineResponse.status, 200);
     const timelineBody = await timelineResponse.json() as {
@@ -361,7 +355,7 @@ test("runtime telemetry rejects a non-chronological date window", async () => {
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -383,7 +377,7 @@ test("runtime telemetry rejects invalid revision filter shape", async () => {
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?revisionSha=abc",
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -405,8 +399,8 @@ test("report and interpretation endpoints reject limits outside their bounded ra
   ]) {
     const response = await fetch(baseUrl + route, {
       headers: {
-        ,
-        "x-autopsy-ai-access-key": "test-ai-key"
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken,
+        "x-autopsy-csrf-token": csrfToken
       }
     });
 
@@ -437,7 +431,7 @@ test("repository import rejects invalid branch syntax before queueing work", asy
       method: "POST",
       headers: {
         "content-type": "application/json",
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       },
       body: JSON.stringify({
         url: "https://github.com/octocat/Hello-World.git",
@@ -467,7 +461,7 @@ test("repository import rejects unsupported repository hosts before persistence"
       method: "POST",
       headers: {
         "content-type": "application/json",
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       },
       body: JSON.stringify({ url })
     });
@@ -483,13 +477,15 @@ test("repository import rejects unsupported repository hosts before persistence"
   }
 });
 
-test("invalid session credentials are rejected", async () => {
+test("authenticated account sessions are accepted by protected routes", async () => {
   const response = await fetch(baseUrl + "/api/", {
-    headers: {
-      cookie: "autopsy_session=invalid-session"
-    }
+    headers: authHeaders()
   });
-
+  assert.equal(response.status, 200);
+});test("invalid session credentials are rejected", async () => {
+  const response = await fetch(baseUrl + "/api/", {
+    headers: { cookie: "autopsy_session=invalid-session" }
+  });
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), {
     success: false,
@@ -498,9 +494,7 @@ test("invalid session credentials are rejected", async () => {
       message: "A signed-in account is required."
     }
   });
-});
-
-test("analysis status endpoint returns a scoped not-found contract", async () => {
+});test("analysis status endpoint returns a scoped not-found contract", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const analysisRunId = "00000000-0000-4000-8000-000000000998";
 
@@ -508,7 +502,7 @@ test("analysis status endpoint returns a scoped not-found contract", async () =>
     `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -537,13 +531,15 @@ test("contributor endpoint remains behind session auth", async () => {
       message: "A signed-in account is required."
     }
   });
-});test("contributor endpoint returns the repository-not-found contract", async () => {
+});
+
+test("contributor endpoint returns the repository-not-found contract", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const response = await fetch(
     `${baseUrl}/api/repositories/${repositoryId}/contributors`,
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -559,7 +555,7 @@ test("contributor endpoint remains behind session auth", async () => {
 });
 
 
-test("unauthenticated malformed JSON is rejected by the API access wall", async () => {
+test("unauthenticated malformed JSON is rejected by the session auth wall", async () => {
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
     headers: {
@@ -576,12 +572,14 @@ test("unauthenticated malformed JSON is rejected by the API access wall", async 
       message: "A signed-in account is required."
     }
   });
-});test("malformed JSON returns a client error instead of a generic server error", async () => {
+});
+
+test("malformed JSON returns a client error instead of a generic server error", async () => {
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      
+      "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
     },
     body: '{"url":'
   });
@@ -614,13 +612,15 @@ test("unauthenticated oversized JSON is rejected before body parsing", async () 
       message: "A signed-in account is required."
     }
   });
-});test("oversized JSON returns a bounded payload error", async () => {
+});
+
+test("oversized JSON returns a bounded payload error", async () => {
   const oversizedValue = "x".repeat(1_100_000);
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      
+      "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
     },
     body: JSON.stringify({ value: oversizedValue })
   });
@@ -649,7 +649,6 @@ test("analysis status hides internal failure paths from API consumers", async ()
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
-      )
       VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $2)
     `,
     [repositoryId, testUserId, storagePath]
@@ -674,7 +673,7 @@ test("analysis status hides internal failure paths from API consumers", async ()
         analysisRunId,
       {
         headers: {
-          
+          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
         }
       }
     );
@@ -706,11 +705,10 @@ test("repository deletion is blocked while analysis is active", async () => {
   await db.query(
     `
       INSERT INTO repositories (
-        id, source_type, source_url, name, tracked_branch, storage_path
-      )
-      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-active-test', 'main', $2)
+        id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-active-test', 'main', $2)
     `,
-    [repositoryId, storagePath]
+    [repositoryId, testUserId, storagePath]
   );
 
   await db.query(
@@ -727,7 +725,7 @@ test("repository deletion is blocked while analysis is active", async () => {
     const response = await fetch(baseUrl + "/api/repositories/" + repositoryId, {
       method: "DELETE",
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     });
 
@@ -757,18 +755,17 @@ test("repository deletion removes persisted metadata and checkout storage", asyn
   await db.query(
     `
       INSERT INTO repositories (
-        id, source_type, source_url, name, tracked_branch, storage_path
-      )
-      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-success-test', 'main', $2)
+        id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-success-test', 'main', $2)
     `,
-    [repositoryId, storagePath]
+    [repositoryId, testUserId, storagePath]
   );
 
   try {
     const response = await fetch(baseUrl + "/api/repositories/" + repositoryId, {
       method: "DELETE",
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     });
 
@@ -808,23 +805,22 @@ test("repository deletion and refresh cannot both succeed concurrently", async (
   await db.query(
     `
       INSERT INTO repositories (
-        id, source_type, source_url, name, tracked_branch, storage_path
-      )
-      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-race-test', 'main', $2)
+        id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-race-test', 'main', $2)
     `,
-    [repositoryId, storagePath]
+    [repositoryId, testUserId, storagePath]
   );
 
   try {
     const [deleteResponse, analyzeResponse] = await Promise.all([
       fetch(baseUrl + "/api/repositories/" + repositoryId, {
         method: "DELETE",
-        headers: {  }
+        headers: { "cookie": authCookie, "x-autopsy-csrf-token": csrfToken }
       }),
       fetch(baseUrl + "/api/repositories/" + repositoryId + "/analyze", {
         method: "POST",
         headers: {
-          ,
+          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken,
           "content-type": "application/json"
         },
         body: "{}"
@@ -869,7 +865,7 @@ test("repository storage cleanup retry removes pending managed storage", async (
       )
       VALUES ($1, $2)
     `,
-    [repositoryId, storagePath]
+    [repositoryId, testUserId, storagePath]
   );
 
   try {
@@ -949,7 +945,7 @@ test("analysis-runs endpoint returns the repository-not-found contract", async (
       "/api/repositories/00000000-0000-4000-8000-000000000999/analysis-runs",
     {
       headers: {
-        
+        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
       }
     }
   );
@@ -972,7 +968,7 @@ test("analysis-runs endpoint bounds pagination", async () => {
         limit,
       {
         headers: {
-          
+          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
         }
       }
     );
@@ -990,7 +986,7 @@ test("analysis-runs endpoint bounds pagination", async () => {
 test("API rate-limit configuration is visible through bounded response headers", async () => {
   const response = await fetch(baseUrl + "/api/", {
     headers: {
-      
+      "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
     }
   });
 
