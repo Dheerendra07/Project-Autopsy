@@ -1197,7 +1197,12 @@
       return;
     }
     S.authSubmitting=true;
-    actionBusy('auth-submit',true,S.authMode==='register'?'Creating…':'Signing in…');
+    var authButton=$('authSubmit');
+    if(authButton){
+      authButton.disabled=true;
+      authButton.setAttribute('aria-busy','true');
+      authButton.textContent=S.authMode==='register'?'Creating…':'Signing in…';
+    }
     $('authError').hidden=true;
     try{
       var path=S.authMode==='register'?'/api/auth/register':'/api/auth/login';
@@ -1216,7 +1221,11 @@
       $('authError').hidden=false;
     }finally{
       S.authSubmitting=false;
-      actionBusy('auth-submit',false);
+      if(authButton){
+        authButton.disabled=false;
+        authButton.removeAttribute('aria-busy');
+        setAuthMode(S.authMode);
+      }
     }
   }
   function clearWorkspaceState(){
@@ -1309,9 +1318,10 @@
   }
   async function openSavedRepository(repositoryId){
     if(!S.user||!repositoryId)return;
+    var token=S.workspaceToken;
     try{
       clearWorkspaceState();
-      var token=S.workspaceToken;
+      token=S.workspaceToken;
       var repo=await getRepo(repositoryId);
       var runs=await api('/api/repositories/'+repositoryId+'/analysis-runs?page=1&limit=1');
       var latest=arr(runs,'runs')[0];
