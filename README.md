@@ -298,7 +298,7 @@ The interpretation can summarize recurring themes, identify evidence-backed inve
 
 Configuration is optional. Set `AI_API_KEY` to enable the endpoint, with `AI_BASE_URL`, `AI_MODEL`, and `AI_TIMEOUT_MS` available for provider configuration. The default provider configuration targets OpenAI's Responses API with `gpt-5.6-luna`.
 
-AI interpretation is available to signed-in users. The provider credential remains server-side in `AI_API_KEY` and is never sent to the browser. Account security includes active-session visibility, individual session revocation, and password rotation. Password changes invalidate all existing sessions and immediately issue a new session for the current device. Authentication and password-changing endpoints use a dedicated rate-limit bucket. Repeated requests for the same report fingerprint and model are served from Redis for the configured cache TTL, reducing duplicate provider calls.
+AI interpretation is available to signed-in users. The provider credential remains server-side in `AI_API_KEY` and is never sent to the browser. Account security includes active-session visibility, individual session revocation, and password rotation. Password changes invalidate all existing sessions and immediately issue a new session for the current device. Authentication and password-changing endpoints use a dedicated rate-limit bucket. The server keeps at most 10 active sessions per account and periodically removes expired or long-revoked session rows. Repeated requests for the same report fingerprint and model are served from Redis for the configured cache TTL, reducing duplicate provider calls.
 
 ## Repeatedly modified files
 
