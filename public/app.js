@@ -85,7 +85,7 @@
   function connected(state){
     var c=$('conn'),button=$('settings');
     var verified=state==='verified',rejected=state==='rejected';
-    c.textContent=verified?'Signed in':rejected?'Session expired':'Sign in';
+    c.textContent=verified?'Signed in':rejected?'Access rejected':'Sign in';
     c.className='pill '+(verified?'good':rejected?'bad':'');
     if(button)button.textContent=verified?'Account':'Sign in';
   }
