@@ -387,3 +387,17 @@ PR #178 is merged on main at `bcac9aa14cf8b05aab31eefd8006b3b5538d8049`.
 - Open pull requests: 0.
 
 Continuation rule: treat `bcac9aa...` as the newest verified main baseline. Preserve the existing 11-view information architecture, one-place navigation model, evidence-first semantics, stale-state handling, focus management, mobile layout contracts, protected API boundary, and bounded execution contracts. Do not re-introduce duplicate navigation surfaces or parallel renderer/action wiring.
+
+## Hidden overlay production blocker checkpoint — 2026-10-02
+
+PR #180 merged on main at `e0d8a1c078f34b06336d68290cfea09fb801fd20`.
+
+- Root cause: author CSS declared `.drawer`, `.modal`, and `.toast` with explicit display values while relying on the HTML `hidden` attribute, so the CSS could override the browser's hidden display behavior.
+- Fix: add an explicit `[hidden]` display override for transient overlays.
+- Regression invariant now verifies the overlay hidden-display contract and initial hidden state for auth, settings, destructive-confirmation, evidence-inspector, and toast surfaces.
+- Full PR quality gate passed, including import -> analysis -> report acceptance, migration idempotency, API startup, combined API/worker startup, and worker startup smoke tests.
+- Both Render services are live on `e0d8a1c...`.
+- Live browser verification on the canonical URL confirmed `#drawer` is hidden on initial load; simulating a click on `#drawerClose` returns it to `hidden=true`, computed `display:none`, with no uncaught exception.
+- Open pull requests: 0.
+
+Continuation rule: preserve explicit hidden-overlay behavior for every transient UI surface; never rely on `hidden` alone when author CSS supplies an explicit display rule.
