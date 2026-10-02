@@ -37,6 +37,7 @@ import {
 import {
   clearAuthCookies,
   getAuthContext,
+  getCsrfCookie,
   requireCsrf,
   requireSession,
   setAuthCookies
@@ -91,7 +92,7 @@ async function startSession(
   request: Parameters<typeof getAuthContext>[0],
   response: Parameters<typeof setAuthCookies>[0],
   user: { id: string }
-): Promise<void> {
+): Promise<string> {
   const sessionToken = createOpaqueToken();
   const csrfToken = createOpaqueToken();
   const expiresAt = createSessionExpiry();
@@ -107,6 +108,7 @@ async function startSession(
 
   setAuthCookies(response, sessionToken, csrfToken, expiresAt);
   await revokeExcessUserSessions(user.id);
+  return csrfToken;
 }
 
 authRouter.post("/migrate-legacy", async (request, response, next) => {
@@ -198,10 +200,11 @@ authRouter.post("/migrate-legacy", async (request, response, next) => {
 
     const claimedRepositories = await claimUnownedRepositories(user.id);
 
-    await startSession(request, response, user);
+    const csrfToken = await startSession(request, response, user);
 
     response.json({
       success: true,
+      csrfToken,
       user: publicUser(user),
       migration: {
         repositoriesClaimed: claimedRepositories
@@ -305,10 +308,11 @@ authRouter.post("/register", async (request, response, next) => {
 
     await markEmailVerified(user.id);
     user.email_verified_at = new Date().toISOString();
-    await startSession(request, response, user);
+    const csrfToken = await startSession(request, response, user);
 
     response.status(201).json({
       success: true,
+      csrfToken,
       user: publicUser(user),
       requiresEmailVerification: false
     });
@@ -366,10 +370,11 @@ authRouter.post("/login", async (request, response, next) => {
     }
 
     await updateLastLogin(user.id);
-    await startSession(request, response, user);
+    const csrfToken = await startSession(request, response, user);
 
     response.json({
       success: true,
+      csrfToken,
       user: publicUser({
         ...user,
         last_login_at: new Date().toISOString()
@@ -694,12 +699,13 @@ authRouter.post(
 
       await revokeAllUserSessions(auth.userId);
 
-      await startSession(request, response, {
+      const csrfToken = await startSession(request, response, {
         id: auth.userId
       });
 
       response.json({
         success: true,
+        csrfToken,
         message: "Password changed. Other active sessions were signed out."
       });
     } catch (error) {
@@ -717,6 +723,7 @@ authRouter.get("/me", requireSession, (request, response) => {
 
   response.json({
     success: true,
+    csrfToken: getCsrfCookie(request) ?? "",
     user: {
       id: auth.userId,
       email: auth.email
