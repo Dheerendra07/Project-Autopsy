@@ -1101,9 +1101,11 @@ test("account recovery and transactional email contracts remain explicit", () =>
   assert.ok(render.includes("AUTOPSY_PUBLIC_URL"));
   assert.ok(readme.includes("Transactional email recovery is supported through Resend"));
   assert.ok(persistence.includes("AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS"));
+  assert.ok(persistence.includes("pg_advisory_xact_lock"));
   assert.ok(persistence.includes("FOR UPDATE"));
   assert.ok(persistence.includes('await client.query("BEGIN")'));
   assert.ok(routes.includes("resetPasswordWithToken"));
+  assert.ok(routes.includes("verifyEmailWithToken"));
   assert.ok(routes.includes('invalidateAuthActionTokens(user.id, "email_verification")'));
   assert.ok(routes.includes('invalidateAuthActionTokens(user.id, "password_reset")'));
   assert.doesNotThrow(() => new Function(appJs));
