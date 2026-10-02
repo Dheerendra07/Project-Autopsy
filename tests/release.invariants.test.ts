@@ -376,6 +376,10 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   assert.ok(structure.includes("architectureMap(ar)"));
   assert.ok(structure.includes("dependencyKinds"));
   assert.ok(structure.includes("complexityDelta"));
+  assert.ok(appJs.includes("No architecture evidence.</td></tr>')+'</tbody>"));
+  assert.ok(appJs.includes("No dependency evidence.</td></tr>')+'</tbody>"));
+  assert.ok(appJs.includes("No complexity evidence.</td></tr>')+'</tbody>"));
+  assert.ok(appJs.includes("No coupling evidence.</td></tr>')+'</tbody>"));
 });
 
 test("responsive grid cards can shrink while child tables keep their own overflow", () => {
