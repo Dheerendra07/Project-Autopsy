@@ -21,14 +21,16 @@ jobs:
     timeout-minutes: 10
     env:
       AUTOPSY_PRODUCTION_URL: ${{ inputs.url }}
-      AUTOPSY_API_ACCESS_KEY: ${{ secrets.AUTOPSY_API_ACCESS_KEY }}
+      AUTOPSY_BOOTSTRAP_EMAIL: ${{ secrets.AUTOPSY_BOOTSTRAP_EMAIL }}
+      AUTOPSY_BOOTSTRAP_PASSWORD: ${{ secrets.AUTOPSY_BOOTSTRAP_PASSWORD }}
     steps:
       - name: Validate production credential
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$AUTOPSY_API_ACCESS_KEY"
-          test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32
+          test -n "$AUTOPSY_BOOTSTRAP_EMAIL"
+          test -n "$AUTOPSY_BOOTSTRAP_PASSWORD"
+          test "${#AUTOPSY_BOOTSTRAP_PASSWORD}" -ge 12
 
       - name: Checkout
         uses: actions/checkout@v6
