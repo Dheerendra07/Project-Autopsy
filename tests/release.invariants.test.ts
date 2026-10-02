@@ -154,8 +154,12 @@ test("production smoke covers public surface and protected API boundaries", () =
     "AUTOPSY_PRODUCTION_URL",
     "AUTOPSY_BOOTSTRAP_EMAIL",
     "AUTOPSY_BOOTSTRAP_PASSWORD",
+    '"/favicon.svg"',
+    '"/favicon.ico"',
     '"/health"',
     '"/ready"',
+    "x-request-id",
+    "image/svg+xml",
     '"/api/auth/login"',
     '"/api/auth/me"',
     '"/api/auth/sessions"',
@@ -178,7 +182,10 @@ test("production smoke covers public surface and protected API boundaries", () =
     );
   }
 
+  assert.ok(workflow.includes("schedule:"));
+  assert.ok(workflow.includes('cron: "17 */6 * * *"'));
   assert.ok(workflow.includes("workflow_dispatch:"));
+  assert.ok(workflow.includes("default: \"https://project-autopsy.onrender.com\""));
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_EMAIL"));
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));

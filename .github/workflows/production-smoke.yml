@@ -1,11 +1,14 @@
 name: production-smoke
 
 on:
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       url:
         description: "Hosted Project Autopsy URL"
-        required: true
+        required: false
+        default: "https://project-autopsy.onrender.com"
         type: string
 
 permissions:
@@ -18,9 +21,9 @@ concurrency:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
-      AUTOPSY_PRODUCTION_URL: ${{ inputs.url }}
+      AUTOPSY_PRODUCTION_URL: ${{ inputs.url || 'https://project-autopsy.onrender.com' }}
       AUTOPSY_BOOTSTRAP_EMAIL: ${{ secrets.AUTOPSY_BOOTSTRAP_EMAIL }}
       AUTOPSY_BOOTSTRAP_PASSWORD: ${{ secrets.AUTOPSY_BOOTSTRAP_PASSWORD }}
     steps:
