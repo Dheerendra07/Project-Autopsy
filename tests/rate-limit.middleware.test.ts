@@ -71,6 +71,10 @@ test("authentication endpoints use the dedicated per-IP auth bucket", () => {
     "auth"
   );
   assert.equal(
+    resolveRateLimitCategory(request("/auth/password", "POST")),
+    "auth"
+  );
+  assert.equal(
     getRateLimitLimit(request("/auth/login", "POST")),
     20
   );

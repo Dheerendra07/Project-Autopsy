@@ -1067,6 +1067,96 @@
     }catch(e){if(token===S.workspaceToken&&id===S.repoId)toast(e.message,'bad')}
     finally{S.refreshLoading=false;if(refreshButton){refreshButton.disabled=false;refreshButton.removeAttribute('aria-busy');if(refreshLabel)refreshButton.textContent=refreshLabel}}
   }
+  function formatUserAgent(ua){
+    var value=String(ua||'').trim();
+    return value?value.slice(0,180):'Browser session';
+  }
+  async function loadSecuritySessions(){
+    var zone=$('sessionsList');
+    if(!zone)return;
+    if(!S.user){
+      zone.innerHTML='<div class="callout">Sign in to manage active sessions.</div>';
+      return;
+    }
+    zone.innerHTML='<div class="callout">Loading active sessions…</div>';
+    try{
+      var r=await api('/api/auth/sessions');
+      var sessions=arr(r,'sessions');
+      if(!sessions.length){
+        zone.innerHTML='<div class="callout">No active sessions were found.</div>';
+        return;
+      }
+      zone.innerHTML=sessions.map(function(session){
+        var current=!!session.isCurrent;
+        return '<div class="security-session '+(current?'current':'')+'"><div class="security-session-head"><div><div class="session-badge">'+(current?'CURRENT SESSION':'ACTIVE SESSION')+'</div><strong>'+esc(formatUserAgent(session.userAgent))+'</strong><small>Last seen '+esc(date(session.lastSeenAt))+' · Expires '+esc(date(session.expiresAt))+'</small></div><button class="btn danger revoke-session" type="button" data-session-id="'+esc(session.id)+'" data-current="'+(current?'1':'0')+'">'+(current?'Sign out':'Revoke')+'</button></div></div>';
+      }).join('');
+    }catch(e){
+      zone.innerHTML='<div class="callout">Sessions could not be loaded right now.</div>';
+    }
+  }
+  async function revokeOneSession(sessionId,isCurrent){
+    if(!sessionId||!S.user)return;
+    try{
+      var r=await api('/api/auth/sessions/'+encodeURIComponent(sessionId),{method:'DELETE'});
+      if(r.signedOutCurrentSession||isCurrent){
+        await logoutLocalState(false);
+        openAuth('login');
+        toast('Current session signed out.','good');
+        return;
+      }
+      toast('Session revoked.','good');
+      await loadSecuritySessions();
+    }catch(e){
+      toast(e.message||'Could not revoke the session.','bad');
+    }
+  }
+  async function changePassword(){
+    if(!S.user)return;
+    var current=$('currentPassword').value;
+    var next=$('newPassword').value;
+    var error=$('passwordError');
+    var button=$('changePassword');
+    if(!current||!next){
+      error.textContent='Enter both passwords.';
+      error.hidden=false;
+      return;
+    }
+    if(current===next){
+      error.textContent='Choose a new password that is different from the current password.';
+      error.hidden=false;
+      return;
+    }
+    error.hidden=true;
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent='Changing…';
+    try{
+      await api('/api/auth/password',{method:'POST',body:JSON.stringify({currentPassword:current,newPassword:next})});
+      $('currentPassword').value='';
+      $('newPassword').value='';
+      closeSettings();
+      toast('Password changed. Other sessions were signed out.','good');
+    }catch(e){
+      error.textContent=e.message||'Password change failed.';
+      error.hidden=false;
+    }finally{
+      button.disabled=false;
+      button.removeAttribute('aria-busy');
+      button.textContent='Change password';
+      await loadSecuritySessions();
+    }
+  }
+  async function logoutLocalState(showToast){
+    try{await api('/api/auth/logout',{method:'POST'})}catch(e){}
+    S.user=null;
+    S.connectionState='unknown';
+    clearWorkspaceState();
+    connected('unknown');
+    closeSettings();
+    closeAuth();
+    landing();
+    if(showToast)toast('Signed out.','good');
+  }
   function openSettings(trigger){
     S.settingsFocus=trigger||document.activeElement;
     $('api').value=S.api;
@@ -1074,7 +1164,11 @@
     if($('repoToken'))$('repoToken').value='';
     $('dangerZone').hidden=!S.repoId;
     $('modal').hidden=false;
+    if($('passwordError'))$('passwordError').hidden=true;
+    if($('currentPassword'))$('currentPassword').value='';
+    if($('newPassword'))$('newPassword').value='';
     syncRepositoryAccessSettings();
+    void loadSecuritySessions();
     requestAnimationFrame(function(){($('repoToken')||$('close')).focus()});
   }
   function closeSettings(){ $('modal').hidden=true;var focus=S.settingsFocus;S.settingsFocus=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
@@ -1144,6 +1238,13 @@
   }
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('authForm').onsubmit=function(e){e.preventDefault();submitAuth()};
+  $('passwordForm').onsubmit=function(e){e.preventDefault();changePassword()};
+  $('sessionsList').onclick=function(e){
+    var button=e.target.closest('.revoke-session');
+    if(!button)return;
+    void revokeOneSession(button.getAttribute('data-session-id'),button.getAttribute('data-current')==='1');
+  };
+  $('refreshSessions').onclick=function(){void loadSecuritySessions()};
   $('authModeToggle').onclick=function(){
     if(S.authMode==='migrate'){
       setAuthMode('login');
@@ -1153,7 +1254,7 @@
   };
   $('authClose').onclick=function(){closeAuth()};
   $('authModal').onclick=function(e){if(e.target===$('authModal'))closeAuth()};
-  $('logout').onclick=function(){logoutCurrentSession()};
+  $('logout').onclick=function(){logoutLocalState(true)};
   $('revokeSessions').onclick=function(){revokeAllSessions()};
   $('recentRepositories').onclick=function(e){var b=e.target.closest('[data-repository-id]');if(b)openSavedRepository(b.getAttribute('data-repository-id'))};
 
@@ -1281,36 +1382,6 @@
     S.tableSort={};
     S.viewLoading={};
     persist();
-  }
-  async function logoutCurrentSession(){
-    try{
-      await api('/api/auth/logout',{method:'POST'});
-    }catch(e){}
-    S.user=null;
-    S.connectionState='unknown';
-    clearWorkspaceState();
-    connected('unknown');
-    closeSettings();
-    closeAuth();
-    landing();
-    toast('Signed out.','good');
-  }
-  async function revokeAllSessions(){
-    if(!S.user)return;
-    try{
-      await api('/api/auth/sessions/revoke-all',{method:'POST'});
-    }catch(e){
-      toast(e.message||'Could not revoke sessions.','bad');
-      return;
-    }
-    S.user=null;
-    S.connectionState='unknown';
-    clearWorkspaceState();
-    connected('unknown');
-    closeSettings();
-    landing();
-    openAuth('login');
-    toast('All sessions were revoked. Sign in again.','good');
   }
   async function loadRecentRepositories(){
     if(!S.user)return;
