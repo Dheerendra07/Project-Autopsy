@@ -380,6 +380,14 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   assert.ok(appJs.includes("No dependency evidence.</td></tr>')+'</tbody>"));
   assert.ok(appJs.includes("No complexity evidence.</td></tr>')+'</tbody>"));
   assert.ok(appJs.includes("No coupling evidence.</td></tr>')+'</tbody>"));
+  for (const marker of [
+    'data-empty-state="true"><td colspan="5" class="dim">No architecture evidence.',
+    'data-empty-state="true"><td colspan="6" class="dim">No dependency evidence.',
+    'data-empty-state="true"><td colspan="5" class="dim">No complexity evidence.',
+    'data-empty-state="true"><td colspan="4" class="dim">No coupling evidence.'
+  ]) {
+    assert.ok(appJs.includes(marker), "Structure empty rows must be excluded from local filters: " + marker);
+  }
 });
 
 test("responsive grid cards can shrink while child tables keep their own overflow", () => {
