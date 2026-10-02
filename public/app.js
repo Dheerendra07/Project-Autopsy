@@ -962,7 +962,7 @@
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.timelineLoadToken)toast(e.message||'Timeline evidence could not be loaded','bad');
     }finally{
-      if(loadToken===S.timelineLoadToken)S.timelineLoading=false;
+      if(loadToken===S.timelineLoadToken){S.timelineLoading=false;actionBusy('more-timeline',false)}
     }
   }
   async function loadMoreCommits(){
@@ -978,7 +978,7 @@
       setView('history');
       toast(next.length?'Loaded next commit page':'No more commit evidence','good');
     }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.commitLoadToken)toast(e.message,'bad')}
-    finally{if(loadToken===S.commitLoadToken)S.commitLoading=false}
+    finally{if(loadToken===S.commitLoadToken){S.commitLoading=false;actionBusy('more-commits',false)}}
   }
   async function loadProvenance(deploymentId,trigger){
     if(S.provenanceLoading)return;
