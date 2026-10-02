@@ -185,7 +185,6 @@ Optional deployment-system evidence can be ingested without deriving deployment 
 ```http
 POST /api/repositories/:repositoryId/deployments
 Content-Type: application/json
-x-autopsy-api-key: <configured application key>
 x-autopsy-deployment-key: <configured key>
 
 {
