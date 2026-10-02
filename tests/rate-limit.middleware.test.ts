@@ -57,6 +57,21 @@ test("rate-limit policy places expensive operations in the heavy bucket", () => 
   );
 });
 
+test("authentication endpoints use the dedicated per-IP auth bucket", () => {
+  assert.equal(
+    resolveRateLimitCategory(request("/auth/login", "POST")),
+    "auth"
+  );
+  assert.equal(
+    resolveRateLimitCategory(request("/auth/register", "POST")),
+    "auth"
+  );
+  assert.equal(
+    getRateLimitLimit(request("/auth/login", "POST")),
+    20
+  );
+});
+
 test("consumeRateLimit uses the configured heavy limit", async () => {
   const redis = new MemoryRedis();
   const result = await consumeRateLimit(
