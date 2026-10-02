@@ -248,7 +248,7 @@ test("authenticated unknown API routes reach the API not-found contract", async 
 
 
 
-test("protected repository routes reject malformed UUIDs with the validation contract", async () => {
+test("protected repository routes reject malformed UUIDs with the repository-id contract", async () => {
   const response = await fetch(
     baseUrl + "/api/repositories/not-a-uuid/commits",
     {
@@ -261,13 +261,15 @@ test("protected repository routes reject malformed UUIDs with the validation con
   assert.equal(response.status, 400);
   const body = await response.json() as {
     success: boolean;
-    error: { code: string; message: string; issues: unknown[] };
+    error: { code: string; message: string };
   };
 
   assert.equal(body.success, false);
   assert.equal(body.error.code, "REPOSITORY_ID_INVALID");
   assert.equal(body.error.message, "Repository id is invalid.");
 });
+
+
 
 test("protected repository access takes precedence over query validation for unknown IDs", async () => {
   for (const query of ["page=0&limit=50", "page=1&limit=101"]) {
@@ -350,7 +352,7 @@ test("commit history is newest-first while the timeline remains chronological", 
 });
 
 
-test("runtime telemetry rejects a non-chronological date window", async () => {
+test("unknown repositories return not-found before runtime filter validation", async () => {
   const response = await fetch(
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
     {
@@ -361,18 +363,18 @@ test("runtime telemetry rejects a non-chronological date window", async () => {
   );
 
   assert.equal(response.status, 404);
-  const body = await response.json() as {
-    error: { code: string; issues: Array<{ message: string }> };
-  };
-  assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
-  assert.ok(
-    body.error.issues.some((issue) =>
-      /from must be earlier than to/i.test(issue.message)
-    )
-  );
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "REPOSITORY_NOT_FOUND",
+      message: "Repository not found."
+    }
+  });
 });
 
-test("runtime telemetry rejects invalid revision filter shape", async () => {
+
+
+test("unknown repositories return not-found before revision filter validation", async () => {
   const response = await fetch(
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?revisionSha=abc",
     {
@@ -383,13 +385,18 @@ test("runtime telemetry rejects invalid revision filter shape", async () => {
   );
 
   assert.equal(response.status, 404);
-  const body = await response.json() as {
-    error: { code: string; issues: unknown[] };
-  };
-  assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "REPOSITORY_NOT_FOUND",
+      message: "Repository not found."
+    }
   });
+});
 
-test("report and interpretation endpoints reject limits outside their bounded range", async () => {
+
+
+test("unknown repositories return not-found before report query validation", async () => {
   for (const route of [
     "/api/repositories/00000000-0000-4000-8000-000000000999/report?limit=0",
     "/api/repositories/00000000-0000-4000-8000-000000000999/report?limit=51",
@@ -404,11 +411,14 @@ test("report and interpretation endpoints reject limits outside their bounded ra
     });
 
     assert.equal(response.status, 404);
-    const body = await response.json() as {
-      error: { code: string; issues: unknown[] };
-    };
-    assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+    assert.deepEqual(await response.json(), {
+      success: false,
+      error: {
+        code: "REPOSITORY_NOT_FOUND",
+        message: "Repository not found."
       }
+    });
+  }
 });
 
 
@@ -492,7 +502,7 @@ test("authenticated account sessions are accepted by protected routes", async ()
       message: "A signed-in account is required."
     }
   });
-});test("analysis status returns repository not-found for an unknown repository", async () => {
+});test("analysis status returns repository-not-found for an unknown repository", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const analysisRunId = "00000000-0000-4000-8000-000000000998";
 
@@ -514,6 +524,8 @@ test("authenticated account sessions are accepted by protected routes", async ()
     }
   });
 });
+
+
 
 test("contributor endpoint remains behind session auth", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
@@ -962,7 +974,7 @@ test("analysis-runs endpoint returns the repository-not-found contract", async (
   });
 });
 
-test("analysis-runs endpoint bounds pagination", async () => {
+test("unknown repositories return not-found before analysis-run pagination validation", async () => {
   for (const limit of [0, 51]) {
     const response = await fetch(
       baseUrl +
@@ -976,12 +988,16 @@ test("analysis-runs endpoint bounds pagination", async () => {
     );
 
     assert.equal(response.status, 404);
-    const body = await response.json() as {
-      error: { code: string; issues: unknown[] };
-    };
-    assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+    assert.deepEqual(await response.json(), {
+      success: false,
+      error: {
+        code: "REPOSITORY_NOT_FOUND",
+        message: "Repository not found."
       }
+    });
+  }
 });
+
 
 
 test("API rate-limit configuration is visible through bounded response headers", async () => {
