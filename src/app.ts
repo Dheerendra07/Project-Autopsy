@@ -125,6 +125,11 @@ const publicDirectory = path.resolve(
   "../public"
 );
 
+app.get("/favicon.ico", (_request, response) => {
+  response.setHeader("Cache-Control", "public, max-age=86400");
+  response.type("image/svg+xml").sendFile(path.join(publicDirectory, "favicon.svg"));
+});
+
 app.use(
   express.static(publicDirectory, {
     index: "index.html",
