@@ -481,18 +481,25 @@ test("frontend controls have explicit handlers and every workspace view is wired
 });
 
 
-test("hidden overlays remain visually hidden despite display rules", () => {
+test("all hidden UI states remain visually hidden despite explicit display rules", () => {
   const html = readRepoFile("public/index.html");
-  assert.match(
-    html,
-    /\.modal\[hidden\],\.drawer\[hidden\],\.toast\[hidden\]\{display:none!important\}/,
-    "hidden transient UI must override overlay display rules"
+  assert.ok(
+    html.includes("*[hidden]{display:none!important}"),
+    "every hidden UI surface must override author display rules"
   );
-  for (const id of ["authModal", "modal", "confirmModal", "drawer", "toast"]) {
+  for (const id of [
+    "landing",
+    "workspace",
+    "authModal",
+    "modal",
+    "confirmModal",
+    "drawer",
+    "toast"
+  ]) {
     assert.match(
       html,
       new RegExp('id="' + id + '"[^>]*hidden'),
-      "transient overlay must start hidden: " + id
+      "hidden UI state must be explicitly represented: " + id
     );
   }
 });
