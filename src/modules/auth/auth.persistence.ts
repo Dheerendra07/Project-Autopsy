@@ -7,6 +7,7 @@ export interface StoredUser {
   updated_at: string;
   last_login_at: string | null;
   disabled_at: string | null;
+  email_verified_at: string | null;
 }
 
 export interface StoredSession {
@@ -32,7 +33,8 @@ export async function getUserByEmail(
         created_at,
         updated_at,
         last_login_at,
-        disabled_at
+        disabled_at,
+        email_verified_at
       FROM users
       WHERE email = $1
       LIMIT 1
@@ -54,7 +56,8 @@ export async function getUserById(
         created_at,
         updated_at,
         last_login_at,
-        disabled_at
+        disabled_at,
+        email_verified_at
       FROM users
       WHERE id = $1
       LIMIT 1
@@ -92,6 +95,118 @@ export async function createUser(
   }
 
   return user;
+}
+
+export type AuthActionPurpose = "email_verification" | "password_reset";
+
+export async function createAuthActionToken(
+  id: string,
+  userId: string,
+  purpose: AuthActionPurpose,
+  tokenHash: string,
+  expiresAt: Date
+): Promise<void> {
+  await db.query(
+    `
+      DELETE FROM auth_action_tokens
+      WHERE user_id = $1
+        AND purpose = $2
+        AND consumed_at IS NULL
+    `,
+    [userId, purpose]
+  );
+
+  await db.query(
+    `
+      INSERT INTO auth_action_tokens (
+        id,
+        user_id,
+        purpose,
+        token_hash,
+        expires_at
+      )
+      VALUES ($1, $2, $3, $4, $5)
+    `,
+    [id, userId, purpose, tokenHash, expiresAt]
+  );
+}
+
+export async function consumeAuthActionToken(
+  tokenHash: string,
+  purpose: AuthActionPurpose
+): Promise<{ userId: string } | null> {
+  const result = await db.query<{ user_id: string }>(
+    `
+      UPDATE auth_action_tokens
+      SET consumed_at = NOW()
+      WHERE token_hash = $1
+        AND purpose = $2
+        AND consumed_at IS NULL
+        AND expires_at > NOW()
+      RETURNING user_id
+    `,
+    [tokenHash, purpose]
+  );
+
+  const row = result.rows[0];
+  return row ? { userId: row.user_id } : null;
+}
+
+export async function markEmailVerified(userId: string): Promise<void> {
+  await db.query(
+    `
+      UPDATE users
+      SET email_verified_at = COALESCE(email_verified_at, NOW()),
+          updated_at = NOW()
+      WHERE id = $1
+        AND disabled_at IS NULL
+    `,
+    [userId]
+  );
+}
+
+export async function invalidateAuthActionTokens(
+  userId: string,
+  purpose: AuthActionPurpose
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE auth_action_tokens
+      SET consumed_at = NOW()
+      WHERE user_id = $1
+        AND purpose = $2
+        AND consumed_at IS NULL
+    `,
+    [userId, purpose]
+  );
+}
+
+export async function purgeStaleAuthActionTokens(
+  batchSize = SESSION_CLEANUP_BATCH_SIZE
+): Promise<number> {
+  const result = await db.query(
+    `
+      WITH stale AS (
+        SELECT id
+        FROM auth_action_tokens
+        WHERE expires_at <= NOW()
+           OR consumed_at < NOW() - INTERVAL '30 days'
+        ORDER BY COALESCE(consumed_at, expires_at), id
+        LIMIT $1
+      )
+      DELETE FROM auth_action_tokens AS t
+      USING stale
+      WHERE t.id = stale.id
+      RETURNING t.id
+    `,
+    [Math.max(1, Math.min(SESSION_CLEANUP_BATCH_SIZE, Math.floor(batchSize)))]
+  );
+
+  return result.rowCount ?? 0;
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await db.query(`DELETE FROM users WHERE id = $1`, [userId]);
 }
 
 export async function getPasswordHashByUserId(
