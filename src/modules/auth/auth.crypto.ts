@@ -59,7 +59,7 @@ export async function hashPassword(password: string): Promise<string> {
     r: SCRYPT_R,
     p: SCRYPT_P,
     maxmem: SCRYPT_MAX_MEM
-  })) as Buffer;
+  });
 
   return [
     "scrypt",
