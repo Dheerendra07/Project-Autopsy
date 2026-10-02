@@ -99,13 +99,32 @@ export async function createUser(
 
 export type AuthActionPurpose = "email_verification" | "password_reset";
 
+export const AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS = 5 * 60_000;
+
 export async function createAuthActionToken(
   id: string,
   userId: string,
   purpose: AuthActionPurpose,
   tokenHash: string,
   expiresAt: Date
-): Promise<void> {
+): Promise<boolean> {
+  const recent = await db.query(
+    `
+      SELECT 1
+      FROM auth_action_tokens
+      WHERE user_id = $1
+        AND purpose = $2
+        AND consumed_at IS NULL
+        AND created_at > NOW() - INTERVAL '5 minutes'
+      LIMIT 1
+    `,
+    [userId, purpose]
+  );
+
+  if (recent.rowCount) {
+    return false;
+  }
+
   await db.query(
     `
       DELETE FROM auth_action_tokens
@@ -129,6 +148,8 @@ export async function createAuthActionToken(
     `,
     [id, userId, purpose, tokenHash, expiresAt]
   );
+
+  return true;
 }
 
 export async function consumeAuthActionToken(
