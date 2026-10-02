@@ -885,7 +885,20 @@ test("frontend history pagination releases busy state on every exit path", () =>
     appJs.includes('c.map(function(x){return \'<tr>')
   );
 
+  assert.ok(
+    appJs.includes("history-timeline">'+(t.map(function(x)")
+  );
+  assert.ok(
+    appJs.includes("No timeline evidence.</div>')+'</div></div>")
+  );
+  assert.ok(
+    appJs.includes("<tbody>+(c.map(function(x)")
+  );
+  assert.ok(
+    appJs.includes("No commit evidence.</td></tr>')+'</tbody>")
+  );
 });
+
 
 test("frontend releases the runtime loading lock when an analysis run changes", () => {
   const appJs = readRepoFile("public/app.js");
