@@ -251,7 +251,7 @@ authRouter.post("/register", async (request, response, next) => {
       const verificationToken = createOpaqueToken();
 
       try {
-        await createAuthActionToken(
+        const created = await createAuthActionToken(
           randomUUID(),
           user.id,
           "email_verification",
@@ -259,11 +259,13 @@ authRouter.post("/register", async (request, response, next) => {
           new Date(Date.now() + AUTH_EMAIL_VERIFICATION_TTL_MS)
         );
 
-        await sendVerificationEmail(
-          user.email,
-          verificationToken,
-          `email-verification/${user.id}/${hashOpaqueToken(verificationToken)}`
-        );
+        if (created) {
+          await sendVerificationEmail(
+            user.email,
+            verificationToken,
+            `email-verification/${user.id}/${hashOpaqueToken(verificationToken)}`
+          );
+        }
       } catch (error) {
         await deleteUser(user.id);
 
@@ -400,18 +402,20 @@ authRouter.post("/resend-verification", async (request, response, next) => {
       const verificationToken = createOpaqueToken();
 
       try {
-        await createAuthActionToken(
+        const created = await createAuthActionToken(
           randomUUID(),
           user.id,
           "email_verification",
           hashOpaqueToken(verificationToken),
           new Date(Date.now() + AUTH_EMAIL_VERIFICATION_TTL_MS)
         );
-        await sendVerificationEmail(
-          user.email,
-          verificationToken,
-          `email-verification/${user.id}`
-        );
+        if (created) {
+          await sendVerificationEmail(
+            user.email,
+            verificationToken,
+            `email-verification/${user.id}/${hashOpaqueToken(verificationToken)}`
+          );
+        }
       } catch (error) {
         if (error instanceof Error && error.message === "AUTH_EMAIL_NOT_CONFIGURED") {
           response.status(503).json({
@@ -500,18 +504,20 @@ authRouter.post("/forgot-password", async (request, response, next) => {
       const resetToken = createOpaqueToken();
 
       try {
-        await createAuthActionToken(
+        const created = await createAuthActionToken(
           randomUUID(),
           user.id,
           "password_reset",
           hashOpaqueToken(resetToken),
           new Date(Date.now() + AUTH_PASSWORD_RESET_TTL_MS)
         );
-        await sendPasswordResetEmail(
-          user.email,
-          resetToken,
-          `password-reset/${user.id}/${hashOpaqueToken(resetToken)}`
-        );
+        if (created) {
+          await sendPasswordResetEmail(
+            user.email,
+            resetToken,
+            `password-reset/${user.id}/${hashOpaqueToken(resetToken)}`
+          );
+        }
       } catch (error) {
         response.status(502).json({
           success: false,
