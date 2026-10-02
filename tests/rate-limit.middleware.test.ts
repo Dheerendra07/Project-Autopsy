@@ -67,7 +67,15 @@ test("authentication endpoints use the dedicated per-IP auth bucket", () => {
     "auth"
   );
   assert.equal(
+    resolveRateLimitCategory(request("/auth/migrate-legacy", "POST")),
+    "auth"
+  );
+  assert.equal(
     getRateLimitLimit(request("/auth/login", "POST")),
+    20
+  );
+  assert.equal(
+    getRateLimitLimit(request("/auth/migrate-legacy", "POST")),
     20
   );
 });
