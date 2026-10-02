@@ -965,6 +965,31 @@ test("legacy migration is explicitly one-time and separate from normal session a
   assert.ok(appJs.includes("if(S.authMode==='migrate'&&S.legacyMigrationKey)"));
 });
 
+test("account security exposes password rotation and individual session revocation", () => {
+  const routes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(routes.includes('authRouter.get("/sessions"'));
+  assert.ok(routes.includes('authRouter.delete('));
+  assert.ok(routes.includes('"/sessions/:sessionId"'));
+  assert.ok(routes.includes('authRouter.post('));
+  assert.ok(routes.includes('"/password"'));
+  assert.ok(routes.includes("changeUserPassword"));
+  assert.ok(routes.includes("revokeSessionForUser"));
+  assert.ok(routes.includes("revokeAllUserSessions"));
+  assert.ok(persistence.includes("LIMIT 25"));
+  assert.ok(persistence.includes("AND user_id = $2"));
+  assert.ok(html.includes('id="passwordForm"'));
+  assert.ok(html.includes('id="sessionsList"'));
+  assert.ok(appJs.includes("async function changePassword()"));
+  assert.ok(appJs.includes("async function loadSecuritySessions()"));
+  assert.ok(appJs.includes("async function revokeOneSession("));
+});
+
+
+
 test("repository resources are tenant-scoped to authenticated accounts", () => {
   const routes = readRepoFile("src/routes/index.ts");
   const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
