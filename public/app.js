@@ -1000,9 +1000,9 @@
   async function loadReport(){
     if(S.reportLoading)return;
     S.reportLoading=true;
-    actionBusy('report',true,'Generating…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     setView('report');
+    actionBusy('report',true,'Generating…');
     $('root').innerHTML=loadingPage('Evidence report','Building a readable report from the current completed evidence snapshot.');
     try{
       var r=await api('/api/repositories/'+id+'/report?limit=10');
@@ -1023,9 +1023,9 @@
   async function loadInterview(){
     if(S.interviewLoading)return;
     S.interviewLoading=true;
-    actionBusy('interview',true,'Loading…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     setView('interview');
+    actionBusy('interview',true,'Loading…');
     $('root').innerHTML=loadingPage('Interview','Turning the evidence snapshot into verifiable talking points.');
     try{
       var r=await api('/api/repositories/'+id+'/interview-stories?limit=6');
@@ -1046,10 +1046,10 @@
   async function loadInterpretation(){
     if(S.interpretationLoading)return;
     S.interpretationLoading=true;
-    actionBusy('interpretation',true,'Generating…');
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
     try{
       setView('interpretation');
+      actionBusy('interpretation',true,'Generating…');
       $('root').innerHTML=loadingPage('Engineering insights','Grounding the current report into themes, questions and uncertainties.');
       var r=await api('/api/repositories/'+id+'/interpretation?limit=10');
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='interpretation')return;
