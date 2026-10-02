@@ -117,7 +117,7 @@
     var verified=state==='verified';
     var rejected=state==='rejected';
     if(button){
-      button.textContent=verified?'Account':rejected?'Sign in':'Sign in';
+      button.textContent=verified?'Account':rejected?'Access rejected':'Sign in';
       button.setAttribute('data-auth-state',verified?'signed-in':rejected?'rejected':'signed-out');
       button.setAttribute('aria-label',verified?'Open account settings':'Sign in to your private workspace');
       button.title=verified?'Account & security settings':'Sign in to your private workspace';
@@ -1196,8 +1196,8 @@
   }
   async function logoutLocalState(showToast){
     try{await api('/api/auth/logout',{method:'POST'})}catch(e){}
-    S.user=null;
-    S.csrfToken='';
+    S.user=null;S.csrfToken='';
+    S.connectionState='unknown';
     S.connectionState='unknown';
     clearWorkspaceState();
     connected('unknown');
