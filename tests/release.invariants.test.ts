@@ -481,6 +481,89 @@ test("frontend controls have explicit handlers and every workspace view is wired
 });
 
 
+test("frontend navigation, DOM ids and delegated actions stay one-to-one", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+  assert.deepEqual(duplicateIds, [], "duplicate static DOM ids detected");
+
+  const viewRenderers = {
+    overview: "overview",
+    history: "historyView",
+    structure: "structure",
+    quality: "quality",
+    runtime: "runtime",
+    report: "reportPage",
+    interview: "interview",
+    interpretation: "interpretation",
+    evidence: "evidencePage",
+    contributors: "contributors",
+    operations: "operations"
+  };
+  for (const [view, renderer] of Object.entries(viewRenderers)) {
+    const occurrences = html.match(new RegExp('data-view="' + view + '"', "g")) || [];
+    assert.equal(
+      occurrences.length,
+      1,
+      "workspace navigation view must have exactly one control: " + view
+    );
+    const rendererMatches = appJs.match(
+      new RegExp("function " + renderer + "\\s*\\(", "g")
+    ) || [];
+    assert.equal(
+      rendererMatches.length,
+      1,
+      "workspace view must have exactly one renderer: " + view + " -> " + renderer
+    );
+  }
+
+  const expectedActions = [
+    "report",
+    "interview",
+    "interpretation",
+    "download",
+    "more-commits",
+    "more-timeline",
+    "analysis-runs-more",
+    "reload-data",
+    "reload-view",
+    "runtime-filter",
+    "runtime-clear-filter",
+    "runtime-more",
+    "historical-filter",
+    "historical-clear-filter",
+    "operations-refresh",
+    "operations-retry"
+  ];
+  const rootHandlerStart = appJs.indexOf("$('root').onclick=function(e){");
+  const rootHandlerEnd = appJs.indexOf("\n  function setAuthMode(", rootHandlerStart);
+  assert.ok(rootHandlerStart >= 0 && rootHandlerEnd > rootHandlerStart);
+  const rootHandler = appJs.slice(rootHandlerStart, rootHandlerEnd);
+  const delegatedActions = [
+    ...rootHandler.matchAll(
+      /a\.getAttribute\('data-action'\)===['"]([^'"]+)['"]/g
+    )
+  ].map((match) => match[1]);
+  assert.deepEqual(
+    [...delegatedActions].sort(),
+    [...expectedActions].sort(),
+    "delegated root actions drifted from the declared UI action contract"
+  );
+  assert.equal(
+    new Set(delegatedActions).size,
+    delegatedActions.length,
+    "delegated root actions must not be duplicated"
+  );
+
+  assert.ok(
+    html.includes(".nav .nav-group{grid-column:1/-1}"),
+    "responsive navigation groups must span the full row"
+  );
+});
+
+
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
