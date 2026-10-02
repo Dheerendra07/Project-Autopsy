@@ -1214,7 +1214,7 @@
     if(authButton){
       authButton.disabled=true;
       authButton.setAttribute('aria-busy','true');
-      authButton.textContent=S.authMode==='register'?'Creating…':'Signing in…';
+      authButton.textContent=S.authMode==='migrate'?'Migrating…':S.authMode==='register'?'Creating…':'Signing in…';
     }
     $('authError').hidden=true;
     try{
