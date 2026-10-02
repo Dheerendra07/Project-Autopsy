@@ -28,7 +28,7 @@ export function resolveRateLimitCategory(req: Request): RateLimitCategory {
 
   if (
     req.method === "POST" &&
-    (path === "/auth/login" || path === "/auth/register" || path === "/auth/migrate-legacy")
+    (path === "/auth/login" || path === "/auth/register" || path === "/auth/migrate-legacy" || path === "/auth/password")
   ) {
     return "auth";
   }
