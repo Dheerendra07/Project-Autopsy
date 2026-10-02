@@ -405,6 +405,20 @@ test("frontend quality workspace exposes an evidence matrix", () => {
 });
 
 
+test("landing import requires auth without leaving a stale inline error flow", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(
+    appJs.includes("if(!S.user){\n        $('formerr').textContent='Sign in is required before an analysis can start.';")
+  );
+  assert.ok(appJs.includes("openAuth('login');"));
+  assert.ok(appJs.includes("return;\n      }"));
+  assert.ok(
+    appJs.includes("$('brandLink').onclick=function(e){")
+    && appJs.includes("setView('overview');")
+    && appJs.includes("clearWorkspaceState();")
+  );
+});
+
 test("top navigation has a single account action and auth interruption is single-flight", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
