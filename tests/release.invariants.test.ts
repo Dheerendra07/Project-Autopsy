@@ -378,6 +378,16 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   assert.ok(structure.includes("complexityDelta"));
 });
 
+test("frontend structure architecture map avoids redundant nested card chrome", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function architectureMap(ar)");
+  const end = appJs.indexOf("async function boundedFetch", start);
+  assert.ok(start >= 0 && end > start);
+  const surface = appJs.slice(start, end);
+  assert.ok(surface.includes('<div class="archmap section">'));
+  assert.doesNotMatch(surface, /return '<div class="card section">/);
+});
+
 test("frontend quality workspace exposes an evidence matrix", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
