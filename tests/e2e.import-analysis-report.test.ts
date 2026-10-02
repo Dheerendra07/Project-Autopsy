@@ -4,7 +4,6 @@ import { once } from "node:events";
 import test from "node:test";
 
 const E2E_ENABLED = process.env.AUTOPSY_E2E === "1";
-const TEST_API_KEY = "e2e-api-access-key-12345678901234567890";
 const E2E_API_RATE_LIMIT_MAX_REQUESTS = "1000";
 const E2E_API_RATE_LIMIT_HEAVY_MAX_REQUESTS = "1000";
 const E2E_PORT = Number.parseInt(process.env.E2E_PORT ?? "5101", 10);
@@ -77,6 +76,7 @@ async function waitForServer(
 async function waitForAnalysis(
   baseUrl: string,
   analysisRunId: string,
+  cookieHeader: string,
   timeoutMs: number
 ): Promise<{
   status: string;
@@ -89,7 +89,7 @@ async function waitForAnalysis(
       `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
       {
         headers: {
-          "x-autopsy-api-key": TEST_API_KEY
+          Cookie: cookieHeader
         }
       }
     );
@@ -140,7 +140,6 @@ test(
       ...process.env,
       NODE_ENV: "test",
       PORT: String(E2E_PORT),
-      AUTOPSY_API_ACCESS_KEY: TEST_API_KEY,
       API_RATE_LIMIT_MAX_REQUESTS: E2E_API_RATE_LIMIT_MAX_REQUESTS,
       API_RATE_LIMIT_HEAVY_MAX_REQUESTS: E2E_API_RATE_LIMIT_HEAVY_MAX_REQUESTS
     };
@@ -179,13 +178,62 @@ test(
     try {
       await waitForServer(baseUrl, server, 20_000);
 
+      const testEmail = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 10)}@example.com`;
+      const testPassword = "E2E-session-password-2026!";
+
+      const registerResponse = await fetch(
+        baseUrl + "/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            email: testEmail,
+            password: testPassword
+          })
+        }
+      );
+
+      const registerBody = await registerResponse.json() as {
+        success: boolean;
+        user?: {
+          email: string;
+        };
+        requiresEmailVerification?: boolean;
+      };
+
+      assert.equal(registerResponse.status, 201);
+      assert.equal(registerBody.success, true);
+      assert.equal(registerBody.user?.email, testEmail);
+      assert.equal(registerBody.requiresEmailVerification, false);
+
+      const setCookie = registerResponse.headers.getSetCookie?.() ?? [];
+      const sessionCookie = setCookie.find((value) =>
+        value.startsWith("autopsy_session=")
+      );
+      const csrfCookie = setCookie.find((value) =>
+        value.startsWith("autopsy_csrf=")
+      );
+
+      assert.ok(sessionCookie);
+      assert.ok(csrfCookie);
+
+      const cookieHeader = [sessionCookie, csrfCookie]
+        .map((value) => value.split(";")[0])
+        .join("; ");
+      const csrfToken = decodeURIComponent(
+        csrfCookie.split(";")[0].slice("autopsy_csrf=".length)
+      );
+
       const importResponse = await fetch(
         baseUrl + "/api/repositories/import",
         {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            "x-autopsy-api-key": TEST_API_KEY
+            Cookie: cookieHeader,
+            "x-autopsy-csrf-token": csrfToken
           },
           body: JSON.stringify({
             url: TEST_REPOSITORY_URL
@@ -215,6 +263,7 @@ test(
       const analysis = await waitForAnalysis(
         baseUrl,
         importBody.analysis.id,
+        cookieHeader,
         180_000
       );
 
@@ -231,7 +280,7 @@ test(
         `${baseUrl}/api/repositories/${repositoryId}/report?limit=3`,
         {
           headers: {
-            "x-autopsy-api-key": TEST_API_KEY
+            Cookie: cookieHeader
           }
         }
       );
