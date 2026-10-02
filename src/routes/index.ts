@@ -7,6 +7,7 @@ import { interpretationRouter } from "../modules/interpretation/interpretation.r
 import { deploymentRouter } from "../modules/deployments/deployment.routes.js";
 import contributorEvolutionRouter from "../modules/contributors/contributor-evolution.routes.js";
 import observabilityRouter from "../modules/observability/observability.routes.js";
+import { requireRepositoryAccess } from "../middleware/repository-access.middleware.js";
 
 export const router = Router();
 
@@ -18,6 +19,7 @@ router.get("/", (_req, res) => {
   });
 });
 
+router.use("/repositories/:repositoryId", requireRepositoryAccess);
 router.use("/repositories", repositoryRouter);
 router.use("/repositories/:repositoryId/runtime", runtimeRouter);
 router.use("/repositories/:repositoryId/deployments", deploymentRouter);
