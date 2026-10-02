@@ -7,7 +7,11 @@ import { redis, checkRedisConnection } from "./config/redis.js";
 import { retryRepositoryStorageCleanup } from "./modules/repositories/repository.service.js";
 import { runEvidenceRetentionSweep } from "./modules/evidence-retention.service.js";
 import { ensureBootstrapAccount } from "./modules/auth/auth.bootstrap.js";
-import { purgeStaleSessions, SESSION_CLEANUP_BATCH_SIZE } from "./modules/auth/auth.persistence.js";
+import {
+  purgeStaleAuthActionTokens,
+  purgeStaleSessions,
+  SESSION_CLEANUP_BATCH_SIZE
+} from "./modules/auth/auth.persistence.js";
 
 export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
@@ -108,20 +112,40 @@ export async function startServer(): Promise<void> {
 
     await ensureBootstrapAccount();
 
-    const staleSessions = await purgeStaleSessions();
+    const [staleSessions, staleAuthActionTokens] = await Promise.all([
+      purgeStaleSessions(),
+      purgeStaleAuthActionTokens()
+    ]);
+
     if (staleSessions > 0) {
       console.log(`✓ Session cleanup: ${staleSessions} stale session(s) removed`);
     }
 
+    if (staleAuthActionTokens > 0) {
+      console.log(
+        `✓ Auth-token cleanup: ${staleAuthActionTokens} stale token(s) removed`
+      );
+    }
+
     sessionCleanupTimer = setInterval(() => {
-      void purgeStaleSessions(SESSION_CLEANUP_BATCH_SIZE)
-        .then((count) => {
-          if (count > 0) {
-            console.log(`✓ Session cleanup: ${count} stale session(s) removed`);
+      void Promise.all([
+        purgeStaleSessions(SESSION_CLEANUP_BATCH_SIZE),
+        purgeStaleAuthActionTokens(SESSION_CLEANUP_BATCH_SIZE)
+      ])
+        .then(([sessionCount, tokenCount]) => {
+          if (sessionCount > 0) {
+            console.log(
+              `✓ Session cleanup: ${sessionCount} stale session(s) removed`
+            );
+          }
+          if (tokenCount > 0) {
+            console.log(
+              `✓ Auth-token cleanup: ${tokenCount} stale token(s) removed`
+            );
           }
         })
         .catch((error) => {
-          console.error("Session cleanup sweep failed:", error);
+          console.error("Session/auth-token cleanup sweep failed:", error);
         });
     }, SESSION_CLEANUP_INTERVAL_MS);
     sessionCleanupTimer.unref();

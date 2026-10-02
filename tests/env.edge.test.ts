@@ -24,17 +24,15 @@ test("accepts a valid production web configuration", () => {
   );
 });
 
-test("production web configuration fails closed when the API key is missing", () => {
-  assert.throws(
-    () =>
-      parseEnvironment({
-        ...base,
-        NODE_ENV: "production",
-        AUTOPSY_SERVICE_ROLE: "web",
-        RUNTIME_TELEMETRY_INGEST_KEY: productionKeys.RUNTIME_TELEMETRY_INGEST_KEY,
-        DEPLOYMENT_EVIDENCE_INGEST_KEY: productionKeys.DEPLOYMENT_EVIDENCE_INGEST_KEY
-      }),
-    /AUTOPSY_API_ACCESS_KEY is required in production/
+test("production web configuration allows session-based user authentication without the legacy API key", () => {
+  assert.doesNotThrow(() =>
+    parseEnvironment({
+      ...base,
+      NODE_ENV: "production",
+      AUTOPSY_SERVICE_ROLE: "web",
+      RUNTIME_TELEMETRY_INGEST_KEY: productionKeys.RUNTIME_TELEMETRY_INGEST_KEY,
+      DEPLOYMENT_EVIDENCE_INGEST_KEY: productionKeys.DEPLOYMENT_EVIDENCE_INGEST_KEY
+    })
   );
 });
 
@@ -59,27 +57,14 @@ test("production worker mode does not inherit web-only ingestion requirements", 
   );
 });
 
-test("AI in production requires a separate interpretation access key", () => {
-  assert.throws(
-    () =>
-      parseEnvironment({
-        ...base,
-        NODE_ENV: "production",
-        AUTOPSY_SERVICE_ROLE: "web",
-        ...productionKeys,
-        AI_API_KEY: "provider-key"
-      }),
-    /AI_INTERPRETATION_ACCESS_KEY is required/
-  );
-
+test("AI in production keeps the provider credential server-side", () => {
   assert.doesNotThrow(() =>
     parseEnvironment({
       ...base,
       NODE_ENV: "production",
       AUTOPSY_SERVICE_ROLE: "web",
       ...productionKeys,
-      AI_API_KEY: "provider-key",
-      AI_INTERPRETATION_ACCESS_KEY: "i".repeat(32)
+      AI_API_KEY: "provider-key"
     })
   );
 });

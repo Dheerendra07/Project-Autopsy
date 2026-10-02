@@ -311,9 +311,33 @@ h1{font-size:clamp(48px,6.5vw,78px);line-height:.94;max-width:960px;margin:20px 
     <label class="field">Email<input id="authEmail" type="email" autocomplete="email" maxlength="320" required></label>
     <label class="field">Password<input id="authPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" required></label>
     <div id="authError" class="bad" style="font-size:10px" hidden></div>
+    <div id="authNotice" class="good" style="font-size:10px" hidden></div>
     <button id="authSubmit" class="btn primary" type="submit" data-action="auth-submit">Sign in</button>
+    <button id="authForgotLink" class="btn link" type="button">Forgot password?</button>
   </form>
-  <button id="authModeToggle" class="btn link" style="margin-top:12px">New here? Create an account</button>
+  <form id="forgotForm" style="display:grid;gap:12px;margin-top:18px" hidden>
+    <label class="field">Account email<input id="forgotEmail" type="email" autocomplete="email" maxlength="320" required></label>
+    <div id="forgotError" class="bad" style="font-size:10px" hidden></div>
+    <div id="forgotNotice" class="good" style="font-size:10px" hidden></div>
+    <button id="forgotSubmit" class="btn primary" type="submit">Send reset link</button>
+  </form>
+  <form id="resetForm" style="display:grid;gap:12px;margin-top:18px" hidden>
+    <label class="field">New password<input id="resetPassword" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
+    <label class="field">Confirm new password<input id="resetPasswordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
+    <div id="resetError" class="bad" style="font-size:10px" hidden></div>
+    <button id="resetSubmit" class="btn primary" type="submit">Reset password</button>
+  </form>
+  <div id="verifyPanel" style="margin-top:18px" hidden>
+    <div class="card" style="padding:14px">
+      <div class="kicker">EMAIL VERIFICATION</div>
+      <div id="verifyStatus" class="sub" style="margin-top:7px">Verifying your email address…</div>
+    </div>
+    <button id="verifySubmit" class="btn primary" type="button" style="margin-top:12px">Verify email</button>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+    <button id="resendVerification" class="btn link" type="button">Resend verification email</button>
+    <button id="authModeToggle" class="btn link" type="button">New here? Create an account</button>
+  </div>
 </div></div>
 <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">ACCOUNT</div><h3 id="settingsTitle">Account & workspace</h3><div class="sub">Your sign-in session is held in a secure HTTP-only cookie. Repository access tokens are encrypted on the server and never returned.</div></div><button id="close" class="btn" aria-label="Close settings">Close</button></div><div style="margin-top:18px;padding:12px;border:1px solid #302f28;border-radius:10px;background:#131310"><div class="kicker">SIGNED-IN ACCOUNT</div><strong id="accountEmail" style="display:block;margin-top:6px;font-size:12px">Not signed in</strong><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px"><button id="logout" class="btn danger">Sign out</button><button id="revokeSessions" class="btn danger">Revoke all sessions</button></div></div>
 <div class="account-security" style="margin-top:16px;padding-top:16px;border-top:1px solid #302f28">

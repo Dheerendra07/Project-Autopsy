@@ -1,32 +1,14 @@
-test("enforces configured access keys with constant-time credential comparison", () => {
-  assert.equal(
-    isAiInterpretationAuthorized(
-      undefined,
-      "wrong-key",
-      "correct-access-key",
-      "production"
-    ),
-    false
-  );
-  assert.equal(
-    isAiInterpretationAuthorized(
-      undefined,
-      "correct-access-key",
-      "correct-access-key",
-      "production"
-    ),
-    true
-  );
-  assert.equal(
-    isAiInterpretationAuthorized(
-      "Bearer correct-access-key",
-      undefined,
-      "correct-access-key",
-      "production"
-    ),
-    true
-  );
-});
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import type { EvidenceReport } from "../src/modules/reports/report.types.js";
+import {
+  AiInterpretationProviderError,
+  AiInterpretationValidationError,
+  buildInterpretationPrompt,
+  generateAiInterpretation,
+  readAiProviderConfig
+} from "../src/modules/interpretation/interpretation.service.js";
 
 test("uses a cached interpretation without calling the provider", async () => {
   const report = reportFixture();
@@ -151,40 +133,6 @@ test("continues provider flow when cache read or write fails", async () => {
   assert.equal(fetchCalls, 1);
   assert.equal(result.cacheHit, false);
 });
-
-test("keeps development unprotected when no AI access key is configured", () => {
-  assert.equal(
-    isAiInterpretationAuthorized(
-      undefined,
-      undefined,
-      undefined,
-      "development"
-    ),
-    true
-  );
-  assert.equal(
-    isAiInterpretationAuthorized(
-      undefined,
-      undefined,
-      undefined,
-      "production"
-    ),
-    false
-  );
-});
-
-import assert from "node:assert/strict";
-import test from "node:test";
-
-import type { EvidenceReport } from "../src/modules/reports/report.types.js";
-import { isAiInterpretationAuthorized } from "../src/modules/interpretation/interpretation.auth.js";
-import {
-  AiInterpretationProviderError,
-  AiInterpretationValidationError,
-  buildInterpretationPrompt,
-  generateAiInterpretation,
-  readAiProviderConfig
-} from "../src/modules/interpretation/interpretation.service.js";
 
 function reportFixture(): EvidenceReport {
   return {

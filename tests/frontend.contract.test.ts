@@ -98,7 +98,7 @@ test("product frontend contains the core evidence workflow", () => {
     "await mapLimited(keys,6",
     "previousEvents",
     "runtimeEventsPathWithFilter",
-    "Repository head differs from the analyzed target.",
+    "Repository head differs from this snapshot.",
     "runId!==S.runId",
     "loadToken!==S.commitLoadToken",
     "function runtimeEventsPath(page,limit)",

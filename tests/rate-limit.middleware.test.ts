@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import {
   consumeRateLimit,
   createRateLimitMiddleware,
+  getRateLimitLimit,
   resolveRateLimitCategory
 } from "../src/middleware/rate-limit.middleware.js";
 
@@ -72,6 +73,22 @@ test("authentication endpoints use the dedicated per-IP auth bucket", () => {
   );
   assert.equal(
     resolveRateLimitCategory(request("/auth/password", "POST")),
+    "auth"
+  );
+  assert.equal(
+    resolveRateLimitCategory(request("/auth/resend-verification", "POST")),
+    "auth"
+  );
+  assert.equal(
+    resolveRateLimitCategory(request("/auth/verify-email", "POST")),
+    "auth"
+  );
+  assert.equal(
+    resolveRateLimitCategory(request("/auth/forgot-password", "POST")),
+    "auth"
+  );
+  assert.equal(
+    resolveRateLimitCategory(request("/auth/reset-password", "POST")),
     "auth"
   );
   assert.equal(

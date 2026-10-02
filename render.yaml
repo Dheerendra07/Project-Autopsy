@@ -41,6 +41,15 @@ services:
       # Temporary compatibility secret used only by the one-time legacy workspace migration.
       - key: AUTOPSY_API_ACCESS_KEY
         sync: false
+      # Transactional auth email is opt-in until a verified Brevo sender/domain is configured.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: AUTOPSY_EMAIL_FROM
+        sync: false
+      - key: AUTOPSY_EMAIL_FROM_NAME
+        value: Project Autopsy
+      - key: AUTOPSY_PUBLIC_URL
+        sync: false
       - key: REPOSITORY_CREDENTIAL_ENCRYPTION_KEY
         sync: false
       - key: AI_API_KEY

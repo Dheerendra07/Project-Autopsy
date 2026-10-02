@@ -16,14 +16,21 @@ import {
 import {
   changeUserPassword,
   claimUnownedRepositories,
+  consumeAuthActionToken,
+  createAuthActionToken,
   createSession,
   createUser,
+  deleteUser,
   getPasswordHashByUserId,
   getUserByEmail,
+  invalidateAuthActionTokens,
   listUserSessions,
+  markEmailVerified,
   revokeAllUserSessions,
   revokeExcessUserSessions,
   revokeSession,
+  resetPasswordWithToken,
+  verifyEmailWithToken,
   revokeSessionForUser,
   updateLastLogin
 } from "./auth.persistence.js";
@@ -34,6 +41,13 @@ import {
   requireSession,
   setAuthCookies
 } from "../../middleware/session.middleware.js";
+import {
+  AUTH_EMAIL_VERIFICATION_TTL_MS,
+  AUTH_PASSWORD_RESET_TTL_MS,
+  isAuthEmailConfigured,
+  sendPasswordResetEmail,
+  sendVerificationEmail
+} from "./auth.email.js";
 
 export const authRouter = Router();
 
@@ -62,12 +76,14 @@ function publicUser(user: {
   email: string;
   created_at?: string;
   last_login_at: string | null;
+  email_verified_at: string | null;
 }) {
   return {
     id: user.id,
     email: user.email,
     ...(user.created_at ? { createdAt: user.created_at } : {}),
-    lastLoginAt: user.last_login_at
+    lastLoginAt: user.last_login_at,
+    emailVerifiedAt: user.email_verified_at
   };
 }
 
@@ -178,6 +194,8 @@ authRouter.post("/migrate-legacy", async (request, response, next) => {
       }
     }
 
+    await markEmailVerified(user.id);
+
     const claimedRepositories = await claimUnownedRepositories(user.id);
 
     await startSession(request, response, user);
@@ -231,11 +249,68 @@ authRouter.post("/register", async (request, response, next) => {
       throw error;
     }
 
+    if (isAuthEmailConfigured()) {
+      const verificationToken = createOpaqueToken();
+
+      try {
+        const created = await createAuthActionToken(
+          randomUUID(),
+          user.id,
+          "email_verification",
+          hashOpaqueToken(verificationToken),
+          new Date(Date.now() + AUTH_EMAIL_VERIFICATION_TTL_MS)
+        );
+
+        if (created) {
+          await sendVerificationEmail(
+            user.email,
+            verificationToken
+          );
+        }
+      } catch (error) {
+        await deleteUser(user.id);
+
+        if (
+          error instanceof Error &&
+          error.message === "AUTH_EMAIL_NOT_CONFIGURED"
+        ) {
+          response.status(503).json({
+            success: false,
+            error: {
+              code: "AUTH_EMAIL_NOT_CONFIGURED",
+              message: "Email delivery is not configured. Try again later."
+            }
+          });
+          return;
+        }
+
+        response.status(502).json({
+          success: false,
+          error: {
+            code: "AUTH_EMAIL_SEND_FAILED",
+            message: "We could not send the verification email. Try again."
+          }
+        });
+        return;
+      }
+
+      response.status(201).json({
+        success: true,
+        user: publicUser(user),
+        requiresEmailVerification: true,
+        message: "Account created. Check your email to verify the account before signing in."
+      });
+      return;
+    }
+
+    await markEmailVerified(user.id);
+    user.email_verified_at = new Date().toISOString();
     await startSession(request, response, user);
 
     response.status(201).json({
       success: true,
-      user: publicUser(user)
+      user: publicUser(user),
+      requiresEmailVerification: false
     });
   } catch (error) {
     next(error);
@@ -274,6 +349,22 @@ authRouter.post("/login", async (request, response, next) => {
       return;
     }
 
+    if (isAuthEmailConfigured() && !user.email_verified_at) {
+      response.status(403).json({
+        success: false,
+        error: {
+          code: "EMAIL_VERIFICATION_REQUIRED",
+          message: "Verify your email address before signing in."
+        }
+      });
+      return;
+    }
+
+    if (!user.email_verified_at) {
+      await markEmailVerified(user.id);
+      user.email_verified_at = new Date().toISOString();
+    }
+
     await updateLastLogin(user.id);
     await startSession(request, response, user);
 
@@ -283,6 +374,193 @@ authRouter.post("/login", async (request, response, next) => {
         ...user,
         last_login_at: new Date().toISOString()
       })
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post("/resend-verification", async (request, response, next) => {
+  try {
+    const input = z.object({
+      email: z.string().trim().email().max(320).transform((value) => value.toLowerCase())
+    }).parse(request.body);
+
+    if (!isAuthEmailConfigured()) {
+      response.status(503).json({
+        success: false,
+        error: {
+          code: "AUTH_EMAIL_NOT_CONFIGURED",
+          message: "Email delivery is not configured. Try again later."
+        }
+      });
+      return;
+    }
+
+    const user = await getUserByEmail(input.email);
+
+    if (user && !user.disabled_at && !user.email_verified_at) {
+      const verificationToken = createOpaqueToken();
+
+      try {
+        const created = await createAuthActionToken(
+          randomUUID(),
+          user.id,
+          "email_verification",
+          hashOpaqueToken(verificationToken),
+          new Date(Date.now() + AUTH_EMAIL_VERIFICATION_TTL_MS)
+        );
+        if (created) {
+          await sendVerificationEmail(
+            user.email,
+            verificationToken
+          );
+        }
+      } catch (error) {
+        await invalidateAuthActionTokens(user.id, "email_verification");
+        if (error instanceof Error && error.message === "AUTH_EMAIL_NOT_CONFIGURED") {
+          response.status(503).json({
+            success: false,
+            error: {
+              code: "AUTH_EMAIL_NOT_CONFIGURED",
+              message: "Email delivery is not configured. Try again later."
+            }
+          });
+          return;
+        }
+
+        response.status(502).json({
+          success: false,
+          error: {
+            code: "AUTH_EMAIL_SEND_FAILED",
+            message: "We could not send the verification email. Try again."
+          }
+        });
+        return;
+      }
+    }
+
+    response.json({
+      success: true,
+      message: "If the account needs verification, a new verification email has been sent."
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post("/verify-email", async (request, response, next) => {
+  try {
+    const input = z.object({
+      token: z.string().trim().min(32).max(512)
+    }).parse(request.body);
+
+    const verified = await verifyEmailWithToken(hashOpaqueToken(input.token));
+
+    if (!verified) {
+      response.status(400).json({
+        success: false,
+        error: {
+          code: "AUTH_TOKEN_INVALID",
+          message: "This verification link is invalid, expired, or already used."
+        }
+      });
+      return;
+    }
+
+    response.json({
+      success: true,
+      message: "Email verified. You can now sign in."
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post("/forgot-password", async (request, response, next) => {
+  try {
+    const input = z.object({
+      email: z.string().trim().email().max(320).transform((value) => value.toLowerCase())
+    }).parse(request.body);
+
+    if (!isAuthEmailConfigured()) {
+      response.status(503).json({
+        success: false,
+        error: {
+          code: "AUTH_EMAIL_NOT_CONFIGURED",
+          message: "Email delivery is not configured. Try again later."
+        }
+      });
+      return;
+    }
+
+    const user = await getUserByEmail(input.email);
+
+    if (user && !user.disabled_at) {
+      const resetToken = createOpaqueToken();
+
+      try {
+        const created = await createAuthActionToken(
+          randomUUID(),
+          user.id,
+          "password_reset",
+          hashOpaqueToken(resetToken),
+          new Date(Date.now() + AUTH_PASSWORD_RESET_TTL_MS)
+        );
+        if (created) {
+          await sendPasswordResetEmail(
+            user.email,
+            resetToken
+          );
+        }
+      } catch (error) {
+        await invalidateAuthActionTokens(user.id, "password_reset");
+        response.status(502).json({
+          success: false,
+          error: {
+            code: "AUTH_EMAIL_SEND_FAILED",
+            message: "We could not send the password reset email. Try again."
+          }
+        });
+        return;
+      }
+    }
+
+    response.json({
+      success: true,
+      message: "If an account exists for that email, a password reset link has been sent."
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post("/reset-password", async (request, response, next) => {
+  try {
+    const input = z.object({
+      token: z.string().trim().min(32).max(512),
+      newPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH)
+    }).parse(request.body);
+
+    const reset = await resetPasswordWithToken(
+      hashOpaqueToken(input.token),
+      await hashPassword(input.newPassword)
+    );
+
+    if (!reset) {
+      response.status(400).json({
+        success: false,
+        error: {
+          code: "AUTH_TOKEN_INVALID",
+          message: "This password reset link is invalid, expired, or already used."
+        }
+      });
+      return;
+    }
+
+    response.json({
+      success: true,
+      message: "Password reset. All existing sessions were signed out."
     });
   } catch (error) {
     next(error);

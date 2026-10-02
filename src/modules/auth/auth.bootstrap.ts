@@ -4,7 +4,8 @@ import { env } from "../../config/env.js";
 import {
   claimUnownedRepositories,
   createUser,
-  getUserByEmail
+  getUserByEmail,
+  markEmailVerified
 } from "./auth.persistence.js";
 import { hashPassword } from "./auth.crypto.js";
 
@@ -27,6 +28,8 @@ export async function ensureBootstrapAccount(): Promise<void> {
 
     console.log(`✓ Bootstrap account created for ${user.email}`);
   }
+
+  await markEmailVerified(user.id);
 
   const claimed = await claimUnownedRepositories(user.id);
 

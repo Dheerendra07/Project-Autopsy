@@ -303,6 +303,7 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 test("frontend overview exposes command-center snapshot context", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
+  const surface = html + "\n" + appJs;
 
   for (const marker of [
     "overview-context",
@@ -313,7 +314,7 @@ test("frontend overview exposes command-center snapshot context", () => {
     "target-stack",
     "CURRENT SNAPSHOT"
   ]) {
-    assert.ok(html.includes(marker), "missing overview UI style marker: " + marker);
+    assert.ok(surface.includes(marker), "missing overview UI marker: " + marker);
   }
 
   for (const marker of [
@@ -323,10 +324,7 @@ test("frontend overview exposes command-center snapshot context", () => {
     "What this snapshot can support",
     "Evidence → analysis → inspection"
   ]) {
-    assert.ok(
-      html.includes(marker) || appJs.includes(marker),
-      "missing overview command-center marker: " + marker
-    );
+    assert.ok(surface.includes(marker), "missing overview command-center marker: " + marker);
   }
 
   const overviewStart = appJs.indexOf("function overview()");
@@ -338,10 +336,10 @@ test("frontend overview exposes command-center snapshot context", () => {
   assert.ok(appJs.slice(overviewStart, overviewEnd).includes("a.targetHeadSha"));
 });
 
-
 test("frontend structure workspace exposes the architecture map surface", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
+  const surface = html + "\n" + appJs;
 
   for (const marker of [
     "structure-summary",
@@ -350,7 +348,7 @@ test("frontend structure workspace exposes the architecture map surface", () => 
     "ARCHITECTURE MAP",
     "DEPENDENCY PULSE"
   ]) {
-    assert.ok(html.includes(marker), "missing structure UI marker: " + marker);
+    assert.ok(surface.includes(marker), "missing structure UI marker: " + marker);
   }
 
   const start = appJs.indexOf("function structure()");
@@ -362,7 +360,6 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   assert.ok(structure.includes("dependencyKinds"));
   assert.ok(structure.includes("complexityDelta"));
 });
-
 
 test("frontend quality workspace exposes an evidence matrix", () => {
   const html = readRepoFile("public/index.html");
@@ -607,16 +604,20 @@ test("frontend overview exposes direct evidence inspection hooks", () => {
 test("frontend connection test handles invalid API base URLs", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
-  const end = appJs.indexOf("async function importRepo()", start);
+  const end = appJs.indexOf("async function api(", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
 
   const probe = appJs.slice(start, end);
-  assert.ok(probe.includes("var base;"));
-  assert.ok(probe.includes("safeApiBase"));
-  assert.ok(probe.includes("toast(e.message||'API base URL is invalid.','bad')"));
+  assert.ok(probe.includes("var base=safeApiBase($('api').value);"));
+  assert.ok(appJs.includes("function safeApiBase(value)"));
+  assert.ok(appJs.includes("API base URL is invalid."));
+  assert.ok(probe.includes("S.connectionState='rejected';"));
+  assert.ok(probe.includes("connected('rejected');"));
 });
+
+
 
 test("frontend interview and refactor views match persisted evidence schemas", () => {
   const appJs = readRepoFile("public/app.js");
@@ -842,25 +843,24 @@ test("frontend connection failures remain actionable and mobile evidence control
 
   assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("Access to this API operation was denied."));
-  assert.ok(appJs.includes("Saved workspace could not be restored."));
+  assert.ok(appJs.includes("You are not signed in."));
   assert.ok(html.includes("Account & workspace"));
   assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
-  assert.ok(
-    appJs.includes("S.dataErrors.length?'warn':'good'")
-  );
+  assert.ok(appJs.includes("S.connectionState='rejected';"));
+  assert.ok(appJs.includes("S.dataErrors.length"));
 });
 
 test("frontend workspace keeps the real connection state", () => {
   const appJs = readRepoFile("public/app.js");
 
   const start = appJs.indexOf("function workspace()");
-  const end = appJs.indexOf("function banner(", start);
-
+  const end = appJs.indexOf("function openSettings(trigger)", start);
   assert.ok(start >= 0);
   assert.ok(end > start);
 
   const workspace = appJs.slice(start, end);
   assert.ok(workspace.includes("connected(S.connectionState)"));
+  assert.ok(workspace.includes("syncAnalysisRefreshControl()"));
   assert.doesNotMatch(workspace, /connected\(true\)/);
 });
 
@@ -884,13 +884,15 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(end > start);
 
   const poll = appJs.slice(start, end);
-  assert.match(poll, /Your session has expired\./);
-  assert.match(poll, /Access denied/);
-  assert.match(poll, /Analysis run unavailable/);
-  assert.ok(poll.includes("Your account session has expired"));
+  assert.ok(poll.includes("if(/^Your session has expired\\./.test(message)){"));
+  assert.ok(poll.includes("banner(true,'Access denied'"));
+  assert.ok(poll.includes("banner(true,'Analysis run unavailable'"));
+  assert.ok(poll.includes("Your account session has expired."));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
+
+
 
 test("frontend restores saved work only through the authenticated session", () => {
   const appJs = readRepoFile("public/app.js");
@@ -910,14 +912,14 @@ test("frontend retains failure-safe and stale-analysis controls", () => {
   for (const marker of [
     "function boundedFetch(url,options,timeoutMs)",
     "runtimeEventsPathWithFilter",
-    "Repository head differs from the analyzed target.",
     "previousEvents",
-    "Request timed out after 20 seconds."
+    "Request timed out after 20 seconds.",
+    "function workspace()",
+    "function landing()"
   ]) {
     assert.ok(appJs.includes(marker), "missing frontend invariant: " + marker);
   }
 });
-
 
 test("Helmet keeps HTTPS upgrades production-only", () => {
   const app = readRepoFile("src/app.ts");
@@ -962,7 +964,8 @@ test("legacy migration is explicitly one-time and separate from normal session a
   assert.ok(render.includes("Temporary compatibility secret used only by the one-time legacy workspace migration."));
   assert.ok(render.includes("key: AUTOPSY_API_ACCESS_KEY"));
   assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
-  assert.ok(appJs.includes("if(S.authMode==='migrate'&&S.legacyMigrationKey)"));
+  assert.ok(appJs.includes("S.authMode==='migrate'"));
+  assert.ok(appJs.includes("var migrating=S.authMode==='migrate'"));
 });
 
 test("session lifecycle is bounded and cleaned up on a schedule", () => {
@@ -1005,6 +1008,114 @@ test("account security exposes password rotation and individual session revocati
 });
 
 
+
+
+test("account recovery and transactional email contracts remain explicit", () => {
+  const env = readRepoFile("src/config/env.ts");
+  const migration = readRepoFile("database/migrations/018_auth_email_recovery.sql");
+  const email = readRepoFile("src/modules/auth/auth.email.ts");
+  const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
+  const routes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const bootstrap = readRepoFile("src/modules/auth/auth.bootstrap.ts");
+  const server = readRepoFile("src/server.ts");
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const render = readRepoFile("render.yaml");
+  const readme = readRepoFile("README.md");
+
+  for (const marker of [
+    "BREVO_API_KEY",
+    "AUTOPSY_EMAIL_FROM",
+    "AUTOPSY_PUBLIC_URL",
+    "transactional email is configured"
+  ]) {
+    assert.ok(env.includes(marker), "missing email configuration invariant: " + marker);
+  }
+
+  for (const marker of [
+    "email_verified_at",
+    "auth_action_tokens",
+    "email_verification",
+    "password_reset"
+  ]) {
+    assert.ok(migration.includes(marker), "missing recovery migration marker: " + marker);
+  }
+
+  for (const marker of [
+    "isAuthEmailConfigured",
+    "BREVO_TRANSACTIONAL_EMAIL_ENDPOINT",
+    "AUTH_EMAIL_VERIFICATION_TTL_MS",
+    "AUTH_PASSWORD_RESET_TTL_MS",
+    "#auth-verify=",
+    "#auth-reset="
+  ]) {
+    assert.ok(email.includes(marker), "missing transactional email marker: " + marker);
+  }
+
+  for (const marker of [
+    "createAuthActionToken",
+    "consumeAuthActionToken",
+    "markEmailVerified",
+    "invalidateAuthActionTokens",
+    "purgeStaleAuthActionTokens"
+  ]) {
+    assert.ok(persistence.includes(marker), "missing recovery persistence marker: " + marker);
+  }
+
+  for (const marker of [
+    '"/resend-verification"',
+    '"/verify-email"',
+    '"/forgot-password"',
+    '"/reset-password"',
+    "EMAIL_VERIFICATION_REQUIRED",
+    "requiresEmailVerification"
+  ]) {
+    assert.ok(routes.includes(marker), "missing recovery route marker: " + marker);
+  }
+
+  assert.ok(bootstrap.includes("markEmailVerified"));
+  assert.ok(server.includes("purgeStaleAuthActionTokens"));
+  assert.ok(server.includes("Session/auth-token cleanup sweep failed"));
+
+  for (const marker of [
+    "authForgotLink",
+    "forgotForm",
+    "resetForm",
+    "verifyPanel",
+    "resendVerification",
+    "verifySubmit"
+  ]) {
+    assert.ok(html.includes(marker), "missing recovery UI marker: " + marker);
+  }
+
+  for (const marker of [
+    "submitForgotPassword",
+    "resetPasswordFromLink",
+    "verifyEmail",
+    "consumeAuthLink",
+    "auth-verify=",
+    "auth-reset=",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/verify-email"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing recovery client marker: " + marker);
+  }
+
+  assert.ok(render.includes("BREVO_API_KEY"));
+  assert.ok(render.includes("AUTOPSY_EMAIL_FROM"));
+  assert.ok(render.includes("AUTOPSY_PUBLIC_URL"));
+  assert.ok(readme.includes("Transactional email recovery is supported through Brevo"));
+  assert.ok(persistence.includes("AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS"));
+  assert.ok(persistence.includes("pg_advisory_xact_lock"));
+  assert.ok(persistence.includes("FOR UPDATE"));
+  assert.ok(persistence.includes('await client.query("BEGIN")'));
+  assert.ok(routes.includes("resetPasswordWithToken"));
+  assert.ok(routes.includes("verifyEmailWithToken"));
+  assert.ok(routes.includes('invalidateAuthActionTokens(user.id, "email_verification")'));
+  assert.ok(routes.includes('invalidateAuthActionTokens(user.id, "password_reset")'));
+  assert.doesNotThrow(() => new Function(appJs));
+});
 
 test("repository resources are tenant-scoped to authenticated accounts", () => {
   const routes = readRepoFile("src/routes/index.ts");
@@ -1329,13 +1440,12 @@ test("historical filter state resets when repository or analysis context changes
   const refresh = appJs.slice(refreshStart, refreshEnd);
   assert.ok(refresh.includes("S.historicalFilter=" + defaultFilter));
   assert.ok(refresh.includes("S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"));
-  assert.ok(appJs.includes("$('new').onclick=function(){"));
   assert.ok(appJs.includes("S.historicalLoading=false;"));
   assert.ok(appJs.includes("S.analysisRunsLoading=false;"));
   assert.ok(appJs.includes("S.analysisRunsLoadToken+=1;"));
-  assert.ok(appJs.includes("Saved workspace no longer exists"));
+  assert.ok(appJs.includes("clearWorkspaceState();"));
+  assert.ok(appJs.includes("workspace();"));
 });
-
 
 test("analysis run history load token resets on repository context changes", () => {
   const appJs = readRepoFile("public/app.js");
@@ -1579,24 +1689,25 @@ test("frontend navigation writes browser history for user-driven view changes", 
 });
 
 
-test("frontend marks rejected API credentials instead of leaving a stale verified state", () => {
+test("frontend marks rejected session state instead of leaving stale verified state", () => {
   const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("state==='rejected'"));
-  assert.ok(appJs.includes("Access rejected"));
-  assert.ok(appJs.includes("S.connectionState='rejected';connected('rejected');"));
+  assert.ok(appJs.includes("var verified=state==='verified',rejected=state==='rejected';"));
+  assert.ok(appJs.includes("rejected?'Access rejected'"));
+  assert.ok(appJs.includes("S.connectionState='rejected';"));
+  assert.ok(appJs.includes("connected('rejected');"));
 });
 
-
-test("frontend connection verification preserves explicit rejected credential state", () => {
+test("frontend connection verification preserves explicit rejected session state", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
   const end = appJs.indexOf("async function api(", start);
   assert.ok(start >= 0 && end > start);
   const fn = appJs.slice(start, end);
-  assert.ok(fn.includes("rejected=e&&e.message==='API key rejected by protected API'"));
-  assert.ok(fn.includes("S.connectionState=rejected?'rejected':'configured'"));
+  assert.ok(fn.includes("message==='You are not signed in.'"));
+  assert.ok(fn.includes("S.connectionState='unknown';"));
+  assert.ok(fn.includes("S.connectionState='rejected';"));
+  assert.ok(fn.includes("connected('rejected');"));
 });
-
 
 test("frontend history renders full loaded pages and paginates timeline evidence", () => {
   const appJs = readRepoFile("public/app.js");
@@ -1838,7 +1949,7 @@ test("frontend restores settings focus and moves evidence inspector focus on ope
   assert.ok(appJs.includes("settingsFocus:null"));
   assert.ok(appJs.includes("function openSettings(trigger)"));
   assert.ok(appJs.includes("requestAnimationFrame(function(){$('drawerClose').focus()})"));
-  assert.ok(appJs.includes("$('settings').onclick=function(){openSettings(this)};"));
+  assert.ok(appJs.includes("$('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};"));
 });
 
 test("frontend keeps browser history API unshadowed by the History view renderer", () => {
@@ -1899,9 +2010,9 @@ test("frontend releases the insights action state on early failure", () => {
   const end = appJs.indexOf("function downloadReport()", start);
   assert.ok(start >= 0 && end > start);
   const fn = appJs.slice(start, end);
-  assert.ok(fn.includes("if(!S.aiKey)"));
-  assert.ok(fn.includes("openSettings()"));
+  assert.ok(fn.includes("actionBusy('interpretation',true,'Generating…');"));
   assert.ok(fn.includes("actionBusy('interpretation',false);"));
+  assert.ok(fn.includes("S.interpretationLoading=false;"));
 });
 
 test("frontend preserves generated-action busy state across rerenders", () => {

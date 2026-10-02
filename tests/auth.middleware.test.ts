@@ -12,14 +12,14 @@ import {
 } from "../src/middleware/session.middleware.js";
 import { hashOpaqueToken } from "../src/modules/auth/auth.crypto.js";
 
-function response(): Response & { headers: Map<string,string> } {
-  const headers = new Map<string,string>();
+function response(): Response & { headers: Map<string,string | string[]> } {
+  const headers = new Map<string,string | string[]>();
   return {
     headers,
-    setHeader(name: string, value: string) {
+    setHeader(name: string, value: string | string[]) {
       headers.set(name.toLowerCase(), value);
     }
-  } as unknown as Response & { headers: Map<string,string> };
+  } as unknown as Response & { headers: Map<string,string | string[]> };
 }
 
 test("auth cookies are distinct and the session cookie is HttpOnly", () => {
@@ -27,11 +27,13 @@ test("auth cookies are distinct and the session cookie is HttpOnly", () => {
   const expiry = new Date(Date.now() + 60_000);
   setAuthCookies(res, "session-token", "csrf-token", expiry);
 
-  const header = res.headers.get("set-cookie") ?? "";
-  assert.match(header, new RegExp(SESSION_COOKIE_NAME + "=session-token"));
-  assert.match(header, new RegExp(CSRF_COOKIE_NAME + "=csrf-token"));
-  assert.match(header, /HttpOnly/);
-  assert.match(header, /SameSite=Lax/);
+  const header = res.headers.get("set-cookie");
+  assert.ok(header);
+  const serialized = Array.isArray(header) ? header.join("; ") : header;
+  assert.match(serialized, new RegExp(SESSION_COOKIE_NAME + "=session-token"));
+  assert.match(serialized, new RegExp(CSRF_COOKIE_NAME + "=csrf-token"));
+  assert.match(serialized, /HttpOnly/);
+  assert.match(serialized, /SameSite=Lax/);
 });
 
 test("CSRF middleware rejects a missing token", async () => {
@@ -67,7 +69,7 @@ test("CSRF middleware rejects a missing token", async () => {
 
   assert.equal(called, false);
   assert.equal(getAuthContext(req), undefined);
-  assert.equal(getCsrfCookie(req), "");
+  assert.equal(getCsrfCookie(req), undefined);
 });
 
 test("CSRF middleware accepts a token only when it matches the session-bound token hash", () => {
