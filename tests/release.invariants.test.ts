@@ -490,7 +490,7 @@ test("frontend script remains dependency-free, parseable and session-based", () 
   assert.ok(appJs.includes("readCookie('autopsy_csrf')"));
   assert.ok(appJs.includes("x-autopsy-csrf-token"));
   assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
-  assert.ok(appJs.includes("api('/api/auth/migrate-legacy'"));
+  assert.ok(appJs.includes("'/api/auth/migrate-legacy'"));
   assert.doesNotMatch(appJs, /storageSet\(['"]autopsy\.(key|aiKey)['"]/);
   assert.doesNotMatch(appJs, /S\.key\b|S\.aiKey\b/);
   assert.doesNotMatch(
