@@ -498,6 +498,15 @@ test("frontend resolves the split Render UI/API deployment without persisting a 
   assert.ok(appJs.includes("return fallback"));
 });
 
+test("frontend recovers from a previously saved split Render UI origin", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("storedHost.endsWith('-ui.onrender.com')"));
+  assert.ok(appJs.includes("apiHost=storedHost.slice(0,-'-ui.onrender.com'.length)+'.onrender.com'"));
+  assert.ok(appJs.includes("storageSet('autopsy.api',normalized)"));
+  assert.ok(appJs.includes("storedHost!==location.hostname.toLowerCase()"));
+});
+
 test("web service serves the frontend with dependency-free client routing logic", () => {
   const app = readRepoFile("src/app.ts");
   const html = readRepoFile("public/index.html");
