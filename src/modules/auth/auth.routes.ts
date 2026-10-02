@@ -14,8 +14,6 @@ import {
   safeEqualString
 } from "./auth.crypto.js";
 import {
-  createSession,
-  createUser,
   changeUserPassword,
   claimUnownedRepositories,
   createSession,
