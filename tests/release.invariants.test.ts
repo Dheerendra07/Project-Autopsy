@@ -2083,7 +2083,7 @@ test("frontend connection verification preserves explicit rejected session state
 
 test("frontend history renders full loaded pages and paginates timeline evidence", () => {
   const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("t.map(function(x){return '<div class="item">"));
+  assert.ok(appJs.includes('t.map(function(x){return \'<div class="item">'));
   assert.ok(appJs.includes("c.map(function(x){return '<tr>"));
   assert.ok(appJs.includes("async function loadMoreTimeline()"));
   assert.ok(appJs.includes("/timeline?page="));
