@@ -824,6 +824,17 @@ test("frontend quality workspace renders refactor evidence", () => {
   assert.ok(appJs.includes("Commit-subject heuristic signals; not proof of intent"));
 });
 
+test("frontend Overview keeps empty evidence fallbacks inside their own sections", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("<tbody>'+(arr(d.analysisRuns,'runs').slice(0,20).map(function(x)"));
+  assert.ok(appJs.includes("No analysis runs persisted.</td></tr>')+'</tbody>"));
+  assert.ok(appJs.includes('<div class="timeline">\'+(c.slice(0,7).map(function(x)'));
+  assert.ok(appJs.includes("No commit evidence.</div>')+'</div></div>"));
+  assert.ok(appJs.includes('<div class="bars" style="margin-top:15px">\'+(h.slice(0,8).map(function(x)'));
+  assert.ok(appJs.includes("No hotspot evidence.</div>')+'</div></div></div>"));
+});
+
 test("frontend overview exposes direct evidence inspection hooks", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
