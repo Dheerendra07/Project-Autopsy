@@ -604,18 +604,20 @@ test("frontend overview exposes direct evidence inspection hooks", () => {
 test("frontend connection test handles invalid API base URLs", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
-  const end = appJs.indexOf("async function importRepo()", start);
+  const end = appJs.indexOf("async function api(", start);
 
   assert.ok(start >= 0);
   assert.ok(end > start);
 
   const probe = appJs.slice(start, end);
   assert.ok(probe.includes("var base=safeApiBase($('api').value);"));
-  assert.ok(probe.includes("safeApiBase"));
-  assert.ok(probe.includes("API base URL is invalid."));
+  assert.ok(appJs.includes("function safeApiBase(value)"));
+  assert.ok(appJs.includes("API base URL is invalid."));
   assert.ok(probe.includes("S.connectionState='rejected';"));
   assert.ok(probe.includes("connected('rejected');"));
 });
+
+
 
 test("frontend interview and refactor views match persisted evidence schemas", () => {
   const appJs = readRepoFile("public/app.js");
@@ -882,13 +884,15 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(end > start);
 
   const poll = appJs.slice(start, end);
-  assert.match(poll, /Your session has expired\./);
-  assert.match(poll, /Access denied/);
-  assert.match(poll, /Analysis run unavailable/);
-  assert.ok(poll.includes("Your account session has expired"));
+  assert.ok(poll.includes("if(/^Your session has expired\\./.test(message)){"));
+  assert.ok(poll.includes("banner(true,'Access denied'"));
+  assert.ok(poll.includes("banner(true,'Analysis run unavailable'"));
+  assert.ok(poll.includes("Your account session has expired."));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
+
+
 
 test("frontend restores saved work only through the authenticated session", () => {
   const appJs = readRepoFile("public/app.js");
