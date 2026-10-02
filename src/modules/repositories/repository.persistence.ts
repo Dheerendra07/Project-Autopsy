@@ -15,7 +15,6 @@ export interface StoredRepository {
   tracked_branch: string | null;
   head_sha: string | null;
   storage_path: string | null;
-  owner_user_id: string | null;
 }
 
 export interface StoredAnalysisRun {
@@ -54,7 +53,7 @@ export interface CreateRepositoryInput {
   trackedBranch: string;
   metadata: RepositoryMetadata;
   storagePath: string;
-  ownerUserId: string | null;
+  ownerUserId?: string | null;
 }
 
 export interface CreateAnalysisRunInput {
@@ -71,7 +70,7 @@ export interface PendingRepositoryInput {
   name: string;
   trackedBranch: string | null;
   storagePath: string;
-  ownerUserId: string;
+  ownerUserId?: string | null;
 }
 
 async function createAnalysisRun(
@@ -335,8 +334,7 @@ export async function getRepositoryById(
         default_branch,
         tracked_branch,
         head_sha,
-        storage_path,
-        owner_user_id
+        storage_path
       FROM repositories
       WHERE id = $1
     `,
