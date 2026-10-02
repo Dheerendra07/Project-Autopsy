@@ -487,7 +487,18 @@ test("frontend script remains dependency-free, parseable and key-gated", () => {
   );
 });
 
-test("web service serves the frontend and avoids a hardcoded API origin", () => {
+test("frontend resolves the split Render UI/API deployment without persisting a stale UI origin", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("function defaultApiBase()"));
+  assert.ok(appJs.includes("host.endsWith('.onrender.com')"));
+  assert.ok(appJs.includes("label.endsWith('-ui')"));
+  assert.ok(appJs.includes("function initialApiBase()"));
+  assert.ok(appJs.includes("stored===location.origin"));
+  assert.ok(appJs.includes("return fallback"));
+});
+
+test("web service serves the frontend with dependency-free client routing logic", () => {
   const app = readRepoFile("src/app.ts");
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
@@ -496,6 +507,7 @@ test("web service serves the frontend and avoids a hardcoded API origin", () => 
   assert.ok(app.includes('path.dirname(fileURLToPath(import.meta.url))'));
   assert.ok(app.includes('"../public"'));
   assert.ok(appJs.includes("location.origin"));
+  assert.ok(appJs.includes("defaultApiBase()"));
   assert.doesNotMatch(
     html + "\n" + appJs,
     /https:\/\/project-autopsy\.onrender\.com/
