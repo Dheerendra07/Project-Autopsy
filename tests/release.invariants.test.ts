@@ -547,9 +547,14 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
     )
   ].map((match) => match[1]);
   assert.deepEqual(
-    delegatedActions,
-    expectedActions,
+    [...delegatedActions].sort(),
+    [...expectedActions].sort(),
     "delegated root actions drifted from the declared UI action contract"
+  );
+  assert.equal(
+    new Set(delegatedActions).size,
+    delegatedActions.length,
+    "delegated root actions must not be duplicated"
   );
 
   const responsiveNavRule = html.match(
