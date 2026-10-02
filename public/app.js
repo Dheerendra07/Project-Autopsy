@@ -38,6 +38,7 @@
   var S={
     api:initialApiBase(),
     user:null,
+    csrfToken:'',
     legacyMigrationKey:'',
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
@@ -194,6 +195,7 @@
       var me=await boundedFetch(base+'/api/auth/me',{headers:h,credentials:'include'},10000);
       if(me.status===401){
         S.user=null;
+        S.csrfToken='';
         S.connectionState='unknown';
         connected('unknown');
         throw new Error('You are not signed in.');
@@ -231,7 +233,7 @@
     if(opt&&opt.body)h.set('Content-Type','application/json');
     var method=(opt&&opt.method?opt.method:'GET').toUpperCase();
     if(method!=='GET'&&method!=='HEAD'&&method!=='OPTIONS'){
-      var csrf=readCookie('autopsy_csrf');
+      var csrf=S.csrfToken||readCookie('autopsy_csrf');
       if(csrf)h.set('x-autopsy-csrf-token',csrf);
     }
     var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},20000);
@@ -252,6 +254,7 @@
           if(r.status===401){
             if(b&&b.error&&b.error.code==='AUTH_REQUIRED'){
               S.user=null;
+              S.csrfToken='';
               S.connectionState='unknown';
               connected('unknown');
               if(path!=='/api/auth/me'&&!S.authInterrupt){
@@ -277,6 +280,7 @@
       }
       if(!isJson)throw new Error('API returned an invalid JSON response ('+r.status+').');
       if(!b||typeof b!=='object'||Array.isArray(b))throw new Error('API returned an invalid response body ('+r.status+').');
+      if(typeof b.csrfToken==='string'&&b.csrfToken)S.csrfToken=b.csrfToken;
       return b;
     }catch(e){
       if(e&&e.name==='AbortError')throw new Error('Request timed out after 20 seconds.');
@@ -1574,6 +1578,7 @@
       var result=await api('/api/auth/reset-password',{method:'POST',body:JSON.stringify({token:S.authToken,newPassword:next})});
       S.authToken='';
       S.user=null;
+      S.csrfToken='';
       S.connectionState='unknown';
       clearWorkspaceState();
       connected('unknown');
