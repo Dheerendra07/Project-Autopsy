@@ -17,6 +17,7 @@ import {
   createUser,
   getPasswordHashByUserId,
   getUserByEmail,
+  claimUnownedRepositories,
   revokeAllUserSessions,
   revokeSession,
   updateLastLogin
@@ -110,6 +111,17 @@ authRouter.post("/migrate-legacy", async (request, response, next) => {
     let user = await getUserByEmail(input.email);
 
     if (user) {
+      if (user.disabled_at) {
+        response.status(401).json({
+          success: false,
+          error: {
+            code: "AUTH_INVALID_CREDENTIALS",
+            message: "Email or password is incorrect."
+          }
+        });
+        return;
+      }
+
       const passwordHash = await getPasswordHashByUserId(user.id);
       const valid = passwordHash
         ? await verifyPassword(input.password, passwordHash)
@@ -160,8 +172,7 @@ authRouter.post("/migrate-legacy", async (request, response, next) => {
       }
     }
 
-    const claimedRepositories = await (await import("./auth.persistence.js"))
-      .claimUnownedRepositories(user.id);
+    const claimedRepositories = await claimUnownedRepositories(user.id);
 
     await startSession(request, response, user);
 
