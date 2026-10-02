@@ -109,7 +109,7 @@
     if(action==='reload-view')return 'Refresh data';
     return '';
   }
-  function actionBusy(action,busy,busyLabel){document.querySelectorAll('#root [data-action="'+action+'"]').forEach(function(el){if(busy){if(el._autopsyBusy)return;el._autopsyBusy=true;el._autopsyIdleText=el.textContent;el.disabled=true;el.setAttribute('aria-busy','true');if(busyLabel)el.textContent=busyLabel}else if(el._autopsyBusy){el._autopsyBusy=false;el.disabled=false;el.removeAttribute('aria-busy');var idle=actionIdleLabel(action)||el._autopsyIdleText;if(idle)el.textContent=idle;delete el._autopsyIdleText}})}
+  function actionBusy(action,busy,busyLabel){document.querySelectorAll('#root [data-action="'+action+'"]').forEach(function(el){if(busy){if(el._autopsyBusy)return;el._autopsyBusy=true;el._autopsyIdleText=el.textContent;el.disabled=true;el.setAttribute('aria-busy','true');if(busyLabel)el.textContent=busyLabel}else{var idle=actionIdleLabel(action)||el._autopsyIdleText;el._autopsyBusy=false;el.disabled=false;el.removeAttribute('aria-busy');if(idle)el.textContent=idle;delete el._autopsyIdleText}})}
   function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
   function connected(state){
     var button=$('settings');
