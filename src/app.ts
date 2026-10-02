@@ -6,9 +6,13 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import { router } from "./routes/index.js";
+import { authRouter } from "./modules/auth/auth.routes.js";
+import {
+  requireApiCsrfOrMachineIngest,
+  requireApiSessionOrMachineIngest
+} from "./middleware/api-session.middleware.js";
 import { notFoundMiddleware } from "./middleware/notFound.middleware.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
-import { isApiAccessAuthorized } from "./middleware/apiAccess.middleware.js";
 import { checkDatabaseConnection } from "./config/database.js";
 import { redis, checkRedisConnection } from "./config/redis.js";
 import { env } from "./config/env.js";
@@ -102,33 +106,18 @@ app.get("/ready", async (_req, res) => {
   });
 });
 
-app.use("/api", rateLimitMiddleware);
-
 app.use("/api", (req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
-
-  if (
-    !isApiAccessAuthorized(
-      req.header("authorization"),
-      req.header("x-autopsy-api-key")
-    )
-  ) {
-    res.status(401).json({
-      success: false,
-      error: {
-        code: "API_ACCESS_UNAUTHORIZED",
-        message: "API access credentials are invalid."
-      }
-    });
-    return;
-  }
-
   next();
 });
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 
+app.use("/api", rateLimitMiddleware);
+app.use("/api/auth", authRouter);
+app.use("/api", requireApiSessionOrMachineIngest);
+app.use("/api", requireApiCsrfOrMachineIngest);
 app.use("/api", router);
 
 const publicDirectory = path.resolve(
