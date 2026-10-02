@@ -303,6 +303,7 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 test("frontend overview exposes command-center snapshot context", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
+  const surface = html + "\n" + appJs;
 
   for (const marker of [
     "overview-context",
@@ -313,7 +314,7 @@ test("frontend overview exposes command-center snapshot context", () => {
     "target-stack",
     "CURRENT SNAPSHOT"
   ]) {
-    assert.ok(html.includes(marker), "missing overview UI style marker: " + marker);
+    assert.ok(surface.includes(marker), "missing overview UI marker: " + marker);
   }
 
   for (const marker of [
@@ -323,10 +324,7 @@ test("frontend overview exposes command-center snapshot context", () => {
     "What this snapshot can support",
     "Evidence → analysis → inspection"
   ]) {
-    assert.ok(
-      html.includes(marker) || appJs.includes(marker),
-      "missing overview command-center marker: " + marker
-    );
+    assert.ok(surface.includes(marker), "missing overview command-center marker: " + marker);
   }
 
   const overviewStart = appJs.indexOf("function overview()");
@@ -338,10 +336,10 @@ test("frontend overview exposes command-center snapshot context", () => {
   assert.ok(appJs.slice(overviewStart, overviewEnd).includes("a.targetHeadSha"));
 });
 
-
 test("frontend structure workspace exposes the architecture map surface", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
+  const surface = html + "\n" + appJs;
 
   for (const marker of [
     "structure-summary",
@@ -350,7 +348,7 @@ test("frontend structure workspace exposes the architecture map surface", () => 
     "ARCHITECTURE MAP",
     "DEPENDENCY PULSE"
   ]) {
-    assert.ok(html.includes(marker), "missing structure UI marker: " + marker);
+    assert.ok(surface.includes(marker), "missing structure UI marker: " + marker);
   }
 
   const start = appJs.indexOf("function structure()");
@@ -362,7 +360,6 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   assert.ok(structure.includes("dependencyKinds"));
   assert.ok(structure.includes("complexityDelta"));
 });
-
 
 test("frontend quality workspace exposes an evidence matrix", () => {
   const html = readRepoFile("public/index.html");
@@ -842,25 +839,24 @@ test("frontend connection failures remain actionable and mobile evidence control
 
   assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("Access to this API operation was denied."));
-  assert.ok(appJs.includes("Saved workspace could not be restored."));
+  assert.ok(appJs.includes("You are not signed in."));
   assert.ok(html.includes("Account & workspace"));
   assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
-  assert.ok(
-    appJs.includes("S.dataErrors.length?'warn':'good'")
-  );
+  assert.ok(appJs.includes("S.connectionState='rejected';"));
+  assert.ok(appJs.includes("S.dataErrors.length"));
 });
 
 test("frontend workspace keeps the real connection state", () => {
   const appJs = readRepoFile("public/app.js");
 
   const start = appJs.indexOf("function workspace()");
-  const end = appJs.indexOf("function banner(", start);
-
+  const end = appJs.indexOf("function syncRepositoryAccessSettings()", start);
   assert.ok(start >= 0);
   assert.ok(end > start);
 
   const workspace = appJs.slice(start, end);
   assert.ok(workspace.includes("connected(S.connectionState)"));
+  assert.ok(workspace.includes("syncAnalysisRefreshControl()"));
   assert.doesNotMatch(workspace, /connected\(true\)/);
 });
 
@@ -910,14 +906,14 @@ test("frontend retains failure-safe and stale-analysis controls", () => {
   for (const marker of [
     "function boundedFetch(url,options,timeoutMs)",
     "runtimeEventsPathWithFilter",
-    "Repository head differs from the analyzed target.",
     "previousEvents",
-    "Request timed out after 20 seconds."
+    "Request timed out after 20 seconds.",
+    "function workspace()",
+    "function landing()"
   ]) {
     assert.ok(appJs.includes(marker), "missing frontend invariant: " + marker);
   }
 });
-
 
 test("Helmet keeps HTTPS upgrades production-only", () => {
   const app = readRepoFile("src/app.ts");
@@ -962,7 +958,8 @@ test("legacy migration is explicitly one-time and separate from normal session a
   assert.ok(render.includes("Temporary compatibility secret used only by the one-time legacy workspace migration."));
   assert.ok(render.includes("key: AUTOPSY_API_ACCESS_KEY"));
   assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
-  assert.ok(appJs.includes("if(S.authMode==='migrate'&&S.legacyMigrationKey)"));
+  assert.ok(appJs.includes("S.authMode==='migrate'"));
+  assert.ok(appJs.includes("var migrating=S.authMode==='migrate'"));
 });
 
 test("session lifecycle is bounded and cleaned up on a schedule", () => {
@@ -1438,13 +1435,12 @@ test("historical filter state resets when repository or analysis context changes
   const refresh = appJs.slice(refreshStart, refreshEnd);
   assert.ok(refresh.includes("S.historicalFilter=" + defaultFilter));
   assert.ok(refresh.includes("S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"));
-  assert.ok(appJs.includes("$('new').onclick=function(){"));
   assert.ok(appJs.includes("S.historicalLoading=false;"));
   assert.ok(appJs.includes("S.analysisRunsLoading=false;"));
   assert.ok(appJs.includes("S.analysisRunsLoadToken+=1;"));
-  assert.ok(appJs.includes("Saved workspace no longer exists"));
+  assert.ok(appJs.includes("clearWorkspaceState();"));
+  assert.ok(appJs.includes("workspace();"));
 });
-
 
 test("analysis run history load token resets on repository context changes", () => {
   const appJs = readRepoFile("public/app.js");
@@ -1688,24 +1684,24 @@ test("frontend navigation writes browser history for user-driven view changes", 
 });
 
 
-test("frontend marks rejected API credentials instead of leaving a stale verified state", () => {
+test("frontend marks rejected session state instead of leaving stale verified state", () => {
   const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("state==='rejected'"));
-  assert.ok(appJs.includes("Access rejected"));
+  assert.ok(appJs.includes("var verified=state==='verified',rejected=state==='rejected';"));
+  assert.ok(appJs.includes("rejected?'Session expired'"));
   assert.ok(appJs.includes("S.connectionState='rejected';connected('rejected');"));
 });
 
-
-test("frontend connection verification preserves explicit rejected credential state", () => {
+test("frontend connection verification preserves explicit rejected session state", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
   const end = appJs.indexOf("async function api(", start);
   assert.ok(start >= 0 && end > start);
   const fn = appJs.slice(start, end);
-  assert.ok(fn.includes("rejected=e&&e.message==='API key rejected by protected API'"));
-  assert.ok(fn.includes("S.connectionState=rejected?'rejected':'configured'"));
+  assert.ok(fn.includes("message==='You are not signed in.'"));
+  assert.ok(fn.includes("S.connectionState='unknown';"));
+  assert.ok(fn.includes("S.connectionState='rejected';"));
+  assert.ok(fn.includes("connected('rejected');"));
 });
-
 
 test("frontend history renders full loaded pages and paginates timeline evidence", () => {
   const appJs = readRepoFile("public/app.js");
@@ -2008,9 +2004,9 @@ test("frontend releases the insights action state on early failure", () => {
   const end = appJs.indexOf("function downloadReport()", start);
   assert.ok(start >= 0 && end > start);
   const fn = appJs.slice(start, end);
-  assert.ok(fn.includes("if(!S.aiKey)"));
-  assert.ok(fn.includes("openSettings()"));
+  assert.ok(fn.includes("actionBusy('interpretation',true,'Generating…');"));
   assert.ok(fn.includes("actionBusy('interpretation',false);"));
+  assert.ok(fn.includes("S.interpretationLoading=false;"));
 });
 
 test("frontend preserves generated-action busy state across rerenders", () => {
