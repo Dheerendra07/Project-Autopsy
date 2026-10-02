@@ -897,6 +897,9 @@ test("frontend history pagination releases busy state on every exit path", () =>
   assert.ok(
     appJs.includes("No commit evidence.</td></tr>')+'</tbody>")
   );
+  assert.ok(
+    appJs.includes('<tr data-empty-state="true"><td colspan="7" class="dim">No commit evidence.</td></tr>')
+  );
 });
 
 
