@@ -12,7 +12,27 @@
   function initialApiBase(){
     var fallback=defaultApiBase(),stored=storageGet('autopsy.api');
     if(!stored)return fallback;
-    if(fallback!==location.origin&&stored===location.origin)return fallback;
+    try{
+      var storedUrl=new URL(stored);
+      var storedHost=storedUrl.hostname.toLowerCase();
+      if(storedUrl.protocol!=='https:'&&storedUrl.protocol!=='http:')return fallback;
+      if(storedHost.endsWith('-ui.onrender.com')){
+        var apiHost=storedHost.slice(0,-'-ui.onrender.com'.length)+'.onrender.com';
+        var normalized=storedUrl.protocol+'//'+apiHost+(storedUrl.port?':'+storedUrl.port:'');
+        if(location.hostname.toLowerCase().endsWith('.onrender.com')||storedUrl.origin===location.origin){
+          storageSet('autopsy.api',normalized);
+          return normalized;
+        }
+      }
+      if(location.hostname.toLowerCase().endsWith('.onrender.com')&&storedHost.endsWith('.onrender.com')&&storedHost!==location.hostname.toLowerCase()){
+        storageSet('autopsy.api',fallback);
+        return fallback;
+      }
+    }catch(e){}
+    if(fallback!==location.origin&&stored===location.origin){
+      storageSet('autopsy.api',fallback);
+      return fallback;
+    }
     return stored;
   }
   var S={
