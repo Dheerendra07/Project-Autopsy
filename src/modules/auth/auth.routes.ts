@@ -264,8 +264,7 @@ authRouter.post("/register", async (request, response, next) => {
         if (created) {
           await sendVerificationEmail(
             user.email,
-            verificationToken,
-            `email-verification/${user.id}/${hashOpaqueToken(verificationToken)}`
+            verificationToken
           );
         }
       } catch (error) {
@@ -414,8 +413,7 @@ authRouter.post("/resend-verification", async (request, response, next) => {
         if (created) {
           await sendVerificationEmail(
             user.email,
-            verificationToken,
-            `email-verification/${user.id}/${hashOpaqueToken(verificationToken)}`
+            verificationToken
           );
         }
       } catch (error) {
@@ -512,8 +510,7 @@ authRouter.post("/forgot-password", async (request, response, next) => {
         if (created) {
           await sendPasswordResetEmail(
             user.email,
-            resetToken,
-            `password-reset/${user.id}/${hashOpaqueToken(resetToken)}`
+            resetToken
           );
         }
       } catch (error) {
