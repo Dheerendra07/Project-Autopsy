@@ -1383,36 +1383,6 @@
     S.viewLoading={};
     persist();
   }
-  async function logoutCurrentSession(){
-    try{
-      await api('/api/auth/logout',{method:'POST'});
-    }catch(e){}
-    S.user=null;
-    S.connectionState='unknown';
-    clearWorkspaceState();
-    connected('unknown');
-    closeSettings();
-    closeAuth();
-    landing();
-    toast('Signed out.','good');
-  }
-  async function revokeAllSessions(){
-    if(!S.user)return;
-    try{
-      await api('/api/auth/sessions/revoke-all',{method:'POST'});
-    }catch(e){
-      toast(e.message||'Could not revoke sessions.','bad');
-      return;
-    }
-    S.user=null;
-    S.connectionState='unknown';
-    clearWorkspaceState();
-    connected('unknown');
-    closeSettings();
-    landing();
-    openAuth('login');
-    toast('All sessions were revoked. Sign in again.','good');
-  }
   async function loadRecentRepositories(){
     if(!S.user)return;
     try{
