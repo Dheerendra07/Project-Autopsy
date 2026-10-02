@@ -6,6 +6,7 @@ import { db, checkDatabaseConnection } from "./config/database.js";
 import { redis, checkRedisConnection } from "./config/redis.js";
 import { retryRepositoryStorageCleanup } from "./modules/repositories/repository.service.js";
 import { runEvidenceRetentionSweep } from "./modules/evidence-retention.service.js";
+import { ensureBootstrapAccount } from "./modules/auth/auth.bootstrap.js";
 
 export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
@@ -96,6 +97,8 @@ export async function startServer(): Promise<void> {
 
     await checkRedisConnection();
     console.log("✓ Redis connected");
+
+    await ensureBootstrapAccount();
 
     const cleanup = await retryRepositoryStorageCleanup(20);
     if (cleanup.attempted > 0) {
