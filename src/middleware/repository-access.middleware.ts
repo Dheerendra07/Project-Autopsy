@@ -1,14 +1,45 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
+import { isDeploymentEvidenceAuthorized } from "../modules/deployments/deployment.auth.js";
+import { isRuntimeTelemetryAuthorized } from "../modules/runtime/runtime.auth.js";
 import { getOwnedRepository } from "../modules/auth/auth.persistence.js";
 import { requireSession } from "./session.middleware.js";
+
+function isMachineIngestionRequest(request: Request): boolean {
+  const path = request.path;
+
+  if (request.method !== "POST") {
+    return false;
+  }
+
+  if (/^\/repositories\/[0-9a-f-]+\/runtime\/telemetry$/i.test(path)) {
+    return isRuntimeTelemetryAuthorized(
+      request.header("authorization"),
+      request.header("x-autopsy-telemetry-key")
+    );
+  }
+
+  if (/^\/repositories\/[0-9a-f-]+\/deployments$/i.test(path)) {
+    return isDeploymentEvidenceAuthorized(
+      request.header("authorization"),
+      request.header("x-autopsy-deployment-key")
+    );
+  }
+
+  return false;
+}
 
 export function requireRepositoryAccess(
   request: Request,
   response: Response,
   next: NextFunction
 ): void {
+  if (isMachineIngestionRequest(request)) {
+    next();
+    return;
+  }
+
   requireSession(request, response, () => {
     const repositoryId = request.params.repositoryId;
 
