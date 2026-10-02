@@ -69,7 +69,7 @@ test("CSRF middleware rejects a missing token", async () => {
 
   assert.equal(called, false);
   assert.equal(getAuthContext(req), undefined);
-  assert.equal(getCsrfCookie(req), "");
+  assert.equal(getCsrfCookie(req), undefined);
 });
 
 test("CSRF middleware accepts a token only when it matches the session-bound token hash", () => {
