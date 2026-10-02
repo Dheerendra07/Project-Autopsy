@@ -661,17 +661,20 @@
         '<div class="card"><div class="empty"><strong>No operational snapshot loaded.</strong><span>Check the live service status without changing repository analysis state.</span></div></div>';
     }
     var q=o.analysisQueue||{},d=o.dependencies||{},db=d.database||{},redis=d.redis||{};
-    var degraded=o.status!=='healthy';
+    var degraded=o.status!=='healthy',queueAvailable=q.waiting!=null||q.active!=null||q.failed!=null;
+    var monitoring=S.operationalTimer?'Auto refresh active':'On-demand refresh';
+    var dependencyLabel=degraded?'One or more checks need attention':'API, database and queue checks are healthy';
     return shell('Operations','Live service health and queue telemetry for the running Autopsy API.','<span class="pill '+fresh.tone+'">'+esc(fresh.label)+'</span><button class="btn primary" data-action="operations-refresh"'+(S.operationalLoading?' disabled aria-busy="true"':'')+'>'+(S.operationalLoading?'Checking…':'Refresh status')+'</button>')+
+      '<div class="ops-posture card" aria-live="polite"><div class="arch-title"><div><h3>Operational posture</h3><div class="sub">A live service snapshot kept separate from repository analysis evidence.</div></div><span class="tag">'+esc(monitoring)+'</span></div><div class="ops-posture-grid"><div><span>SNAPSHOT</span><b>'+esc(date(o.timestamp))+'</b><small>last successful status payload</small></div><div><span>DEPENDENCIES</span><b>'+esc(dependencyLabel)+'</b><small>PostgreSQL and Redis probes are bounded</small></div><div><span>QUEUE</span><b>'+esc(queueAvailable?'Available':'Unavailable')+'</b><small>analysis counts are operational telemetry only</small></div><div><span>BOUNDARY</span><b>Runtime only</b><small>does not mutate or reinterpret persisted evidence</small></div></div></div>'+
       '<div class="grid g4">'+
-        '<div class="card"><div class="metric">'+operationalStatusPill(o.status)+'</div><div class="metric-label">Service status</div><div class="sub">'+esc(o.service||'project-autopsy-api')+'</div></div>'+
-        '<div class="card"><div class="metric">'+operationalStatusPill(db.status)+'</div><div class="metric-label">PostgreSQL</div><div class="sub">'+esc(ms(db.latencyMs))+' probe latency</div></div>'+
-        '<div class="card"><div class="metric">'+operationalStatusPill(redis.status)+'</div><div class="metric-label">Redis</div><div class="sub">'+esc(ms(redis.latencyMs))+' probe latency</div></div>'+
-        '<div class="card"><div class="metric">'+(q.waiting==null?'—':n(q.waiting))+'</div><div class="metric-label">Waiting jobs</div><div class="sub">'+(q.failed==null?'Queue unavailable':n(q.failed)+' failed retained')+'</div></div>'+
+        '<div class="card ops-health-card"><div class="ops-health-top"><span>SERVICE</span>'+operationalStatusPill(o.status)+'</div><div class="metric">'+esc(o.status||'unknown')+'</div><div class="metric-label">Service status</div><div class="sub">'+esc(o.service||'project-autopsy-api')+'</div></div>'+
+        '<div class="card ops-health-card"><div class="ops-health-top"><span>DATABASE</span>'+operationalStatusPill(db.status)+'</div><div class="metric">'+esc(db.status||'unknown')+'</div><div class="metric-label">PostgreSQL</div><div class="sub">'+esc(ms(db.latencyMs))+' probe latency</div></div>'+
+        '<div class="card ops-health-card"><div class="ops-health-top"><span>QUEUE STORE</span>'+operationalStatusPill(redis.status)+'</div><div class="metric">'+esc(redis.status||'unknown')+'</div><div class="metric-label">Redis</div><div class="sub">'+esc(ms(redis.latencyMs))+' probe latency</div></div>'+
+        '<div class="card ops-health-card"><div class="ops-health-top"><span>BACKLOG</span><span class="tag">'+(q.failed==null?'queue unavailable':n(q.failed)+' failed retained')+'</span></div><div class="metric">'+(q.waiting==null?'—':n(q.waiting))+'</div><div class="metric-label">Waiting jobs</div><div class="sub">current BullMQ waiting count</div></div>'+
       '</div>'+
       (degraded?'<div class="callout section"><strong>Service is degraded.</strong><br>One or more live operational checks are unavailable. Repository evidence is unchanged; retry this status check after the service recovers.</div>':'')+
       '<div class="grid g2 section">'+
-        '<div class="card"><h3>Analysis queue</h3><div class="sub">Current BullMQ counts; these are live operational signals, not repository evidence.</div><div class="grid g2" style="margin-top:14px">'+
+        '<div class="card"><div class="arch-title"><div><h3>Analysis queue</h3><div class="sub">Current BullMQ counts; these are live operational signals, not repository evidence.</div></div><span class="tag">'+esc(queueAvailable?'live counts':'unavailable')+'</span></div><div class="grid g2" style="margin-top:14px">'+
           metric('Waiting',q.waiting==null?'—':n(q.waiting))+
           metric('Active',q.active==null?'—':n(q.active))+
           metric('Delayed',q.delayed==null?'—':n(q.delayed))+
@@ -679,14 +682,14 @@
           metric('Completed retained',q.completed==null?'—':n(q.completed))+
           metric('Paused',q.paused==null?'—':n(q.paused))+
           '</div></div>'+
-        '<div class="card"><h3>Process runtime</h3><div class="sub">Current API process measurements from the live service.</div><div class="grid g2" style="margin-top:14px">'+
+        '<div class="card"><div class="arch-title"><div><h3>Process runtime</h3><div class="sub">Current API process measurements from the live service.</div></div><span class="tag">process scope</span></div><div class="grid g2" style="margin-top:14px">'+
           metric('Uptime',operationalUptime(o.process&&o.process.uptimeSeconds))+
           metric('Node.js',o.process&&o.process.nodeVersion||'—')+
           metric('RSS',o.process&&o.process.rssMb!=null?n(o.process.rssMb)+' MB':'—')+
           metric('Heap used',o.process&&o.process.heapUsedMb!=null?n(o.process.heapUsedMb)+' MB':'—')+
           '</div></div>'+
       '</div>'+
-      '<div class="card section"><h3>Operational snapshot</h3><div class="sub">Captured '+esc(date(o.timestamp))+' · status '+operationalStatusPill(o.status)+'</div><div class="callout"><strong>Boundary</strong><br>This surface describes the running Autopsy service. It does not change, reinterpret or overwrite persisted repository evidence.</div></div>';
+      '<div class="card section"><div class="arch-title"><div><h3>Operational snapshot</h3><div class="sub">Captured '+esc(date(o.timestamp))+' · status '+operationalStatusPill(o.status)+'</div></div><span class="tag">'+esc(fresh.label)+'</span></div><div class="ops-boundary"><span>WHAT THIS MEANS</span><strong>The workspace tells you how the running service is behaving at the time of the snapshot.</strong><small>It does not change, reinterpret or overwrite persisted repository evidence.</small></div></div>';
   }
   function stopOperationsMonitoring(){
     if(S.operationalTimer){clearInterval(S.operationalTimer);S.operationalTimer=null}
