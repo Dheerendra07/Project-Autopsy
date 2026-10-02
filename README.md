@@ -119,7 +119,9 @@ Private repositories are supported for GitHub, GitLab, and Bitbucket HTTPS remot
 
 Use a repository token with read-only access to the source repository. The UI never persists the repository token in sessionStorage.
 
-Production API access requires AUTOPSY_API_ACCESS_KEY. The key is accepted through x-autopsy-api-key or a Bearer authorization header. The /health endpoint remains public for hosting health checks. Runtime telemetry and deployment evidence ingestion additionally require their dedicated production ingestion keys.
+Production browser/API access uses account sessions backed by PostgreSQL and opaque HttpOnly cookies. Users authenticate with email and password; unsafe browser requests carry a server-issued CSRF token. Repository resources are scoped to the signed-in account. The /health and /ready endpoints remain public for hosting health checks. Runtime telemetry and deployment evidence ingestion remain machine-to-machine and additionally require their dedicated production ingestion keys.
+
+During the first production deployment, set AUTOPSY_BOOTSTRAP_EMAIL and AUTOPSY_BOOTSTRAP_PASSWORD to create the initial operator account and claim legacy repositories that predate account ownership. Remove those bootstrap variables after the first successful login so future restarts do not retain bootstrap credentials in the service configuration.
 
 ## Stored commit evidence
 
