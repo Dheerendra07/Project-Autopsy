@@ -41,10 +41,14 @@ export function requireRepositoryAccess(
   }
 
   requireSession(request, response, () => {
-    const repositoryId = request.params.repositoryId;
+    let repositoryId: string;
 
     try {
-      z.string().uuid().parse(repositoryId);
+      repositoryId = z.string().uuid().parse(
+        Array.isArray(request.params.repositoryId)
+          ? request.params.repositoryId[0]
+          : request.params.repositoryId
+      );
     } catch {
       response.status(400).json({
         success: false,
