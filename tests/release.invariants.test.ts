@@ -152,13 +152,18 @@ test("production smoke covers public surface and protected API boundaries", () =
 
   for (const marker of [
     "AUTOPSY_PRODUCTION_URL",
-    "AUTOPSY_API_ACCESS_KEY",
+    "AUTOPSY_BOOTSTRAP_EMAIL",
+    "AUTOPSY_BOOTSTRAP_PASSWORD",
     '"/health"',
     '"/ready"',
+    '"/api/auth/login"',
+    '"/api/auth/me"',
     '"/api/repositories/00000000-0000-0000-0000-000000000000"',
-    "API_ACCESS_UNAUTHORIZED",
+    "AUTH_REQUIRED",
     "REPOSITORY_NOT_FOUND",
-    'redirect: "error"',
+    "autopsy_session=",
+    "autopsy_csrf=",
+    'redirect: "manual"',
     "AbortSignal.timeout(15_000)"
   ]) {
     assert.ok(
@@ -168,7 +173,8 @@ test("production smoke covers public surface and protected API boundaries", () =
   }
 
   assert.ok(workflow.includes("workflow_dispatch:"));
-  assert.ok(workflow.includes("secrets.AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_EMAIL"));
+  assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
 });
 test("quality workflow retains the full validation gate", () => {
@@ -855,13 +861,13 @@ test("frontend workspace keeps the real connection state", () => {
   assert.doesNotMatch(workspace, /connected\(true\)/);
 });
 
-test("frontend distinguishes configured credentials from verified connectivity", () => {
+test("frontend distinguishes signed-in state from an unauthenticated session", () => {
   const appJs = readRepoFile("public/app.js");
 
   assert.ok(appJs.includes("connectionState:'unknown'"));
   assert.ok(appJs.includes("state==='verified'"));
-  assert.ok(appJs.includes("state==='configured'"));
-  assert.ok(appJs.includes("Connection settings saved. Test the connection to verify the credentials."));
+  assert.ok(appJs.includes("state==='rejected'"));
+  assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("S.connectionState='verified'"));
   assert.ok(appJs.includes("connected('verified')"));
 });
@@ -883,28 +889,15 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
 
-test("frontend clears stale saved workspace state after a missing repository or analysis run", () => {
+test("frontend restores saved work only through the authenticated session", () => {
   const appJs = readRepoFile("public/app.js");
-  const start = appJs.indexOf("async function boot()");
-  const end = appJs.indexOf("\n  boot()\n})();", start);
 
-  assert.ok(start >= 0);
-  assert.ok(end > start);
-
-  const boot = appJs.slice(start, end);
-  assert.ok(boot.includes("message.indexOf('Request failed (404).')===0"));
-  assert.ok(boot.includes("S.repoId=''"));
-  assert.ok(boot.includes("S.runId=''"));
-  assert.ok(boot.includes("S.data={}"));
-  assert.ok(
-    boot.includes(
-      "S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"
-    )
-  );
-  assert.ok(
-    boot.includes("Saved workspace no longer exists. Start a new repository analysis.")
-  );
-  assert.ok(boot.includes("persist()"));
+  assert.ok(appJs.includes("async function restoreSavedWorkspace()"));
+  assert.ok(appJs.includes("if(!S.user||!S.repoId||!S.runId)return false"));
+  assert.ok(appJs.includes("async function loadRecentRepositories()"));
+  assert.ok(appJs.includes("api('/api/repositories?limit=20')"));
+  assert.ok(appJs.includes("storageRemove('autopsy.key')"));
+  assert.ok(appJs.includes("storageRemove('autopsy.aiKey')"));
 });
 
 
