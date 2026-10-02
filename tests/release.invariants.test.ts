@@ -2526,3 +2526,21 @@ test("frontend clears transient overlays when a page is restored", () => {
   assert.ok(appJs.includes("window.addEventListener('pageshow',function(){closeTransientOverlays()})"));
   assert.ok(appJs.includes("if($('drawer'))$('drawer').hidden=true"));
 });
+
+
+test("repository access middleware reconstructs mounted paths before machine-ingest matching", () => {
+  const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
+
+  assert.ok(
+    middleware.includes("const path = request.baseUrl + request.path;")
+  );
+  assert.ok(
+    middleware.includes("runtime\\/telemetry")
+  );
+  assert.ok(
+    middleware.includes("x-autopsy-telemetry-key")
+  );
+  assert.ok(
+    middleware.includes("x-autopsy-deployment-key")
+  );
+});
