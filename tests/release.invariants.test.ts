@@ -1006,6 +1006,102 @@ test("account security exposes password rotation and individual session revocati
 
 
 
+
+test("account recovery and transactional email contracts remain explicit", () => {
+  const env = readRepoFile("src/config/env.ts");
+  const migration = readRepoFile("database/migrations/018_auth_email_recovery.sql");
+  const email = readRepoFile("src/modules/auth/auth.email.ts");
+  const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
+  const routes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const bootstrap = readRepoFile("src/modules/auth/auth.bootstrap.ts");
+  const server = readRepoFile("src/server.ts");
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const render = readRepoFile("render.yaml");
+  const readme = readRepoFile("README.md");
+
+  for (const marker of [
+    "RESEND_API_KEY",
+    "AUTOPSY_EMAIL_FROM",
+    "AUTOPSY_PUBLIC_URL",
+    "transactional email is configured"
+  ]) {
+    assert.ok(env.includes(marker), "missing email configuration invariant: " + marker);
+  }
+
+  for (const marker of [
+    "email_verified_at",
+    "auth_action_tokens",
+    "email_verification",
+    "password_reset"
+  ]) {
+    assert.ok(migration.includes(marker), "missing recovery migration marker: " + marker);
+  }
+
+  for (const marker of [
+    "isAuthEmailConfigured",
+    "api.resend.com/emails",
+    "Idempotency-Key",
+    "AUTH_EMAIL_VERIFICATION_TTL_MS",
+    "AUTH_PASSWORD_RESET_TTL_MS"
+  ]) {
+    assert.ok(email.includes(marker), "missing transactional email marker: " + marker);
+  }
+
+  for (const marker of [
+    "createAuthActionToken",
+    "consumeAuthActionToken",
+    "markEmailVerified",
+    "invalidateAuthActionTokens",
+    "purgeStaleAuthActionTokens"
+  ]) {
+    assert.ok(persistence.includes(marker), "missing recovery persistence marker: " + marker);
+  }
+
+  for (const marker of [
+    '"/resend-verification"',
+    '"/verify-email"',
+    '"/forgot-password"',
+    '"/reset-password"',
+    "EMAIL_VERIFICATION_REQUIRED",
+    "requiresEmailVerification"
+  ]) {
+    assert.ok(routes.includes(marker), "missing recovery route marker: " + marker);
+  }
+
+  assert.ok(bootstrap.includes("markEmailVerified"));
+  assert.ok(server.includes("purgeStaleAuthActionTokens"));
+  assert.ok(server.includes("Session/auth-token cleanup sweep failed"));
+
+  for (const marker of [
+    "authForgotLink",
+    "forgotForm",
+    "resetForm",
+    "verifyPanel",
+    "resendVerification",
+    "verifySubmit"
+  ]) {
+    assert.ok(html.includes(marker), "missing recovery UI marker: " + marker);
+  }
+
+  for (const marker of [
+    "submitForgotPassword",
+    "resetPasswordFromLink",
+    "verifyEmail",
+    "consumeAuthLink",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/verify-email"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing recovery client marker: " + marker);
+  }
+
+  assert.ok(render.includes("RESEND_API_KEY"));
+  assert.ok(render.includes("AUTOPSY_EMAIL_FROM"));
+  assert.ok(render.includes("AUTOPSY_PUBLIC_URL"));
+  assert.ok(readme.includes("Transactional email recovery is supported through Resend"));
+});
+
 test("repository resources are tenant-scoped to authenticated accounts", () => {
   const routes = readRepoFile("src/routes/index.ts");
   const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
