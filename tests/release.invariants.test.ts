@@ -378,6 +378,14 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   assert.ok(structure.includes("complexityDelta"));
 });
 
+test("responsive grid cards can shrink while child tables keep their own overflow", () => {
+  const html = readRepoFile("public/index.html");
+  assert.ok(
+    html.includes(".grid>*{min-width:0}"),
+    "grid cards must be allowed to shrink below table min-content width"
+  );
+});
+
 test("frontend structure architecture map avoids redundant nested card chrome", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("function architectureMap(ar)");
