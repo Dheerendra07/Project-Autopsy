@@ -485,7 +485,7 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map((match) => match[1]);
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
   const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
   assert.deepEqual(duplicateIds, [], "duplicate static DOM ids detected");
 
@@ -557,7 +557,7 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
   )?.[1] || "";
   assert.match(
     responsiveNavRule,
-    /grid-column:1\\/-1/,
+    /grid-column:1\/-1/,
     "responsive navigation groups must span the full row"
   );
 });
