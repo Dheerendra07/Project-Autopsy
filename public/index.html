@@ -261,7 +261,7 @@ body{background:
     <span class="mark">A</span>
     <span><b>Project Autopsy</b><small>Engineering Evidence</small></span>
   </a>
-  <button id="settings" class="btn top-account" aria-label="Open account settings" title="Account settings">Sign in</button>
+  <button id="settings" class="btn top-account" aria-label="Sign in to your private workspace" title="Sign in to your private workspace">Sign in</button>
 </header>
 <a class="skip-link" href="#root">Skip to workspace</a><main>
 <section id="landing" class="landing">
@@ -370,7 +370,7 @@ body{background:
   <div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">PRIVATE WORKSPACE</div><h3 id="authTitle">Sign in to Project Autopsy</h3><div id="authSubtitle" class="sub">Use the account that owns your Autopsy repositories.</div></div><button id="authClose" class="btn" aria-label="Close sign in dialog">Close</button></div>
   <form id="authForm" style="display:grid;gap:12px;margin-top:18px">
     <label class="field">Email<input id="authEmail" type="email" autocomplete="email" maxlength="320" required></label>
-    <label class="field">Password<input id="authPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" required></label>
+    <label class="field">Password<input id="authPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" required><small id="authPasswordHint" class="sub" hidden>Use at least 12 characters.</small></label>
     <div id="authError" class="bad" style="font-size:10px" hidden></div>
     <div id="authNotice" class="good" style="font-size:10px" hidden></div>
     <button id="authSubmit" class="btn primary" type="submit" data-action="auth-submit">Sign in</button>
