@@ -1,7 +1,22 @@
 (function(){
   'use strict';
+  function defaultApiBase(){
+    if(location.protocol!=='http:'&&location.protocol!=='https:')return 'http://localhost:5100';
+    var host=location.hostname.toLowerCase();
+    if(host.endsWith('.onrender.com')){
+      var label=host.slice(0,-'.onrender.com'.length);
+      if(label.endsWith('-ui'))return location.origin.replace(host,label.slice(0,-3)+'.onrender.com');
+    }
+    return location.origin;
+  }
+  function initialApiBase(){
+    var fallback=defaultApiBase(),stored=storageGet('autopsy.api');
+    if(!stored)return fallback;
+    if(fallback!==location.origin&&stored===location.origin)return fallback;
+    return stored;
+  }
   var S={
-    api:storageGet('autopsy.api')||((location.protocol==='http:'||location.protocol==='https:')?location.origin:'http://localhost:5100'),
+    api:initialApiBase(),
     key:storageGet('autopsy.key'),
     aiKey:storageGet('autopsy.aiKey'),
     repoId:storageGet('autopsy.repoId'),
