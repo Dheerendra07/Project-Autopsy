@@ -41,7 +41,7 @@
     legacyMigrationKey:'',
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
+    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',authInterrupt:false,dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -83,11 +83,14 @@
   function actionBusy(action,busy,busyLabel){document.querySelectorAll('#root [data-action="'+action+'"]').forEach(function(el){if(busy){if(el._autopsyBusy)return;el._autopsyBusy=true;el._autopsyIdleText=el.textContent;el.disabled=true;el.setAttribute('aria-busy','true');if(busyLabel)el.textContent=busyLabel}else if(el._autopsyBusy){el._autopsyBusy=false;el.disabled=false;el.removeAttribute('aria-busy');if(el._autopsyIdleText)el.textContent=el._autopsyIdleText;delete el._autopsyIdleText}})}
   function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
   function connected(state){
-    var c=$('conn'),button=$('settings');
-    var verified=state==='verified',rejected=state==='rejected';
-    c.textContent=verified?'Signed in':rejected?'Access rejected':'Sign in';
-    c.className='pill '+(verified?'good':rejected?'bad':'');
-    if(button)button.textContent=verified?'Account':'Sign in';
+    var button=$('settings');
+    var verified=state==='verified';
+    var rejected=state==='rejected';
+    if(button){
+      button.textContent=verified?'Account':rejected?'Sign in':'Sign in';
+      button.setAttribute('data-auth-state',verified?'signed-in':rejected?'rejected':'signed-out');
+      button.title=verified?'Account & security settings':'Sign in to your private workspace';
+    }
   }
   function syncAnalysisRefreshControl(){var b=$('refresh'),running=!!(S.analysis&&['queued','running'].indexOf(S.analysis.status)>=0);if(!b)return;b.disabled=running||S.refreshLoading;b.setAttribute('aria-busy',running||S.refreshLoading?'true':'false');b.textContent=S.refreshLoading?'Refreshing…':running?'Analysis running…':'Refresh analysis'}
   function trapFocus(container,event){if(!container||event.key!=='Tab'||container.hidden)return;var focusable=Array.prototype.slice.call(container.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')).filter(function(el){return !el.hidden&&el.getClientRects().length>0});if(!focusable.length){event.preventDefault();return}var first=focusable[0],last=focusable[focusable.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
@@ -222,7 +225,10 @@
               S.user=null;
               S.connectionState='unknown';
               connected('unknown');
-              openAuth('login');
+              if(path!=='/api/auth/me'&&!S.authInterrupt){
+                S.authInterrupt=true;
+                openAuth('login');
+              }
               throw new Error('Your session has expired. Sign in again.');
             }
             S.connectionState='rejected';
@@ -1326,7 +1332,9 @@
     if($('resetPassword'))$('resetPassword').setAttribute('autocomplete','new-password');
     if($('resetPasswordConfirm'))$('resetPasswordConfirm').setAttribute('autocomplete','new-password');
   }
-  function openAuth(mode){
+  function openAuth(mode,interrupt){
+    if(S.authInterrupt&& !$('authModal').hidden)return;
+    S.authInterrupt=!!interrupt;
     S.authMode=mode||'login';
     setAuthMode(S.authMode);
     $('authError').hidden=true;
@@ -1350,6 +1358,7 @@
   function closeAuth(){
     $('authModal').hidden=true;
     S.authSubmitting=false;
+    S.authInterrupt=false;
   }
   async function submitAuth(){
     if(S.authSubmitting)return;
@@ -1390,6 +1399,7 @@
         return;
       }
       S.user=result.user;
+      S.authInterrupt=false;
       S.connectionState='verified';
       connected('verified');
       closeAuth();

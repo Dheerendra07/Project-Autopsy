@@ -50,7 +50,7 @@ button{transition:background .16s ease,border-color .16s ease,color .16s ease,tr
 button:active{transform:translateY(1px)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}button:disabled{opacity:.55;cursor:wait;transform:none;box-shadow:none}
 .top{height:68px;padding:0 28px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(13,14,12,.86);box-shadow:0 8px 30px rgba(0,0,0,.18)}
-.brand{gap:12px}.mark{width:32px;height:32px;border-radius:10px;background:rgba(216,194,139,.07);border-color:#62583f;color:var(--gold);font-size:11px}.brand b{font-size:14px;letter-spacing:-.02em}.brand small{font-size:9px;color:#7c8176}
+.brand{gap:12px}.mark{width:32px;height:32px;border-radius:10px;background:rgba(216,194,139,.07);border-color:#62583f;color:var(--gold);font-size:11px}.brand b{font-size:14px;letter-spacing:-.02em}.brand small{font-size:9px;color:#8991a0}
 .top .btn{min-height:38px;padding:9px 12px}
 .top .btn[aria-label]{font-size:12px}
 main{max-width:1680px}
@@ -243,12 +243,22 @@ body{background:
 .loading-orb{border-color:#454968;box-shadow:0 0 0 6px rgba(139,143,247,.045)}
 .error-mark{background:rgba(229,139,145,.055);border-color:#59363d}
 .skip-link{background:#151a22;border-color:#4c5670}
+
+/* Navigation + account surface */
+.top-account{min-width:88px;justify-content:center}
+.brand{text-decoration:none;color:inherit}
+.brand:hover .mark{border-color:#5960a0;background:rgba(139,143,247,.12)}
+.brand:hover b{color:#fff}
+@media(max-width:520px){.top{height:62px}.top-account{min-width:76px;padding-inline:11px}.brand b{font-size:13px}}
 </style>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#overview" aria-label="Project Autopsy overview"><span class="mark">A</span><span><b>Project Autopsy</b><small>engineering evidence workspace</small></span></a>
-  <div style="display:flex;gap:9px;align-items:center"><span id="conn" class="pill">sign in</span><button id="settings" class="btn" aria-label="Open account settings" title="Account settings">Sign in</button></div>
+  <a class="brand" href="#overview" aria-label="Project Autopsy overview">
+    <span class="mark">A</span>
+    <span><b>Project Autopsy</b><small>Engineering Evidence</small></span>
+  </a>
+  <button id="settings" class="btn top-account" aria-label="Open account settings" title="Account settings">Sign in</button>
 </header>
 <a class="skip-link" href="#root">Skip to workspace</a><main>
 <section id="landing" class="landing">
