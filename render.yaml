@@ -61,4 +61,4 @@ services:
       - key: AI_TIMEOUT_MS
         value: "30000"
       - key: AUTOPSY_CORS_ORIGINS
-        sync: false
+        value: "https://project-autopsy.onrender.com,https://project-autopsy-ui.onrender.com"
