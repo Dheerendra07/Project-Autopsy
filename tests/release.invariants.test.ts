@@ -968,18 +968,10 @@ test("frontend history pagination releases busy state on every exit path", () =>
     appJs.includes('c.map(function(x){return \'<tr>')
   );
 
-  assert.ok(
-    appJs.includes("history-timeline">'+(t.map(function(x)")
-  );
-  assert.ok(
-    appJs.includes("No timeline evidence.</div>')+'</div></div>")
-  );
-  assert.ok(
-    appJs.includes("<tbody>'+(c.map(function(x)")
-  );
-  assert.ok(
-    appJs.includes("No commit evidence.</td></tr>')+'</tbody>")
-  );
+  assert.ok(appJs.includes("history-timeline"));
+  assert.ok(appJs.includes("No timeline evidence."));
+  assert.ok(appJs.includes("<tbody>"));
+  assert.ok(appJs.includes("No commit evidence."));
   assert.ok(
     appJs.includes('<tr data-empty-state="true"><td colspan="7" class="dim">No commit evidence.</td></tr>')
   );
