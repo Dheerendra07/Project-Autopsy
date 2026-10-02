@@ -1715,7 +1715,7 @@
       S.connectionState='unknown';
       connected('unknown');
       landing();
-      openAuth(S.legacyMigrationKey?'migrate':'login');
+      if(S.legacyMigrationKey)openAuth('migrate');
     }
   }
   boot()
