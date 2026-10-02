@@ -489,20 +489,20 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
   const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
   assert.deepEqual(duplicateIds, [], "duplicate static DOM ids detected");
 
-  const views = [
-    "overview",
-    "history",
-    "structure",
-    "quality",
-    "runtime",
-    "report",
-    "interview",
-    "interpretation",
-    "evidence",
-    "contributors",
-    "operations"
-  ];
-  for (const view of views) {
+  const viewRenderers = {
+    overview: "overview",
+    history: "historyView",
+    structure: "structure",
+    quality: "quality",
+    runtime: "runtime",
+    report: "reportPage",
+    interview: "interview",
+    interpretation: "interpretation",
+    evidence: "evidencePage",
+    contributors: "contributors",
+    operations: "operations"
+  };
+  for (const [view, renderer] of Object.entries(viewRenderers)) {
     const occurrences = html.match(new RegExp('data-view="' + view + '"', "g")) || [];
     assert.equal(
       occurrences.length,
@@ -510,12 +510,12 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
       "workspace navigation view must have exactly one control: " + view
     );
     const rendererMatches = appJs.match(
-      new RegExp("function " + view + "\\s*\\(", "g")
+      new RegExp("function " + renderer + "\\s*\\(", "g")
     ) || [];
     assert.equal(
       rendererMatches.length,
       1,
-      "workspace view must have exactly one renderer: " + view
+      "workspace view must have exactly one renderer: " + view + " -> " + renderer
     );
   }
 
