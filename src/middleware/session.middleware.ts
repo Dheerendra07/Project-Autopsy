@@ -18,6 +18,7 @@ export interface AuthContext {
   userId: string;
   email: string;
   sessionId: string;
+  csrfTokenHash: string;
 }
 
 declare global {
@@ -87,7 +88,8 @@ export async function authenticateSession(
   const context: AuthContext = {
     userId: session.user_id,
     email: session.email,
-    sessionId: session.id
+    sessionId: session.id,
+    csrfTokenHash: session.csrf_token_hash
   };
 
   request.auth = context;
@@ -150,8 +152,13 @@ export function requireCsrf(
 
   const cookie = getCsrfCookie(request);
   const header = request.header("x-autopsy-csrf-token")?.trim();
+  const auth = getAuthContext(request);
+  const tokenMatchesSession =
+    Boolean(auth?.csrfTokenHash) &&
+    Boolean(cookie) &&
+    auth?.csrfTokenHash === hashOpaqueToken(cookie as string);
 
-  if (!cookie || !header || !safeEqualString(cookie, header)) {
+  if (!cookie || !header || !safeEqualString(cookie, header) || !tokenMatchesSession) {
     response.status(403).json({
       success: false,
       error: {
