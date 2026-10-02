@@ -89,7 +89,8 @@ function selectEvidence(claims: EvidenceClaim[]): EvidenceRef[] {
 
 function buildStory(
   definition: StoryDefinition,
-  storySections: EvidenceReportSection[]
+  storySections: EvidenceReportSection[],
+  repositoryName: string
 ): InterviewStory {
   const claims = storySections
     .flatMap((section) => section.claims)
@@ -112,7 +113,7 @@ function buildStory(
     draftAnswer: {
       situation:
         "In " +
-        report.repository.name +
+        repositoryName +
         ", the current analysis surfaces this historical signal: " +
         anchor +
         " Use the cited records to establish the before/after context before describing personal contribution.",
@@ -161,7 +162,7 @@ export function buildInterviewStoriesFromReport(
       continue;
     }
 
-    selected.push(buildStory(definition, storySections));
+    selected.push(buildStory(definition, storySections, report.repository.name));
   }
 
   return {
