@@ -1198,7 +1198,6 @@
     try{await api('/api/auth/logout',{method:'POST'})}catch(e){}
     S.user=null;S.csrfToken='';
     S.connectionState='unknown';
-    S.connectionState='unknown';
     clearWorkspaceState();
     connected('unknown');
     closeSettings();
