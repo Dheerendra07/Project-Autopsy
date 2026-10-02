@@ -1043,7 +1043,9 @@ test("account recovery and transactional email contracts remain explicit", () =>
     "api.resend.com/emails",
     "Idempotency-Key",
     "AUTH_EMAIL_VERIFICATION_TTL_MS",
-    "AUTH_PASSWORD_RESET_TTL_MS"
+    "AUTH_PASSWORD_RESET_TTL_MS",
+    "#auth-verify=",
+    "#auth-reset="
   ]) {
     assert.ok(email.includes(marker), "missing transactional email marker: " + marker);
   }
@@ -1089,6 +1091,8 @@ test("account recovery and transactional email contracts remain explicit", () =>
     "resetPasswordFromLink",
     "verifyEmail",
     "consumeAuthLink",
+    "auth-verify=",
+    "auth-reset=",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
     "/api/auth/verify-email"
