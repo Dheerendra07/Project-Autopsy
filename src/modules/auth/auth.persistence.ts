@@ -213,6 +213,75 @@ export async function updateLastLogin(userId: string): Promise<void> {
   );
 }
 
+export interface UserSessionSummary {
+  id: string;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string;
+  user_agent: string | null;
+  is_revoked: boolean;
+}
+
+export async function listUserSessions(
+  userId: string
+): Promise<UserSessionSummary[]> {
+  const result = await db.query<UserSessionSummary>(
+    `
+      SELECT
+        id,
+        created_at,
+        last_seen_at,
+        expires_at,
+        user_agent,
+        revoked_at IS NOT NULL AS is_revoked
+      FROM sessions
+      WHERE user_id = $1
+        AND revoked_at IS NULL
+        AND expires_at > NOW()
+      ORDER BY last_seen_at DESC, created_at DESC, id DESC
+      LIMIT 25
+    `,
+    [userId]
+  );
+
+  return result.rows;
+}
+
+export async function revokeSessionForUser(
+  sessionId: string,
+  userId: string
+): Promise<boolean> {
+  const result = await db.query(
+    `
+      UPDATE sessions
+      SET revoked_at = NOW()
+      WHERE id = $1
+        AND user_id = $2
+        AND revoked_at IS NULL
+      RETURNING id
+    `,
+    [sessionId, userId]
+  );
+
+  return result.rowCount === 1;
+}
+
+export async function changeUserPassword(
+  userId: string,
+  passwordHash: string
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE users
+      SET password_hash = $2,
+          updated_at = NOW()
+      WHERE id = $1
+        AND disabled_at IS NULL
+    `,
+    [userId, passwordHash]
+  );
+}
+
 export async function getOwnedRepository(
   repositoryId: string,
   userId: string
