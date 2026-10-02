@@ -194,6 +194,60 @@ export async function revokeSession(sessionId: string): Promise<void> {
   );
 }
 
+export const ACTIVE_SESSION_LIMIT = 10;
+export const SESSION_CLEANUP_BATCH_SIZE = 1_000;
+
+export async function revokeExcessUserSessions(
+  userId: string,
+  limit = ACTIVE_SESSION_LIMIT
+): Promise<number> {
+  const result = await db.query(
+    `
+      WITH excess AS (
+        SELECT id
+        FROM sessions
+        WHERE user_id = $1
+          AND revoked_at IS NULL
+          AND expires_at > NOW()
+        ORDER BY last_seen_at DESC, created_at DESC, id DESC
+        OFFSET $2
+      )
+      UPDATE sessions AS s
+      SET revoked_at = NOW()
+      FROM excess
+      WHERE s.id = excess.id
+      RETURNING s.id
+    `,
+    [userId, Math.max(0, Math.floor(limit))]
+  );
+
+  return result.rowCount ?? 0;
+}
+
+export async function purgeStaleSessions(
+  batchSize = SESSION_CLEANUP_BATCH_SIZE
+): Promise<number> {
+  const result = await db.query(
+    `
+      WITH stale AS (
+        SELECT id
+        FROM sessions
+        WHERE expires_at <= NOW()
+           OR revoked_at < NOW() - INTERVAL '30 days'
+        ORDER BY COALESCE(revoked_at, expires_at), id
+        LIMIT $1
+      )
+      DELETE FROM sessions AS s
+      USING stale
+      WHERE s.id = stale.id
+      RETURNING s.id
+    `,
+    [Math.max(1, Math.min(SESSION_CLEANUP_BATCH_SIZE, Math.floor(batchSize)))]
+  );
+
+  return result.rowCount ?? 0;
+}
+
 export async function revokeAllUserSessions(userId: string): Promise<void> {
   await db.query(
     `

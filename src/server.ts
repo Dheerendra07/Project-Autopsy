@@ -7,16 +7,19 @@ import { redis, checkRedisConnection } from "./config/redis.js";
 import { retryRepositoryStorageCleanup } from "./modules/repositories/repository.service.js";
 import { runEvidenceRetentionSweep } from "./modules/evidence-retention.service.js";
 import { ensureBootstrapAccount } from "./modules/auth/auth.bootstrap.js";
+import { purgeStaleSessions, SESSION_CLEANUP_BATCH_SIZE } from "./modules/auth/auth.persistence.js";
 
 export const HTTP_REQUEST_TIMEOUT_MS = 180_000;
 export const HTTP_HEADERS_TIMEOUT_MS = 15_000;
 export const HTTP_KEEP_ALIVE_TIMEOUT_MS = 5_000;
 export const REPOSITORY_STORAGE_CLEANUP_INTERVAL_MS = 5 * 60_000;
 export const EVIDENCE_RETENTION_INTERVAL_MS = 6 * 60 * 60_000;
+export const SESSION_CLEANUP_INTERVAL_MS = 6 * 60 * 60_000;
 
 export let httpServer: Server | undefined;
 let repositoryCleanupTimer: NodeJS.Timeout | undefined;
 let evidenceRetentionTimer: NodeJS.Timeout | undefined;
+let sessionCleanupTimer: NodeJS.Timeout | undefined;
 let shuttingDown = false;
 
 async function closeResources(): Promise<void> {
@@ -35,6 +38,11 @@ export async function closeServer(): Promise<void> {
   if (evidenceRetentionTimer) {
     clearInterval(evidenceRetentionTimer);
     evidenceRetentionTimer = undefined;
+  }
+
+  if (sessionCleanupTimer) {
+    clearInterval(sessionCleanupTimer);
+    sessionCleanupTimer = undefined;
   }
 
   if (!httpServer) {
@@ -99,6 +107,24 @@ export async function startServer(): Promise<void> {
     console.log("✓ Redis connected");
 
     await ensureBootstrapAccount();
+
+    const staleSessions = await purgeStaleSessions();
+    if (staleSessions > 0) {
+      console.log(`✓ Session cleanup: ${staleSessions} stale session(s) removed`);
+    }
+
+    sessionCleanupTimer = setInterval(() => {
+      void purgeStaleSessions(SESSION_CLEANUP_BATCH_SIZE)
+        .then((count) => {
+          if (count > 0) {
+            console.log(`✓ Session cleanup: ${count} stale session(s) removed`);
+          }
+        })
+        .catch((error) => {
+          console.error("Session cleanup sweep failed:", error);
+        });
+    }, SESSION_CLEANUP_INTERVAL_MS);
+    sessionCleanupTimer.unref();
 
     const cleanup = await retryRepositoryStorageCleanup(20);
     if (cleanup.attempted > 0) {
