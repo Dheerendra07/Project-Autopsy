@@ -965,6 +965,22 @@ test("legacy migration is explicitly one-time and separate from normal session a
   assert.ok(appJs.includes("if(S.authMode==='migrate'&&S.legacyMigrationKey)"));
 });
 
+test("session lifecycle is bounded and cleaned up on a schedule", () => {
+  const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
+  const routes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const server = readRepoFile("src/server.ts");
+
+  assert.ok(persistence.includes("ACTIVE_SESSION_LIMIT = 10"));
+  assert.ok(persistence.includes("revokeExcessUserSessions"));
+  assert.ok(persistence.includes("purgeStaleSessions"));
+  assert.ok(persistence.includes("INTERVAL '30 days'"));
+  assert.ok(routes.includes("revokeExcessUserSessions(user.id)"));
+  assert.ok(server.includes("SESSION_CLEANUP_INTERVAL_MS = 6 * 60 * 60_000"));
+  assert.ok(server.includes("SESSION_CLEANUP_BATCH_SIZE"));
+  assert.ok(server.includes("clearInterval(sessionCleanupTimer)"));
+  assert.ok(server.includes("purgeStaleSessions()"));
+});
+
 test("account security exposes password rotation and individual session revocation", () => {
   const routes = readRepoFile("src/modules/auth/auth.routes.ts");
   const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
