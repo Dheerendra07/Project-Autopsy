@@ -2536,3 +2536,32 @@ test("repository access middleware reconstructs mounted paths before machine-ing
     middleware.includes("x-autopsy-deployment-key")
   );
 });
+
+
+test("split-origin auth exposes only csrfToken bootstrap data", () => {
+  const routes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.match(routes, /Promise<string>/);
+  assert.match(routes, /const csrfToken = await startSession\(request, response, user\)/);
+  assert.match(routes, /csrfToken,\n\s+user: publicUser/);
+  assert.match(routes, /csrfToken: getCsrfCookie\(request\) \?\? ""/);
+  assert.ok(!routes.includes("sessionToken,\n      user:"));
+  assert.ok(appJs.includes("csrfToken:''"));
+  assert.ok(appJs.includes("var csrf=S.csrfToken||readCookie('autopsy_csrf')"));
+  assert.ok(appJs.includes("if(typeof b.csrfToken==='string'&&b.csrfToken)S.csrfToken=b.csrfToken;"));
+  assert.ok(appJs.includes("storageSet('autopsy.repoId'"));
+  assert.ok(!appJs.includes("storageSet('autopsy.csrfToken'"));
+});
+
+test("frontend clears in-memory csrf state on auth loss and sign-out", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("S.user=null;S.csrfToken='';"));
+  assert.ok(appJs.includes("S.user=null;\n      S.csrfToken='';"));
+  assert.ok(appJs.includes("async function logoutLocalState(showToast)"));
+  assert.match(
+    appJs,
+    /logoutLocalState\(showToast\)\{[\s\S]*?S\.user=null;\n    S\.csrfToken='';/
+  );
+});
