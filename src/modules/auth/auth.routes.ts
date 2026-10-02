@@ -23,6 +23,7 @@ import {
   deleteUser,
   getPasswordHashByUserId,
   getUserByEmail,
+  invalidateAuthActionTokens,
   listUserSessions,
   markEmailVerified,
   revokeAllUserSessions,
@@ -417,6 +418,7 @@ authRouter.post("/resend-verification", async (request, response, next) => {
           );
         }
       } catch (error) {
+        await invalidateAuthActionTokens(user.id, "email_verification");
         if (error instanceof Error && error.message === "AUTH_EMAIL_NOT_CONFIGURED") {
           response.status(503).json({
             success: false,
@@ -519,6 +521,7 @@ authRouter.post("/forgot-password", async (request, response, next) => {
           );
         }
       } catch (error) {
+        await invalidateAuthActionTokens(user.id, "password_reset");
         response.status(502).json({
           success: false,
           error: {
