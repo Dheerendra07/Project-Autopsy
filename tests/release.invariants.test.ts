@@ -593,7 +593,9 @@ test("frontend controls have explicit handlers and every workspace view is wired
     "historical-filter",
     "historical-clear-filter",
     "operations-refresh",
-    "operations-retry"
+    "operations-retry",
+    "report-jump",
+    "copy-story"
   ]) {
     assert.ok(
       appJs.includes("===" + "'" + action + "'"),
@@ -1204,7 +1206,7 @@ test("frontend refreshes repository metadata after analysis completion", () => {
   assert.ok(completion.includes("await loadViewData(S.view,{force:true})"));
   assert.ok(
     completion.indexOf("S.repo=latestRepo") <
-      completion.indexOf("await loadData()")
+      completion.indexOf("await loadViewData(S.view,{force:true})")
   );
 });
  
@@ -2560,10 +2562,9 @@ test("frontend clears in-memory csrf state on auth loss and sign-out", () => {
   const appJs = readRepoFile("public/app.js");
 
   assert.ok(appJs.includes("S.user=null;S.csrfToken='';"));
-  assert.ok(appJs.includes("S.user=null;\n      S.csrfToken='';"));
   assert.ok(appJs.includes("async function logoutLocalState(showToast)"));
   assert.match(
     appJs,
-    /logoutLocalState\(showToast\)\{[\s\S]*?S\.user=null;\n    S\.csrfToken='';/
+    /logoutLocalState\(showToast\)\{[\s\S]*?S\.user=null;S\.csrfToken='';/
   );
 });

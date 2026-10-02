@@ -123,7 +123,7 @@ function buildStory(
         " Relevant evidence: " +
         evidenceSummary.join(" | "),
       evidenceBackedResult:
-        "What the current repository snapshot can establish: " +
+        "Actual result visible in the current evidence snapshot (not a separately verified engineering or business outcome): " +
         evidenceSummary.join(" | ") +
         ". Add any engineering, user, or business outcome only after independent verification.",
       limitation: storySections

@@ -24,7 +24,7 @@ test("authentication UI contract stays explicit and mode-correct", () => {
   );
   assert.match(
     app,
-    /S.authMode==='register'?'Use your email and a password with at least 12 characters.'/
+    /S\.authMode==='register'\?'Use your email and a password with at least 12 characters\.'/
   );
   assert.match(
     app,
