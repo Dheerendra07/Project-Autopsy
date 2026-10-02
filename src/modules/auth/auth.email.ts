@@ -83,7 +83,7 @@ export async function sendVerificationEmail(
   idempotencyKey: string
 ): Promise<void> {
   const safeEmail = escapeHtml(email);
-  const link = buildPublicUrl("/?verify=", encodeURIComponent(token));
+  const link = buildPublicUrl("/#auth-verify=", encodeURIComponent(token));
 
   await sendTransactionalEmail(
     email,
@@ -112,7 +112,7 @@ export async function sendPasswordResetEmail(
   token: string,
   idempotencyKey: string
 ): Promise<void> {
-  const link = buildPublicUrl("/?reset=", encodeURIComponent(token));
+  const link = buildPublicUrl("/#auth-reset=", encodeURIComponent(token));
 
   await sendTransactionalEmail(
     email,
