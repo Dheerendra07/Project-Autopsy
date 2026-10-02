@@ -41,7 +41,7 @@
     legacyMigrationKey:'',
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    authMode:'login',authSubmitting:false,repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
+    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -1238,6 +1238,11 @@
   }
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('authForm').onsubmit=function(e){e.preventDefault();submitAuth()};
+  $('forgotForm').onsubmit=function(e){e.preventDefault();submitForgotPassword()};
+  $('resetForm').onsubmit=function(e){e.preventDefault();resetPasswordFromLink()};
+  $('verifySubmit').onclick=verifyEmail;
+  $('authForgotLink').onclick=function(){setAuthMode('forgot');$('forgotEmail').value=$('authEmail').value.trim();$('forgotEmail').focus()};
+  $('resendVerification').onclick=resendVerification;
   $('passwordForm').onsubmit=function(e){e.preventDefault();changePassword()};
   $('sessionsList').onclick=function(e){
     var button=e.target.closest('.revoke-session');
@@ -1246,7 +1251,7 @@
   };
   $('refreshSessions').onclick=function(){void loadSecuritySessions()};
   $('authModeToggle').onclick=function(){
-    if(S.authMode==='migrate'){
+    if(['forgot','reset','verify','migrate'].indexOf(S.authMode)>=0){
       setAuthMode('login');
       return;
     }
@@ -1276,30 +1281,43 @@
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))};window.addEventListener('hashchange',function(){setView(viewFromHash(),{fromHash:true})});window.addEventListener('pageshow',function(){closeTransientOverlays()});document.addEventListener('visibilitychange',function(){syncOperationsMonitoring(!document.hidden)})
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'),ev);return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'),pd);return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='more-timeline')loadMoreTimeline();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='reload-view')reloadCurrentView();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='operations-refresh')loadOperations(true);if(a.getAttribute('data-action')==='operations-retry')loadOperations(true);if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
   function setAuthMode(mode){
-    S.authMode=mode==='register'?'register':mode==='migrate'?'migrate':'login';
+    S.authMode=['login','register','migrate','forgot','reset','verify'].indexOf(mode)>=0?mode:'login';
+    var standard=['login','register','migrate'].indexOf(S.authMode)>=0;
     var migrating=S.authMode==='migrate';
-    $('authTitle').textContent=migrating?'Move your existing workspace':'Sign in to Project Autopsy';
-    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Your private engineering workspace starts with one account.':'Use the account that owns your Autopsy repositories.';
-    $('authSubmit').textContent=migrating?'Migrate & sign in':S.authMode==='register'?'Create account':'Sign in';
-    $('authModeToggle').textContent=migrating?'Use normal sign in instead':S.authMode==='register'?'Already have an account? Sign in':'New here? Create an account';
-    $('authPassword').setAttribute('autocomplete',S.authMode==='register'?'new-password':'current-password');
-  }
-  function openAuth(mode){
+    var forgot=S.authMode==='forgot';
+    var reset=S.authMode==='reset';
+    var verify=S.authMode==='verify';
+    $('authForm').hidden=!standard;
+    $('forgotForm').hidden=!forgot;
+    $('resetForm').hidden=!reset;
+    $('verifyPanel').hidden=!verify;
+    $('authTitle').textContent=migrating?'Move your existing workspace':forgot?'Reset your password':reset?'Choose a new password':verify?'Verify your email':'Sign in to Project Autopsy';
+    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Your private engineering workspace starts with one account.':forgot?'We willfunction openAuth(mode){
     S.authMode=mode||'login';
     setAuthMode(S.authMode);
     $('authError').hidden=true;
-    $('authEmail').value=S.user&&S.user.email||'';
+    $('authNotice').hidden=true;
+    $('forgotError').hidden=true;
+    $('forgotNotice').hidden=true;
+    $('resetError').hidden=true;
+    $('authEmail').value=S.user&&S.user.email||$('authEmail').value||'';
+    $('forgotEmail').value=$('authEmail').value||'';
     $('authPassword').value='';
+    if(mode!=='reset'&&mode!=='verify')S.authToken='';
     if(mode==='migrate'){
       $('authModeToggle').hidden=!S.legacyMigrationKey;
-    }else{
-      $('authModeToggle').hidden=false;
     }
     $('authModal').hidden=false;
-    requestAnimationFrame(function(){($('authEmail')).focus()});
+    requestAnimationFrame(function(){
+      if(mode==='forgot')$('forgotEmail').focus();
+      else if(mode==='reset')$('resetPassword').focus();
+      else if(mode==='verify')$('verifySubmit').focus();
+      else $('authEmail').focus();
+    });
   }
   function closeAuth(){
     $('authModal').hidden=true;
+    S.authSubmitting=false;
   }
   async function submitAuth(){
     if(S.authSubmitting)return;
@@ -1311,28 +1329,43 @@
       return;
     }
     S.authSubmitting=true;
+    var mode=S.authMode;
     var authButton=$('authSubmit');
     if(authButton){
       authButton.disabled=true;
       authButton.setAttribute('aria-busy','true');
-      authButton.textContent=S.authMode==='migrate'?'Migrating…':S.authMode==='register'?'Creating…':'Signing in…';
+      authButton.textContent=mode==='migrate'?'Migrating…':mode==='register'?'Creating…':'Signing in…';
     }
     $('authError').hidden=true;
+    $('authNotice').hidden=true;
     try{
-      var path=S.authMode==='migrate'?'/api/auth/migrate-legacy':S.authMode==='register'?'/api/auth/register':'/api/auth/login';
+      var path=mode==='migrate'?'/api/auth/migrate-legacy':mode==='register'?'/api/auth/register':'/api/auth/login';
       var options={method:'POST',body:JSON.stringify({email:email,password:password})};
-      if(S.authMode==='migrate'&&S.legacyMigrationKey){
+      if(mode==='migrate'&&S.legacyMigrationKey){
         options.headers={'x-autopsy-api-key':S.legacyMigrationKey};
       }
-      var r=await api(path,options);
-      if(S.authMode==='migrate')S.legacyMigrationKey='';
-      S.user=r.user;
+      var result=await api(path,options);
+      if(mode==='migrate')S.legacyMigrationKey='';
+      if(mode==='register'&&result.requiresEmailVerification){
+        S.user=null;
+        S.connectionState='unknown';
+        connected('unknown');
+        $('authPassword').value='';
+        $('authNotice').textContent=result.message||'Account created. Check your email to verify the account.';
+        $('authNotice').hidden=false;
+        $('authModeToggle').hidden=true;
+        $('authForgotLink').hidden=true;
+        $('resendVerification').hidden=false;
+        toast('Verification email sent.','good');
+        return;
+      }
+      S.user=result.user;
       S.connectionState='verified';
       connected('verified');
       closeAuth();
       persist();
       await loadRecentRepositories();
-      toast(S.authMode==='register'?'Account created and signed in.':'Signed in successfully.','good');
+      toast(mode==='register'?'Account created and signed in.':'Signed in successfully.','good');
       var restored=await restoreSavedWorkspace();
       if(!restored)landing();
     }catch(e){
@@ -1343,8 +1376,145 @@
       if(authButton){
         authButton.disabled=false;
         authButton.removeAttribute('aria-busy');
-        setAuthMode(S.authMode);
       }
+      setAuthMode(S.authMode);
+    }
+  }
+  async function submitForgotPassword(){
+    var email=$('forgotEmail').value.trim();
+    var error=$('forgotError'),notice=$('forgotNotice'),button=$('forgotSubmit');
+    if(!email){
+      error.textContent='Enter the email address for your account.';
+      error.hidden=false;
+      notice.hidden=true;
+      return;
+    }
+    error.hidden=true;
+    notice.hidden=true;
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent='Sending…';
+    try{
+      var result=await api('/api/auth/forgot-password',{method:'POST',body:JSON.stringify({email:email})});
+      notice.textContent=result.message||'If an account exists for that email, a password reset link has been sent.';
+      notice.hidden=false;
+      $('authEmail').value=email;
+      toast('Reset instructions requested.','good');
+    }catch(e){
+      error.textContent=e.message||'Password reset request failed.';
+      error.hidden=false;
+    }finally{
+      button.disabled=false;
+      button.removeAttribute('aria-busy');
+      button.textContent='Send reset link';
+    }
+  }
+  async function resendVerification(){
+    var email=($('authEmail').value||$('forgotEmail').value||'').trim();
+    var error=$('authError'),notice=$('authNotice'),button=$('resendVerification');
+    if(!email){
+      error.textContent='Enter your account email first.';
+      error.hidden=false;
+      return;
+    }
+    error.hidden=true;
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    try{
+      var result=await api('/api/auth/resend-verification',{method:'POST',body:JSON.stringify({email:email})});
+      notice.textContent=result.message||'If the account needs verification, a new verification email has been sent.';
+      notice.hidden=false;
+      toast('Verification instructions requested.','good');
+    }catch(e){
+      error.textContent=e.message||'Verification email request failed.';
+      error.hidden=false;
+    }finally{
+      button.disabled=false;
+      button.removeAttribute('aria-busy');
+    }
+  }
+  async function verifyEmail(){
+    var status=$('verifyStatus'),button=$('verifySubmit');
+    if(!S.authToken){
+      status.textContent='This verification link is missing or incomplete.';
+      button.disabled=true;
+      return;
+    }
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent='Verifying…';
+    try{
+      var result=await api('/api/auth/verify-email',{method:'POST',body:JSON.stringify({token:S.authToken})});
+      $('authNotice').textContent=result.message||'Email verified. You can now sign in.';
+      $('authNotice').hidden=false;
+      $('verifyPanel').hidden=true;
+      S.authToken='';
+      setAuthMode('login');
+      $('authPassword').value='';
+      toast('Email verified.','good');
+    }catch(e){
+      status.textContent=e.message||'Email verification failed.';
+      button.disabled=false;
+    }finally{
+      button.removeAttribute('aria-busy');
+      if(button.textContent==='Verifying…')button.textContent='Verify email';
+    }
+  }
+  async function resetPasswordFromLink(){
+    var next=$('resetPassword').value;
+    var confirm=$('resetPasswordConfirm').value;
+    var error=$('resetError'),button=$('resetSubmit');
+    if(!S.authToken){
+      error.textContent='This reset link is missing or incomplete.';
+      error.hidden=false;
+      return;
+    }
+    if(!next||!confirm){
+      error.textContent='Enter and confirm your new password.';
+      error.hidden=false;
+      return;
+    }
+    if(next!==confirm){
+      error.textContent='The password confirmation does not match.';
+      error.hidden=false;
+      return;
+    }
+    error.hidden=true;
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent='Resetting…';
+    try{
+      var result=await api('/api/auth/reset-password',{method:'POST',body:JSON.stringify({token:S.authToken,newPassword:next})});
+      S.authToken='';
+      S.user=null;
+      S.connectionState='unknown';
+      clearWorkspaceState();
+      connected('unknown');
+      openAuth('login');
+      $('authNotice').textContent=result.message||'Password reset. You can now sign in.';
+      $('authNotice').hidden=false;
+      $('authPassword').focus();
+      toast('Password reset successfully.','good');
+    }catch(e){
+      error.textContent=e.message||'Password reset failed.';
+      error.hidden=false;
+    }finally{
+      button.disabled=false;
+      button.removeAttribute('aria-busy');
+      button.textContent='Reset password';
+    }
+  }
+  function consumeAuthLink(){
+    try{
+      var params=new URLSearchParams(location.search);
+      var verify=params.get('verify'),reset=params.get('reset');
+      if(!verify&&!reset)return'';
+      history.replaceState(null,'',location.pathname+location.hash);
+      if(verify){S.authToken=verify;return'verify'}
+      S.authToken=reset;
+      return'reset';
+    }catch(e){
+      return'';
     }
   }
   function clearWorkspaceState(){
@@ -1465,6 +1635,12 @@
     }
   }
   async function boot(){
+    var authLink=consumeAuthLink();
+    if(authLink){
+      landing();
+      openAuth(authLink);
+      return;
+    }
     S.legacyMigrationKey=storageGet('autopsy.key');
     storageRemove('autopsy.key');
     storageRemove('autopsy.aiKey');
