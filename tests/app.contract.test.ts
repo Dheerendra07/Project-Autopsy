@@ -73,8 +73,10 @@ before(async () => {
   assert.ok(registerBody.user?.id);
   assert.equal(registerBody.requiresEmailVerification, false);
   const setCookie = registerResponse.headers.get("set-cookie") ?? "";
-  authCookie = parseCookie(setCookie, "autopsy_session");
-  csrfToken = parseCookie(setCookie, "autopsy_csrf");
+  const sessionValue = parseCookie(setCookie, "autopsy_session");
+  const csrfValue = parseCookie(setCookie, "autopsy_csrf");
+  authCookie = "autopsy_session=" + sessionValue + "; autopsy_csrf=" + csrfValue;
+  csrfToken = csrfValue;
   testUserId = registerBody.user.id;
   assert.ok(authCookie);
   assert.ok(csrfToken);
@@ -300,7 +302,7 @@ test("commit history is newest-first while the timeline remains chronological", 
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, head_sha
       )
-      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'commit-order-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'commit-order-test', 'main', $3)
     `,
     [repositoryId, testUserId, newestSha]
   );
@@ -649,7 +651,7 @@ test("analysis status hides internal failure paths from API consumers", async ()
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
-      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
   );
@@ -706,7 +708,7 @@ test("repository deletion is blocked while analysis is active", async () => {
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
-      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-active-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-active-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
   );
@@ -756,7 +758,7 @@ test("repository deletion removes persisted metadata and checkout storage", asyn
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
-      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-success-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-success-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
   );
@@ -806,7 +808,7 @@ test("repository deletion and refresh cannot both succeed concurrently", async (
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
-      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-race-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-race-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
   );
