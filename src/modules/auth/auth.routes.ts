@@ -101,7 +101,7 @@ authRouter.post("/register", async (request, response, next) => {
       return;
     }
 
-    let user;
+    let user: Awaited<ReturnType<typeof createUser>>;
     try {
       user = await createUser(
         randomUUID(),
