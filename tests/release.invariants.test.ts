@@ -2091,6 +2091,10 @@ test("frontend runtime datetime filters round-trip between local inputs and API-
   assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.from))"));
   assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.to))"));
   assert.ok(appJs.includes("['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation']"));
+  assert.ok(appJs.includes("<tbody>'+(histItems.map(function(x)"));
+  assert.ok(appJs.includes("No historical runtime records returned.</td></tr>')+'</tbody>"));
+  assert.ok(appJs.includes("<tbody>'+(sci.slice(0,20).map(function(x)"));
+  assert.ok(appJs.includes("No historical source-context records returned.</td></tr>')+'</tbody>"));
 });
 
 
