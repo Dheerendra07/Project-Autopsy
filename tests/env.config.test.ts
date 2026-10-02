@@ -68,17 +68,15 @@ test("production web configuration allows optional ingestion credentials", () =>
   assert.equal(config.DEPLOYMENT_EVIDENCE_INGEST_KEY, undefined);
 });
 
-test("requires the API access key in production", () => {
-  assert.throws(
-    () =>
-      parseEnvironment(
-        baseEnvironment({
-          NODE_ENV: "production",
-          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
-          DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32)
-        })
-      ),
-    /AUTOPSY_API_ACCESS_KEY/
+test("production web configuration no longer requires the legacy API access key", () => {
+  assert.doesNotThrow(() =>
+    parseEnvironment(
+      baseEnvironment({
+        NODE_ENV: "production",
+        RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
+        DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32)
+      })
+    )
   );
 });
 
@@ -95,19 +93,16 @@ test("accepts the required production access credentials", () => {
   assert.equal(config.NODE_ENV, "production");
 });
 
-test("requires the AI access key when AI is enabled in production", () => {
-  assert.throws(
-    () =>
-      parseEnvironment(
-        baseEnvironment({
-          NODE_ENV: "production",
-          RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
-          DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32),
-          AUTOPSY_API_ACCESS_KEY: "a".repeat(32),
-          AI_API_KEY: "test-ai-key"
-        })
-      ),
-    /AI_INTERPRETATION_ACCESS_KEY/
+test("production AI configuration uses the server-side provider credential", () => {
+  assert.doesNotThrow(() =>
+    parseEnvironment(
+      baseEnvironment({
+        NODE_ENV: "production",
+        RUNTIME_TELEMETRY_INGEST_KEY: "r".repeat(32),
+        DEPLOYMENT_EVIDENCE_INGEST_KEY: "d".repeat(32),
+        AI_API_KEY: "test-ai-key"
+      })
+    )
   );
 });
 
