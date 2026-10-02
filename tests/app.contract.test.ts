@@ -271,24 +271,44 @@ test("protected repository routes reject malformed UUIDs with the repository-id 
 
 
 
-test("protected repository access takes precedence over query validation for unknown IDs", async () => {
-  for (const query of ["page=0&limit=50", "page=1&limit=101"]) {
-    const response = await fetch(
-      baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/commits?" + query,
-      {
-        headers: {
-          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
-        }
-      }
-    );
+test("commit pagination rejects zero and oversized limits before persistence access", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
 
-    assert.equal(response.status, 404);
-    const body = await response.json() as {
-      error: { code: string };
-    };
-    assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'commit-pagination-validation-test', 'main')
+    `,
+    [repositoryId, testUserId]
+  );
+
+  try {
+    for (const query of ["page=0&limit=50", "page=1&limit=101"]) {
+      const response = await fetch(
+        baseUrl + "/api/repositories/" + repositoryId + "/commits?" + query,
+        {
+          headers: {
+            "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
+          }
+        }
+      );
+
+      assert.equal(response.status, 400);
+      const body = await response.json() as {
+        error: { code: string; issues: unknown[] };
+      };
+      assert.equal(body.error.code, "VALIDATION_ERROR");
+      assert.ok(body.error.issues.length > 0);
+    }
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
   }
 });
+
+
 
 test("commit history is newest-first while the timeline remains chronological", async () => {
   const { db } = await import("../src/config/database.js");
@@ -352,72 +372,121 @@ test("commit history is newest-first while the timeline remains chronological", 
 });
 
 
-test("unknown repositories return not-found before runtime filter validation", async () => {
-  const response = await fetch(
-    baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
-    {
-      headers: {
-        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
-      }
-    }
+test("runtime telemetry rejects a non-chronological date window", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'runtime-window-validation-test', 'main')
+    `,
+    [repositoryId, testUserId]
   );
 
-  assert.equal(response.status, 404);
-  assert.deepEqual(await response.json(), {
-    success: false,
-    error: {
-      code: "REPOSITORY_NOT_FOUND",
-      message: "Repository not found."
-    }
-  });
+  try {
+    const response = await fetch(
+      baseUrl + "/api/repositories/" + repositoryId + "/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
+      {
+        headers: {
+          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
+        }
+      }
+    );
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      error: { code: string; issues: Array<{ message: string }> };
+    };
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.ok(
+      body.error.issues.some((issue) =>
+        /from must be earlier than to/i.test(issue.message)
+      )
+    );
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+  }
 });
 
 
 
-test("unknown repositories return not-found before revision filter validation", async () => {
-  const response = await fetch(
-    baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?revisionSha=abc",
-    {
-      headers: {
-        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
-      }
-    }
+test("runtime telemetry rejects invalid revision filter shape", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'runtime-revision-validation-test', 'main')
+    `,
+    [repositoryId, testUserId]
   );
 
-  assert.equal(response.status, 404);
-  assert.deepEqual(await response.json(), {
-    success: false,
-    error: {
-      code: "REPOSITORY_NOT_FOUND",
-      message: "Repository not found."
-    }
-  });
+  try {
+    const response = await fetch(
+      baseUrl + "/api/repositories/" + repositoryId + "/runtime/telemetry?revisionSha=abc",
+      {
+        headers: {
+          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
+        }
+      }
+    );
+
+    assert.equal(response.status, 400);
+    const body = await response.json() as {
+      error: { code: string; issues: unknown[] };
+    };
+    assert.equal(body.error.code, "VALIDATION_ERROR");
+    assert.ok(body.error.issues.length > 0);
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+  }
 });
 
 
 
-test("unknown repositories return not-found before report query validation", async () => {
-  for (const route of [
-    "/api/repositories/00000000-0000-4000-8000-000000000999/report?limit=0",
-    "/api/repositories/00000000-0000-4000-8000-000000000999/report?limit=51",
-    "/api/repositories/00000000-0000-4000-8000-000000000999/interpretation?limit=0",
-    "/api/repositories/00000000-0000-4000-8000-000000000999/interpretation?limit=51"
-  ]) {
-    const response = await fetch(baseUrl + route, {
-      headers: {
-        "cookie": authCookie,
-        "x-autopsy-csrf-token": csrfToken
-      }
-    });
+test("report and interpretation endpoints reject limits outside their bounded range", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
 
-    assert.equal(response.status, 404);
-    assert.deepEqual(await response.json(), {
-      success: false,
-      error: {
-        code: "REPOSITORY_NOT_FOUND",
-        message: "Repository not found."
-      }
-    });
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'report-limit-validation-test', 'main')
+    `,
+    [repositoryId, testUserId]
+  );
+
+  try {
+    for (const route of [
+      "/api/repositories/" + repositoryId + "/report?limit=0",
+      "/api/repositories/" + repositoryId + "/report?limit=51",
+      "/api/repositories/" + repositoryId + "/interpretation?limit=0",
+      "/api/repositories/" + repositoryId + "/interpretation?limit=51"
+    ]) {
+      const response = await fetch(baseUrl + route, {
+        headers: {
+          "cookie": authCookie,
+          "x-autopsy-csrf-token": csrfToken
+        }
+      });
+
+      assert.equal(response.status, 400);
+      const body = await response.json() as {
+        error: { code: string; issues: unknown[] };
+      };
+      assert.equal(body.error.code, "VALIDATION_ERROR");
+      assert.ok(body.error.issues.length > 0);
+    }
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
   }
 });
 
@@ -974,27 +1043,42 @@ test("analysis-runs endpoint returns the repository-not-found contract", async (
   });
 });
 
-test("unknown repositories return not-found before analysis-run pagination validation", async () => {
-  for (const limit of [0, 51]) {
-    const response = await fetch(
-      baseUrl +
-        "/api/repositories/00000000-0000-4000-8000-000000000999/analysis-runs?limit=" +
-        limit,
-      {
-        headers: {
-          "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
-        }
-      }
-    );
+test("analysis-runs endpoint bounds pagination", async () => {
+  const { db } = await import("../src/config/database.js");
+  const repositoryId = randomUUID();
 
-    assert.equal(response.status, 404);
-    assert.deepEqual(await response.json(), {
-      success: false,
-      error: {
-        code: "REPOSITORY_NOT_FOUND",
-        message: "Repository not found."
-      }
-    });
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-runs-pagination-validation-test', 'main')
+    `,
+    [repositoryId, testUserId]
+  );
+
+  try {
+    for (const limit of [0, 51]) {
+      const response = await fetch(
+        baseUrl +
+          "/api/repositories/" + repositoryId + "/analysis-runs?limit=" +
+          limit,
+        {
+          headers: {
+            "cookie": authCookie, "x-autopsy-csrf-token": csrfToken
+          }
+        }
+      );
+
+      assert.equal(response.status, 400);
+      const body = await response.json() as {
+        error: { code: string; issues: unknown[] };
+      };
+      assert.equal(body.error.code, "VALIDATION_ERROR");
+      assert.ok(body.error.issues.length > 0);
+    }
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
   }
 });
 
