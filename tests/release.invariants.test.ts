@@ -1906,3 +1906,11 @@ test("frontend Operations workspace exposes live posture and evidence boundary",
   assert.ok(indexHtml.includes(".ops-posture-grid"));
   assert.ok(indexHtml.includes(".ops-health-card"));
 });
+
+
+test("frontend clears transient overlays when a page is restored", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function closeTransientOverlays()"));
+  assert.ok(appJs.includes("window.addEventListener('pageshow',function(){closeTransientOverlays()})"));
+  assert.ok(appJs.includes("if($('drawer'))$('drawer').hidden=true"));
+});
