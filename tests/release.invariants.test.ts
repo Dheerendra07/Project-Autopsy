@@ -481,6 +481,88 @@ test("frontend controls have explicit handlers and every workspace view is wired
 });
 
 
+test("frontend navigation, DOM ids and delegated actions stay one-to-one", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map((match) => match[1]);
+  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+  assert.deepEqual(duplicateIds, [], "duplicate static DOM ids detected");
+
+  const views = [
+    "overview",
+    "history",
+    "structure",
+    "quality",
+    "runtime",
+    "report",
+    "interview",
+    "interpretation",
+    "evidence",
+    "contributors",
+    "operations"
+  ];
+  for (const view of views) {
+    const occurrences = html.match(new RegExp('data-view="' + view + '"', "g")) || [];
+    assert.equal(
+      occurrences.length,
+      1,
+      "workspace navigation view must have exactly one control: " + view
+    );
+    const rendererMatches = appJs.match(
+      new RegExp("function " + view + "\\s*\\(", "g")
+    ) || [];
+    assert.equal(
+      rendererMatches.length,
+      1,
+      "workspace view must have exactly one renderer: " + view
+    );
+  }
+
+  const expectedActions = [
+    "report",
+    "interview",
+    "interpretation",
+    "download",
+    "more-commits",
+    "more-timeline",
+    "analysis-runs-more",
+    "reload-data",
+    "reload-view",
+    "runtime-filter",
+    "runtime-clear-filter",
+    "runtime-more",
+    "historical-filter",
+    "historical-clear-filter",
+    "operations-refresh",
+    "operations-retry"
+  ];
+  const rootHandlerStart = appJs.indexOf("$('root').onclick=function(e){");
+  const rootHandlerEnd = appJs.indexOf("\n  function setAuthMode(", rootHandlerStart);
+  assert.ok(rootHandlerStart >= 0 && rootHandlerEnd > rootHandlerStart);
+  const rootHandler = appJs.slice(rootHandlerStart, rootHandlerEnd);
+  const delegatedActions = [
+    ...rootHandler.matchAll(
+      /a\.getAttribute\('data-action'\)===['"]([^'"]+)['"]/g
+    )
+  ].map((match) => match[1]);
+  assert.deepEqual(
+    delegatedActions,
+    expectedActions,
+    "delegated root actions drifted from the declared UI action contract"
+  );
+
+  const responsiveNavRule = html.match(
+    /@media\(max-width:1000px\)\{[^}]*\.nav\{[^}]*\}[^}]*\.nav \.nav-group\{([^}]*)\}/
+  )?.[1] || "";
+  assert.match(
+    responsiveNavRule,
+    /grid-column:1\\/-1/,
+    "responsive navigation groups must span the full row"
+  );
+});
+
+
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
