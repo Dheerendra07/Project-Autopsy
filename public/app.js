@@ -1510,10 +1510,13 @@
   }
   function consumeAuthLink(){
     try{
-      var params=new URLSearchParams(location.search);
-      var verify=params.get('verify'),reset=params.get('reset');
+      var hash=location.hash||'';
+      var verifyPrefix='#auth-verify=';
+      var resetPrefix='#auth-reset=';
+      var verify=hash.startsWith(verifyPrefix)?decodeURIComponent(hash.slice(verifyPrefix.length)):'';
+      var reset=hash.startsWith(resetPrefix)?decodeURIComponent(hash.slice(resetPrefix.length)):'';
       if(!verify&&!reset)return'';
-      history.replaceState(null,'',location.pathname+location.hash);
+      history.replaceState(null,'',location.pathname+location.search);
       if(verify){S.authToken=verify;return'verify'}
       S.authToken=reset;
       return'reset';
