@@ -363,3 +363,11 @@ Post-checkpoint production cleanup merged through PRs #172, #173, and #174: auth
 ## Production smoke hygiene checkpoint — 2026-10-02
 
 The hosted production smoke flow now explicitly closes the session it creates. The authenticated checks are wrapped in a cleanup-safe `try/finally`, and a valid CSRF-protected logout is used to revoke the smoke session even when an earlier assertion fails. This prevents repeated manual production-smoke runs from accumulating active bootstrap-account sessions.
+
+## Automated production-smoke checkpoint — 2026-10-02
+
+The production smoke workflow is now both manually dispatchable and scheduled every six hours against the canonical hosted URL. Manual runs may override the URL, while scheduled runs use `https://project-autopsy.onrender.com`.
+
+The smoke now checks the public HTML/app asset surface, both favicon routes, a valid `X-Request-Id` on health responses, dependency readiness, the unauthenticated API wall, authenticated session establishment, session listing, CSRF rejection, protected-route ownership boundary, and smoke-session cleanup.
+
+The schedule intentionally runs the existing bounded smoke only; it does not import repositories or mutate repository evidence. Bootstrap credentials remain GitHub Actions secrets and are not stored in source.
