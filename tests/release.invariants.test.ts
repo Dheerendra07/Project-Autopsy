@@ -869,6 +869,22 @@ test("frontend history pagination releases busy state on every exit path", () =>
     timelineBlock.includes("actionBusy('more-timeline',false)")
     && timelineBlock.includes("S.timelineLoading=false")
   );
+  assert.ok(
+    appJs.includes("S.data.timeline={events:current.concat(next),pagination:r.pagination}")
+  );
+  assert.ok(
+    appJs.includes("S.data.commits={commits:current.concat(next),pagination:r.pagination}")
+  );
+  assert.ok(
+    appJs.includes('var d=S.data,c=arr(d.commits,\'commits\'),t=arr(d.timeline,\'events\')')
+  );
+  assert.ok(
+    appJs.includes('t.map(function(x){return \'<div class="item">')
+  );
+  assert.ok(
+    appJs.includes('c.map(function(x){return \'<tr>')
+  );
+
 });
 
 test("frontend releases the runtime loading lock when an analysis run changes", () => {
