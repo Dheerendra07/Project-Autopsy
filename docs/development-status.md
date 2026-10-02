@@ -344,3 +344,18 @@ The evidence-first workspace UI has now received a focused production-surface pa
 - Render auto-deploy is active for both the static UI and API services. The Runtime commit is live on the API service; the latest Operations commit is being deployed to the static UI at checkpoint time.
 
 Continuation rule: preserve evidence-first semantics, deterministic report fingerprints, protected API access, bounded execution, secret non-disclosure, stale-state handling, focus management and mobile-layout contracts while continuing remaining product polish.
+
+## Authentication production-smoke checkpoint — 2026-10-02
+
+PR #171 is merged on main at `fac98d487d79e6d2e2aee6b955128572b014d9aa`.
+
+- Account sessions, password change, session listing/revocation, email verification, resend verification, forgot-password, and password reset are implemented behind the existing account/CSRF boundary.
+- Verification and reset tokens are PostgreSQL-backed, hashed at rest, single-use, expiry-bound, and stale tokens are purged during startup and the recurring cleanup sweep.
+- Transactional auth email is opt-in through Brevo using `BREVO_API_KEY`, `AUTOPSY_EMAIL_FROM`, and `AUTOPSY_PUBLIC_URL`; when configured, new accounts require email verification before sign-in.
+- Legacy workspace migration remains intentionally available until all pre-account workspaces have been migrated; do not remove `AUTOPSY_API_ACCESS_KEY` or the migration route based only on time.
+- Render production deploy for `fac98d4…` completed successfully. Migration `018_auth_email_recovery.sql` applied, PostgreSQL and Redis connected, and the API reached its listening port.
+- Live `/health` verification returned HTTP 200 with `status: healthy`; the canonical production root also returned the expected Project Autopsy UI.
+- The production smoke contract now covers authenticated `/api/auth/sessions` and rejects state-changing logout without the session-bound CSRF token.
+- Hosted production-smoke execution still requires the configured bootstrap credentials; source code contains no production credential.
+
+Continuation rule: treat `fac98d4…` as the current main release baseline. Preserve session authentication, CSRF enforcement, tenant ownership, token non-disclosure, bounded rate limiting, stale-state protections, and the existing evidence-first product boundary.
