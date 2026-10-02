@@ -247,7 +247,8 @@ test("frontend product surface stays guided, progressive and evidence-readable",
     "data-view=\"operations\"",
     "Operations",
     "id=\"drawerSummary\"",
-    "id=\"drawerRaw\""
+    "id=\"drawerRaw\"",
+    "favicon.svg"
   ]) {
     assert.ok(html.includes(marker), "missing product UI marker: " + marker);
   }
