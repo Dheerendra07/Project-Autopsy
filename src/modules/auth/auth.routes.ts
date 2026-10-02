@@ -30,6 +30,7 @@ import {
   revokeExcessUserSessions,
   revokeSession,
   resetPasswordWithToken,
+  verifyEmailWithToken,
   revokeSessionForUser,
   updateLastLogin
 } from "./auth.persistence.js";
@@ -456,12 +457,9 @@ authRouter.post("/verify-email", async (request, response, next) => {
       token: z.string().trim().min(32).max(512)
     }).parse(request.body);
 
-    const consumed = await consumeAuthActionToken(
-      hashOpaqueToken(input.token),
-      "email_verification"
-    );
+    const verified = await verifyEmailWithToken(hashOpaqueToken(input.token));
 
-    if (!consumed) {
+    if (!verified) {
       response.status(400).json({
         success: false,
         error: {
@@ -471,8 +469,6 @@ authRouter.post("/verify-email", async (request, response, next) => {
       });
       return;
     }
-
-    await markEmailVerified(consumed.userId);
 
     response.json({
       success: true,
