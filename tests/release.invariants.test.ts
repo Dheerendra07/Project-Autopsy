@@ -2216,6 +2216,8 @@ test("frontend report surface exposes a claim and evidence posture", () => {
   assert.ok(appJs.includes("var sections=Array.isArray(rep.sections)?rep.sections:[],claims=0,evidenceRefs=0,limited=0"));
   assert.ok(appJs.includes("Evidence posture"));
   assert.ok(appJs.includes("Report map"));
+  assert.ok(appJs.includes("data-action=\"report-jump\""));
+  assert.ok(appJs.includes("scrollIntoView({behavior:'smooth',block:'start'})"));
   assert.ok(indexHtml.includes(".report-posture"));
   assert.ok(indexHtml.includes(".report-index-row"));
 });
