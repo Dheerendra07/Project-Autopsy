@@ -261,7 +261,12 @@
     var token=S.workspaceToken;
     try{
       $('formerr').hidden=true;$('importButton').disabled=true;S.importing=true;
-      if(!S.user){openAuth('login');throw new Error('Sign in to analyze a repository.')}
+      if(!S.user){
+        $('formerr').textContent='Sign in is required before an analysis can start.';
+        $('formerr').hidden=false;
+        openAuth('login');
+        return;
+      }
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;clearInterval(S.timer);S.timer=null;
@@ -1259,6 +1264,17 @@
       if(token===S.workspaceToken&&id===S.repoId)toast(e.message||'Repository deletion failed','bad');
     }
   }
+  $('brandLink').onclick=function(e){
+    if(S.user&&S.repoId){
+      e.preventDefault();
+      setView('overview');
+      return;
+    }
+    e.preventDefault();
+    clearWorkspaceState();
+    landing();
+    if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+  };
   $('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('saveRepoAccess').onclick=function(){saveRepositoryAccess(false)};$('clearRepoAccess').onclick=function(){saveRepositoryAccess(true)};$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){
     try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}
     persist();
