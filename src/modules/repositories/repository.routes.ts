@@ -34,6 +34,7 @@ import {
   enqueueRepositoryRefresh
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
+import { listRepositoriesForUser } from "../auth/auth.persistence.js";
 import { sanitizePublicAnalysisErrorMessage } from "../analysis/analysis-error.js";
 import { classifyTimelineEvent } from "../timeline/timeline.classifier.js";
 import { classifyRefactorSignal } from "../refactors/refactor-signals.js";
@@ -67,6 +68,26 @@ const repositoryAccessTokenSchema = z
     "Repository access credential is invalid."
   );
 
+router.get("/", async (req, res, next) => {
+  try {
+    const result = await listRepositoriesForUser(req.auth?.userId ?? "", 50);
+
+    res.json({
+      success: true,
+      repositories: result.map((repository) => ({
+        id: repository.id,
+        name: repository.name,
+        sourceUrl: repository.source_url,
+        trackedBranch: repository.tracked_branch,
+        headSha: repository.head_sha,
+        updatedAt: repository.updated_at
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 const importSchema = z.object({
   url: z.string().url(),
   branch: z
@@ -97,7 +118,8 @@ router.post("/import", async (req, res, next) => {
         sourceUrl: safeUrl.toString(),
         name: getRepositoryNameFromUrl(safeUrl),
         trackedBranch: input.branch ?? null,
-        storagePath: getRepositoryStoragePath(repositoryId)
+        storagePath: getRepositoryStoragePath(repositoryId),
+        ownerUserId: req.auth?.userId ?? ""
       },
       ANALYZER_VERSION
     );
