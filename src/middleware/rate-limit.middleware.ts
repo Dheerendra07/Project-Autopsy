@@ -92,6 +92,7 @@ export async function consumeRateLimit(
     windowSeconds?: number;
     maxRequests?: number;
     heavyMaxRequests?: number;
+    authMaxRequests?: number;
   } = {}
 ): Promise<RateLimitResult> {
   const nowMs = options.nowMs ?? Date.now();
