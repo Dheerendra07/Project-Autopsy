@@ -2232,6 +2232,20 @@ test("frontend restores settings focus and moves evidence inspector focus on ope
   assert.ok(appJs.includes("$('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};"));
 });
 
+test("frontend preserves the current scroll position across same-view rerenders", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function setView(v,options)");
+  const end = appJs.indexOf("async function loadRuntimeEvents", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("var previous=S.view;"));
+  assert.ok(fn.includes("if(previous)S.viewScroll[previous]=window.scrollY||0;"));
+  assert.ok(fn.includes("var restore=S.viewScroll[v]||0;"));
+  assert.ok(fn.includes("window.scrollTo(0,restore)"));
+});
+
+
+
 test("frontend keeps browser history API unshadowed by the History view renderer", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("function historyView()"));
