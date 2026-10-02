@@ -1688,7 +1688,7 @@ test("frontend navigation writes browser history for user-driven view changes", 
 test("frontend marks rejected session state instead of leaving stale verified state", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("var verified=state==='verified',rejected=state==='rejected';"));
-  assert.ok(appJs.includes("rejected?'Session expired'"));
+  assert.ok(appJs.includes("rejected?'Access rejected'"));
   assert.ok(appJs.includes("S.connectionState='rejected';"));
   assert.ok(appJs.includes("connected('rejected');"));
 });
