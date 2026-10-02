@@ -26,6 +26,10 @@ function escapeHtml(value: string): string {
 }
 
 function buildPublicUrl(fragment: string, token: string): string {
+  if (!env.AUTOPSY_PUBLIC_URL) {
+    throw new Error("AUTH_EMAIL_NOT_CONFIGURED");
+  }
+
   const url = new URL(env.AUTOPSY_PUBLIC_URL);
   url.hash = fragment + encodeURIComponent(token);
   return url.toString();
