@@ -9,7 +9,8 @@ import {
   hashPassword,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
-  verifyPassword
+  verifyPassword,
+  safeEqualString
 } from "./auth.crypto.js";
 import {
   createSession,
@@ -84,6 +85,97 @@ async function startSession(
 
   setAuthCookies(response, sessionToken, csrfToken, expiresAt);
 }
+
+authRouter.post("/migrate-legacy", async (request, response, next) => {
+  try {
+    const configuredKey = env.AUTOPSY_API_ACCESS_KEY;
+    const providedKey = request.header("x-autopsy-api-key")?.trim();
+
+    if (
+      !configuredKey ||
+      !providedKey ||
+      !safeEqualString(configuredKey, providedKey)
+    ) {
+      response.status(401).json({
+        success: false,
+        error: {
+          code: "LEGACY_MIGRATION_UNAUTHORIZED",
+          message: "The legacy workspace migration credential is invalid."
+        }
+      });
+      return;
+    }
+
+    const input = credentialsSchema.parse(request.body);
+    let user = await getUserByEmail(input.email);
+
+    if (user) {
+      const passwordHash = await getPasswordHashByUserId(user.id);
+      const valid = passwordHash
+        ? await verifyPassword(input.password, passwordHash)
+        : false;
+
+      if (!valid) {
+        response.status(401).json({
+          success: false,
+          error: {
+            code: "AUTH_INVALID_CREDENTIALS",
+            message: "Email or password is incorrect."
+          }
+        });
+        return;
+      }
+    } else {
+      try {
+        user = await createUser(
+          randomUUID(),
+          input.email,
+          await hashPassword(input.password)
+        );
+      } catch (error) {
+        if (!isUniqueViolation(error)) {
+          throw error;
+        }
+
+        user = await getUserByEmail(input.email);
+        if (!user) {
+          throw error;
+        }
+
+        const passwordHash = await getPasswordHashByUserId(user.id);
+        const valid = passwordHash
+          ? await verifyPassword(input.password, passwordHash)
+          : false;
+
+        if (!valid) {
+          response.status(401).json({
+            success: false,
+            error: {
+              code: "AUTH_INVALID_CREDENTIALS",
+              message: "Email or password is incorrect."
+            }
+          });
+          return;
+        }
+      }
+    }
+
+    const claimedRepositories = await (await import("./auth.persistence.js"))
+      .claimUnownedRepositories(user.id);
+
+    await startSession(request, response, user);
+
+    response.json({
+      success: true,
+      user: publicUser(user),
+      migration: {
+        repositoriesClaimed: claimedRepositories
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 authRouter.post("/register", async (request, response, next) => {
   try {
