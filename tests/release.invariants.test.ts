@@ -1872,3 +1872,14 @@ test("private repository access stays encrypted, server-side and outside queue p
     errorMiddleware.includes("REPOSITORY_ACCESS_NOT_CONFIGURED")
   );
 });
+
+
+test("frontend runtime workspace exposes an explicit provenance chain", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("Provenance chain"));
+  assert.ok(appJs.includes("Correlation narrows the historical window; it does not establish causality."));
+  assert.ok(appJs.includes("ANALYSIS TARGET"));
+  assert.ok(indexHtml.includes(".runtime-lineage-grid"));
+  assert.ok(indexHtml.includes(".runtime-lineage-step"));
+});
