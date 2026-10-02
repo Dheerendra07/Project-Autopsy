@@ -22,6 +22,7 @@ import {
   getUserByEmail,
   listUserSessions,
   revokeAllUserSessions,
+  revokeExcessUserSessions,
   revokeSession,
   revokeSessionForUser,
   updateLastLogin
@@ -89,6 +90,7 @@ async function startSession(
   );
 
   setAuthCookies(response, sessionToken, csrfToken, expiresAt);
+  await revokeExcessUserSessions(user.id);
 }
 
 authRouter.post("/migrate-legacy", async (request, response, next) => {
