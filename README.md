@@ -123,6 +123,8 @@ Production browser/API access uses account sessions backed by PostgreSQL and opa
 
 During the first production deployment, set AUTOPSY_BOOTSTRAP_EMAIL and AUTOPSY_BOOTSTRAP_PASSWORD to create the initial operator account and claim legacy repositories that predate account ownership. Remove those bootstrap variables after the first successful login so future restarts do not retain bootstrap credentials in the service configuration.
 
+Existing browsers that still have the pre-account workspace key can use the one-time workspace migration screen. That migration credential is accepted only by /api/auth/migrate-legacy, after which the browser removes it and normal requests use the account session. Keep AUTOPSY_API_ACCESS_KEY only until all legacy workspaces have been migrated, then remove it from Render and delete the migration path in the subsequent cleanup release.
+
 ## Stored commit evidence
 
 GET /api/repositories/:repositoryId/commits?page=1&limit=50
