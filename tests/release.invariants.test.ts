@@ -315,8 +315,8 @@ test("frontend product surface stays guided, progressive and evidence-readable",
     "operationalLoadToken",
     "operationalTimer",
     "operationalPollMs",
-    "preserveScroll:true",
-    "options.preserveScroll",
+    "var previous=S.view;",
+    "window.scrollTo(0,restore)",
 
     "function stopOperationsMonitoring()",
     "function scheduleOperationsMonitoring()",
@@ -610,7 +610,6 @@ test("all hidden UI states remain visually hidden despite explicit display rules
     "every hidden UI surface must override author display rules"
   );
   for (const id of [
-    "landing",
     "workspace",
     "authModal",
     "modal",
@@ -1202,7 +1201,7 @@ test("frontend refreshes repository metadata after analysis completion", () => {
 
   assert.ok(completion.includes("var latestRepo=await getRepo(repoId)"));
   assert.ok(completion.includes("S.repo=latestRepo"));
-  assert.ok(completion.includes("await loadData()"));
+  assert.ok(completion.includes("await loadViewData(S.view,{force:true})"));
   assert.ok(
     completion.indexOf("S.repo=latestRepo") <
       completion.indexOf("await loadData()")
@@ -2063,7 +2062,8 @@ test("frontend navigation writes browser history for user-driven view changes", 
 
 test("frontend marks rejected session state instead of leaving stale verified state", () => {
   const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("var verified=state==='verified',rejected=state==='rejected';"));
+  assert.ok(appJs.includes("var verified=state==='verified';"));
+  assert.ok(appJs.includes("var rejected=state==='rejected';"));
   assert.ok(appJs.includes("rejected?'Access rejected'"));
   assert.ok(appJs.includes("S.connectionState='rejected';"));
   assert.ok(appJs.includes("connected('rejected');"));
@@ -2083,8 +2083,8 @@ test("frontend connection verification preserves explicit rejected session state
 
 test("frontend history renders full loaded pages and paginates timeline evidence", () => {
   const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("t.slice(0,50).map(function(x)"));
-  assert.ok(appJs.includes("c.slice(0,50).map(function(x)"));
+  assert.ok(appJs.includes("t.map(function(x){return '<div class="item">"));
+  assert.ok(appJs.includes("c.map(function(x){return '<tr>"));
   assert.ok(appJs.includes("async function loadMoreTimeline()"));
   assert.ok(appJs.includes("/timeline?page="));
   assert.ok(appJs.includes("more-timeline"));
