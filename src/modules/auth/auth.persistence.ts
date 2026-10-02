@@ -108,6 +108,10 @@ export async function createAuthActionToken(
   tokenHash: string,
   expiresAt: Date
 ): Promise<boolean> {
+  const cooldownSince = new Date(
+    Date.now() - AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS
+  );
+
   const recent = await db.query(
     `
       SELECT 1
@@ -115,10 +119,10 @@ export async function createAuthActionToken(
       WHERE user_id = $1
         AND purpose = $2
         AND consumed_at IS NULL
-        AND created_at > NOW() - INTERVAL '5 minutes'
+        AND created_at > $3
       LIMIT 1
     `,
-    [userId, purpose]
+    [userId, purpose, cooldownSince]
   );
 
   if (recent.rowCount) {
