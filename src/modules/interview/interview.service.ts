@@ -111,15 +111,20 @@ function buildStory(
     evidenceSummary,
     draftAnswer: {
       situation:
-        "Start with the verified project context around this evidence. " +
-        "Do not add an incident, requirement, scale, or constraint unless it is independently known.",
+        "In " +
+        report.repository.name +
+        ", the current analysis surfaces this historical signal: " +
+        anchor +
+        " Use the cited records to establish the before/after context before describing personal contribution.",
       approach:
+        "Trace the referenced commits and files, compare adjacent evidence, and validate the signal against compatible tests, deployment records, or runtime observations where available. " +
         definition.framing +
         " Relevant evidence: " +
         evidenceSummary.join(" | "),
       evidenceBackedResult:
-        "The repository evidence establishes the historical change or observation described above. " +
-        "Add the actual engineering, user, or business result only after verification.",
+        "What the current repository snapshot can establish: " +
+        evidenceSummary.join(" | ") +
+        ". Add any engineering, user, or business outcome only after independent verification.",
       limitation: storySections
         .map((section) => section.limitation)
         .filter((value, index, values) => values.indexOf(value) === index)
