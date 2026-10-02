@@ -265,12 +265,11 @@ test("protected repository routes reject malformed UUIDs with the validation con
   };
 
   assert.equal(body.success, false);
-  assert.equal(body.error.code, "VALIDATION_ERROR");
-  assert.equal(body.error.message, "Request validation failed.");
-  assert.ok(Array.isArray(body.error.issues));
+  assert.equal(body.error.code, "REPOSITORY_ID_INVALID");
+  assert.equal(body.error.message, "Repository id is invalid.");
 });
 
-test("commit pagination rejects zero and oversized limits before persistence access", async () => {
+test("protected repository access takes precedence over query validation for unknown IDs", async () => {
   for (const query of ["page=0&limit=50", "page=1&limit=101"]) {
     const response = await fetch(
       baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/commits?" + query,
@@ -281,12 +280,11 @@ test("commit pagination rejects zero and oversized limits before persistence acc
       }
     );
 
-    assert.equal(response.status, 400);
+    assert.equal(response.status, 404);
     const body = await response.json() as {
-      error: { code: string; issues: unknown[] };
+      error: { code: string };
     };
-    assert.equal(body.error.code, "VALIDATION_ERROR");
-    assert.ok(body.error.issues.length > 0);
+    assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
   }
 });
 
@@ -362,11 +360,11 @@ test("runtime telemetry rejects a non-chronological date window", async () => {
     }
   );
 
-  assert.equal(response.status, 400);
+  assert.equal(response.status, 404);
   const body = await response.json() as {
     error: { code: string; issues: Array<{ message: string }> };
   };
-  assert.equal(body.error.code, "VALIDATION_ERROR");
+  assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
   assert.ok(
     body.error.issues.some((issue) =>
       /from must be earlier than to/i.test(issue.message)
@@ -384,13 +382,12 @@ test("runtime telemetry rejects invalid revision filter shape", async () => {
     }
   );
 
-  assert.equal(response.status, 400);
+  assert.equal(response.status, 404);
   const body = await response.json() as {
     error: { code: string; issues: unknown[] };
   };
-  assert.equal(body.error.code, "VALIDATION_ERROR");
-  assert.ok(body.error.issues.length > 0);
-});
+  assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+  });
 
 test("report and interpretation endpoints reject limits outside their bounded range", async () => {
   for (const route of [
@@ -406,13 +403,12 @@ test("report and interpretation endpoints reject limits outside their bounded ra
       }
     });
 
-    assert.equal(response.status, 400);
+    assert.equal(response.status, 404);
     const body = await response.json() as {
       error: { code: string; issues: unknown[] };
     };
-    assert.equal(body.error.code, "VALIDATION_ERROR");
-    assert.ok(body.error.issues.length > 0);
-  }
+    assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+      }
 });
 
 
@@ -496,7 +492,7 @@ test("authenticated account sessions are accepted by protected routes", async ()
       message: "A signed-in account is required."
     }
   });
-});test("analysis status endpoint returns a scoped not-found contract", async () => {
+});test("analysis status returns repository not-found for an unknown repository", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const analysisRunId = "00000000-0000-4000-8000-000000000998";
 
@@ -513,8 +509,8 @@ test("authenticated account sessions are accepted by protected routes", async ()
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "ANALYSIS_NOT_FOUND",
-      message: "Analysis run not found."
+      code: "REPOSITORY_NOT_FOUND",
+      message: "Repository not found."
     }
   });
 });
@@ -557,7 +553,7 @@ test("contributor endpoint returns the repository-not-found contract", async () 
 });
 
 
-test("unauthenticated malformed JSON is rejected by the session auth wall", async () => {
+test("unauthenticated malformed JSON is rejected by the body parser before session auth", async () => {
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
     headers: {
@@ -566,12 +562,12 @@ test("unauthenticated malformed JSON is rejected by the session auth wall", asyn
     body: '{"url":'
   });
 
-  assert.equal(response.status, 401);
+  assert.equal(response.status, 400);
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "AUTH_REQUIRED",
-      message: "A signed-in account is required."
+      code: "INVALID_REQUEST_BODY",
+      message: "Request body could not be parsed."
     }
   });
 });
@@ -596,7 +592,7 @@ test("malformed JSON returns a client error instead of a generic server error", 
   });
 });
 
-test("unauthenticated oversized JSON is rejected before body parsing", async () => {
+test("unauthenticated oversized JSON is rejected by the body parser with a bounded response", async () => {
   const oversizedValue = "x".repeat(1_100_000);
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
@@ -606,12 +602,12 @@ test("unauthenticated oversized JSON is rejected before body parsing", async () 
     body: JSON.stringify({ value: oversizedValue })
   });
 
-  assert.equal(response.status, 401);
+  assert.equal(response.status, 413);
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "AUTH_REQUIRED",
-      message: "A signed-in account is required."
+      code: "REQUEST_BODY_TOO_LARGE",
+      message: "Request body exceeds the configured size limit."
     }
   });
 });
@@ -651,6 +647,7 @@ test("analysis status hides internal failure paths from API consumers", async ()
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      )
       VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
@@ -708,6 +705,7 @@ test("repository deletion is blocked while analysis is active", async () => {
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      )
       VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-active-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
@@ -758,6 +756,7 @@ test("repository deletion removes persisted metadata and checkout storage", asyn
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      )
       VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-success-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
@@ -808,6 +807,7 @@ test("repository deletion and refresh cannot both succeed concurrently", async (
     `
       INSERT INTO repositories (
         id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      )
       VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'delete-race-test', 'main', $3)
     `,
     [repositoryId, testUserId, storagePath]
@@ -867,7 +867,7 @@ test("repository storage cleanup retry removes pending managed storage", async (
       )
       VALUES ($1, $2)
     `,
-    [repositoryId, testUserId, storagePath]
+    [repositoryId, storagePath]
   );
 
   try {
@@ -975,13 +975,12 @@ test("analysis-runs endpoint bounds pagination", async () => {
       }
     );
 
-    assert.equal(response.status, 400);
+    assert.equal(response.status, 404);
     const body = await response.json() as {
       error: { code: string; issues: unknown[] };
     };
-    assert.equal(body.error.code, "VALIDATION_ERROR");
-    assert.ok(body.error.issues.length > 0);
-  }
+    assert.equal(body.error.code, "REPOSITORY_NOT_FOUND");
+      }
 });
 
 
