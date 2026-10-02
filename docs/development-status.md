@@ -358,4 +358,4 @@ PR #171 is merged on main at `fac98d487d79e6d2e2aee6b955128572b014d9aa`.
 - The production smoke contract now covers authenticated `/api/auth/sessions` and rejects state-changing logout without the session-bound CSRF token.
 - Hosted production-smoke execution still requires the configured bootstrap credentials; source code contains no production credential.
 
-Continuation rule: treat `fac98d4…` as the current main release baseline. Preserve session authentication, CSRF enforcement, tenant ownership, token non-disclosure, bounded rate limiting, stale-state protections, and the existing evidence-first product boundary.
+Post-checkpoint production cleanup merged through PRs #172, #173, and #174: authenticated production smoke now covers session listing and CSRF rejection; the frontend ships an explicit favicon asset; legacy `/favicon.ico` requests are served from that asset to eliminate browser-default 404s. The current main application baseline is `30ceb26d239c9b8ddaca802c34d4789f8abb9f85`.
