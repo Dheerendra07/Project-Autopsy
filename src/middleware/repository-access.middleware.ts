@@ -7,7 +7,10 @@ import { getOwnedRepository } from "../modules/auth/auth.persistence.js";
 import { requireSession } from "./session.middleware.js";
 
 function isMachineIngestionRequest(request: Request): boolean {
-  const path = request.path;
+  // This middleware is mounted at /repositories/:repositoryId, so Express
+  // strips that mount path from req.path. Reconstruct the full route before
+  // matching machine-ingestion endpoints.
+  const path = request.baseUrl + request.path;
 
   if (request.method !== "POST") {
     return false;
