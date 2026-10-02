@@ -405,6 +405,20 @@ test("frontend quality workspace exposes an evidence matrix", () => {
 });
 
 
+test("unauthenticated boot stays on landing unless legacy migration is required", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("async function boot()");
+  const end = appJs.indexOf("\n  boot()", start);
+  assert.ok(start >= 0 && end > start);
+  const boot = appJs.slice(start, end);
+  assert.ok(boot.includes("landing();"));
+  assert.ok(boot.includes("if(S.legacyMigrationKey)openAuth('migrate');"));
+  assert.doesNotMatch(
+    boot,
+    /openAuth\(S\.legacyMigrationKey\?'migrate':'login'\)/
+  );
+});
+
 test("landing import requires auth without leaving a stale inline error flow", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(
