@@ -865,7 +865,7 @@
   function setView(v,options){
     options=options||{};
     var previous=S.view;
-    if(previous&&(previous!==v||options.preserveScroll))S.viewScroll[previous]=window.scrollY||0;
+    if(previous)S.viewScroll[previous]=window.scrollY||0;
     S.view=v;
     if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);
     resetEvidence();
