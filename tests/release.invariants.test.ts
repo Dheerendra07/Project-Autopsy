@@ -2199,6 +2199,21 @@ test("frontend clears targeted refresh state before rerendering the completed vi
   assert.ok(fn.includes("actionBusy('reload-view',false)"));
 });
 
+test("frontend releases dynamic action labels even when the view rerendered during loading", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function actionBusy(action,busy,busyLabel)");
+  const end = appJs.indexOf("function persist()", start);
+  assert.ok(start >= 0 && end > start);
+  const fn = appJs.slice(start, end);
+  assert.ok(fn.includes("}else{var idle=actionIdleLabel(action)||el._autopsyIdleText;"));
+  assert.ok(fn.includes("el._autopsyBusy=false;"));
+  assert.ok(fn.includes("el.disabled=false;"));
+  assert.ok(fn.includes("el.removeAttribute('aria-busy');"));
+  assert.ok(fn.includes("if(idle)el.textContent=idle;"));
+});
+
+
+
 test("frontend gives generated evidence actions single-flight busy feedback", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("reportLoading:false"));
