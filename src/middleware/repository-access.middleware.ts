@@ -35,6 +35,14 @@ export function requireRepositoryAccess(
   response: Response,
   next: NextFunction
 ): void {
+  if (
+    request.params.repositoryId === "import" &&
+    request.path === "/"
+  ) {
+    next();
+    return;
+  }
+
   if (isMachineIngestionRequest(request)) {
     next();
     return;
