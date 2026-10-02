@@ -119,6 +119,7 @@
     if(button){
       button.textContent=verified?'Account':rejected?'Sign in':'Sign in';
       button.setAttribute('data-auth-state',verified?'signed-in':rejected?'rejected':'signed-out');
+      button.setAttribute('aria-label',verified?'Open account settings':'Sign in to your private workspace');
       button.title=verified?'Account & security settings':'Sign in to your private workspace';
     }
   }
@@ -1374,14 +1375,15 @@
     $('forgotForm').hidden=!forgot;
     $('resetForm').hidden=!reset;
     $('verifyPanel').hidden=!verify;
-    $('authTitle').textContent=migrating?'Move your existing workspace':forgot?'Reset your password':reset?'Choose a new password':verify?'Verify your email':'Sign in to Project Autopsy';
-    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Your private engineering workspace starts with one account.':forgot?'We will send a one-time password reset link to your account email.':reset?'Choose a new password for your account.':verify?'Use the one-time link from your email to confirm this address.':'Use the account that owns your Autopsy repositories.';
+    $('authTitle').textContent=migrating?'Move your existing workspace':forgot?'Reset your password':reset?'Choose a new password':verify?'Verify your email':S.authMode==='register'?'Create your Project Autopsy account':'Sign in to Project Autopsy';
+    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Use your email and a password with at least 12 characters.':forgot?'We will send a one-time password reset link to your account email.':reset?'Choose a new password for your account.':verify?'Use the one-time link from your email to confirm this address.':'Use the account that owns your Autopsy repositories.';
     $('authSubmit').textContent=migrating?'Migrate & sign in':S.authMode==='register'?'Create account':'Sign in';
     $('authModeToggle').textContent=migrating?'Use normal sign in instead':S.authMode==='register'?'Already have an account? Sign in':(forgot||reset||verify)?'Back to sign in':'New here? Create an account';
     $('authModeToggle').hidden=!(standard||forgot);
     $('authForgotLink').hidden=S.authMode!=='login';
-    $('resendVerification').hidden=!['login','register'].includes(S.authMode);
+    $('resendVerification').hidden=S.authMode!=='login';
     $('authPassword').setAttribute('autocomplete',S.authMode==='register'?'new-password':'current-password');
+    if($('authPasswordHint'))$('authPasswordHint').hidden=S.authMode!=='register';
     if($('resetPassword'))$('resetPassword').setAttribute('autocomplete','new-password');
     if($('resetPasswordConfirm'))$('resetPasswordConfirm').setAttribute('autocomplete','new-password');
   }
