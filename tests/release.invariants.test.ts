@@ -610,9 +610,11 @@ test("frontend connection test handles invalid API base URLs", () => {
   assert.ok(end > start);
 
   const probe = appJs.slice(start, end);
-  assert.ok(probe.includes("var base;"));
+  assert.ok(probe.includes("var base=safeApiBase($('api').value);"));
   assert.ok(probe.includes("safeApiBase"));
-  assert.ok(probe.includes("toast(e.message||'API base URL is invalid.','bad')"));
+  assert.ok(probe.includes("API base URL is invalid."));
+  assert.ok(probe.includes("S.connectionState='rejected';"));
+  assert.ok(probe.includes("connected('rejected');"));
 });
 
 test("frontend interview and refactor views match persisted evidence schemas", () => {
@@ -850,7 +852,7 @@ test("frontend workspace keeps the real connection state", () => {
   const appJs = readRepoFile("public/app.js");
 
   const start = appJs.indexOf("function workspace()");
-  const end = appJs.indexOf("function syncRepositoryAccessSettings()", start);
+  const end = appJs.indexOf("function openSettings(trigger)", start);
   assert.ok(start >= 0);
   assert.ok(end > start);
 
@@ -1018,7 +1020,7 @@ test("account recovery and transactional email contracts remain explicit", () =>
   const readme = readRepoFile("README.md");
 
   for (const marker of [
-    "RESEND_API_KEY",
+    "BREVO_API_KEY",
     "AUTOPSY_EMAIL_FROM",
     "AUTOPSY_PUBLIC_URL",
     "transactional email is configured"
@@ -1037,8 +1039,7 @@ test("account recovery and transactional email contracts remain explicit", () =>
 
   for (const marker of [
     "isAuthEmailConfigured",
-    "api.resend.com/emails",
-    "Idempotency-Key",
+    "BREVO_TRANSACTIONAL_EMAIL_ENDPOINT",
     "AUTH_EMAIL_VERIFICATION_TTL_MS",
     "AUTH_PASSWORD_RESET_TTL_MS",
     "#auth-verify=",
@@ -1097,10 +1098,10 @@ test("account recovery and transactional email contracts remain explicit", () =>
     assert.ok(appJs.includes(marker), "missing recovery client marker: " + marker);
   }
 
-  assert.ok(render.includes("RESEND_API_KEY"));
+  assert.ok(render.includes("BREVO_API_KEY"));
   assert.ok(render.includes("AUTOPSY_EMAIL_FROM"));
   assert.ok(render.includes("AUTOPSY_PUBLIC_URL"));
-  assert.ok(readme.includes("Transactional email recovery is supported through Resend"));
+  assert.ok(readme.includes("Transactional email recovery is supported through Brevo"));
   assert.ok(persistence.includes("AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS"));
   assert.ok(persistence.includes("pg_advisory_xact_lock"));
   assert.ok(persistence.includes("FOR UPDATE"));
@@ -1688,7 +1689,8 @@ test("frontend marks rejected session state instead of leaving stale verified st
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("var verified=state==='verified',rejected=state==='rejected';"));
   assert.ok(appJs.includes("rejected?'Session expired'"));
-  assert.ok(appJs.includes("S.connectionState='rejected';connected('rejected');"));
+  assert.ok(appJs.includes("S.connectionState='rejected';"));
+  assert.ok(appJs.includes("connected('rejected');"));
 });
 
 test("frontend connection verification preserves explicit rejected session state", () => {
@@ -1943,7 +1945,7 @@ test("frontend restores settings focus and moves evidence inspector focus on ope
   assert.ok(appJs.includes("settingsFocus:null"));
   assert.ok(appJs.includes("function openSettings(trigger)"));
   assert.ok(appJs.includes("requestAnimationFrame(function(){$('drawerClose').focus()})"));
-  assert.ok(appJs.includes("$('settings').onclick=function(){openSettings(this)};"));
+  assert.ok(appJs.includes("$('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};"));
 });
 
 test("frontend keeps browser history API unshadowed by the History view renderer", () => {
