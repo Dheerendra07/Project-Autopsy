@@ -38,6 +38,7 @@
   var S={
     api:initialApiBase(),
     user:null,
+    legacyMigrationKey:'',
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
     authMode:'login',authSubmitting:false,repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
@@ -1143,7 +1144,13 @@
   }
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
   $('authForm').onsubmit=function(e){e.preventDefault();submitAuth()};
-  $('authModeToggle').onclick=function(){setAuthMode(S.authMode==='login'?'register':'login')};
+  $('authModeToggle').onclick=function(){
+    if(S.authMode==='migrate'){
+      setAuthMode('login');
+      return;
+    }
+    setAuthMode(S.authMode==='login'?'register':'login');
+  };
   $('authClose').onclick=function(){closeAuth()};
   $('authModal').onclick=function(e){if(e.target===$('authModal'))closeAuth()};
   $('logout').onclick=function(){logoutCurrentSession()};
@@ -1168,11 +1175,12 @@
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))};window.addEventListener('hashchange',function(){setView(viewFromHash(),{fromHash:true})});window.addEventListener('pageshow',function(){closeTransientOverlays()});document.addEventListener('visibilitychange',function(){syncOperationsMonitoring(!document.hidden)})
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'),ev);return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'),pd);return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='more-timeline')loadMoreTimeline();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='reload-view')reloadCurrentView();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='operations-refresh')loadOperations(true);if(a.getAttribute('data-action')==='operations-retry')loadOperations(true);if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
   function setAuthMode(mode){
-    S.authMode=mode==='register'?'register':'login';
-    $('authTitle').textContent=S.authMode==='register'?'Create your account':'Sign in to Project Autopsy';
-    $('authSubtitle').textContent=S.authMode==='register'?'Your private engineering workspace starts with one account.':'Use the account that owns your Autopsy repositories.';
-    $('authSubmit').textContent=S.authMode==='register'?'Create account':'Sign in';
-    $('authModeToggle').textContent=S.authMode==='register'?'Already have an account? Sign in':'New here? Create an account';
+    S.authMode=mode==='register'?'register':mode==='migrate'?'migrate':'login';
+    var migrating=S.authMode==='migrate';
+    $('authTitle').textContent=migrating?'Move your existing workspace':'Sign in to Project Autopsy';
+    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Your private engineering workspace starts with one account.':'Use the account that owns your Autopsy repositories.';
+    $('authSubmit').textContent=migrating?'Migrate & sign in':S.authMode==='register'?'Create account':'Sign in';
+    $('authModeToggle').textContent=migrating?'Use normal sign in instead':S.authMode==='register'?'Already have an account? Sign in':'New here? Create an account';
     $('authPassword').setAttribute('autocomplete',S.authMode==='register'?'new-password':'current-password');
   }
   function openAuth(mode){
@@ -1181,6 +1189,11 @@
     $('authError').hidden=true;
     $('authEmail').value=S.user&&S.user.email||'';
     $('authPassword').value='';
+    if(mode==='migrate'){
+      $('authModeToggle').hidden=!S.legacyMigrationKey;
+    }else{
+      $('authModeToggle').hidden=false;
+    }
     $('authModal').hidden=false;
     requestAnimationFrame(function(){($('authEmail')).focus()});
   }
@@ -1205,8 +1218,13 @@
     }
     $('authError').hidden=true;
     try{
-      var path=S.authMode==='register'?'/api/auth/register':'/api/auth/login';
-      var r=await api(path,{method:'POST',body:JSON.stringify({email:email,password:password})});
+      var path=S.authMode==='migrate'?'/api/auth/migrate-legacy':S.authMode==='register'?'/api/auth/register':'/api/auth/login';
+      var options={method:'POST',body:JSON.stringify({email:email,password:password})};
+      if(S.authMode==='migrate'&&S.legacyMigrationKey){
+        options.headers={'x-autopsy-api-key':S.legacyMigrationKey};
+      }
+      var r=await api(path,options);
+      if(S.authMode==='migrate')S.legacyMigrationKey='';
       S.user=r.user;
       S.connectionState='verified';
       connected('verified');
@@ -1376,6 +1394,7 @@
     }
   }
   async function boot(){
+    S.legacyMigrationKey=storageGet('autopsy.key');
     storageRemove('autopsy.key');
     storageRemove('autopsy.aiKey');
     try{
@@ -1392,7 +1411,7 @@
       S.connectionState='unknown';
       connected('unknown');
       landing();
-      openAuth('login');
+      openAuth(S.legacyMigrationKey?'migrate':'login');
     }
   }
   boot()
