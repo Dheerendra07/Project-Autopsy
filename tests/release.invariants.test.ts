@@ -236,6 +236,9 @@ test("frontend product surface stays guided, progressive and evidence-readable",
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
+  const app = readRepoFile("src/app.ts");
+  assert.ok(app.includes('app.get("/favicon.ico"'));
+
   for (const marker of [
     "Understand",
     "Validate",
