@@ -873,6 +873,25 @@ test("frontend interview and refactor views match persisted evidence schemas", (
   assert.ok(appJs.includes("x.committed_at"));
 });
 
+test("frontend Insights keeps empty Themes, Questions and Uncertainties sections independent", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("'+(themes.map(function(t)"));
+  assert.ok(appJs.includes("No themes returned.</div>')+'</div></div>"));
+  assert.ok(appJs.includes("'+(questions.map(function(q)"));
+  assert.ok(appJs.includes("No investigation questions returned.</div>')+'</div></div></div>"));
+  assert.ok(appJs.includes("'+(uncertainties.map(function(u)"));
+  assert.ok(appJs.includes("No uncertainties returned.</div>')+'</div></div>"));
+});
+
+test("frontend Evidence structure family includes architecture and dependency records", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(
+    appJs.includes("{label:'Structure',items:arr(d.architecture,'events').concat(arr(d.dependencies,'changes')),detail:'architecture + dependency change events'}")
+  );
+});
+
 test("frontend AI interpretation keeps validated evidence keys inspectable", () => {
   const appJs = readRepoFile("public/app.js");
 
