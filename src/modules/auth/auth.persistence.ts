@@ -109,52 +109,69 @@ export async function createAuthActionToken(
   tokenHash: string,
   expiresAt: Date
 ): Promise<boolean> {
-  const cooldownSince = new Date(
-    Date.now() - AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS
-  );
+  const client = await db.connect();
 
-  const recent = await db.query(
-    `
-      SELECT 1
-      FROM auth_action_tokens
-      WHERE user_id = $1
-        AND purpose = $2
-        AND consumed_at IS NULL
-        AND created_at > $3
-      LIMIT 1
-    `,
-    [userId, purpose, cooldownSince]
-  );
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      [`${userId}:${purpose}`]
+    );
 
-  if (recent.rowCount) {
-    return false;
+    const cooldownSince = new Date(
+      Date.now() - AUTH_EMAIL_TOKEN_RESEND_COOLDOWN_MS
+    );
+
+    const recent = await client.query(
+      `
+        SELECT 1
+        FROM auth_action_tokens
+        WHERE user_id = $1
+          AND purpose = $2
+          AND consumed_at IS NULL
+          AND created_at > $3
+        LIMIT 1
+      `,
+      [userId, purpose, cooldownSince]
+    );
+
+    if (recent.rowCount) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+
+    await client.query(
+      `
+        DELETE FROM auth_action_tokens
+        WHERE user_id = $1
+          AND purpose = $2
+          AND consumed_at IS NULL
+      `,
+      [userId, purpose]
+    );
+
+    await client.query(
+      `
+        INSERT INTO auth_action_tokens (
+          id,
+          user_id,
+          purpose,
+          token_hash,
+          expires_at
+        )
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [id, userId, purpose, tokenHash, expiresAt]
+    );
+
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  await db.query(
-    `
-      DELETE FROM auth_action_tokens
-      WHERE user_id = $1
-        AND purpose = $2
-        AND consumed_at IS NULL
-    `,
-    [userId, purpose]
-  );
-
-  await db.query(
-    `
-      INSERT INTO auth_action_tokens (
-        id,
-        user_id,
-        purpose,
-        token_hash,
-        expires_at
-      )
-      VALUES ($1, $2, $3, $4, $5)
-    `,
-    [id, userId, purpose, tokenHash, expiresAt]
-  );
-
-  return true;
 }
 
 export async function consumeAuthActionToken(
@@ -189,6 +206,71 @@ export async function markEmailVerified(userId: string): Promise<void> {
     `,
     [userId]
   );
+}
+
+export async function verifyEmailWithToken(
+  tokenHash: string
+): Promise<boolean> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const tokenResult = await client.query<{ user_id: string }>(
+      `
+        SELECT user_id
+        FROM auth_action_tokens
+        WHERE token_hash = $1
+          AND purpose = 'email_verification'
+          AND consumed_at IS NULL
+          AND expires_at > NOW()
+        FOR UPDATE
+      `,
+      [tokenHash]
+    );
+
+    const token = tokenResult.rows[0];
+
+    if (!token) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+
+    const userResult = await client.query(
+      `
+        UPDATE users
+        SET email_verified_at = COALESCE(email_verified_at, NOW()),
+            updated_at = NOW()
+        WHERE id = $1
+          AND disabled_at IS NULL
+      `,
+      [token.user_id]
+    );
+
+    if (!userResult.rowCount) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+
+    await client.query(
+      `
+        UPDATE auth_action_tokens
+        SET consumed_at = NOW()
+        WHERE token_hash = $1
+          AND purpose = 'email_verification'
+          AND consumed_at IS NULL
+      `,
+      [tokenHash]
+    );
+
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function invalidateAuthActionTokens(
