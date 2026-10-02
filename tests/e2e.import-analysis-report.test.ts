@@ -308,6 +308,49 @@ test(
       assert.equal(reportBody.report.analysis.status, "completed");
       assert.equal(reportBody.report.analysis.targetHeadSha, analysis.targetHeadSha);
       assert.ok(reportBody.report.sections.length > 0);
+
+      const interviewResponse = await fetch(
+        `${baseUrl}/api/repositories/${repositoryId}/interview-stories?limit=6`,
+        {
+          headers: {
+            Cookie: cookieHeader
+          }
+        }
+      );
+
+      const interviewBody = await interviewResponse.json() as {
+        success: boolean;
+        repositoryId: string;
+        result?: {
+          analysisRunId: string;
+          stories: Array<{
+            id: string;
+            headline: string;
+            evidence: unknown[];
+            draftAnswer: {
+              situation: string;
+              approach: string;
+              evidenceBackedResult: string;
+            };
+          }>;
+        };
+      };
+
+      assert.equal(interviewResponse.status, 200);
+      assert.equal(interviewBody.success, true);
+      assert.equal(interviewBody.repositoryId, repositoryId);
+      assert.ok(interviewBody.result);
+      assert.equal(interviewBody.result.analysisRunId, importBody.analysis.id);
+      assert.ok(interviewBody.result.stories.length > 0);
+      assert.ok(interviewBody.result.stories.length <= 6);
+      for (const story of interviewBody.result.stories) {
+        assert.ok(story.id);
+        assert.ok(story.headline);
+        assert.ok(story.evidence.length > 0);
+        assert.ok(story.draftAnswer.situation);
+        assert.ok(story.draftAnswer.approach);
+        assert.ok(story.draftAnswer.evidenceBackedResult);
+      }
     } finally {
       await Promise.allSettled([
         stopProcess(server),
