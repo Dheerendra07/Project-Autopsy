@@ -405,6 +405,29 @@ test("frontend quality workspace exposes an evidence matrix", () => {
 });
 
 
+test("top navigation has a single account action and auth interruption is single-flight", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  const top = html.slice(html.indexOf('<header class="top">'), html.indexOf("</header>") + 9);
+  assert.equal(
+    (top.match(/id="settings"/g) || []).length,
+    1,
+    "top navigation must expose exactly one account action"
+  );
+  assert.doesNotMatch(
+    top,
+    /id="conn"/,
+    "top navigation must not show a redundant connection sign-in control"
+  );
+  assert.ok(top.includes("<b>Project Autopsy</b>"));
+  assert.ok(top.includes("<small>Engineering Evidence</small>"));
+  assert.ok(appJs.includes("authInterrupt:false"));
+  assert.ok(appJs.includes("if(path!=='/api/auth/me'&&!S.authInterrupt)"));
+  assert.ok(appJs.includes("S.authInterrupt=true;"));
+  assert.ok(appJs.includes("S.authInterrupt=false;"));
+});
+
 test("frontend controls have explicit handlers and every workspace view is wired", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
