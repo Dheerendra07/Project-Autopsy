@@ -3,12 +3,14 @@ import { env } from "../../config/env.js";
 export const AUTH_EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60_000;
 export const AUTH_PASSWORD_RESET_TTL_MS = 60 * 60_000;
 export const AUTH_EMAIL_SEND_TIMEOUT_MS = 10_000;
+export const BREVO_TRANSACTIONAL_EMAIL_ENDPOINT =
+  "https://api.brevo.com/v3/smtp/email";
 
 export type AuthEmailPurpose = "email_verification" | "password_reset";
 
 export function isAuthEmailConfigured(): boolean {
   return Boolean(
-    env.RESEND_API_KEY &&
+    env.BREVO_API_KEY &&
       env.AUTOPSY_EMAIL_FROM &&
       env.AUTOPSY_PUBLIC_URL
   );
@@ -23,16 +25,17 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function buildPublicUrl(path: string, token: string): string {
-  return new URL(path + token, env.AUTOPSY_PUBLIC_URL).toString();
+function buildPublicUrl(fragment: string, token: string): string {
+  const url = new URL(env.AUTOPSY_PUBLIC_URL);
+  url.hash = fragment + encodeURIComponent(token);
+  return url.toString();
 }
 
 async function sendTransactionalEmail(
   to: string,
   subject: string,
-  html: string,
-  text: string,
-  idempotencyKey: string
+  htmlContent: string,
+  textContent: string
 ): Promise<void> {
   if (!isAuthEmailConfigured()) {
     throw new Error("AUTH_EMAIL_NOT_CONFIGURED");
@@ -45,20 +48,23 @@ async function sendTransactionalEmail(
   );
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
+    const response = await fetch(BREVO_TRANSACTIONAL_EMAIL_ENDPOINT, {
       method: "POST",
       headers: {
         Accept: "application/json",
-        Authorization: "Bearer " + env.RESEND_API_KEY,
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey
+        "api-key": env.BREVO_API_KEY!,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        from: env.AUTOPSY_EMAIL_FROM,
-        to: [to],
+        sender: {
+          email: env.AUTOPSY_EMAIL_FROM,
+          name: env.AUTOPSY_EMAIL_FROM_NAME
+        },
+        to: [{ email: to }],
         subject,
-        html,
-        text
+        htmlContent,
+        textContent,
+        tags: ["project-autopsy", subject.includes("Verify") ? "verification" : "password-reset"]
       }),
       signal: controller.signal
     });
@@ -79,17 +85,16 @@ async function sendTransactionalEmail(
 
 export async function sendVerificationEmail(
   email: string,
-  token: string,
-  idempotencyKey: string
+  token: string
 ): Promise<void> {
   const safeEmail = escapeHtml(email);
-  const link = buildPublicUrl("/#auth-verify=", encodeURIComponent(token));
+  const link = buildPublicUrl("#auth-verify=", token);
 
   await sendTransactionalEmail(
     email,
     "Verify your Project Autopsy account",
     `<!doctype html>
-<html>
+<html lang="en">
   <body style="margin:0;background:#f3efe6;color:#27231d;font-family:Arial,sans-serif">
     <div style="max-width:600px;margin:0 auto;padding:40px 20px">
       <div style="font-size:11px;letter-spacing:.16em;color:#796b58">PROJECT AUTOPSY</div>
@@ -102,23 +107,21 @@ export async function sendVerificationEmail(
 </html>`,
     `Verify your Project Autopsy account: ${link}
 
-This link expires in 24 hours.`,
-    idempotencyKey
+This link expires in 24 hours.`
   );
 }
 
 export async function sendPasswordResetEmail(
   email: string,
-  token: string,
-  idempotencyKey: string
+  token: string
 ): Promise<void> {
-  const link = buildPublicUrl("/#auth-reset=", encodeURIComponent(token));
+  const link = buildPublicUrl("#auth-reset=", token);
 
   await sendTransactionalEmail(
     email,
     "Reset your Project Autopsy password",
     `<!doctype html>
-<html>
+<html lang="en">
   <body style="margin:0;background:#f3efe6;color:#27231d;font-family:Arial,sans-serif">
     <div style="max-width:600px;margin:0 auto;padding:40px 20px">
       <div style="font-size:11px;letter-spacing:.16em;color:#796b58">PROJECT AUTOPSY</div>
@@ -131,7 +134,6 @@ export async function sendPasswordResetEmail(
 </html>`,
     `Reset your Project Autopsy password: ${link}
 
-This link expires in 1 hour and can only be used once.`,
-    idempotencyKey
+This link expires in 1 hour and can only be used once.`
   );
 }
