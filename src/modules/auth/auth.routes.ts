@@ -16,11 +16,16 @@ import {
 import {
   createSession,
   createUser,
+  changeUserPassword,
+  claimUnownedRepositories,
+  createSession,
+  createUser,
   getPasswordHashByUserId,
   getUserByEmail,
-  claimUnownedRepositories,
+  listUserSessions,
   revokeAllUserSessions,
   revokeSession,
+  revokeSessionForUser,
   updateLastLogin
 } from "./auth.persistence.js";
 import {
@@ -283,6 +288,147 @@ authRouter.post("/login", async (request, response, next) => {
     next(error);
   }
 });
+
+authRouter.get("/sessions", requireSession, async (request, response, next) => {
+  try {
+    const auth = getAuthContext(request);
+
+    if (!auth) {
+      return;
+    }
+
+    const sessions = await listUserSessions(auth.userId);
+
+    response.json({
+      success: true,
+      sessions: sessions.map((session) => ({
+        id: session.id,
+        createdAt: session.created_at,
+        lastSeenAt: session.last_seen_at,
+        expiresAt: session.expires_at,
+        userAgent: session.user_agent,
+        isCurrent: session.id === auth.sessionId
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.delete(
+  "/sessions/:sessionId",
+  requireSession,
+  requireCsrf,
+  async (request, response, next) => {
+    try {
+      const auth = getAuthContext(request);
+
+      if (!auth) {
+        return;
+      }
+
+      const sessionId = z.string().uuid().parse(
+        Array.isArray(request.params.sessionId)
+          ? request.params.sessionId[0]
+          : request.params.sessionId
+      );
+
+      const revoked = await revokeSessionForUser(sessionId, auth.userId);
+
+      if (!revoked) {
+        response.status(404).json({
+          success: false,
+          error: {
+            code: "SESSION_NOT_FOUND",
+            message: "The session no longer exists or is already signed out."
+          }
+        });
+        return;
+      }
+
+      if (sessionId === auth.sessionId) {
+        clearAuthCookies(response);
+      }
+
+      response.json({
+        success: true,
+        signedOutCurrentSession: sessionId === auth.sessionId
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+authRouter.post(
+  "/password",
+  requireSession,
+  requireCsrf,
+  async (request, response, next) => {
+    try {
+      const auth = getAuthContext(request);
+
+      if (!auth) {
+        return;
+      }
+
+      const input = z.object({
+        currentPassword: z
+          .string()
+          .min(PASSWORD_MIN_LENGTH)
+          .max(PASSWORD_MAX_LENGTH),
+        newPassword: z
+          .string()
+          .min(PASSWORD_MIN_LENGTH)
+          .max(PASSWORD_MAX_LENGTH)
+      }).parse(request.body);
+
+      if (input.currentPassword === input.newPassword) {
+        response.status(400).json({
+          success: false,
+          error: {
+            code: "PASSWORD_UNCHANGED",
+            message: "Choose a new password that is different from the current password."
+          }
+        });
+        return;
+      }
+
+      const passwordHash = await getPasswordHashByUserId(auth.userId);
+      const valid = passwordHash
+        ? await verifyPassword(input.currentPassword, passwordHash)
+        : false;
+
+      if (!valid) {
+        response.status(401).json({
+          success: false,
+          error: {
+            code: "PASSWORD_INVALID",
+            message: "Current password is incorrect."
+          }
+        });
+        return;
+      }
+
+      const newPasswordHash = await hashPassword(input.newPassword);
+
+      await changeUserPassword(auth.userId, newPasswordHash);
+
+      await revokeAllUserSessions(auth.userId);
+
+      await startSession(request, response, {
+        id: auth.userId
+      });
+
+      response.json({
+        success: true,
+        message: "Password changed. Other active sessions were signed out."
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 authRouter.get("/me", requireSession, (request, response) => {
   const auth = getAuthContext(request);
