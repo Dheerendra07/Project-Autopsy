@@ -20,7 +20,7 @@ test("authentication UI contract stays explicit and mode-correct", () => {
   );
   assert.match(
     app,
-    /S.authMode==='register'?'Create your Project Autopsy account'/
+    /S\.authMode===\'register\'\?\'Create your Project Autopsy account\'/
   );
   assert.match(
     app,
