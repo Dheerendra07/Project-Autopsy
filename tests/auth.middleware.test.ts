@@ -10,6 +10,7 @@ import {
   CSRF_COOKIE_NAME,
   setAuthCookies
 } from "../src/middleware/session.middleware.js";
+import { hashOpaqueToken } from "../src/modules/auth/auth.crypto.js";
 
 function response(): Response & { headers: Map<string,string> } {
   const headers = new Map<string,string>();
@@ -67,4 +68,37 @@ test("CSRF middleware rejects a missing token", async () => {
   assert.equal(called, false);
   assert.equal(getAuthContext(req), undefined);
   assert.equal(getCsrfCookie(req), "");
+});
+
+test("CSRF middleware accepts a token only when it matches the session-bound token hash", () => {
+  const csrfToken = "csrf-token-for-test";
+  let called = false;
+
+  const req = {
+    method: "POST",
+    header(name: string) {
+      const key = name.toLowerCase();
+      if (key === "cookie") {
+        return CSRF_COOKIE_NAME + "=" + encodeURIComponent(csrfToken);
+      }
+      if (key === "x-autopsy-csrf-token") {
+        return csrfToken;
+      }
+      return undefined;
+    },
+    auth: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      email: "owner@example.com",
+      sessionId: "00000000-0000-0000-0000-000000000002",
+      csrfTokenHash: hashOpaqueToken(csrfToken)
+    }
+  } as unknown as Request;
+
+  const res = {} as Response;
+
+  requireCsrf(req, res, () => {
+    called = true;
+  });
+
+  assert.equal(called, true);
 });
