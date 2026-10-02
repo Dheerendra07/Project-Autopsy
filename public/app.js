@@ -1157,6 +1157,30 @@
     landing();
     if(showToast)toast('Signed out.','good');
   }
+  function landing(){
+    $('landing').hidden=false;
+    $('workspace').hidden=true;
+    document.title='Project Autopsy — Engineering Evidence';
+  }
+  function syncRepositoryAccessSettings(){
+    var zone=$('repoAccessZone'),status=$('repoAccessStatus'),tokenInput=$('repoToken'),clearButton=$('clearRepoAccess');
+    if(!zone)return;
+    zone.hidden=!S.repoId;
+    if(!S.repoId)return;
+    var configured=!!(S.repo&&S.repo.accessConfigured);
+    if(status)status.textContent=configured?'A repository credential is configured on the server. The current value is never shown.':'No repository credential is stored for this workspace.';
+    if(tokenInput)tokenInput.value='';
+    if(clearButton)clearButton.disabled=!configured;
+  }
+  function workspace(){
+    $('landing').hidden=true;
+    $('workspace').hidden=false;
+    $('repoName').textContent=S.repo&&S.repo.name||'Repository';
+    $('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';
+    connected(S.connectionState);
+    syncAnalysisRefreshControl();
+    syncRepositoryAccessSettings();
+  }
   function openSettings(trigger){
     S.settingsFocus=trigger||document.activeElement;
     $('api').value=S.api;
