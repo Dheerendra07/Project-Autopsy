@@ -83,7 +83,8 @@ export async function createUser(
         created_at,
         updated_at,
         last_login_at,
-        disabled_at
+        disabled_at,
+        email_verified_at
     `,
     [id, email, passwordHash]
   );
