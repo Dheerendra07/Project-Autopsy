@@ -80,7 +80,36 @@
   function storageRemove(key){try{sessionStorage.removeItem(key);return true}catch(e){return false}}
   function readCookie(name){var prefix=encodeURIComponent(name)+'=';return document.cookie.split(';').map(function(x){return x.trim()}).find(function(x){return x.indexOf(prefix)===0})?.slice(prefix.length)||''}
   function toast(msg,tone){var x=$('toast');x.textContent=msg;x.style.borderColor=tone==='bad'?'#5b302c':tone==='good'?'#35523d':'#303028';x.hidden=false;clearTimeout(x._t);x._t=setTimeout(function(){x.hidden=true},3200)}
-  function actionBusy(action,busy,busyLabel){document.querySelectorAll('#root [data-action="'+action+'"]').forEach(function(el){if(busy){if(el._autopsyBusy)return;el._autopsyBusy=true;el._autopsyIdleText=el.textContent;el.disabled=true;el.setAttribute('aria-busy','true');if(busyLabel)el.textContent=busyLabel}else if(el._autopsyBusy){el._autopsyBusy=false;el.disabled=false;el.removeAttribute('aria-busy');if(el._autopsyIdleText)el.textContent=el._autopsyIdleText;delete el._autopsyIdleText}})}
+  function actionIdleLabel(action){
+    if(action==='reload-view')return 'Refresh data';
+    if(action==='report'){
+      var rep=S.data.report,a=S.analysis||{};
+      var current=!!(rep&&currentAnalysisSnapshot()&&rep.analysis&&rep.analysis.runId===S.runId&&sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha));
+      return current?'Generate / refresh':'Generate current report';
+    }
+    if(action==='interview'){
+      var stories=S.data.interview,a=S.analysis||{};
+      var current=!!(stories&&currentAnalysisSnapshot()&&stories.analysisRunId===S.runId&&a.status==='completed');
+      return current?'Refresh stories':'Load stories';
+    }
+    if(action==='interpretation'){
+      var i=S.data.interpretation,rep=S.data.report,a=S.analysis||{};
+      var current=!!(rep&&currentAnalysisSnapshot()&&rep.analysis&&rep.analysis.runId===S.runId&&sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha)&&i&&i.result&&i.result.reportFingerprint===rep.fingerprint);
+      return current?'Refresh insights':'Generate insights';
+    }
+    if(action==='more-commits')return 'Load next 50 commits';
+    if(action==='more-timeline')return 'Load next 50 timeline events';
+    if(action==='analysis-runs-more')return 'Load older analysis runs';
+    if(action==='runtime-filter')return 'Apply filters';
+    if(action==='runtime-clear-filter')return 'Clear';
+    if(action==='runtime-more')return 'Load next 40 runtime events';
+    if(action==='historical-filter')return 'Apply';
+    if(action==='historical-clear-filter')return 'Reset';
+    if(action==='reload-data')return 'Retry evidence load';
+    if(action==='reload-view')return 'Refresh data';
+    return '';
+  }
+  function actionBusy(action,busy,busyLabel){document.querySelectorAll('#root [data-action="'+action+'"]').forEach(function(el){if(busy){if(el._autopsyBusy)return;el._autopsyBusy=true;el._autopsyIdleText=el.textContent;el.disabled=true;el.setAttribute('aria-busy','true');if(busyLabel)el.textContent=busyLabel}else if(el._autopsyBusy){el._autopsyBusy=false;el.disabled=false;el.removeAttribute('aria-busy');var idle=actionIdleLabel(action)||el._autopsyIdleText;if(idle)el.textContent=idle;delete el._autopsyIdleText}})}
   function persist(){storageSet('autopsy.api',S.api);storageSet('autopsy.repoId',S.repoId||'');storageSet('autopsy.runId',S.runId||'')}
   function connected(state){
     var button=$('settings');
@@ -991,6 +1020,8 @@
       S.currentEvidence={label:'Provenance · '+deploymentId,basis:'Exact deployment evidence reconciliation between observed deployment fields and available runtime identity.',payload:r};S.focusReturn=trigger||document.activeElement;
       $('drawerTitle').textContent=S.currentEvidence.label;
       $('drawerBasis').textContent=S.currentEvidence.basis;
+      if($('drawerSummary'))$('drawerSummary').innerHTML=evidenceSummary(r);
+      if($('drawerRaw'))$('drawerRaw').open=false;
       $('drawerJson').textContent=JSON.stringify(r,null,2);
       $('drawer').hidden=false;
       requestAnimationFrame(function(){$('drawerClose').focus()});
