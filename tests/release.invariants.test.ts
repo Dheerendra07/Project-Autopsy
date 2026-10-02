@@ -1104,6 +1104,8 @@ test("account recovery and transactional email contracts remain explicit", () =>
   assert.ok(persistence.includes("FOR UPDATE"));
   assert.ok(persistence.includes('await client.query("BEGIN")'));
   assert.ok(routes.includes("resetPasswordWithToken"));
+  assert.ok(routes.includes('invalidateAuthActionTokens(user.id, "email_verification")'));
+  assert.ok(routes.includes('invalidateAuthActionTokens(user.id, "password_reset")'));
   assert.doesNotThrow(() => new Function(appJs));
 });
 
