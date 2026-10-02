@@ -1883,3 +1883,14 @@ test("frontend runtime workspace exposes an explicit provenance chain", () => {
   assert.ok(indexHtml.includes(".runtime-lineage-grid"));
   assert.ok(indexHtml.includes(".runtime-lineage-step"));
 });
+
+
+test("frontend Operations workspace exposes live posture and evidence boundary", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("Operational posture"));
+  assert.ok(appJs.includes("Auto refresh active"));
+  assert.ok(appJs.includes("does not change, reinterpret or overwrite persisted repository evidence"));
+  assert.ok(indexHtml.includes(".ops-posture-grid"));
+  assert.ok(indexHtml.includes(".ops-health-card"));
+});
