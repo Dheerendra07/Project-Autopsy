@@ -125,7 +125,7 @@ export const envSchema = z
       .min(32)
       .optional(),
 
-    RESEND_API_KEY: z
+    BREVO_API_KEY: z
       .string()
       .min(1)
       .optional(),
@@ -133,8 +133,15 @@ export const envSchema = z
     AUTOPSY_EMAIL_FROM: z
       .string()
       .trim()
-      .min(3)
+      .email()
       .optional(),
+
+    AUTOPSY_EMAIL_FROM_NAME: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .default("Project Autopsy")
 
     AUTOPSY_PUBLIC_URL: z
       .string()
@@ -204,7 +211,7 @@ export const envSchema = z
       });
     }
 
-    const hasEmailProviderKey = Boolean(value.RESEND_API_KEY);
+    const hasEmailProviderKey = Boolean(value.BREVO_API_KEY);
     const hasEmailFrom = Boolean(value.AUTOPSY_EMAIL_FROM);
     const hasPublicUrl = Boolean(value.AUTOPSY_PUBLIC_URL);
 
@@ -212,9 +219,9 @@ export const envSchema = z
       if (!hasEmailProviderKey) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ["RESEND_API_KEY"],
+          path: ["BREVO_API_KEY"],
           message:
-            "RESEND_API_KEY is required when transactional email is configured."
+            "BREVO_API_KEY is required when transactional email is configured."
         });
       }
       if (!hasEmailFrom) {
