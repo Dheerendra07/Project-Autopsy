@@ -471,16 +471,19 @@ test("frontend JavaScript is served as a same-origin CSP-compatible asset", () =
   assert.doesNotMatch(html, /<script[^>]+src=["'][a-z]+:\/\//i);
 });
 
-test("frontend script remains dependency-free, parseable and key-gated", () => {
+test("frontend script remains dependency-free, parseable and session-based", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
   assert.doesNotThrow(() => new Function(appJs));
   assert.ok(html.includes('<script src="app.js" defer></script>'));
-  assert.ok(appJs.includes("function storageGet(key)"));
-  assert.ok(appJs.includes("function storageSet(key,value)"));
-  assert.ok(appJs.includes("storageGet('autopsy.key')"));
-  assert.ok(appJs.includes("storageSet('autopsy.aiKey',S.aiKey)"));
+  assert.ok(html.includes('id="authForm"'));
+  assert.ok(html.includes('id="authEmail"'));
+  assert.ok(html.includes('id="authPassword"'));
+  assert.ok(appJs.includes("credentials:'include'"));
+  assert.ok(appJs.includes("readCookie('autopsy_csrf')"));
+  assert.ok(appJs.includes("x-autopsy-csrf-token"));
+  assert.doesNotMatch(appJs, /(?:storageGet|storageSet)\(['"]autopsy\.(key|aiKey)['"]/);
   assert.doesNotMatch(
     html + "\n" + appJs,
     /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\s*[:=]\s*['"][^'"]{12,}['"]/i
@@ -828,10 +831,10 @@ test("frontend connection failures remain actionable and mobile evidence control
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  assert.ok(appJs.includes("API access key was rejected. Open Settings and update the key."));
+  assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("Access to this API operation was denied."));
   assert.ok(appJs.includes("Saved workspace could not be restored."));
-  assert.ok(html.includes("Connection settings"));
+  assert.ok(html.includes("Account & workspace"));
   assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
   assert.ok(
     appJs.includes("S.dataErrors.length?'warn':'good'")
@@ -872,10 +875,10 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(end > start);
 
   const poll = appJs.slice(start, end);
-  assert.match(poll, /API access key was rejected\./);
+  assert.match(poll, /Your session has expired\./);
   assert.match(poll, /Access denied/);
   assert.match(poll, /Analysis run unavailable/);
-  assert.ok(poll.includes("The saved API access key was rejected"));
+  assert.ok(poll.includes("Your account session has expired"));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
@@ -928,30 +931,55 @@ test("Helmet keeps HTTPS upgrades production-only", () => {
   assert.ok(app.includes("? [] : null"));
 });
 
-test("API authentication is mounted before JSON body parsing", () => {
+test("account session authentication is mounted before the protected API router", () => {
   const app = readRepoFile("src/app.ts");
-  const authIndex = app.indexOf("isApiAccessAuthorized(");
-  const jsonParserIndex = app.indexOf('app.use(express.json({ limit: "1mb" }))');
-  const routerIndex = app.indexOf('app.use("/api", router);');
-  const authMountEnd = app.indexOf("});", authIndex);
 
-  assert.ok(authIndex >= 0);
-  assert.ok(jsonParserIndex >= 0);
+  const authRouterIndex = app.indexOf('app.use("/api/auth", authRouter);');
+  const sessionIndex = app.indexOf('app.use("/api", requireApiSessionOrMachineIngest);');
+  const csrfIndex = app.indexOf('app.use("/api", requireApiCsrfOrMachineIngest);');
+  const routerIndex = app.indexOf('app.use("/api", router);');
+
+  assert.ok(authRouterIndex >= 0);
+  assert.ok(sessionIndex >= 0);
+  assert.ok(csrfIndex >= 0);
   assert.ok(routerIndex >= 0);
-  assert.ok(authMountEnd >= 0);
-  assert.ok(authIndex < authMountEnd);
-  assert.ok(authMountEnd < jsonParserIndex);
-  assert.ok(jsonParserIndex < routerIndex);
+  assert.ok(authRouterIndex < sessionIndex);
+  assert.ok(sessionIndex < csrfIndex);
+  assert.ok(csrfIndex < routerIndex);
   assert.equal(
     (app.match(/app\.use\("\/api", router\);/g) ?? []).length,
     1
   );
-  assert.doesNotMatch(
-    app.slice(Math.max(0, authIndex - 80), authMountEnd + 3),
-    /,\s*router\)/
-  );
+  assert.doesNotMatch(app, /isApiAccessAuthorized\(/);
 });
 
+
+test("repository resources are tenant-scoped to authenticated accounts", () => {
+  const routes = readRepoFile("src/routes/index.ts");
+  const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
+  const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
+  const repositoryRoutes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const migration = readRepoFile("database/migrations/016_user_auth_and_repository_ownership.sql");
+
+  assert.ok(routes.includes('router.use("/repositories/:repositoryId", requireRepositoryAccess);'));
+  assert.ok(middleware.includes("getOwnedRepository(repositoryId, userId)"));
+  assert.ok(middleware.includes('code: "REPOSITORY_NOT_FOUND"'));
+  assert.ok(persistence.includes("WHERE id = $1"));
+  assert.ok(persistence.includes("AND owner_user_id = $2"));
+  assert.ok(repositoryRoutes.includes("ownerUserId: req.auth?.userId"));
+  assert.ok(migration.includes("owner_user_id UUID"));
+});
+
+test("machine evidence ingestion remains separately authenticated", () => {
+  const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
+  const runtime = readRepoFile("src/modules/runtime/runtime.auth.ts");
+  const deployment = readRepoFile("src/modules/deployments/deployment.auth.ts");
+
+  assert.ok(middleware.includes("isRuntimeTelemetryAuthorized"));
+  assert.ok(middleware.includes("isDeploymentEvidenceAuthorized"));
+  assert.ok(runtime.includes("RUNTIME_TELEMETRY_INGEST_KEY"));
+  assert.ok(deployment.includes("DEPLOYMENT_EVIDENCE_INGEST_KEY"));
+});
 
 test("repository deletion keeps an explicit lifecycle guard in the API and client", () => {
   const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
