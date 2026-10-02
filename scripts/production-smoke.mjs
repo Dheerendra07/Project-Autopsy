@@ -46,9 +46,22 @@ const appJs = await request("/app.js");
 assert(appJs.response.ok, `Frontend asset returned HTTP ${appJs.response.status}.`);
 assert(appJs.text.includes("function storageGet(key)"), "Frontend asset is not the expected Autopsy client.");
 
+for (const assetPath of ["/favicon.svg", "/favicon.ico"]) {
+  const asset = await request(assetPath);
+  assert(asset.response.status === 200, `${assetPath} returned HTTP ${asset.response.status}.`);
+  assert(
+    asset.response.headers.get("content-type")?.startsWith("image/svg+xml"),
+    `${assetPath} returned an unexpected content type.`
+  );
+}
+
 const health = await request("/health");
 assert(health.response.status === 200, `/health returned HTTP ${health.response.status}.`);
 assert(health.body?.success === true && health.body?.status === "healthy", "/health did not report healthy.");
+assert(
+  /^[0-9a-f-]{36}$/i.test(health.response.headers.get("x-request-id") ?? ""),
+  "Health response did not expose a valid X-Request-Id."
+);
 
 const ready = await request("/ready");
 assert(ready.response.status === 200, `/ready returned HTTP ${ready.response.status}. Body: ${ready.text.slice(0, 500)}`);
