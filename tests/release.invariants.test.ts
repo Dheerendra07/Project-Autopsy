@@ -489,7 +489,10 @@ test("frontend script remains dependency-free, parseable and session-based", () 
   assert.ok(appJs.includes("credentials:'include'"));
   assert.ok(appJs.includes("readCookie('autopsy_csrf')"));
   assert.ok(appJs.includes("x-autopsy-csrf-token"));
-  assert.doesNotMatch(appJs, /(?:storageGet|storageSet)\(['"]autopsy\.(key|aiKey)['"]/);
+  assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
+  assert.ok(appJs.includes("api('/api/auth/migrate-legacy'"));
+  assert.doesNotMatch(appJs, /storageSet\(['"]autopsy\.(key|aiKey)['"]/);
+  assert.doesNotMatch(appJs, /S\.key\b|S\.aiKey\b/);
   assert.doesNotMatch(
     html + "\n" + appJs,
     /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\s*[:=]\s*['"][^'"]{12,}['"]/i
@@ -946,6 +949,21 @@ test("account session authentication is mounted before the protected API router"
   assert.doesNotMatch(app, /isApiAccessAuthorized\(/);
 });
 
+
+test("legacy migration is explicitly one-time and separate from normal session auth", () => {
+  const authRoutes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const appJs = readRepoFile("public/app.js");
+  const env = readRepoFile("src/config/env.ts");
+  const render = readRepoFile("render.yaml");
+
+  assert.ok(authRoutes.includes('authRouter.post("/migrate-legacy"'));
+  assert.ok(authRoutes.includes("x-autopsy-api-key"));
+  assert.ok(env.includes("AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(render.includes("Temporary compatibility secret used only by the one-time legacy workspace migration."));
+  assert.ok(render.includes("key: AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
+  assert.ok(appJs.includes("if(S.authMode==='migrate'&&S.legacyMigrationKey)"));
+});
 
 test("repository resources are tenant-scoped to authenticated accounts", () => {
   const routes = readRepoFile("src/routes/index.ts");
