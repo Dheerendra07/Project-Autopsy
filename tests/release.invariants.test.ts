@@ -432,6 +432,15 @@ test("frontend quality workspace exposes an evidence matrix", () => {
   assert.ok(quality.includes("migrationOps"));
   assert.ok(quality.includes("testDelta"));
   assert.ok(quality.includes("Subject-based historical bug/fix signal"));
+  for (const marker of [
+    'data-empty-state="true"><td colspan="5" class="dim">No bug-area signal evidence.',
+    'data-empty-state="true"><td colspan="5" class="dim">No test-change evidence.',
+    'data-empty-state="true"><td colspan="5" class="dim">No repeated-change evidence.',
+    'data-empty-state="true"><td colspan="5" class="dim">No refactor signal evidence.',
+    'data-empty-state="true"><td colspan="6" class="dim">No migration evidence.'
+  ]) {
+    assert.ok(appJs.includes(marker), "Quality empty rows must be excluded from local filters: " + marker);
+  }
 });
 
 
