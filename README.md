@@ -119,7 +119,11 @@ Private repositories are supported for GitHub, GitLab, and Bitbucket HTTPS remot
 
 Use a repository token with read-only access to the source repository. The UI never persists the repository token in sessionStorage.
 
-Production API access requires AUTOPSY_API_ACCESS_KEY. The key is accepted through x-autopsy-api-key or a Bearer authorization header. The /health endpoint remains public for hosting health checks. Runtime telemetry and deployment evidence ingestion additionally require their dedicated production ingestion keys.
+Production browser/API access uses account sessions backed by PostgreSQL and opaque HttpOnly cookies. Users authenticate with email and password; unsafe browser requests carry a server-issued CSRF token. Repository resources are scoped to the signed-in account. The /health and /ready endpoints remain public for hosting health checks. Runtime telemetry and deployment evidence ingestion remain machine-to-machine and additionally require their dedicated production ingestion keys.
+
+During the first production deployment, set AUTOPSY_BOOTSTRAP_EMAIL and AUTOPSY_BOOTSTRAP_PASSWORD to create the initial operator account and claim legacy repositories that predate account ownership. Remove those bootstrap variables after the first successful login so future restarts do not retain bootstrap credentials in the service configuration.
+
+Existing browsers that still have the pre-account workspace key can use the one-time workspace migration screen. That migration credential is accepted only by /api/auth/migrate-legacy, after which the browser removes it and normal requests use the account session. Keep AUTOPSY_API_ACCESS_KEY only until all legacy workspaces have been migrated, then remove it from Render and delete the migration path in the subsequent cleanup release.
 
 ## Stored commit evidence
 
@@ -183,7 +187,6 @@ Optional deployment-system evidence can be ingested without deriving deployment 
 ```http
 POST /api/repositories/:repositoryId/deployments
 Content-Type: application/json
-x-autopsy-api-key: <configured application key>
 x-autopsy-deployment-key: <configured key>
 
 {
@@ -295,7 +298,7 @@ The interpretation can summarize recurring themes, identify evidence-backed inve
 
 Configuration is optional. Set `AI_API_KEY` to enable the endpoint, with `AI_BASE_URL`, `AI_MODEL`, and `AI_TIMEOUT_MS` available for provider configuration. The default provider configuration targets OpenAI's Responses API with `gpt-5.6-luna`.
 
-In production, a separate `AI_INTERPRETATION_ACCESS_KEY` is required when `AI_API_KEY` is configured. It can be supplied through the `x-autopsy-ai-access-key` header or a Bearer authorization header. Repeated requests for the same report fingerprint and model are served from Redis for the configured cache TTL, reducing duplicate provider calls.
+AI interpretation is available to signed-in users. The provider credential remains server-side in `AI_API_KEY` and is never sent to the browser. Repeated requests for the same report fingerprint and model are served from Redis for the configured cache TTL, reducing duplicate provider calls.
 
 ## Repeatedly modified files
 

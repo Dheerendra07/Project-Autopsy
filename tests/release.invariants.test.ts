@@ -152,13 +152,18 @@ test("production smoke covers public surface and protected API boundaries", () =
 
   for (const marker of [
     "AUTOPSY_PRODUCTION_URL",
-    "AUTOPSY_API_ACCESS_KEY",
+    "AUTOPSY_BOOTSTRAP_EMAIL",
+    "AUTOPSY_BOOTSTRAP_PASSWORD",
     '"/health"',
     '"/ready"',
+    '"/api/auth/login"',
+    '"/api/auth/me"',
     '"/api/repositories/00000000-0000-0000-0000-000000000000"',
-    "API_ACCESS_UNAUTHORIZED",
+    "AUTH_REQUIRED",
     "REPOSITORY_NOT_FOUND",
-    'redirect: "error"',
+    "autopsy_session=",
+    "autopsy_csrf=",
+    'redirect: "manual"',
     "AbortSignal.timeout(15_000)"
   ]) {
     assert.ok(
@@ -168,7 +173,8 @@ test("production smoke covers public surface and protected API boundaries", () =
   }
 
   assert.ok(workflow.includes("workflow_dispatch:"));
-  assert.ok(workflow.includes("secrets.AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_EMAIL"));
+  assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
 });
 test("quality workflow retains the full validation gate", () => {
@@ -471,16 +477,22 @@ test("frontend JavaScript is served as a same-origin CSP-compatible asset", () =
   assert.doesNotMatch(html, /<script[^>]+src=["'][a-z]+:\/\//i);
 });
 
-test("frontend script remains dependency-free, parseable and key-gated", () => {
+test("frontend script remains dependency-free, parseable and session-based", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
   assert.doesNotThrow(() => new Function(appJs));
   assert.ok(html.includes('<script src="app.js" defer></script>'));
-  assert.ok(appJs.includes("function storageGet(key)"));
-  assert.ok(appJs.includes("function storageSet(key,value)"));
-  assert.ok(appJs.includes("storageGet('autopsy.key')"));
-  assert.ok(appJs.includes("storageSet('autopsy.aiKey',S.aiKey)"));
+  assert.ok(html.includes('id="authForm"'));
+  assert.ok(html.includes('id="authEmail"'));
+  assert.ok(html.includes('id="authPassword"'));
+  assert.ok(appJs.includes("credentials:'include'"));
+  assert.ok(appJs.includes("readCookie('autopsy_csrf')"));
+  assert.ok(appJs.includes("x-autopsy-csrf-token"));
+  assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
+  assert.ok(appJs.includes("'/api/auth/migrate-legacy'"));
+  assert.doesNotMatch(appJs, /storageSet\(['"]autopsy\.(key|aiKey)['"]/);
+  assert.doesNotMatch(appJs, /S\.key\b|S\.aiKey\b/);
   assert.doesNotMatch(
     html + "\n" + appJs,
     /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY)\s*[:=]\s*['"][^'"]{12,}['"]/i
@@ -828,10 +840,10 @@ test("frontend connection failures remain actionable and mobile evidence control
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  assert.ok(appJs.includes("API access key was rejected. Open Settings and update the key."));
+  assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("Access to this API operation was denied."));
   assert.ok(appJs.includes("Saved workspace could not be restored."));
-  assert.ok(html.includes("Connection settings"));
+  assert.ok(html.includes("Account & workspace"));
   assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
   assert.ok(
     appJs.includes("S.dataErrors.length?'warn':'good'")
@@ -852,13 +864,13 @@ test("frontend workspace keeps the real connection state", () => {
   assert.doesNotMatch(workspace, /connected\(true\)/);
 });
 
-test("frontend distinguishes configured credentials from verified connectivity", () => {
+test("frontend distinguishes signed-in state from an unauthenticated session", () => {
   const appJs = readRepoFile("public/app.js");
 
   assert.ok(appJs.includes("connectionState:'unknown'"));
   assert.ok(appJs.includes("state==='verified'"));
-  assert.ok(appJs.includes("state==='configured'"));
-  assert.ok(appJs.includes("Connection settings saved. Test the connection to verify the credentials."));
+  assert.ok(appJs.includes("state==='rejected'"));
+  assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("S.connectionState='verified'"));
   assert.ok(appJs.includes("connected('verified')"));
 });
@@ -872,36 +884,23 @@ test("frontend stops polling on terminal analysis access errors", () => {
   assert.ok(end > start);
 
   const poll = appJs.slice(start, end);
-  assert.match(poll, /API access key was rejected\./);
+  assert.match(poll, /Your session has expired\./);
   assert.match(poll, /Access denied/);
   assert.match(poll, /Analysis run unavailable/);
-  assert.ok(poll.includes("The saved API access key was rejected"));
+  assert.ok(poll.includes("Your account session has expired"));
   assert.ok(poll.includes("The saved analysis run no longer exists."));
   assert.ok(poll.includes("clearInterval(S.timer);S.timer=null"));
 });
 
-test("frontend clears stale saved workspace state after a missing repository or analysis run", () => {
+test("frontend restores saved work only through the authenticated session", () => {
   const appJs = readRepoFile("public/app.js");
-  const start = appJs.indexOf("async function boot()");
-  const end = appJs.indexOf("\n  boot()\n})();", start);
 
-  assert.ok(start >= 0);
-  assert.ok(end > start);
-
-  const boot = appJs.slice(start, end);
-  assert.ok(boot.includes("message.indexOf('Request failed (404).')===0"));
-  assert.ok(boot.includes("S.repoId=''"));
-  assert.ok(boot.includes("S.runId=''"));
-  assert.ok(boot.includes("S.data={}"));
-  assert.ok(
-    boot.includes(
-      "S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"
-    )
-  );
-  assert.ok(
-    boot.includes("Saved workspace no longer exists. Start a new repository analysis.")
-  );
-  assert.ok(boot.includes("persist()"));
+  assert.ok(appJs.includes("async function restoreSavedWorkspace()"));
+  assert.ok(appJs.includes("if(!S.user||!S.repoId||!S.runId)return false"));
+  assert.ok(appJs.includes("async function loadRecentRepositories()"));
+  assert.ok(appJs.includes("api('/api/repositories?limit=20')"));
+  assert.ok(appJs.includes("storageRemove('autopsy.key')"));
+  assert.ok(appJs.includes("storageRemove('autopsy.aiKey')"));
 });
 
 
@@ -928,30 +927,70 @@ test("Helmet keeps HTTPS upgrades production-only", () => {
   assert.ok(app.includes("? [] : null"));
 });
 
-test("API authentication is mounted before JSON body parsing", () => {
+test("account session authentication is mounted before the protected API router", () => {
   const app = readRepoFile("src/app.ts");
-  const authIndex = app.indexOf("isApiAccessAuthorized(");
-  const jsonParserIndex = app.indexOf('app.use(express.json({ limit: "1mb" }))');
-  const routerIndex = app.indexOf('app.use("/api", router);');
-  const authMountEnd = app.indexOf("});", authIndex);
 
-  assert.ok(authIndex >= 0);
-  assert.ok(jsonParserIndex >= 0);
+  const authRouterIndex = app.indexOf('app.use("/api/auth", authRouter);');
+  const sessionIndex = app.indexOf('app.use("/api", requireApiSessionOrMachineIngest);');
+  const csrfIndex = app.indexOf('app.use("/api", requireApiCsrfOrMachineIngest);');
+  const routerIndex = app.indexOf('app.use("/api", router);');
+
+  assert.ok(authRouterIndex >= 0);
+  assert.ok(sessionIndex >= 0);
+  assert.ok(csrfIndex >= 0);
   assert.ok(routerIndex >= 0);
-  assert.ok(authMountEnd >= 0);
-  assert.ok(authIndex < authMountEnd);
-  assert.ok(authMountEnd < jsonParserIndex);
-  assert.ok(jsonParserIndex < routerIndex);
+  assert.ok(authRouterIndex < sessionIndex);
+  assert.ok(sessionIndex < csrfIndex);
+  assert.ok(csrfIndex < routerIndex);
   assert.equal(
     (app.match(/app\.use\("\/api", router\);/g) ?? []).length,
     1
   );
-  assert.doesNotMatch(
-    app.slice(Math.max(0, authIndex - 80), authMountEnd + 3),
-    /,\s*router\)/
-  );
+  assert.doesNotMatch(app, /isApiAccessAuthorized\(/);
 });
 
+
+test("legacy migration is explicitly one-time and separate from normal session auth", () => {
+  const authRoutes = readRepoFile("src/modules/auth/auth.routes.ts");
+  const appJs = readRepoFile("public/app.js");
+  const env = readRepoFile("src/config/env.ts");
+  const render = readRepoFile("render.yaml");
+
+  assert.ok(authRoutes.includes('authRouter.post("/migrate-legacy"'));
+  assert.ok(authRoutes.includes("x-autopsy-api-key"));
+  assert.ok(env.includes("AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(render.includes("Temporary compatibility secret used only by the one-time legacy workspace migration."));
+  assert.ok(render.includes("key: AUTOPSY_API_ACCESS_KEY"));
+  assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
+  assert.ok(appJs.includes("if(S.authMode==='migrate'&&S.legacyMigrationKey)"));
+});
+
+test("repository resources are tenant-scoped to authenticated accounts", () => {
+  const routes = readRepoFile("src/routes/index.ts");
+  const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
+  const persistence = readRepoFile("src/modules/auth/auth.persistence.ts");
+  const repositoryRoutes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const migration = readRepoFile("database/migrations/016_user_auth_and_repository_ownership.sql");
+
+  assert.ok(routes.includes('router.use("/repositories/:repositoryId", requireRepositoryAccess);'));
+  assert.ok(middleware.includes("getOwnedRepository(repositoryId, userId)"));
+  assert.ok(middleware.includes('code: "REPOSITORY_NOT_FOUND"'));
+  assert.ok(persistence.includes("WHERE id = $1"));
+  assert.ok(persistence.includes("AND owner_user_id = $2"));
+  assert.ok(repositoryRoutes.includes("ownerUserId: req.auth?.userId"));
+  assert.ok(migration.includes("owner_user_id UUID"));
+});
+
+test("machine evidence ingestion remains separately authenticated", () => {
+  const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
+  const runtime = readRepoFile("src/modules/runtime/runtime.auth.ts");
+  const deployment = readRepoFile("src/modules/deployments/deployment.auth.ts");
+
+  assert.ok(middleware.includes("isRuntimeTelemetryAuthorized"));
+  assert.ok(middleware.includes("isDeploymentEvidenceAuthorized"));
+  assert.ok(runtime.includes("RUNTIME_TELEMETRY_INGEST_KEY"));
+  assert.ok(deployment.includes("DEPLOYMENT_EVIDENCE_INGEST_KEY"));
+});
 
 test("repository deletion keeps an explicit lifecycle guard in the API and client", () => {
   const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
@@ -1111,7 +1150,7 @@ test("analysis terminal updates preserve existing failure diagnostics when no re
 });
 
 
-test("frontend health probes do not attach privileged API credentials", () => {
+test("frontend connection verification uses the account session without privileged API keys", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
   const end = appJs.indexOf("async function importRepo()", start);
@@ -1122,12 +1161,10 @@ test("frontend health probes do not attach privileged API credentials", () => {
   const probe = appJs.slice(start, end);
   assert.match(probe, /boundedFetch\(base\+'\/health'/);
   assert.match(probe, /boundedFetch\(base\+'\/ready'/);
-  assert.ok(probe.includes("var probeHeaders=new Headers(h)"));
-  assert.ok(probe.includes("probeHeaders.set('x-autopsy-api-key',key)"));
-  assert.doesNotMatch(
-    probe.slice(0, probe.indexOf("var probeHeaders")),
-    /x-autopsy-api-key/
-  );
+  assert.ok(probe.includes("base+'/api/auth/me'"));
+  assert.ok(probe.includes("credentials:'include'"));
+  assert.doesNotMatch(probe, /x-autopsy-api-key/);
+  assert.doesNotMatch(probe, /x-autopsy-ai-access-key/);
 });
 
 
@@ -1137,8 +1174,9 @@ test("production-smoke workflow validates its production credential before check
   const checkout = workflow.indexOf("name: Checkout");
   assert.ok(validation >= 0);
   assert.ok(checkout > validation);
-  assert.ok(workflow.includes('test -n "$AUTOPSY_API_ACCESS_KEY"'));
-  assert.ok(workflow.includes('test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32'));
+  assert.ok(workflow.includes('test -n "$AUTOPSY_BOOTSTRAP_EMAIL"'));
+  assert.ok(workflow.includes('test -n "$AUTOPSY_BOOTSTRAP_PASSWORD"'));
+  assert.ok(workflow.includes('test "${#AUTOPSY_BOOTSTRAP_PASSWORD}" -ge 12'));
 });
 
 

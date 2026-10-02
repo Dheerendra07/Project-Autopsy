@@ -1,8 +1,9 @@
 const baseUrl = (process.env.AUTOPSY_PRODUCTION_URL ?? process.argv[2] ?? "").trim().replace(/\/$/, "");
-const apiKey = (process.env.AUTOPSY_API_ACCESS_KEY ?? "").trim();
+const email = (process.env.AUTOPSY_BOOTSTRAP_EMAIL ?? "").trim();
+const password = process.env.AUTOPSY_BOOTSTRAP_PASSWORD ?? "";
 
 if (!baseUrl) {
-  throw new Error("Usage: AUTOPSY_PRODUCTION_URL=https://... AUTOPSY_API_ACCESS_KEY=... node scripts/production-smoke.mjs");
+  throw new Error("Usage: AUTOPSY_PRODUCTION_URL=https://... AUTOPSY_BOOTSTRAP_EMAIL=... AUTOPSY_BOOTSTRAP_PASSWORD=... node scripts/production-smoke.mjs");
 }
 
 const url = new URL(baseUrl);
@@ -14,10 +15,12 @@ if (url.username || url.password || url.search || url.hash) {
   throw new Error("Production smoke URL must not contain credentials, query parameters or fragments.");
 }
 
-async function request(path, headers = {}) {
+async function request(path, options = {}) {
   const response = await fetch(new URL(path, baseUrl), {
-    headers: { Accept: "application/json, text/html", ...headers },
-    redirect: "error",
+    method: options.method ?? "GET",
+    headers: { Accept: "application/json, text/html", ...(options.headers ?? {}) },
+    body: options.body,
+    redirect: "manual",
     signal: AbortSignal.timeout(15_000)
   });
   const text = await response.text();
@@ -53,25 +56,37 @@ assert(ready.body?.success === true && ready.body?.status === "ready", "/ready d
 assert(ready.body?.checks?.database === "ready", "PostgreSQL is not ready.");
 assert(ready.body?.checks?.redis === "ready", "Redis is not ready.");
 
-const protectedWithoutKey = await request("/api/repositories/00000000-0000-0000-0000-000000000000");
-assert(protectedWithoutKey.response.status === 401, `Unauthenticated API request returned HTTP ${protectedWithoutKey.response.status}.`);
-assert(protectedWithoutKey.body?.error?.code === "API_ACCESS_UNAUTHORIZED", "Unauthenticated API response has the wrong error contract.");
+const protectedWithoutSession = await request("/api/repositories/00000000-0000-0000-0000-000000000000");
+assert(protectedWithoutSession.response.status === 401, `Unauthenticated API request returned HTTP ${protectedWithoutSession.response.status}.`);
+assert(protectedWithoutSession.body?.error?.code === "AUTH_REQUIRED", "Unauthenticated API response has the wrong error contract.");
 
-const protectedWithBadKey = await request(
-  "/api/repositories/00000000-0000-0000-0000-000000000000",
-  { "x-autopsy-api-key": "invalid-production-smoke-key" }
-);
-assert(protectedWithBadKey.response.status === 401, `Invalid API key returned HTTP ${protectedWithBadKey.response.status}.`);
-
-if (!apiKey) {
-  throw new Error("AUTOPSY_API_ACCESS_KEY is required for the authenticated production smoke check.");
+if (!email || !password) {
+  throw new Error("AUTOPSY_BOOTSTRAP_EMAIL and AUTOPSY_BOOTSTRAP_PASSWORD are required for the authenticated production smoke check.");
 }
 
-const protectedWithKey = await request(
-  "/api/repositories/00000000-0000-0000-0000-000000000000",
-  { "x-autopsy-api-key": apiKey }
-);
-assert(protectedWithKey.response.status === 404, `Valid API key did not reach the protected route; received HTTP ${protectedWithKey.response.status}.`);
-assert(protectedWithKey.body?.error?.code === "REPOSITORY_NOT_FOUND", "Authenticated protected-route smoke returned the wrong error contract.");
+const login = await request("/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password })
+});
+assert(login.response.status === 200, `Login returned HTTP ${login.response.status}. Body: ${login.text.slice(0, 500)}.`);
+assert(login.body?.success === true && login.body?.user?.email === email.toLowerCase(), "Login did not return the expected account.");
+const setCookie = login.response.headers.getSetCookie?.() ?? [];
+const sessionCookie = setCookie.find((value) => value.startsWith("autopsy_session="));
+const csrfCookie = setCookie.find((value) => value.startsWith("autopsy_csrf="));
+assert(sessionCookie && csrfCookie, "Login did not establish both required session cookies.");
+const cookieHeader = [sessionCookie, csrfCookie].map((value) => value.split(";")[0]).join("; ");
 
-console.log("✓ Production smoke passed: frontend, asset, health, readiness, unauthenticated wall, invalid-key rejection, and authenticated protected-route boundary.");
+const me = await request("/api/auth/me", {
+  headers: { Cookie: cookieHeader }
+});
+assert(me.response.status === 200 && me.body?.user?.email === email.toLowerCase(), "Authenticated /auth/me check failed.");
+
+const protectedWithSession = await request(
+  "/api/repositories/00000000-0000-0000-0000-000000000000",
+  { headers: { Cookie: cookieHeader } }
+);
+assert(protectedWithSession.response.status === 404, `Authenticated protected route returned HTTP ${protectedWithSession.response.status}.`);
+assert(protectedWithSession.body?.error?.code === "REPOSITORY_NOT_FOUND", "Authenticated protected-route smoke returned the wrong error contract.");
+
+console.log("✓ Production smoke passed: frontend, asset, health, readiness, unauthenticated wall, account login/session, /auth/me, and authenticated protected-route boundary.");

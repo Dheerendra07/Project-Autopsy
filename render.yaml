@@ -34,13 +34,16 @@ services:
         sync: false
       - key: DEPLOYMENT_EVIDENCE_INGEST_KEY
         sync: false
+      - key: AUTOPSY_BOOTSTRAP_EMAIL
+        sync: false
+      - key: AUTOPSY_BOOTSTRAP_PASSWORD
+        sync: false
+      # Temporary compatibility secret used only by the one-time legacy workspace migration.
       - key: AUTOPSY_API_ACCESS_KEY
         sync: false
       - key: REPOSITORY_CREDENTIAL_ENCRYPTION_KEY
         sync: false
       - key: AI_API_KEY
-        sync: false
-      - key: AI_INTERPRETATION_ACCESS_KEY
         sync: false
       - key: AI_BASE_URL
         value: https://api.openai.com/v1

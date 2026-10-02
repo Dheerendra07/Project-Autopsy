@@ -107,6 +107,19 @@ export const envSchema = z
       .min(32)
       .optional(),
 
+    AUTOPSY_BOOTSTRAP_EMAIL: z
+      .string()
+      .trim()
+      .email()
+      .max(320)
+      .optional(),
+
+    AUTOPSY_BOOTSTRAP_PASSWORD: z
+      .string()
+      .min(12)
+      .max(256)
+      .optional(),
+
     AUTOPSY_API_ACCESS_KEY: z
       .string()
       .min(32)
@@ -143,11 +156,6 @@ export const envSchema = z
       .max(120_000)
       .default(30_000),
 
-    AI_INTERPRETATION_ACCESS_KEY: z
-      .string()
-      .min(32)
-      .optional(),
-
     EVIDENCE_RETENTION_DAYS: z.coerce
       .number()
       .int()
@@ -163,32 +171,22 @@ export const envSchema = z
       .default(86_400)
   })
   .superRefine((value, ctx) => {
-    if (
-      value.NODE_ENV === "production" &&
-      value.AUTOPSY_SERVICE_ROLE === "web" &&
-      !value.AUTOPSY_API_ACCESS_KEY
-    ) {
+    const hasBootstrapEmail = Boolean(value.AUTOPSY_BOOTSTRAP_EMAIL);
+    const hasBootstrapPassword = Boolean(value.AUTOPSY_BOOTSTRAP_PASSWORD);
+
+    if (hasBootstrapEmail !== hasBootstrapPassword) {
+      const path = hasBootstrapEmail
+        ? ["AUTOPSY_BOOTSTRAP_PASSWORD"]
+        : ["AUTOPSY_BOOTSTRAP_EMAIL"];
+
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["AUTOPSY_API_ACCESS_KEY"],
+        path,
         message:
-          "AUTOPSY_API_ACCESS_KEY is required in production."
+          "AUTOPSY_BOOTSTRAP_EMAIL and AUTOPSY_BOOTSTRAP_PASSWORD must be configured together."
       });
     }
 
-    if (
-      value.NODE_ENV === "production" &&
-      value.AUTOPSY_SERVICE_ROLE === "web" &&
-      value.AI_API_KEY &&
-      !value.AI_INTERPRETATION_ACCESS_KEY
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["AI_INTERPRETATION_ACCESS_KEY"],
-        message:
-          "AI_INTERPRETATION_ACCESS_KEY is required in production when AI_API_KEY is configured."
-      });
-    }
   });
 
 export function parseEnvironment(

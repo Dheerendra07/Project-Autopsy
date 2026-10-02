@@ -7,7 +7,6 @@ import {
   AiInterpretationValidationError,
   generateAiInterpretation
 } from "./interpretation.service.js";
-import { isAiInterpretationAuthorized } from "./interpretation.auth.js";
 import { RedisAiInterpretationCache } from "./interpretation.cache.js";
 import { redis } from "../../config/redis.js";
 import { env } from "../../config/env.js";
@@ -30,22 +29,6 @@ const querySchema = z.object({
 
 interpretationRouter.get("/", async (req, res, next) => {
   try {
-    if (
-      !isAiInterpretationAuthorized(
-        req.header("authorization"),
-        req.header("x-autopsy-ai-access-key")
-      )
-    ) {
-      res.status(401).json({
-        success: false,
-        error: {
-          code: "AI_INTERPRETATION_UNAUTHORIZED",
-          message: "AI interpretation access credentials are invalid."
-        }
-      });
-      return;
-    }
-
     const repositoryId = z
       .string()
       .uuid()

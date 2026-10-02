@@ -3,12 +3,13 @@ export const API_RATE_LIMIT_WINDOW_SECONDS = 60;
 export const API_RATE_LIMIT_MAX_REQUESTS = 120;
 export const API_RATE_LIMIT_HEAVY_MAX_REQUESTS = 12;
 
-type RateLimitCategory = "api" | "heavy";
+type RateLimitCategory = "api" | "heavy" | "auth";
 
 export interface RateLimitConfig {
   windowSeconds: number;
   maxRequests: number;
   heavyMaxRequests: number;
+  authMaxRequests?: number;
 }
 
 interface RateLimitResult {
@@ -24,6 +25,13 @@ export interface RateLimitRedisClient {
 
 export function resolveRateLimitCategory(req: Request): RateLimitCategory {
   const path = req.path;
+
+  if (
+    req.method === "POST" &&
+    (path === "/auth/login" || path === "/auth/register")
+  ) {
+    return "auth";
+  }
 
   if (
     (req.method === "POST" &&
@@ -61,9 +69,14 @@ export function getRateLimitLimit(
     heavyMaxRequests: API_RATE_LIMIT_HEAVY_MAX_REQUESTS
   }
 ): number {
-  return resolveRateLimitCategory(req) === "heavy"
-    ? config.heavyMaxRequests
-    : config.maxRequests;
+  switch (resolveRateLimitCategory(req)) {
+    case "heavy":
+      return config.heavyMaxRequests;
+    case "auth":
+      return config.authMaxRequests ?? 20;
+    default:
+      return config.maxRequests;
+  }
 }
 
 function getClientKey(req: Request, category: RateLimitCategory): string {
@@ -79,6 +92,7 @@ export async function consumeRateLimit(
     windowSeconds?: number;
     maxRequests?: number;
     heavyMaxRequests?: number;
+    authMaxRequests?: number;
   } = {}
 ): Promise<RateLimitResult> {
   const nowMs = options.nowMs ?? Date.now();
@@ -88,7 +102,8 @@ export async function consumeRateLimit(
     maxRequests:
       options.maxRequests ?? API_RATE_LIMIT_MAX_REQUESTS,
     heavyMaxRequests:
-      options.heavyMaxRequests ?? API_RATE_LIMIT_HEAVY_MAX_REQUESTS
+      options.heavyMaxRequests ?? API_RATE_LIMIT_HEAVY_MAX_REQUESTS,
+    authMaxRequests: options.authMaxRequests ?? 20
   });
 
   const windowId = Math.floor(nowMs / (windowSeconds * 1_000));
