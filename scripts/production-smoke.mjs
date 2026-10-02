@@ -77,30 +77,62 @@ const csrfCookie = setCookie.find((value) => value.startsWith("autopsy_csrf="));
 assert(sessionCookie && csrfCookie, "Login did not establish both required session cookies.");
 const cookieHeader = [sessionCookie, csrfCookie].map((value) => value.split(";")[0]).join("; ");
 
-const me = await request("/api/auth/me", {
-  headers: { Cookie: cookieHeader }
-});
-assert(me.response.status === 200 && me.body?.user?.email === email.toLowerCase(), "Authenticated /auth/me check failed.");
-
-const sessions = await request("/api/auth/sessions", {
-  headers: { Cookie: cookieHeader }
-});
-assert(sessions.response.status === 200, `Authenticated session list returned HTTP ${sessions.response.status}.`);
-assert(sessions.body?.success === true && Array.isArray(sessions.body?.sessions), "Authenticated session list returned the wrong response contract.");
-assert(sessions.body.sessions.some((session) => session.isCurrent === true), "Authenticated session list did not identify the current session.");
-
-const csrfRejectedLogout = await request("/api/auth/logout", {
-  method: "POST",
-  headers: { Cookie: cookieHeader }
-});
-assert(csrfRejectedLogout.response.status === 403, `Logout without CSRF protection returned HTTP ${csrfRejectedLogout.response.status}.`);
-assert(csrfRejectedLogout.body?.error?.code === "CSRF_INVALID", "Logout without CSRF protection returned the wrong error contract.");
-
-const protectedWithSession = await request(
-  "/api/repositories/00000000-0000-0000-0000-000000000000",
-  { headers: { Cookie: cookieHeader } }
+const csrfToken = decodeURIComponent(
+  csrfCookie.split(";")[0].slice("autopsy_csrf=".length)
 );
-assert(protectedWithSession.response.status === 404, `Authenticated protected route returned HTTP ${protectedWithSession.response.status}.`);
-assert(protectedWithSession.body?.error?.code === "REPOSITORY_NOT_FOUND", "Authenticated protected-route smoke returned the wrong error contract.");
+let sessionClosed = false;
 
-console.log("✓ Production smoke passed: frontend, asset, health, readiness, unauthenticated wall, account login/session, /auth/me, session listing, CSRF rejection, and authenticated protected-route boundary.");
+try {
+  const me = await request("/api/auth/me", {
+    headers: { Cookie: cookieHeader }
+  });
+  assert(me.response.status === 200 && me.body?.user?.email === email.toLowerCase(), "Authenticated /auth/me check failed.");
+
+  const sessions = await request("/api/auth/sessions", {
+    headers: { Cookie: cookieHeader }
+  });
+  assert(sessions.response.status === 200, `Authenticated session list returned HTTP ${sessions.response.status}.`);
+  assert(sessions.body?.success === true && Array.isArray(sessions.body?.sessions), "Authenticated session list returned the wrong response contract.");
+  assert(sessions.body.sessions.some((session) => session.isCurrent === true), "Authenticated session list did not identify the current session.");
+
+  const csrfRejectedLogout = await request("/api/auth/logout", {
+    method: "POST",
+    headers: { Cookie: cookieHeader }
+  });
+  assert(csrfRejectedLogout.response.status === 403, `Logout without CSRF protection returned HTTP ${csrfRejectedLogout.response.status}.`);
+  assert(csrfRejectedLogout.body?.error?.code === "CSRF_INVALID", "Logout without CSRF protection returned the wrong error contract.");
+
+  const protectedWithSession = await request(
+    "/api/repositories/00000000-0000-0000-0000-000000000000",
+    { headers: { Cookie: cookieHeader } }
+  );
+  assert(protectedWithSession.response.status === 404, `Authenticated protected route returned HTTP ${protectedWithSession.response.status}.`);
+  assert(protectedWithSession.body?.error?.code === "REPOSITORY_NOT_FOUND", "Authenticated protected-route smoke returned the wrong error contract.");
+
+  const logout = await request("/api/auth/logout", {
+    method: "POST",
+    headers: {
+      Cookie: cookieHeader,
+      "x-autopsy-csrf-token": csrfToken
+    }
+  });
+  assert(logout.response.status === 200, `Authenticated logout cleanup returned HTTP ${logout.response.status}.`);
+  assert(logout.body?.success === true, "Authenticated logout cleanup returned the wrong response contract.");
+  sessionClosed = true;
+} finally {
+  if (!sessionClosed) {
+    try {
+      await request("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          Cookie: cookieHeader,
+          "x-autopsy-csrf-token": csrfToken
+        }
+      });
+    } catch (error) {
+      console.warn("Production smoke session cleanup failed:", error);
+    }
+  }
+}
+
+console.log("✓ Production smoke passed: frontend, asset, health, readiness, unauthenticated wall, account login/session, /auth/me, session listing, CSRF rejection, protected-route boundary, and smoke-session cleanup.");
