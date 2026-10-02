@@ -1196,6 +1196,7 @@
   async function logoutLocalState(showToast){
     try{await api('/api/auth/logout',{method:'POST'})}catch(e){}
     S.user=null;
+    S.csrfToken='';
     S.connectionState='unknown';
     clearWorkspaceState();
     connected('unknown');
@@ -1749,6 +1750,7 @@
       return;
     }catch(e){
       S.user=null;
+      S.csrfToken='';
       S.connectionState='unknown';
       connected('unknown');
       landing();
