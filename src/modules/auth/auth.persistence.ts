@@ -435,6 +435,89 @@ export async function revokeSessionForUser(
   return result.rowCount === 1;
 }
 
+export async function resetPasswordWithToken(
+  tokenHash: string,
+  passwordHash: string
+): Promise<boolean> {
+  const client = await db.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const tokenResult = await client.query<{ user_id: string }>(
+      `
+        SELECT user_id
+        FROM auth_action_tokens
+        WHERE token_hash = $1
+          AND purpose = 'password_reset'
+          AND consumed_at IS NULL
+          AND expires_at > NOW()
+        FOR UPDATE
+      `,
+      [tokenHash]
+    );
+
+    const token = tokenResult.rows[0];
+
+    if (!token) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+
+    await client.query(
+      `
+        UPDATE auth_action_tokens
+        SET consumed_at = NOW()
+        WHERE token_hash = $1
+          AND purpose = 'password_reset'
+          AND consumed_at IS NULL
+      `,
+      [tokenHash]
+    );
+
+    await client.query(
+      `
+        UPDATE users
+        SET password_hash = $2,
+            email_verified_at = COALESCE(email_verified_at, NOW()),
+            updated_at = NOW()
+        WHERE id = $1
+          AND disabled_at IS NULL
+      `,
+      [token.user_id, passwordHash]
+    );
+
+    await client.query(
+      `
+        UPDATE auth_action_tokens
+        SET consumed_at = NOW()
+        WHERE user_id = $1
+          AND purpose = 'password_reset'
+          AND consumed_at IS NULL
+      `,
+      [token.user_id]
+    );
+
+    await client.query(
+      `
+        UPDATE sessions
+        SET revoked_at = NOW()
+        WHERE user_id = $1
+          AND revoked_at IS NULL
+      `,
+      [token.user_id]
+    );
+
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function changeUserPassword(
   userId: string,
   passwordHash: string
