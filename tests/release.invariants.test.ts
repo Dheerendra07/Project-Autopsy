@@ -1132,7 +1132,7 @@ test("analysis terminal updates preserve existing failure diagnostics when no re
 });
 
 
-test("frontend health probes do not attach privileged API credentials", () => {
+test("frontend connection verification uses the account session without privileged API keys", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
   const end = appJs.indexOf("async function importRepo()", start);
@@ -1143,12 +1143,10 @@ test("frontend health probes do not attach privileged API credentials", () => {
   const probe = appJs.slice(start, end);
   assert.match(probe, /boundedFetch\(base\+'\/health'/);
   assert.match(probe, /boundedFetch\(base\+'\/ready'/);
-  assert.ok(probe.includes("var probeHeaders=new Headers(h)"));
-  assert.ok(probe.includes("probeHeaders.set('x-autopsy-api-key',key)"));
-  assert.doesNotMatch(
-    probe.slice(0, probe.indexOf("var probeHeaders")),
-    /x-autopsy-api-key/
-  );
+  assert.ok(probe.includes("base+'/api/auth/me'"));
+  assert.ok(probe.includes("credentials:'include'"));
+  assert.doesNotMatch(probe, /x-autopsy-api-key/);
+  assert.doesNotMatch(probe, /x-autopsy-ai-access-key/);
 });
 
 
@@ -1158,8 +1156,9 @@ test("production-smoke workflow validates its production credential before check
   const checkout = workflow.indexOf("name: Checkout");
   assert.ok(validation >= 0);
   assert.ok(checkout > validation);
-  assert.ok(workflow.includes('test -n "$AUTOPSY_API_ACCESS_KEY"'));
-  assert.ok(workflow.includes('test "${#AUTOPSY_API_ACCESS_KEY}" -ge 32'));
+  assert.ok(workflow.includes('test -n "$AUTOPSY_BOOTSTRAP_EMAIL"'));
+  assert.ok(workflow.includes('test -n "$AUTOPSY_BOOTSTRAP_PASSWORD"'));
+  assert.ok(workflow.includes('test "${#AUTOPSY_BOOTSTRAP_PASSWORD}" -ge 12'));
 });
 
 
