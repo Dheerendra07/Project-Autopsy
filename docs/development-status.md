@@ -327,3 +327,20 @@ PR #151 is merged on main at `98d996d86f7c90ff3252f09cdac7624384dfee9b`.
 - The private-repository encryption key is a production secret and must be configured before private-repository credentials can be stored. Public repositories remain usable without that optional secret.
 
 Continuation rule: treat this section as the newest authoritative checkpoint. Preserve the evidence-first boundary, protected API access, bounded execution, secret non-disclosure, credential server-side storage, and existing 11-view product UI.
+## UI product-surface checkpoint — 2026-10-02
+
+The evidence-first workspace UI has now received a focused production-surface pass across the remaining high-value views.
+
+- PR #153 added the landing-page workspace preview and a clearer evidence-to-analysis product story without introducing fake metrics or external UI dependencies.
+- PR #154 turned Overview into a command center with the current analysis snapshot, journey state, run boundary, persisted metrics and stale-head visibility.
+- PR #155 rebuilt History as an investigation surface with event signals, recent commit footprint, chronology and full ledger views.
+- PR #156 surfaced the existing architecture map in Structure and added dependency/complexity/coupling summary panels using persisted analysis data.
+- PR #157 organized Quality into a historical/test/schema evidence matrix while retaining the existing signal semantics.
+- PR #158 added the bounded Evidence Explorer index, descriptive contributor activity pulse and Runtime evidence posture surface.
+- PR #159 strengthened Report, Interview and Insights with explicit evidence/verification/grounding posture.
+- PR #161 added a visible Runtime provenance chain and analysis-target/run boundary; correlation remains explicitly distinct from causality.
+- PR #162 added a dashboard-style Operations posture with live snapshot freshness, monitoring state, dependency/queue visibility and an explicit operational-vs-repository boundary.
+- Frontend regression invariants were added alongside these surfaces; source-level checks verified JavaScript brace balance, HTML div balance, CSS brace balance and the new view markers. No backend analysis semantics were changed by these UI passes.
+- Render auto-deploy is active for both the static UI and API services. The Runtime commit is live on the API service; the latest Operations commit is being deployed to the static UI at checkpoint time.
+
+Continuation rule: preserve evidence-first semantics, deterministic report fingerprints, protected API access, bounded execution, secret non-disclosure, stale-state handling, focus management and mobile-layout contracts while continuing remaining product polish.
