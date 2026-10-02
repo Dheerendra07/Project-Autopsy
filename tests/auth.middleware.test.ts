@@ -32,8 +32,8 @@ test("auth cookies are distinct and the session cookie is HttpOnly", () => {
   const serialized = Array.isArray(header) ? header.join("; ") : header;
   assert.match(serialized, new RegExp(SESSION_COOKIE_NAME + "=session-token"));
   assert.match(serialized, new RegExp(CSRF_COOKIE_NAME + "=csrf-token"));
-  assert.match(header, /HttpOnly/);
-  assert.match(header, /SameSite=Lax/);
+  assert.match(serialized, /HttpOnly/);
+  assert.match(serialized, /SameSite=Lax/);
 });
 
 test("CSRF middleware rejects a missing token", async () => {
