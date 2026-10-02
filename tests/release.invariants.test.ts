@@ -896,6 +896,34 @@ test("frontend releases the runtime loading lock when an analysis run changes", 
   );
 });
 
+test("completed analysis hydrates only the active view and invalidates stale view caches", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(
+    appJs.includes("S.dataRunId===S.runId"),
+    "view cache must be bound to the active analysis run"
+  );
+
+  const pollStart = appJs.indexOf("function poll()");
+  const pollEnd = appJs.indexOf("async function mapLimited", pollStart);
+  assert.ok(pollStart >= 0 && pollEnd > pollStart);
+  const poll = appJs.slice(pollStart, pollEnd);
+
+  assert.ok(
+    poll.includes("banner(true,'Analysis complete','Loading the current workspace evidence…','completed')")
+  );
+  assert.ok(
+    poll.includes("await loadViewData(S.view,{force:true})")
+  );
+  assert.ok(
+    poll.includes("banner(false);toast('Analysis complete','good')")
+  );
+  assert.doesNotMatch(
+    poll,
+    /await loadData()/
+  );
+});
+
 test("frontend failure notifications are scoped to the active analysis run", () => {
   const appJs = readRepoFile("public/app.js");
   const functions = [
