@@ -190,6 +190,15 @@ test("production smoke covers public surface and protected API boundaries", () =
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
 });
+test("Render production CORS contract includes both canonical and dedicated UI origins", () => {
+  const render = readRepoFile("render.yaml");
+
+  assert.ok(
+    render.includes('key: AUTOPSY_CORS_ORIGINS') &&
+      render.includes('value: "https://project-autopsy.onrender.com,https://project-autopsy-ui.onrender.com"')
+  );
+});
+
 test("quality workflow retains the full validation gate", () => {
   const workflow = readRepoFile(".github/workflows/quality.yml");
 
