@@ -924,6 +924,28 @@ test("completed analysis hydrates only the active view and invalidates stale vie
   );
 });
 
+test("output action loaders bind after their view DOM is rendered", () => {
+  const appJs = readRepoFile("public/app.js");
+  const cases = [
+    ["loadReport", "report"],
+    ["loadInterview", "interview"],
+    ["loadInterpretation", "interpretation"]
+  ];
+
+  for (const [name, action] of cases) {
+    const start = appJs.indexOf("async function " + name + "()");
+    const next = appJs.indexOf("\n  async function ", start + 1);
+    assert.ok(start >= 0);
+    assert.ok(next > start);
+    const block = appJs.slice(start, next);
+    const renderAt = block.indexOf("setView('"+action+"')");
+    const busyAt = block.indexOf("actionBusy('"+action+"',true");
+    const releaseAt = block.indexOf("actionBusy('"+action+"',false");
+    assert.ok(renderAt >= 0 && busyAt > renderAt);
+    assert.ok(releaseAt > busyAt);
+  }
+});
+
 test("frontend failure notifications are scoped to the active analysis run", () => {
   const appJs = readRepoFile("public/app.js");
   const functions = [
