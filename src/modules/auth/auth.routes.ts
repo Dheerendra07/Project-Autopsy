@@ -23,12 +23,12 @@ import {
   deleteUser,
   getPasswordHashByUserId,
   getUserByEmail,
-  invalidateAuthActionTokens,
   listUserSessions,
   markEmailVerified,
   revokeAllUserSessions,
   revokeExcessUserSessions,
   revokeSession,
+  resetPasswordWithToken,
   revokeSessionForUser,
   updateLastLogin
 } from "./auth.persistence.js";
@@ -540,12 +540,12 @@ authRouter.post("/reset-password", async (request, response, next) => {
       newPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH)
     }).parse(request.body);
 
-    const consumed = await consumeAuthActionToken(
+    const reset = await resetPasswordWithToken(
       hashOpaqueToken(input.token),
-      "password_reset"
+      await hashPassword(input.newPassword)
     );
 
-    if (!consumed) {
+    if (!reset) {
       response.status(400).json({
         success: false,
         error: {
@@ -555,12 +555,6 @@ authRouter.post("/reset-password", async (request, response, next) => {
       });
       return;
     }
-
-    const newPasswordHash = await hashPassword(input.newPassword);
-    await changeUserPassword(consumed.userId, newPasswordHash);
-    await markEmailVerified(consumed.userId);
-    await invalidateAuthActionTokens(consumed.userId, "password_reset");
-    await revokeAllUserSessions(consumed.userId);
 
     response.json({
       success: true,
