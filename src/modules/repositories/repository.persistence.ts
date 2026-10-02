@@ -15,6 +15,7 @@ export interface StoredRepository {
   tracked_branch: string | null;
   head_sha: string | null;
   storage_path: string | null;
+  owner_user_id: string | null;
 }
 
 export interface StoredAnalysisRun {
@@ -53,6 +54,7 @@ export interface CreateRepositoryInput {
   trackedBranch: string;
   metadata: RepositoryMetadata;
   storagePath: string;
+  ownerUserId: string | null;
 }
 
 export interface CreateAnalysisRunInput {
@@ -69,6 +71,7 @@ export interface PendingRepositoryInput {
   name: string;
   trackedBranch: string | null;
   storagePath: string;
+  ownerUserId: string;
 }
 
 async function createAnalysisRun(
@@ -126,9 +129,10 @@ export async function createRepositoryWithAnalysis(
           default_branch,
           tracked_branch,
           head_sha,
-          storage_path
+          storage_path,
+          owner_user_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
       [
         input.id,
@@ -138,7 +142,8 @@ export async function createRepositoryWithAnalysis(
         input.metadata.defaultBranch,
         input.trackedBranch,
         input.metadata.headSha,
-        input.storagePath
+        input.storagePath,
+        input.ownerUserId
       ]
     );
 
@@ -180,9 +185,10 @@ export async function createPendingRepositoryWithAnalysis(
           source_url,
           name,
           tracked_branch,
-          storage_path
+          storage_path,
+          owner_user_id
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
       [
         input.id,
@@ -190,7 +196,8 @@ export async function createPendingRepositoryWithAnalysis(
         input.sourceUrl,
         input.name,
         input.trackedBranch,
-        input.storagePath
+        input.storagePath,
+        input.ownerUserId
       ]
     );
 
@@ -328,7 +335,8 @@ export async function getRepositoryById(
         default_branch,
         tracked_branch,
         head_sha,
-        storage_path
+        storage_path,
+        owner_user_id
       FROM repositories
       WHERE id = $1
     `,
