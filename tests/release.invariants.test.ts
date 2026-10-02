@@ -831,6 +831,28 @@ test("frontend clears runtime filters when the active repository is deleted", ()
 });
 
 
+test("frontend history pagination releases busy state on every exit path", () => {
+  const appJs = readRepoFile("public/app.js");
+
+  const commitsStart = appJs.indexOf("async function loadMoreCommits()");
+  const commitsEnd = appJs.indexOf("async function loadProvenance", commitsStart);
+  assert.ok(commitsStart >= 0 && commitsEnd > commitsStart);
+  const commitsBlock = appJs.slice(commitsStart, commitsEnd);
+  assert.ok(
+    commitsBlock.includes("actionBusy('more-commits',false)")
+    && commitsBlock.includes("S.commitLoading=false")
+  );
+
+  const timelineStart = appJs.indexOf("async function loadMoreTimeline()");
+  const timelineEnd = appJs.indexOf("async function loadMoreCommits", timelineStart);
+  assert.ok(timelineStart >= 0 && timelineEnd > timelineStart);
+  const timelineBlock = appJs.slice(timelineStart, timelineEnd);
+  assert.ok(
+    timelineBlock.includes("actionBusy('more-timeline',false)")
+    && timelineBlock.includes("S.timelineLoading=false")
+  );
+});
+
 test("frontend releases the runtime loading lock when an analysis run changes", () => {
   const appJs = readRepoFile("public/app.js");
   const runtimeStart = appJs.indexOf("async function loadRuntimeEvents");
