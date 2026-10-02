@@ -399,7 +399,7 @@ test("report and interpretation endpoints reject limits outside their bounded ra
   ]) {
     const response = await fetch(baseUrl + route, {
       headers: {
-        "cookie": authCookie, "x-autopsy-csrf-token": csrfToken,
+        "cookie": authCookie,
         "x-autopsy-csrf-token": csrfToken
       }
     });
