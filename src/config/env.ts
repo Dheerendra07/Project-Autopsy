@@ -141,7 +141,7 @@ export const envSchema = z
       .trim()
       .min(1)
       .max(120)
-      .default("Project Autopsy")
+      .default("Project Autopsy"),
 
     AUTOPSY_PUBLIC_URL: z
       .string()
