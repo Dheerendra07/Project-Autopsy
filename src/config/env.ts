@@ -120,6 +120,11 @@ export const envSchema = z
       .max(256)
       .optional(),
 
+    AUTOPSY_API_ACCESS_KEY: z
+      .string()
+      .min(32)
+      .optional(),
+
     REPOSITORY_CREDENTIAL_ENCRYPTION_KEY: z
       .string()
       .regex(
