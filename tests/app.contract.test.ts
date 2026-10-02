@@ -6,20 +6,40 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import test, { after, before } from "node:test";
 
-const TEST_API_KEY = "test-api-access-key-12345678901234567890";
-
 process.env.NODE_ENV = "test";
 process.env.DATABASE_URL =
   process.env.DATABASE_URL ??
   "postgresql://autopsy:autopsy_dev_password@127.0.0.1:5432/project_autopsy";
 process.env.REDIS_HOST = process.env.REDIS_HOST ?? "127.0.0.1";
 process.env.REDIS_PORT = process.env.REDIS_PORT ?? "6379";
-process.env.AUTOPSY_API_ACCESS_KEY = TEST_API_KEY;
 process.env.API_RATE_LIMIT_MAX_REQUESTS = "1000";
 process.env.API_RATE_LIMIT_HEAVY_MAX_REQUESTS = "1000";
 
 let server: Server;
 let baseUrl: string;
+let testUserId: string;
+let testUserEmail: string;
+let authCookie: string;
+let csrfToken: string;
+
+function authHeaders(
+  extra: Record<string, string> = {}
+): Record<string, string> {
+  return {
+    cookie: authCookie,
+    "x-autopsy-csrf-token": csrfToken,
+    ...extra
+  };
+}
+
+function parseCookie(header: string, name: string): string {
+  const match = header.match(new RegExp(
+    "(?:^|,\\s*)" + name.replace(/[.*+?^\${}()|[\]\\\\]/g, "\\let server: Server;
+let baseUrl: string;
+") + "=([^;]+)"
+  ));
+  return match?.[1] ?? "";
+}
 
 before(async () => {
   const { app } = await import("../src/app.js");
@@ -37,6 +57,33 @@ before(async () => {
 
   const info = address as AddressInfo;
   baseUrl = `http://127.0.0.1:${info.port}`;
+
+  testUserEmail = "contract-" + randomUUID() + "@example.com";
+  const registerResponse = await fetch(baseUrl + "/api/auth/register", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      email: testUserEmail,
+      password: "Contract-test-password-123456"
+    })
+  });
+
+  assert.equal(registerResponse.status, 201);
+  const registerBody = await registerResponse.json() as {
+    user: { id: string };
+    requiresEmailVerification?: boolean;
+  };
+  assert.ok(registerBody.user?.id);
+  assert.equal(registerBody.requiresEmailVerification, false);
+
+  const setCookie = registerResponse.headers.get("set-cookie") ?? "";
+  authCookie = parseCookie(setCookie, "autopsy_session");
+  csrfToken = parseCookie(setCookie, "autopsy_csrf");
+  testUserId = registerBody.user.id;
+  assert.ok(authCookie);
+  assert.ok(csrfToken);
 });
 
 after(async () => {
@@ -57,6 +104,10 @@ after(async () => {
     import("../src/config/database.js"),
     import("../src/config/redis.js")
   ]);
+
+  if (testUserId) {
+    await db.query("DELETE FROM users WHERE id = $1", [testUserId]);
+  }
 
   await Promise.allSettled([
     db.end(),
@@ -137,24 +188,20 @@ test("health endpoint stays public", async () => {
   assert.match(body.timestamp, /^\d{4}-\d{2}-\d{2}T.*Z$/);
 });
 
-test("API routes reject requests without application credentials", async () => {
+test("API routes reject requests without a signed-in account", async () => {
   const response = await fetch(`${baseUrl}/api/`);
 
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "API_ACCESS_UNAUTHORIZED",
-      message: "API access credentials are invalid."
+      code: "AUTH_REQUIRED",
+      message: "A signed-in account is required."
     }
   });
-});
-
-test("API root accepts the configured bearer credential", async () => {
+});test("API root accepts the authenticated account session", async () => {
   const response = await fetch(`${baseUrl}/api/`, {
-    headers: {
-      authorization: `Bearer ${TEST_API_KEY}`
-    }
+    headers: authHeaders()
   });
 
   assert.equal(response.status, 200);
@@ -170,7 +217,7 @@ test("authenticated unknown API routes do not reflect query strings", async () =
     baseUrl + "/api/not-a-real-route?secret=should-not-echo",
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -189,7 +236,7 @@ test("authenticated unknown API routes do not reflect query strings", async () =
 test("authenticated unknown API routes reach the API not-found contract", async () => {
   const response = await fetch(`${baseUrl}/api/not-a-real-route`, {
     headers: {
-      "x-autopsy-api-key": TEST_API_KEY
+      
     }
   });
 
@@ -210,7 +257,7 @@ test("protected repository routes reject malformed UUIDs with the validation con
     baseUrl + "/api/repositories/not-a-uuid/commits",
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -233,7 +280,7 @@ test("commit pagination rejects zero and oversized limits before persistence acc
       baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/commits?" + query,
       {
         headers: {
-          "x-autopsy-api-key": TEST_API_KEY
+          
         }
       }
     );
@@ -257,11 +304,11 @@ test("commit history is newest-first while the timeline remains chronological", 
   await db.query(
     `
       INSERT INTO repositories (
-        id, source_type, source_url, name, tracked_branch, head_sha
+        id, owner_user_id, source_type, source_url, name, tracked_branch, head_sha
       )
-      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'commit-order-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'commit-order-test', 'main', $2)
     `,
-    [repositoryId, newestSha]
+    [repositoryId, testUserId, newestSha]
   );
 
   await db.query(
@@ -280,7 +327,7 @@ test("commit history is newest-first while the timeline remains chronological", 
   try {
     const commitsResponse = await fetch(
       baseUrl + "/api/repositories/" + repositoryId + "/commits?page=1&limit=3",
-      { headers: { "x-autopsy-api-key": TEST_API_KEY } }
+      { headers: {  } }
     );
     assert.equal(commitsResponse.status, 200);
     const commitsBody = await commitsResponse.json() as {
@@ -293,7 +340,7 @@ test("commit history is newest-first while the timeline remains chronological", 
 
     const timelineResponse = await fetch(
       baseUrl + "/api/repositories/" + repositoryId + "/timeline?page=1&limit=3",
-      { headers: { "x-autopsy-api-key": TEST_API_KEY } }
+      { headers: {  } }
     );
     assert.equal(timelineResponse.status, 200);
     const timelineBody = await timelineResponse.json() as {
@@ -314,7 +361,7 @@ test("runtime telemetry rejects a non-chronological date window", async () => {
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?from=2026-09-30T02:00:00.000Z&to=2026-09-30T01:00:00.000Z",
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -336,7 +383,7 @@ test("runtime telemetry rejects invalid revision filter shape", async () => {
     baseUrl + "/api/repositories/00000000-0000-4000-8000-000000000999/runtime/telemetry?revisionSha=abc",
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -358,7 +405,7 @@ test("report and interpretation endpoints reject limits outside their bounded ra
   ]) {
     const response = await fetch(baseUrl + route, {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY,
+        ,
         "x-autopsy-ai-access-key": "test-ai-key"
       }
     });
@@ -390,7 +437,7 @@ test("repository import rejects invalid branch syntax before queueing work", asy
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-autopsy-api-key": TEST_API_KEY
+        
       },
       body: JSON.stringify({
         url: "https://github.com/octocat/Hello-World.git",
@@ -420,7 +467,7 @@ test("repository import rejects unsupported repository hosts before persistence"
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-autopsy-api-key": TEST_API_KEY
+        
       },
       body: JSON.stringify({ url })
     });
@@ -436,25 +483,21 @@ test("repository import rejects unsupported repository hosts before persistence"
   }
 });
 
-test("authorization header takes the bearer credential when header key is omitted", async () => {
+test("invalid session credentials are rejected", async () => {
   const response = await fetch(baseUrl + "/api/", {
     headers: {
-      authorization: "Bearer " + TEST_API_KEY
-    }
-  });
-
-  assert.equal(response.status, 200);
-});
-
-test("a wrong header key cannot override a valid bearer credential", async () => {
-  const response = await fetch(baseUrl + "/api/", {
-    headers: {
-      authorization: "Bearer wrong-key",
-      "x-autopsy-api-key": "wrong-key"
+      cookie: "autopsy_session=invalid-session"
     }
   });
 
   assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    error: {
+      code: "AUTH_REQUIRED",
+      message: "A signed-in account is required."
+    }
+  });
 });
 
 test("analysis status endpoint returns a scoped not-found contract", async () => {
@@ -465,7 +508,7 @@ test("analysis status endpoint returns a scoped not-found contract", async () =>
     `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -480,7 +523,7 @@ test("analysis status endpoint returns a scoped not-found contract", async () =>
   });
 });
 
-test("contributor endpoint remains behind application access control", async () => {
+test("contributor endpoint remains behind session auth", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const response = await fetch(
     `${baseUrl}/api/repositories/${repositoryId}/contributors`
@@ -490,19 +533,17 @@ test("contributor endpoint remains behind application access control", async () 
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "API_ACCESS_UNAUTHORIZED",
-      message: "API access credentials are invalid."
+      code: "AUTH_REQUIRED",
+      message: "A signed-in account is required."
     }
   });
-});
-
-test("contributor endpoint returns the repository-not-found contract", async () => {
+});test("contributor endpoint returns the repository-not-found contract", async () => {
   const repositoryId = "00000000-0000-4000-8000-000000000999";
   const response = await fetch(
     `${baseUrl}/api/repositories/${repositoryId}/contributors`,
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -531,18 +572,16 @@ test("unauthenticated malformed JSON is rejected by the API access wall", async 
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "API_ACCESS_UNAUTHORIZED",
-      message: "API access credentials are invalid."
+      code: "AUTH_REQUIRED",
+      message: "A signed-in account is required."
     }
   });
-});
-
-test("malformed JSON returns a client error instead of a generic server error", async () => {
+});test("malformed JSON returns a client error instead of a generic server error", async () => {
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-autopsy-api-key": TEST_API_KEY
+      
     },
     body: '{"url":'
   });
@@ -571,19 +610,17 @@ test("unauthenticated oversized JSON is rejected before body parsing", async () 
   assert.deepEqual(await response.json(), {
     success: false,
     error: {
-      code: "API_ACCESS_UNAUTHORIZED",
-      message: "API access credentials are invalid."
+      code: "AUTH_REQUIRED",
+      message: "A signed-in account is required."
     }
   });
-});
-
-test("oversized JSON returns a bounded payload error", async () => {
+});test("oversized JSON returns a bounded payload error", async () => {
   const oversizedValue = "x".repeat(1_100_000);
   const response = await fetch(baseUrl + "/api/repositories/import", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-autopsy-api-key": TEST_API_KEY
+      
     },
     body: JSON.stringify({ value: oversizedValue })
   });
@@ -611,11 +648,11 @@ test("analysis status hides internal failure paths from API consumers", async ()
   await db.query(
     `
       INSERT INTO repositories (
-        id, source_type, source_url, name, tracked_branch, storage_path
+        id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
       )
-      VALUES ($1, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $2)
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-error-sanitize-test', 'main', $2)
     `,
-    [repositoryId, storagePath]
+    [repositoryId, testUserId, storagePath]
   );
 
   await db.query(
@@ -637,7 +674,7 @@ test("analysis status hides internal failure paths from API consumers", async ()
         analysisRunId,
       {
         headers: {
-          "x-autopsy-api-key": TEST_API_KEY
+          
         }
       }
     );
@@ -690,7 +727,7 @@ test("repository deletion is blocked while analysis is active", async () => {
     const response = await fetch(baseUrl + "/api/repositories/" + repositoryId, {
       method: "DELETE",
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     });
 
@@ -731,7 +768,7 @@ test("repository deletion removes persisted metadata and checkout storage", asyn
     const response = await fetch(baseUrl + "/api/repositories/" + repositoryId, {
       method: "DELETE",
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     });
 
@@ -782,12 +819,12 @@ test("repository deletion and refresh cannot both succeed concurrently", async (
     const [deleteResponse, analyzeResponse] = await Promise.all([
       fetch(baseUrl + "/api/repositories/" + repositoryId, {
         method: "DELETE",
-        headers: { "x-autopsy-api-key": TEST_API_KEY }
+        headers: {  }
       }),
       fetch(baseUrl + "/api/repositories/" + repositoryId + "/analyze", {
         method: "POST",
         headers: {
-          "x-autopsy-api-key": TEST_API_KEY,
+          ,
           "content-type": "application/json"
         },
         body: "{}"
@@ -912,7 +949,7 @@ test("analysis-runs endpoint returns the repository-not-found contract", async (
       "/api/repositories/00000000-0000-4000-8000-000000000999/analysis-runs",
     {
       headers: {
-        "x-autopsy-api-key": TEST_API_KEY
+        
       }
     }
   );
@@ -935,7 +972,7 @@ test("analysis-runs endpoint bounds pagination", async () => {
         limit,
       {
         headers: {
-          "x-autopsy-api-key": TEST_API_KEY
+          
         }
       }
     );
@@ -953,7 +990,7 @@ test("analysis-runs endpoint bounds pagination", async () => {
 test("API rate-limit configuration is visible through bounded response headers", async () => {
   const response = await fetch(baseUrl + "/api/", {
     headers: {
-      "x-autopsy-api-key": TEST_API_KEY
+      
     }
   });
 
