@@ -40,7 +40,7 @@
     user:null,
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    user:null,authMode:'login',authSubmitting:false,repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
+    authMode:'login',authSubmitting:false,repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -254,7 +254,7 @@
     var token=S.workspaceToken;
     try{
       $('formerr').hidden=true;$('importButton').disabled=true;S.importing=true;
-      if(!S.key){openSettings();throw new Error('Add your API access key first.')}
+      if(!S.user){openAuth('login');throw new Error('Sign in to analyze a repository.')}
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;clearInterval(S.timer);S.timer=null;
@@ -297,8 +297,8 @@
       }catch(e){
         if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
         var message=e&&e.message?String(e.message):'Analysis status could not be checked.';
-        if(/^API access key was rejected\./.test(message)){
-          clearInterval(S.timer);S.timer=null;banner(true,'Connection rejected','The saved API access key was rejected. Open Settings, update the key, then retry.','failed');toast('API access key was rejected','bad');return
+        if(/^Your session has expired\./.test(message)){
+          clearInterval(S.timer);S.timer=null;S.user=null;connected('rejected');banner(true,'Session expired','Your account session has expired. Sign in again to continue.','failed');toast('Session expired. Sign in again.','warn');openAuth('login');return
         }
         if(/^Access to this API operation was denied\./.test(message)){
           clearInterval(S.timer);S.timer=null;banner(true,'Access denied','This analysis run is not accessible with the current API credentials.','failed');toast('Analysis access was denied','bad');return
@@ -1151,7 +1151,7 @@
   $('recentRepositories').onclick=function(e){var b=e.target.closest('[data-repository-id]');if(b)openSavedRepository(b.getAttribute('data-repository-id'))};
 
   document.addEventListener('keydown',function(e){
-    if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
+    if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('authModal').hidden)trapFocus($('authModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
     var target=e.target;
     if(e.key==='/'&&$('viewSearch')&&target&&['INPUT','TEXTAREA','SELECT'].indexOf(target.tagName)<0&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
       e.preventDefault();$('viewSearch').focus();return;
@@ -1161,7 +1161,7 @@
       if($('viewSearch')&&document.activeElement===$('viewSearch')&&$('viewSearch').value){
         e.preventDefault();$('viewSearch').value='';S.viewFilter[S.view]='';applyViewFilter();return;
       }
-      if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings()
+      if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings();else if(!$('authModal').hidden)closeAuth()
     }
   });
   $('new').onclick=function(){stopOperationsMonitoring();S.workspaceToken+=1;S.commitLoadToken+=1;S.timelineLoading=false;S.timelineLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;S.refreshLoading=false;S.reportLoading=false;S.interviewLoading=false;S.interpretationLoading=false;S.provenanceLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};persist();landing()}
@@ -1309,9 +1309,9 @@
   }
   async function openSavedRepository(repositoryId){
     if(!S.user||!repositoryId)return;
-    var token=++S.workspaceToken;
     try{
       clearWorkspaceState();
+      var token=S.workspaceToken;
       var repo=await getRepo(repositoryId);
       var runs=await api('/api/repositories/'+repositoryId+'/analysis-runs?page=1&limit=1');
       var latest=arr(runs,'runs')[0];
