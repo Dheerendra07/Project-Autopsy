@@ -12,14 +12,14 @@ import {
 } from "../src/middleware/session.middleware.js";
 import { hashOpaqueToken } from "../src/modules/auth/auth.crypto.js";
 
-function response(): Response & { headers: Map<string,string> } {
-  const headers = new Map<string,string>();
+function response(): Response & { headers: Map<string,string | string[]> } {
+  const headers = new Map<string,string | string[]>();
   return {
     headers,
-    setHeader(name: string, value: string) {
+    setHeader(name: string, value: string | string[]) {
       headers.set(name.toLowerCase(), value);
     }
-  } as unknown as Response & { headers: Map<string,string> };
+  } as unknown as Response & { headers: Map<string,string | string[]> };
 }
 
 test("auth cookies are distinct and the session cookie is HttpOnly", () => {
@@ -27,9 +27,11 @@ test("auth cookies are distinct and the session cookie is HttpOnly", () => {
   const expiry = new Date(Date.now() + 60_000);
   setAuthCookies(res, "session-token", "csrf-token", expiry);
 
-  const header = res.headers.get("set-cookie") ?? "";
-  assert.match(header, new RegExp(SESSION_COOKIE_NAME + "=session-token"));
-  assert.match(header, new RegExp(CSRF_COOKIE_NAME + "=csrf-token"));
+  const header = res.headers.get("set-cookie");
+  assert.ok(header);
+  const serialized = Array.isArray(header) ? header.join("; ") : header;
+  assert.match(serialized, new RegExp(SESSION_COOKIE_NAME + "=session-token"));
+  assert.match(serialized, new RegExp(CSRF_COOKIE_NAME + "=csrf-token"));
   assert.match(header, /HttpOnly/);
   assert.match(header, /SameSite=Lax/);
 });
