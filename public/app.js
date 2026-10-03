@@ -1489,6 +1489,24 @@
   $('revokeSessions').onclick=function(){revokeAllSessions()};
   $('recentRepositories').onclick=function(e){var b=e.target.closest('[data-repository-id]');if(b)openSavedRepository(b.getAttribute('data-repository-id'))};
 
+  document.querySelector('.skip-link').addEventListener('click',function(e){
+    var href=this.getAttribute('href')||'';
+    var target=href.charAt(0)==='#'?$(href.slice(1)):null;
+    if(target&&target.hidden){
+      var fallback=$('url');
+      if(fallback&&!fallback.hidden){
+        e.preventDefault();
+        fallback.focus();
+        fallback.scrollIntoView({block:'center'});
+      }
+      return;
+    }
+    if(target&&typeof target.focus==='function'){
+      e.preventDefault();
+      target.focus();
+      target.scrollIntoView({block:'center'});
+    }
+  });
   document.addEventListener('keydown',function(e){
     if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('authModal').hidden)trapFocus($('authModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
     var target=e.target;
