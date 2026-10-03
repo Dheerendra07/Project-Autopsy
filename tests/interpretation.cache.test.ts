@@ -10,8 +10,8 @@ import {
 
 const value: InterpretationResult = {
   interpretationVersion: "1.0",
-  provider: "openai",
-  model: "gpt-6-luna",
+  provider: "gemini",
+  model: "gemini-2.5-flash",
   reportFingerprint: "f".repeat(64),
   groundingClaimCount: 3,
   generatedAt: "2026-09-29T00:00:00.000Z",
