@@ -2686,7 +2686,7 @@ test("workspace flow rail gives every view an explicit next action", () => {
     'nextLabel:"Open History"',
     'nextLabel:"Build Report"',
     'nextLabel:"Inspect Evidence"',
-    'href="#'+esc(flow.next)+'"',
+    "href="#'+esc(flow.next)+'"",
     "WORKSPACE PATH",
     "view-flow-link primary",
     "view-flow-link secondary"
