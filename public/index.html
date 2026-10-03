@@ -277,6 +277,85 @@ body{background:
   .import{grid-template-columns:1fr}
   .import>.btn.primary{grid-column:auto;width:100%}
 }
+
+
+/* PRODUCT UI SYSTEM V3 — deliberate visual authority */
+:root{
+  --ui-bg:#080b11;
+  --ui-surface:#0f141d;
+  --ui-surface-2:#131a24;
+  --ui-surface-3:#182231;
+  --ui-border:#263141;
+  --ui-border-strong:#344158;
+  --ui-text:#f4f7fb;
+  --ui-text-2:#c1c9d6;
+  --ui-text-3:#8b96a8;
+  --ui-text-4:#68758a;
+  --ui-accent:#7c82f4;
+  --ui-accent-2:#a4a9ff;
+  --ui-accent-soft:rgba(124,130,244,.11);
+  --ui-success:#66d7a0;
+  --ui-warning:#e3bc72;
+  --ui-danger:#ee9299;
+  --ui-shadow:0 18px 55px rgba(0,0,0,.26);
+  --ui-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+html,body{background:var(--ui-bg)!important;color:var(--ui-text)!important}
+body{
+  min-width:320px;font-size:14px;line-height:1.55;letter-spacing:-.008em;
+  background:
+    radial-gradient(900px 520px at 80% -12%,rgba(124,130,244,.13),transparent 61%),
+    radial-gradient(700px 560px at -10% 22%,rgba(82,101,138,.08),transparent 60%),
+    var(--ui-bg)!important;
+}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit}
+button{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--ui-accent-2)!important;outline-offset:2px}
+
+/* top chrome */
+.top{height:72px!important;padding:0 28px!important;background:rgba(8,11,17,.84)!important;border-bottom:1px solid rgba(255,255,255,.08)!important;box-shadow:0 12px 34px rgba(0,0,0,.22)!important;backdrop-filter:blur(18px)}
+.brand{gap:12px}.mark{width:34px;height:34px;border-radius:11px;background:var(--ui-accent-soft)!important;border-color:#48517b!important;color:var(--ui-accent-2)!important}.brand b{font-size:15px!important;color:var(--ui-text)!important}.brand small{font-size:9px!important;color:var(--ui-text-3)!important}
+.top-account{min-width:96px!important;background:var(--ui-surface-2)!important;border:1px solid var(--ui-border-strong)!important;color:var(--ui-text)!important;font-weight:650!important}.top-account:hover{background:#182131!important;border-color:#505d77!important}
+.skip-link{background:var(--ui-surface-2)!important;border-color:#4c5870!important;color:var(--ui-text)!important}
+
+/* landing */
+main{max-width:1720px!important;margin:0 auto}
+.landing{max-width:1320px!important;padding:74px 30px 80px!important}
+.landing-hero{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(460px,.98fr);gap:26px;align-items:start}
+.landing-copy{padding:20px 4px 0;max-width:760px}.landing-copy h1{font-size:clamp(50px,6.3vw,86px)!important;line-height:.95!important;letter-spacing:-.06em!important;margin:16px 0 24px!important;max-width:760px}.landing-copy h1 em{color:var(--ui-accent-2)!important}.eyebrow,.kicker{color:var(--ui-accent-2)!important;font-size:10px!important;letter-spacing:.16em!important}
+.lead{max-width:760px!important;font-size:19px!important;line-height:1.65!important;color:var(--ui-text-2)!important}
+.landing-proof{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px}.landing-proof span{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ui-border);background:rgba(15,20,29,.78);padding:9px 11px;border-radius:10px;color:var(--ui-text-2);font-size:11px}.landing-proof b{font:700 9px var(--ui-mono);color:var(--ui-accent-2)}
+.card{background:linear-gradient(180deg,rgba(18,24,34,.97),rgba(13,18,27,.97))!important;border:1px solid var(--ui-border)!important;border-radius:16px!important;box-shadow:var(--ui-shadow)!important}
+.import-card{padding:22px!important}.import-head h2{font-size:23px!important;color:var(--ui-text)!important;margin:6px 0 0!important}.import-helper{margin:8px 0 0;color:var(--ui-text-3);font-size:12px;line-height:1.5;max-width:560px}.import{grid-template-columns:minmax(0,1fr) minmax(160px,190px) minmax(170px,max-content)!important;gap:13px!important;margin-top:22px!important}.field{font-size:12px!important;color:var(--ui-text-2)!important;gap:7px!important}.field input,.field select{width:100%;min-width:0;min-height:46px!important;height:46px!important;padding:11px 13px!important;border-radius:11px!important;background:#0b1017!important;border:1px solid #2a3545!important;color:var(--ui-text)!important}.field input::placeholder{color:#58667a!important}.field small,.field-help{color:var(--ui-text-4)!important;font-size:10px!important;line-height:1.45}.field em{font-style:normal}.btn{min-height:42px!important;border-radius:11px!important;padding:10px 14px!important;background:#121a25!important;border:1px solid #2d394b!important;color:var(--ui-text)!important;font-size:12px!important;font-weight:650!important}.btn:hover{background:#192333!important;border-color:#46546b!important;box-shadow:0 9px 24px rgba(0,0,0,.2)!important}.btn.primary,.import > #importButton.btn.primary{background:linear-gradient(180deg,#9aa0ff 0%,#7479e6 100%)!important;border-color:#a5aaff!important;color:#fff!important;box-shadow:0 11px 30px rgba(116,121,230,.22)!important}.btn.primary:hover,.import > #importButton.btn.primary:hover{background:linear-gradient(180deg,#a8adff 0%,#8188f2 100%)!important;border-color:#b4b9ff!important}.import > #importButton{height:46px!important;align-self:end;display:inline-flex;align-items:center;justify-content:center;gap:9px;white-space:nowrap}.import > #importButton span:first-child{font-weight:700}.btn.danger{background:rgba(84,31,37,.2)!important;border-color:#663841!important;color:#f0a0a5!important}.btn.link{background:transparent!important;border:0!important;color:var(--ui-text-3)!important;box-shadow:none!important}
+.repo-access{margin-top:13px!important;border:1px solid rgba(255,255,255,.07)!important;border-radius:12px!important;background:rgba(11,16,23,.55)!important;padding:0 14px!important}.repo-access summary{padding:13px 0!important;color:var(--ui-text-2)!important;font-size:11px!important}.repo-access[open] summary{border-bottom:1px solid rgba(255,255,255,.07)!important}.repo-access .field{padding:12px 0 4px}.form-error{margin-top:12px!important;padding:10px 12px;border:1px solid rgba(238,146,153,.28);background:rgba(88,31,37,.22);border-radius:10px;color:#f0b0b5!important}
+
+/* landing product preview */
+.product-preview{min-height:620px!important;overflow:hidden!important;border-color:#2e3a4d!important;background:linear-gradient(180deg,#131a25 0%,#0b1018 100%)!important}.preview-chrome{height:46px!important;background:rgba(8,12,18,.7)!important;border-bottom-color:rgba(255,255,255,.07)!important}.preview-label{font-size:9px!important;color:#8090a6!important}.preview-state{font-size:8px!important;color:#b8c2d1!important;border-color:#3d4b61!important;background:#111925}.preview-grid{grid-template-columns:154px 1fr!important;min-height:574px!important}.preview-nav{padding:18px 12px!important;background:rgba(8,12,18,.38)!important;border-right-color:rgba(255,255,255,.07)!important}.preview-nav-brand{font-size:12px!important;padding-bottom:18px!important;color:var(--ui-text)!important}.preview-mark{width:24px!important;height:24px!important;border-color:#4d577f!important;background:rgba(124,130,244,.09)!important;color:var(--ui-accent-2)!important}.preview-nav-group{margin:17px 5px 7px!important;font-size:8px!important;color:#667388!important}.preview-nav-item{padding:9px 8px!important;font-size:10px!important;color:#8390a4!important;gap:8px!important}.preview-nav-item span{min-width:22px!important;font-size:8px!important;color:#5f6d82!important}.preview-nav-item strong{font-weight:650}.preview-nav-item.active{background:rgba(124,130,244,.11)!important;border-color:#46517a!important;color:#f5f7fb!important}.preview-main{padding:24px 20px 20px!important}.preview-kicker{font-size:8px!important;color:#8190a4!important}.preview-head strong{font-size:20px!important;color:var(--ui-text)!important;margin-top:5px!important}.preview-head small{display:block;max-width:520px;margin-top:7px;color:#7f8ca0;font-size:10px;line-height:1.5}.preview-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:20px!important}.preview-metrics>div{min-height:105px!important;padding:13px!important;border-color:#2a3546!important;background:#111924!important;border-radius:12px!important}.preview-metrics span{font-size:8px!important;color:#728096!important}.preview-metrics b{font-size:12px!important;color:#e9edf4!important;margin-top:7px!important}.preview-metrics small{font-size:9px!important;color:#7f8ca0!important;line-height:1.45!important}.preview-panel{margin-top:12px!important;background:#0d141e!important;border-color:#2a3546!important}.preview-panel-head{padding:11px 12px!important;color:#96a2b4!important;font-size:9px!important}.preview-panel-head span:last-child{color:#a8adff!important}.preview-line{padding:12px!important;gap:10px!important}.preview-line b{font-size:10px!important;color:#e2e7ef!important}.preview-line small{font-size:8px!important;color:#7c899c!important}.preview-line em{font-size:8px!important;color:#8794a7!important}.preview-line i{border-color:#526184!important;background:#222a3c!important;box-shadow:0 0 0 3px rgba(124,130,244,.03)!important}.preview-footline{margin-top:14px!important;padding:12px!important;border-color:rgba(124,130,244,.18)!important;background:rgba(124,130,244,.055)!important;display:grid;grid-template-columns:22px 1fr!important;gap:0 10px!important}.preview-footline>span{width:22px!important;height:22px!important;display:grid;place-items:center;border-radius:7px;background:rgba(124,130,244,.13)!important;color:#aeb3ff!important;box-shadow:none!important;font:700 10px var(--ui-mono)}.preview-footline b{font-size:10px!important;color:#e6eaf2!important}.preview-footline small{grid-column:2;font-size:8px!important;color:#7f8ca0!important;line-height:1.45!important}
+
+/* landing supporting sections */
+.landing-how,.landing-capabilities{margin-top:48px}.landing-section-head{max-width:760px;margin-bottom:17px}.landing-section-head h2{font-size:25px;color:var(--ui-text);margin:6px 0 6px}.landing-section-head p{margin:0;color:var(--ui-text-3);font-size:12px;line-height:1.55}.getting-started{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:11px!important;margin-top:0!important}.getting-step{display:flex!important;gap:13px!important;padding:18px!important;border:1px solid var(--ui-border)!important;background:linear-gradient(180deg,#121925,#0e141d)!important;border-radius:14px!important}.getting-step b{font-size:13px!important;color:var(--ui-text)!important}.getting-step small{font-size:11px!important;color:var(--ui-text-3)!important;line-height:1.55!important}.step-num{width:28px!important;height:28px!important;border-color:#485476!important;color:var(--ui-accent-2)!important;background:rgba(124,130,244,.07)!important}.capability-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.capability-grid article{padding:17px;border:1px solid var(--ui-border);border-radius:14px;background:rgba(15,20,29,.78);min-height:150px}.capability-grid article span{font:700 9px var(--ui-mono);color:var(--ui-accent-2)}.capability-grid article b{display:block;margin-top:8px;font-size:14px;color:var(--ui-text)}.capability-grid article p{margin:7px 0 0;color:var(--ui-text-3);font-size:11px;line-height:1.55}.landing-boundary{margin-top:36px!important;max-width:900px!important;font-size:11px!important;color:#69768a!important}
+
+/* workspace layout + real sidebar scroll */
+.workspace{grid-template-columns:272px minmax(0,1fr)!important;min-height:calc(100vh - 72px)!important}.side{position:sticky!important;top:72px!important;height:calc(100vh - 72px)!important;min-height:0!important;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;overflow:hidden!important;padding:18px 12px 14px!important;background:rgba(8,12,18,.78)!important;border-right:1px solid rgba(255,255,255,.08)!important;backdrop-filter:blur(16px)}.repo-meta{padding:9px 10px 16px!important;margin-bottom:8px!important;border-bottom:1px solid rgba(255,255,255,.075)!important}.repo-topline{display:flex;align-items:center;justify-content:space-between;gap:10px}.repo-label{font-size:9px!important;color:#738095!important}.repo-meta strong{margin-top:9px!important;font-size:14px!important;color:var(--ui-text)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repo-meta span#repoBranch{display:block;margin-top:5px;color:var(--ui-text-3)!important;font:500 10px var(--ui-mono)!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.repo-hint{display:block;margin-top:8px;color:#647185;font-size:9px;line-height:1.45}.side-status{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:5px 7px;border-radius:999px;border:1px solid #37455a;background:#101824;color:#8492a6;font:700 8px var(--ui-mono);letter-spacing:.08em}.side-status.good{border-color:#2f5d49;color:var(--ui-success);background:rgba(55,125,93,.12)}.side-status.warn{border-color:#66553a;color:var(--ui-warning);background:rgba(145,109,45,.12)}.side-status.bad{border-color:#60343b;color:var(--ui-danger);background:rgba(114,48,58,.12)}.nav{display:grid!important;align-content:start;gap:3px!important;min-height:0;overflow-y:auto;overflow-x:hidden;padding:6px 4px 12px 2px;scrollbar-width:thin;scrollbar-color:#344158 transparent}.nav::-webkit-scrollbar{width:7px}.nav::-webkit-scrollbar-thumb{background:#2e394c;border-radius:99px}.nav::-webkit-scrollbar-track{background:transparent}.nav-group{margin:13px 8px 6px!important;font-size:9px!important;color:#657388!important}.nav button{width:100%;min-height:42px!important;display:flex!important;align-items:center!important;gap:8px!important;border:1px solid transparent!important;background:transparent!important;color:#8f9caf!important;text-align:left!important;border-radius:10px!important;padding:9px 10px!important;font-size:12px!important}.nav button span{min-width:24px!important;margin:0!important;color:#59667b!important;font:700 8px var(--ui-mono)!important}.nav button strong{font-weight:650!important}.nav button:hover{background:#131c29!important;border-color:#28364a!important;color:#dce3ee!important}.nav button.active{background:linear-gradient(90deg,rgba(124,130,244,.16),rgba(124,130,244,.055))!important;border-color:#44507a!important;color:#fff!important;box-shadow:inset 3px 0 0 #8288f6!important}.nav button.active span{color:#aeb3ff!important}.sidefoot{display:grid!important;gap:8px!important;padding:12px 4px 0!important;border-top:1px solid rgba(255,255,255,.075)!important;background:rgba(8,12,18,.7)}.sidefoot .btn{width:100%!important;justify-content:center}.sidefoot .btn.link{justify-content:flex-start!important;padding-left:4px!important}
+
+/* content / page hierarchy */
+.content{padding:30px 36px 76px!important;min-width:0!important;max-width:1560px}.banner{background:linear-gradient(180deg,rgba(18,24,34,.96),rgba(11,16,23,.96))!important;border-color:#39475d!important;border-radius:13px!important;padding:13px 15px!important;margin-bottom:20px!important}.spinner{border-color:#2f3b4e!important;border-top-color:#9197ff!important}.head{margin-bottom:18px!important;align-items:flex-end!important}.head-copy{min-width:0}.head h2{font-size:32px!important;line-height:1.08!important;letter-spacing:-.04em!important;color:var(--ui-text)!important;margin:6px 0 0!important}.head p{font-size:12px!important;line-height:1.55!important;color:var(--ui-text-3)!important;max-width:860px!important}.head-title{display:flex;align-items:center;flex-wrap:wrap;gap:9px}.actions{display:flex;align-items:center;justify-content:flex-end;gap:8px!important;flex-wrap:wrap}.actions .btn,.actions a{min-height:40px!important}.actions .btn.primary{box-shadow:0 8px 22px rgba(116,121,230,.18)!important}
+.view-guide{display:grid!important;grid-template-columns:44px minmax(0,1fr) auto!important;gap:13px!important;align-items:center!important;padding:14px 16px!important;margin-bottom:18px!important;background:linear-gradient(180deg,rgba(19,27,38,.95),rgba(13,19,28,.95))!important;border-color:#2b3749!important;box-shadow:none!important}.view-guide-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;border:1px solid #4b567b;background:rgba(124,130,244,.085);color:#aeb3ff;font:700 9px var(--ui-mono)}.view-guide-copy{min-width:0}.view-guide-copy strong{display:block;font-size:12px;line-height:1.45;color:#edf1f7}.view-guide-copy small{display:block;margin-top:3px;font-size:10px;line-height:1.45;color:#7d8a9e}.view-guide-flow{display:flex;align-items:center;gap:7px;white-space:nowrap;color:#748298;font:700 8px var(--ui-mono);letter-spacing:.09em}.view-guide-flow i{font-style:normal;color:#56657a}.section{margin-top:20px!important}.grid{gap:12px!important}.metric{font-size:30px!important;line-height:1!important;color:#f3f6fb!important;margin-top:8px!important}.metric-label{font-size:9px!important;color:#758299!important;margin-top:8px!important}.sub{font-size:11px!important;line-height:1.5!important;color:#77859a!important}.card h3{font-size:16px!important;line-height:1.3!important;color:#edf1f7!important}.card{padding:20px!important}
+
+/* tables / evidence / timelines */
+.table{border-color:#2b3747!important;background:#0c121a!important;border-radius:12px!important}.table table{min-width:720px!important}.table th{background:#111923!important;color:#758398!important;font-size:9px!important;padding:11px 12px!important}.table td{color:#c3cad5!important;font-size:12px!important;padding:12px!important;border-bottom-color:#222d3b!important}.table tbody tr:hover{background:rgba(124,130,244,.045)!important}.path,.cell-link{color:#aeb3ff!important}.inspect{border-color:#35435a!important;background:#111925!important;color:#9ca8ba!important;padding:7px 9px!important;font-size:9px!important}.inspect:hover{background:#192333!important;border-color:#53617a!important;color:#fff!important}.empty{border-color:#344157!important;background:rgba(12,17,25,.5)!important;color:#738095!important;padding:30px!important;font-size:11px!important}.empty strong{font-size:13px!important;color:#c1c9d6!important}.timeline:before{background:#29364a!important}.item{padding-bottom:20px!important}.item i{background:#8a90fb!important;box-shadow:0 0 0 3px #0b1017!important}.item strong{font-size:13px!important;color:#e8edf5!important}.item p{font-size:10px!important;color:#8290a5!important}.tag,.pill{font-size:9px!important;padding:6px 9px!important;background:#101824!important;border-color:#2e3a4d!important;color:#98a5b8!important}.pill.good{color:var(--ui-success)!important;border-color:#315f4a!important;background:rgba(64,142,103,.1)!important}.pill.warn{color:var(--ui-warning)!important;border-color:#5b4d35!important;background:rgba(147,111,47,.1)!important}.pill.bad{color:var(--ui-danger)!important;border-color:#5d353d!important;background:rgba(131,50,60,.1)!important}
+.overview-context,.report-posture,.interview-posture,.insight-posture,.evidence-overview,.runtime-posture,.runtime-lineage,.ops-posture,.history-signalbar{background:linear-gradient(180deg,rgba(18,25,35,.98),rgba(13,18,26,.98))!important;border-color:#2b3748!important}.journey-step,.report-posture-grid>div,.interview-posture-grid>div,.insight-posture-grid>div,.ops-posture-grid>div{background:#101722!important;border-color:#283548!important}.overview-context-title h3{font-size:23px!important}.overview-context-source{font-size:10px!important;color:#7d8b9f!important}.overview-card-head{gap:12px}.overview-warning{border-color:#4c4b6d!important;background:rgba(124,130,244,.045)!important}.archmap{background:linear-gradient(180deg,#111925,#0d141d)!important;border-color:#2b384a!important}.archcore{background:#172131!important;border-color:#4a5678!important}.archnode{background:#111923!important;border-color:#2d394a!important}.archnode b{color:#b6bdca!important}.archnode:hover{background:#172231!important;border-color:#526078!important}.quality-map-card,.quality-map{background:#101722!important;border-color:#29364a!important}.evidence-row{background:#101823!important;border-color:#29364a!important;padding:13px!important}.evidence-row strong{font-size:12px!important;color:#e6ebf3!important}.evidence-row small{font-size:9px!important;color:#7b899e!important}.story,.report{background:linear-gradient(180deg,#111925,#0d141d)!important;border-color:#2b384a!important}.story{padding:20px!important}.story h3{font-size:16px!important;color:#edf1f7!important}.story label{font-size:9px!important;color:#aeb3ff!important}.story div{font-size:11px!important;color:#adb7c6!important;line-height:1.6!important}.claim{border-bottom-color:#273344!important}.claim p{font-size:12px!important;color:#d6dce6!important}.loading-state,.error-state{display:grid!important;grid-template-columns:auto 1fr!important;gap:16px!important;align-items:center;padding:26px!important}.loading-state strong,.error-state strong{font-size:15px!important;color:#edf1f7!important}.loading-state p,.error-state p{font-size:11px!important;color:#7f8da1!important;line-height:1.55!important}.loading-orb{border-color:#424e67!important;box-shadow:0 0 0 7px rgba(124,130,244,.045)!important}.loading-orb:before{background:#8b91fa!important}.error-mark{background:rgba(115,48,58,.14)!important;border-color:#613841!important;color:#f0a0a5!important}
+
+/* account / auth surfaces */
+.settings-modal{align-items:stretch!important;justify-content:flex-end!important;padding:0!important;background:rgba(2,5,10,.72)!important;backdrop-filter:blur(6px)}.settings-sheet{width:min(560px,100%)!important;height:100%!important;max-height:none!important;border-radius:0!important;border:0!important;border-left:1px solid #344158!important;background:linear-gradient(180deg,#0d141d,#0a1017)!important;padding:0!important;display:grid;grid-template-rows:auto minmax(0,1fr)!important;box-shadow:-30px 0 80px rgba(0,0,0,.46)!important}.settings-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:24px 24px 19px;border-bottom:1px solid #293648;background:rgba(9,14,21,.92);position:sticky;top:0;z-index:1}.settings-head h3{font-size:22px!important;margin:6px 0 0;color:#f0f4fa!important}.settings-intro{max-width:430px;margin:7px 0 0;color:#7d8a9d;font-size:11px;line-height:1.55}.settings-scroll{min-height:0;overflow-y:auto;padding:0 24px 28px;scrollbar-width:thin;scrollbar-color:#344158 transparent}.settings-scroll::-webkit-scrollbar{width:8px}.settings-scroll::-webkit-scrollbar-thumb{background:#2e3a4d;border-radius:99px}.settings-section{padding:22px 0;border-bottom:1px solid #243143}.settings-section:last-child{border-bottom:0}.settings-section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.settings-section-head h4{margin:6px 0 0;font-size:15px;color:#e8edf5}.settings-section-head p{margin:5px 0 0;color:#7b899c;font-size:10px;line-height:1.5;max-width:440px}.account-identity-card{display:flex;gap:12px;align-items:center;margin-top:15px;padding:14px;border:1px solid #293649;border-radius:12px;background:#111923}.account-avatar{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(124,130,244,.11);border:1px solid #4b567a;color:#aeb3ff;font:700 12px var(--ui-mono)}.account-identity-card strong{display:block;font-size:13px;color:#e9edf5}.account-identity-card span{display:block;margin-top:3px;color:#728096;font-size:9px}.settings-actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.settings-form{display:grid;gap:11px;margin-top:14px}.session-block{margin-top:22px}.session-block-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.session-block-head p{margin:5px 0 0;color:#748297;font-size:10px}.security-sessions{display:grid;gap:8px;margin-top:11px}.security-session{background:#101823!important;border-color:#29364a!important;border-radius:11px!important;padding:12px!important}.security-session strong{font-size:11px!important;color:#e5eaf2!important}.security-session small{font-size:9px!important;color:#78869b!important}.settings-details{margin-top:14px;border:1px solid #29364a;border-radius:11px;background:#101721;padding:0 13px}.settings-details summary{list-style:none;cursor:pointer;padding:12px 0;color:#b4becd;font-size:11px}.settings-details summary::-webkit-details-marker{display:none}.settings-details[open] summary{border-bottom:1px solid #243143;margin-bottom:12px}.settings-details .field{padding-bottom:12px}.danger-zone{border-bottom:0}.modal:not(.settings-modal){background:rgba(2,5,10,.72)!important;backdrop-filter:blur(6px)}.modal:not(.settings-modal)>div{background:#101722!important;border-color:#344158!important;box-shadow:0 28px 90px rgba(0,0,0,.5)!important}.modal:not(.settings-modal) .field input{background:#0b1119!important;border-color:#2c3849!important}.drawer{background:rgba(2,5,10,.72)!important;backdrop-filter:blur(5px)}.drawer-panel{background:linear-gradient(180deg,#0d141d,#0a1017)!important;border-left-color:#344158!important;box-shadow:-30px 0 80px rgba(0,0,0,.48)!important;padding:22px!important}.drawer-head h3{font-size:20px!important;color:#edf1f7!important}.drawer-basis{background:#101824!important;border-color:#29364a!important;color:#9aa6b8!important;font-size:10px!important}.evidence-summary{display:grid;gap:7px;margin-top:12px}.evidence-detail{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid #243142}.evidence-detail span{font:700 8px var(--ui-mono);color:#6f7c90;letter-spacing:.08em}.evidence-detail strong{font-size:10px;color:#dbe1ea;word-break:break-word}.json{background:#0a1017!important;border-color:#263447!important;color:#ccd5e1!important;font-size:10px!important}
+
+/* mobile */
+@media(max-width:1180px){.landing-hero{grid-template-columns:1fr}.product-preview{min-height:560px}.preview-grid{min-height:512px}.content{padding:26px 26px 66px!important}.workspace{grid-template-columns:252px minmax(0,1fr)!important}.capability-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1000px){.workspace{grid-template-columns:1fr!important}.side{position:static!important;top:auto!important;height:auto!important;max-height:420px!important;grid-template-rows:auto minmax(0,1fr) auto!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.08)!important}.nav{grid-template-columns:repeat(3,minmax(0,1fr))!important}.nav .nav-group{grid-column:1/-1!important}.sidefoot{grid-template-columns:1fr 1fr!important}.import{grid-template-columns:minmax(0,1fr) minmax(160px,190px)!important}.import > #importButton{grid-column:1/-1;width:100%!important}}
+@media(max-width:760px){.top{height:64px!important;padding:0 15px!important}.workspace{min-height:calc(100vh - 64px)!important}.side{max-height:360px!important;padding:13px 11px!important}.nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}.content{padding:20px 15px 52px!important}.landing{padding:54px 16px 58px!important}.landing-copy{padding-top:8px}.landing-copy h1{font-size:clamp(42px,13vw,60px)!important}.lead{font-size:16px!important}.landing-proof{display:grid;grid-template-columns:1fr}.product-preview{min-height:0}.preview-grid{grid-template-columns:110px 1fr!important;min-height:0}.preview-nav{padding:13px 8px!important}.preview-nav-item{font-size:8px!important;padding:8px 6px!important}.preview-main{padding:15px 12px!important}.preview-head strong{font-size:15px!important}.preview-metrics{grid-template-columns:1fr!important}.preview-metrics>div{min-height:80px!important}.getting-started,.capability-grid{grid-template-columns:1fr!important}.view-guide{grid-template-columns:38px minmax(0,1fr)!important}.view-guide-icon{width:36px;height:36px}.view-guide-flow{grid-column:2;justify-content:flex-start}.head{align-items:flex-start!important;flex-direction:column!important}.actions{justify-content:flex-start!important}.actions .btn,.actions a{width:auto!important}.grid.g4,.grid.g3,.grid.g2{grid-template-columns:1fr!important}.bar{grid-template-columns:120px minmax(0,1fr) 35px auto!important}.settings-sheet{width:100%!important}.settings-head{padding:18px 16px 15px}.settings-scroll{padding:0 16px 22px}.settings-section{padding:19px 0}.settings-actions-row .btn{flex:1 1 auto}.evidence-detail{grid-template-columns:92px minmax(0,1fr)}}
+@media(max-width:520px){.import{grid-template-columns:1fr!important}.import > #importButton{grid-column:auto!important;width:100%!important}.side{max-height:430px!important}.nav{grid-template-columns:1fr!important}.sidefoot{grid-template-columns:1fr!important}.top-account{min-width:82px!important}.brand b{font-size:13px!important}.brand small{display:none!important}.head h2{font-size:27px!important}.view-guide-copy strong{font-size:11px}.view-guide-copy small{font-size:9px}.view-guide-flow{font-size:7px}.loading-state,.error-state{grid-template-columns:1fr!important;text-align:left}}
 </style>
 </head>
 <body>
@@ -289,99 +368,153 @@ body{background:
 </header>
 <a class="skip-link" href="#root">Skip to workspace</a><main>
 <section id="landing" class="landing">
-  <div class="eyebrow">EVIDENCE-FIRST ENGINEERING HISTORY</div>
-  <h1>See how a codebase <em>actually evolved.</em></h1>
-  <p class="lead">Import a repository and reconstruct its engineering journey from commits, code structure, dependencies, tests, schema changes, runtime evidence and deployment records.</p>
-  <div class="hero-grid">
-    <div class="hero-copy">
-  <div class="card">
-    <div class="import-head"><div><div class="kicker">Start an analysis</div><h2>Bring a repository into the workspace.</h2></div><span class="tag">HTTPS sources</span></div>
-    <form id="form" class="import">
-      <label class="field">Repository URL<input id="url" type="url" placeholder="https://github.com/owner/repository" required></label>
-      <label class="field">Branch <span class="dim">(optional)</span><input id="branch" placeholder="main"></label>
-      <button id="importButton" class="btn primary" type="submit">Analyze repository →</button>
-    </form>
-    <details class="repo-access">
-      <summary><span>Private repository access</span><span class="dim">optional</span></summary>
-      <label class="field">Repository access token<input id="repoAccessToken" type="password" autocomplete="off" placeholder="Paste a read-only repository token"></label>
-      <div class="repo-access-note">Needed only when the repository is private. The token is encrypted on the server, is never returned to the browser, and is not written into analysis evidence.</div>
-    </details>
-    <div id="formerr" class="bad" style="font-size:10px;margin-top:10px" hidden></div>
-    <div id="recentRepositories" class="recent-repositories" hidden></div>
-  </div>
+  <div class="landing-hero">
+    <div class="landing-copy">
+      <div class="eyebrow">EVIDENCE-FIRST ENGINEERING HISTORY</div>
+      <h1>Understand how your codebase <em>really changed.</em></h1>
+      <p class="lead">Autopsy turns repository history, structure, quality signals, runtime evidence and deployment records into one inspectable engineering timeline.</p>
+      <div class="landing-proof">
+        <span><b>01</b> Observe Git history</span>
+        <span><b>02</b> Validate engineering signals</span>
+        <span><b>03</b> Inspect the evidence behind each output</span>
+      </div>
     </div>
-    <aside class="workspace-preview" aria-label="Workspace preview">
-      <div class="preview-chrome">
-        <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
-        <span class="preview-label">PROJECT AUTOPSY / WORKSPACE</span>
-        <span class="preview-state">EVIDENCE MODE</span>
-      </div>
-      <div class="preview-grid">
-        <div class="preview-nav">
-          <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
-          <div class="preview-nav-group">UNDERSTAND</div>
-          <div class="preview-nav-item active"><span>01</span>Overview</div>
-          <div class="preview-nav-item"><span>02</span>History</div>
-          <div class="preview-nav-item"><span>03</span>Structure</div>
-          <div class="preview-nav-group">VALIDATE</div>
-          <div class="preview-nav-item"><span>04</span>Quality</div>
-          <div class="preview-nav-item"><span>05</span>Runtime</div>
-          <div class="preview-nav-group">EXPLORE</div>
-          <div class="preview-nav-item"><span>09</span>Evidence</div>
+
+    <div class="import-card card">
+      <div class="import-head">
+        <div>
+          <div class="kicker">START HERE</div>
+          <h2>Open a repository workspace</h2>
+          <p class="import-helper">Paste a public repository URL. Sign in first so your analysis and evidence stay private to your account.</p>
         </div>
-        <div class="preview-main">
-          <div class="preview-head">
-            <div><span class="preview-kicker">ENGINEERING EVIDENCE</span><strong>Repository evolution</strong></div>
-            <span class="snapshot-pill good">Snapshot current</span>
-          </div>
-          <div class="preview-metrics">
-            <div><span>01</span><b>Commit trail</b><small>Observed change history</small></div>
-            <div><span>02</span><b>Structure</b><small>Historical code shape</small></div>
-            <div><span>03</span><b>Quality</b><small>Evidence-backed signals</small></div>
-            <div><span>04</span><b>Runtime</b><small>Observed telemetry</small></div>
-          </div>
-          <div class="preview-panel">
-            <div class="preview-panel-head"><span>Evidence trail</span><span>Inspect →</span></div>
-            <div class="preview-line"><i></i><div><b>Commit evidence</b><small>Changed files + revision identity</small></div><em>observed</em></div>
-            <div class="preview-line"><i></i><div><b>Change signal</b><small>Deterministic historical metric</small></div><em>derived</em></div>
-            <div class="preview-line"><i></i><div><b>Interpretation</b><small>Separated from source evidence</small></div><em>scoped</em></div>
-          </div>
-          <div class="preview-footline"><span></span><b>Evidence → analysis → inspection</b><small>No heuristic presented as intent or causality.</small></div>
-        </div>
+        <span class="tag">HTTPS sources</span>
       </div>
-    </aside>
+      <form id="form" class="import">
+        <label class="field">
+          <span>Repository URL</span>
+          <input id="url" type="url" placeholder="https://github.com/owner/repository" required>
+          <small>GitHub, GitLab or Bitbucket HTTPS repository</small>
+        </label>
+        <label class="field">
+          <span>Branch <em class="dim">(optional)</em></span>
+          <input id="branch" placeholder="main">
+          <small>Leave blank to use the detected default</small>
+        </label>
+        <button id="importButton" class="btn primary" type="submit"><span>Analyze repository</span><span aria-hidden="true">→</span></button>
+      </form>
+      <details class="repo-access">
+        <summary><span>Private repository access</span><span class="dim">Optional</span></summary>
+        <label class="field">
+          <span>Repository access token</span>
+          <input id="repoAccessToken" type="password" autocomplete="off" placeholder="Paste a read-only repository token">
+          <small>Encrypted on the server and never returned to the browser.</small>
+        </label>
+      </details>
+      <div id="formerr" class="bad form-error" hidden></div>
+      <div id="recentRepositories" class="recent-repositories" hidden></div>
+    </div>
   </div>
-  <div class="strip"><span class="tag">Git history</span><span class="tag">Architecture</span><span class="tag">Code quality</span><span class="tag">Runtime</span><span class="tag">Deployments</span></div>
-  <div class="getting-started">
-    <div class="getting-step"><span class="step-num">01</span><div><b>Connect</b><small>Sign in once to access your private engineering workspace.</small></div></div>
-    <div class="getting-step"><span class="step-num">02</span><div><b>Analyze</b><small>Autopsy builds a bounded evidence snapshot in the background.</small></div></div>
-    <div class="getting-step"><span class="step-num">03</span><div><b>Explore</b><small>Move from signals to the exact evidence behind them.</small></div></div>
+
+  <div class="workspace-preview product-preview" aria-label="Workspace preview">
+    <div class="preview-chrome">
+      <div class="preview-chrome-left"><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span></div>
+      <span class="preview-label">PROJECT AUTOPSY / WORKSPACE</span>
+      <span class="preview-state">EVIDENCE MODE</span>
+    </div>
+    <div class="preview-grid">
+      <div class="preview-nav">
+        <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
+        <div class="preview-nav-group">START HERE</div>
+        <div class="preview-nav-item active"><span>01</span><strong>Overview</strong></div>
+        <div class="preview-nav-item"><span>02</span><strong>History</strong></div>
+        <div class="preview-nav-item"><span>03</span><strong>Structure</strong></div>
+        <div class="preview-nav-group">VALIDATE</div>
+        <div class="preview-nav-item"><span>04</span><strong>Quality</strong></div>
+        <div class="preview-nav-item"><span>05</span><strong>Runtime</strong></div>
+        <div class="preview-nav-group">OUTPUTS</div>
+        <div class="preview-nav-item"><span>06</span><strong>Report</strong></div>
+        <div class="preview-nav-item"><span>08</span><strong>Insights</strong></div>
+      </div>
+      <div class="preview-main">
+        <div class="preview-head">
+          <div>
+            <span class="preview-kicker">CURRENT SNAPSHOT</span>
+            <strong>Repository evolution</strong>
+            <small>One place to understand what changed, what the evidence says, and what still needs inspection.</small>
+          </div>
+          <span class="snapshot-pill good">CURRENT</span>
+        </div>
+        <div class="preview-metrics">
+          <div><span>01 · HISTORY</span><b>Commit trail</b><small>Chronological source changes</small></div>
+          <div><span>02 · STRUCTURE</span><b>Codebase shape</b><small>Architecture + dependencies</small></div>
+          <div><span>03 · QUALITY</span><b>Engineering signals</b><small>Tests + repeated change + refactors</small></div>
+          <div><span>04 · RUNTIME</span><b>Runtime provenance</b><small>Telemetry + deployments + revision links</small></div>
+        </div>
+        <div class="preview-panel">
+          <div class="preview-panel-head"><span>EVIDENCE TRAIL</span><span>INSPECT →</span></div>
+          <div class="preview-line"><i></i><div><b>Observed evidence</b><small>Commit, file, revision and deployment records</small></div><em>Observed</em></div>
+          <div class="preview-line"><i></i><div><b>Derived signal</b><small>Deterministic historical measurements and classifications</small></div><em>Derived</em></div>
+          <div class="preview-line"><i></i><div><b>Interpretation</b><small>Claims stay grounded in cited evidence and visible uncertainty</small></div><em>Scoped</em></div>
+        </div>
+        <div class="preview-footline"><span>✓</span><div><b>Every output has a next step</b><small>Read the snapshot → inspect the signal → open the exact evidence record.</small></div></div>
+      </div>
+    </div>
   </div>
-  <p class="note">Observed evidence stays separate from interpretation. The workspace never turns a heuristic into a claim of intent, causality or impact.</p>
+
+  <section class="landing-how">
+    <div class="landing-section-head"><div class="kicker">HOW TO USE IT</div><h2>Three moves. No guessing.</h2><p>Each workspace section answers a specific engineering question and points you toward the next useful action.</p></div>
+    <div class="getting-started">
+      <article class="getting-step"><span class="step-num">01</span><div><b>Understand</b><small>Start at Overview, then open History and Structure to learn the repository before reading derived signals.</small></div></article>
+      <article class="getting-step"><span class="step-num">02</span><div><b>Validate</b><small>Use Quality and Runtime to check repeated changes, tests, telemetry, deployments and revision provenance.</small></div></article>
+      <article class="getting-step"><span class="step-num">03</span><div><b>Output & inspect</b><small>Generate Report or Insights, then use Evidence Explorer whenever you need to verify a claim.</small></div></article>
+    </div>
+  </section>
+
+  <section class="landing-capabilities">
+    <div class="landing-section-head"><div class="kicker">WORKSPACE MAP</div><h2>What each section is for</h2></div>
+    <div class="capability-grid">
+      <article><span>01</span><b>Overview</b><p>Your current snapshot, run boundary and a compact read of the repository.</p></article>
+      <article><span>02–03</span><b>History & Structure</b><p>What changed over time and how the codebase shape moved with it.</p></article>
+      <article><span>04–05</span><b>Quality & Runtime</b><p>Where repeated changes, tests, telemetry and deployments provide supporting evidence.</p></article>
+      <article><span>06–08</span><b>Report, Interview & Insights</b><p>Turn the current evidence snapshot into usable outputs without hiding uncertainty.</p></article>
+      <article><span>09–10</span><b>Evidence & Contributors</b><p>Trace records back to their source and understand author-level change history.</p></article>
+      <article><span>11</span><b>Operations</b><p>Check the running service separately from repository evidence.</p></article>
+    </div>
+  </section>
+
+  <p class="note landing-boundary">Evidence remains separate from interpretation. Autopsy does not present a heuristic as intent, causality or impact without supporting evidence.</p>
 </section>
 
 <section id="workspace" class="workspace" hidden>
   <aside class="side">
-    <div class="repo-meta"><div class="repo-label kicker">CURRENT REPOSITORY</div><strong id="repoName">—</strong><span id="repoBranch">—</span></div>
+    <div class="repo-meta">
+      <div class="repo-topline"><span class="repo-label kicker">CURRENT REPOSITORY</span><span id="repoStatus" class="side-status">—</span></div>
+      <strong id="repoName">—</strong>
+      <span id="repoBranch">—</span>
+      <small class="repo-hint">Evidence is scoped to the selected analysis run.</small>
+    </div>
     <nav id="nav" class="nav" aria-label="Workspace sections">
       <div class="nav-group">Understand</div>
-      <button class="active" data-view="overview"><span>01</span>Overview</button>
-      <button data-view="history"><span>02</span>History</button>
-      <button data-view="structure"><span>03</span>Structure</button>
+      <button class="active" data-view="overview" title="Current snapshot and what to inspect first"><span>01</span><strong>Overview</strong></button>
+      <button data-view="history" title="Chronological commits and timeline events"><span>02</span><strong>History</strong></button>
+      <button data-view="structure" title="Architecture, dependencies and complexity"><span>03</span><strong>Structure</strong></button>
       <div class="nav-group">Validate</div>
-      <button data-view="quality"><span>04</span>Quality</button>
-      <button data-view="runtime"><span>05</span>Runtime & provenance</button>
+      <button data-view="quality" title="Tests, repeated changes, bug areas and refactor signals"><span>04</span><strong>Quality</strong></button>
+      <button data-view="runtime" title="Telemetry, deployments and revision provenance"><span>05</span><strong>Runtime</strong></button>
       <div class="nav-group">Outputs</div>
-      <button data-view="report"><span>06</span>Report</button>
-      <button data-view="interview"><span>07</span>Interview</button>
-      <button data-view="interpretation"><span>08</span>Insights</button>
+      <button data-view="report" title="Evidence-backed engineering report"><span>06</span><strong>Report</strong></button>
+      <button data-view="interview" title="Evidence-linked interview story scaffolds"><span>07</span><strong>Interview</strong></button>
+      <button data-view="interpretation" title="Current-report engineering insights"><span>08</span><strong>Insights</strong></button>
       <div class="nav-group">Explore</div>
-      <button data-view="evidence"><span>09</span>Evidence explorer</button>
-      <button data-view="contributors"><span>10</span>Contributors</button>
+      <button data-view="evidence" title="Search and inspect the exact records behind the workspace"><span>09</span><strong>Evidence explorer</strong></button>
+      <button data-view="contributors" title="Contributor history and change distribution"><span>10</span><strong>Contributors</strong></button>
       <div class="nav-group">Operate</div>
-      <button data-view="operations"><span>11</span>Operations</button>
+      <button data-view="operations" title="Live API, database, Redis and queue health"><span>11</span><strong>Operations</strong></button>
     </nav>
-    <div class="sidefoot"><button id="refresh" class="btn">Refresh analysis</button><button id="new" class="btn link">← Analyze another repository</button></div>
+    <div class="sidefoot">
+      <button id="refresh" class="btn">Refresh analysis</button>
+      <button id="new" class="btn link">← Analyze another repository</button>
+    </div>
   </aside>
   <div class="content">
     <div id="banner" class="banner" role="status" aria-live="polite" hidden><div class="spinner"></div><div><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div><span id="bstatus" class="pill warn">queued</span></div>
@@ -424,24 +557,59 @@ body{background:
     <button id="authModeToggle" class="btn link" type="button">New here? Create an account</button>
   </div>
 </div></div>
-<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden><div><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">ACCOUNT</div><h3 id="settingsTitle">Account & workspace</h3><div class="sub">Your sign-in session is held in a secure HTTP-only cookie. Repository access tokens are encrypted on the server and never returned.</div></div><button id="close" class="btn" aria-label="Close settings">Close</button></div><div style="margin-top:18px;padding:12px;border:1px solid #302f28;border-radius:10px;background:#131310"><div class="kicker">SIGNED-IN ACCOUNT</div><strong id="accountEmail" style="display:block;margin-top:6px;font-size:12px">Not signed in</strong><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px"><button id="logout" class="btn danger">Sign out</button><button id="revokeSessions" class="btn danger">Revoke all sessions</button></div></div>
-<div class="account-security" style="margin-top:16px;padding-top:16px;border-top:1px solid #302f28">
-  <div class="kicker">SECURITY</div>
-  <div class="sub" style="margin-top:6px">Change your password or end an individual active session. Changing your password signs out every other session.</div>
-  <form id="passwordForm" style="display:grid;gap:10px;margin-top:12px">
-    <label class="field">Current password<input id="currentPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" required></label>
-    <label class="field">New password<input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
-    <div id="passwordError" class="bad" style="font-size:10px" hidden></div>
-    <button id="changePassword" class="btn" type="submit">Change password</button>
-  </form>
-  <div style="margin-top:18px">
-    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-      <div><div class="kicker">ACTIVE SESSIONS</div><div class="sub">Sessions that can currently access this account.</div></div>
-      <button id="refreshSessions" class="btn" type="button">Refresh</button>
+<div id="modal" class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+  <div class="settings-sheet">
+    <div class="settings-head">
+      <div><div class="kicker">ACCOUNT</div><h3 id="settingsTitle">Account & workspace</h3><p class="settings-intro">Manage your account, active sessions, repository access and trusted API connection settings.</p></div>
+      <button id="close" class="btn" aria-label="Close settings">Close</button>
     </div>
-    <div id="sessionsList" class="security-sessions" style="margin-top:10px"></div>
+    <div class="settings-scroll">
+      <section class="settings-section account-identity">
+        <div class="settings-section-head"><div><div class="kicker">SIGNED-IN ACCOUNT</div><h4>Account identity</h4></div><span class="tag">PRIVATE</span></div>
+        <div class="account-identity-card">
+          <div class="account-avatar">A</div>
+          <div><strong id="accountEmail">Not signed in</strong><span>Authenticated workspace account</span></div>
+        </div>
+        <div class="settings-actions-row"><button id="logout" class="btn danger">Sign out</button><button id="revokeSessions" class="btn danger">Revoke all sessions</button></div>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-section-head"><div><div class="kicker">SECURITY</div><h4>Password & sessions</h4><p>Changing your password signs out every other active session.</p></div></div>
+        <form id="passwordForm" class="settings-form">
+          <label class="field"><span>Current password</span><input id="currentPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" required></label>
+          <label class="field"><span>New password</span><input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
+          <div id="passwordError" class="bad form-error" hidden></div>
+          <button id="changePassword" class="btn primary" type="submit">Change password</button>
+        </form>
+        <div class="session-block">
+          <div class="session-block-head"><div><div class="kicker">ACTIVE SESSIONS</div><p>Sessions that can currently access this account.</p></div><button id="refreshSessions" class="btn" type="button">Refresh</button></div>
+          <div id="sessionsList" class="security-sessions"></div>
+        </div>
+      </section>
+
+      <section id="repoAccessZone" class="settings-section" hidden>
+        <div class="settings-section-head"><div><div class="kicker">REPOSITORY ACCESS</div><h4>Private repository credential</h4><p id="repoAccessStatus">No stored repository credential.</p></div></div>
+        <label class="field"><span>New repository access token</span><input id="repoToken" type="password" autocomplete="off" placeholder="Paste a replacement read-only token"></label>
+        <div class="field-help">The current token is never displayed. Saving replaces it; clearing removes the stored credential without changing the source repository.</div>
+        <div class="settings-actions-row"><button id="saveRepoAccess" class="btn">Update repository access</button><button id="clearRepoAccess" class="btn danger">Clear stored credential</button></div>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-section-head"><div><div class="kicker">CONNECTION</div><h4>Trusted API connection</h4><p>Normally keep the canonical same-origin service. Change this only for a trusted local or split deployment.</p></div></div>
+        <details class="settings-details">
+          <summary>Advanced connection settings</summary>
+          <label class="field"><span>API base URL</span><input id="api" type="url"></label>
+        </details>
+        <div class="settings-actions-row"><button id="testConnection" class="btn">Verify session</button><button id="save" class="btn primary">Save settings</button></div>
+      </section>
+
+      <section id="dangerZone" class="settings-section danger-zone" hidden>
+        <div class="settings-section-head"><div><div class="kicker">DATA LIFECYCLE</div><h4>Delete repository data</h4><p>Permanently remove this imported repository and its persisted Autopsy evidence.</p></div></div>
+        <button id="deleteRepository" class="btn danger">Delete repository data</button>
+      </section>
+    </div>
   </div>
-</div><div id="repoAccessZone" hidden style="margin-top:16px;padding-top:16px;border-top:1px solid #302f28"><div class="kicker">REPOSITORY ACCESS</div><div id="repoAccessStatus" class="sub" style="margin-top:6px">No stored repository credential.</div><label class="field" style="margin-top:12px">New repository access token<input id="repoToken" type="password" autocomplete="off" placeholder="Paste a replacement read-only token"></label><div class="sub" style="margin-top:6px">The current token is never displayed. Saving replaces it; clearing removes the stored credential and does not change the source repository.</div><div class="modal-actions" style="margin-top:12px;justify-content:flex-start"><button id="saveRepoAccess" class="btn">Update repository access</button><button id="clearRepoAccess" class="btn danger">Clear stored credential</button></div></div><details style="margin-top:14px"><summary class="btn link">Advanced connection settings</summary><label class="field" style="margin-top:12px">API base URL<input id="api" type="url"></label><div class="sub" style="margin-top:6px">Normally this stays on the canonical same-origin service. Change it only for a trusted local or split deployment.</div></details><div id="dangerZone" hidden style="margin-top:18px;padding-top:16px;border-top:1px solid #302f28"><div class="kicker" style="color:var(--bad)">DATA LIFECYCLE</div><div style="font-size:10px;margin-top:7px">Permanently remove this imported repository and its persisted evidence.</div><button id="deleteRepository" class="btn danger" style="margin-top:10px;width:100%">Delete repository data</button></div><div class="modal-actions"><button id="testConnection" class="btn">Verify session</button><button id="save" class="btn primary">Save settings</button></div></div></div>
+</div>
 <div id="confirmModal" class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden><div><div class="kicker" style="color:var(--bad)">DESTRUCTIVE ACTION</div><h3 id="confirmTitle">Confirm deletion</h3><p id="confirmText" class="confirm-text"></p><div class="confirm-warning">This removes the repository data stored by Autopsy. Your source repository is not modified.</div><div class="modal-actions"><button id="confirmCancel" class="btn">Cancel</button><button id="confirmConfirm" class="btn danger">Delete repository data</button></div></div></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div><div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden><div class="drawer-panel"><div class="drawer-head"><div><div class="kicker">EVIDENCE INSPECTOR</div><h3 id="drawerTitle">Evidence</h3></div><div class="drawer-actions"><button id="drawerCopy" class="btn">Copy JSON</button><button id="drawerClose" class="btn" aria-label="Close evidence inspector">Close</button></div></div><div id="drawerBasis" class="drawer-basis"></div><div id="drawerSummary" class="evidence-summary"></div><details id="drawerRaw" class="raw-evidence"><summary>View raw evidence record</summary><pre id="drawerJson" class="json"></pre></details></div></div>
 

@@ -373,7 +373,7 @@ test("frontend overview exposes command-center snapshot context", () => {
     "Exact run boundary",
     "Evidence posture",
     "What this snapshot can support",
-    "Evidence → analysis → inspection"
+    "Every output has a next step"
   ]) {
     assert.ok(surface.includes(marker), "missing overview command-center marker: " + marker);
   }
@@ -2123,7 +2123,10 @@ test("frontend labels snapshot freshness consistently across workspace views", (
   assert.ok(appJs.includes("Snapshot current"));
   assert.ok(appJs.includes("Snapshot stale"));
   assert.ok(appJs.includes("Analysis updating"));
-  assert.ok(appJs.includes("function shell(title,desc,actions){var toolbar=viewFilterMarkup(),snap=snapshotState()"));
+  assert.ok(appJs.includes("function shell(title,desc,actions){"));
+  assert.ok(appJs.includes("var snap=snapshotState();"));
+  assert.ok(appJs.includes("VIEW_GUIDANCE[S.view]"));
+  assert.ok(appJs.includes("view-guide"));
   assert.ok(appJs.includes("snapshot-pill"));
 });
 
@@ -2626,5 +2629,42 @@ test("final UI theme uses the consolidated indigo/slate visual system", () => {
     html.lastIndexOf(".btn.primary,") > html.indexOf("/* Visual system consolidation */"),
     "final CTA styling must be later than the legacy theme layers"
   );
+});
+
+test("workspace UI system keeps navigation scrollable and page guidance explicit", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  for (const marker of [
+    'id="repoStatus"',
+    'class="repo-hint"',
+    'title="Current snapshot and what to inspect first"',
+    'class="settings-sheet"',
+    'class="settings-scroll"',
+    'class="landing-proof"',
+    'class="landing-how"',
+    'class="landing-capabilities"',
+    'PRODUCT UI SYSTEM V3',
+    '.nav{display:grid!important;align-content:start;gap:3px!important;min-height:0;overflow-y:auto',
+    '.side{position:sticky!important;top:72px!important;height:calc(100vh - 72px)!important;min-height:0!important;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;overflow:hidden!important'
+  ]) {
+    assert.ok(html.includes(marker), "missing UI system marker: " + marker);
+  }
+  for (const marker of [
+    "const VIEW_GUIDANCE=",
+    "function syncWorkspaceMeta()",
+    "document.body.dataset.view=v;",
+    "view-guide",
+    "WHAT TO DO HERE"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing guided workspace interaction marker: " + marker);
+  }
+});
+
+test("settings surface remains scroll-safe for long account state", () => {
+  const html = readRepoFile("public/index.html");
+  assert.ok(html.includes('class="settings-scroll"'));
+  assert.ok(html.includes('id="sessionsList"'));
+  assert.ok(html.includes('id="repoAccessZone"'));
+  assert.ok(html.includes('id="dangerZone"'));
 });
 
