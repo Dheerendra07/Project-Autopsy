@@ -653,7 +653,63 @@ test("retries transient network failures without leaking error details", async (
   assert.equal(result.interpretation.themes.length, 1);
 });
 
-test("stops retrying when the provider asks for an excessive delay", async () => {
+test("honors a bounded long Retry-After for provider throttling", async () => {
+  let fetchCalls = 0;
+  const retryDelays: number[] = [];
+
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls += 1;
+
+    if (fetchCalls === 1) {
+      return new Response(
+        JSON.stringify({
+          error: { status: "slow_down" }
+        }),
+        {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": "60" }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
+      }),
+      { status: 200 }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-3.8-flash",
+      timeoutMs: 5_000
+    },
+    fakeFetch,
+    undefined,
+    {
+      sleep: async (milliseconds) => {
+        retryDelays.push(milliseconds);
+      },
+      random: () => 0
+    }
+  );
+
+  assert.equal(result.cacheHit, false);
+  assert.equal(fetchCalls, 2);
+  assert.deepEqual(retryDelays, [60_000]);
+});
+
+test("stops retrying when the provider asks for a delay beyond the configured bound", async () => {
   let fetchCalls = 0;
 
   const fakeFetch: typeof fetch = async () => {
@@ -664,7 +720,7 @@ test("stops retrying when the provider asks for an excessive delay", async () =>
       }),
       {
         status: 429,
-        headers: { "content-type": "application/json", "retry-after": "60" }
+        headers: { "content-type": "application/json", "retry-after": "61" }
       }
     );
   };
