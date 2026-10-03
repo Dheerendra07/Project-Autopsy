@@ -314,6 +314,8 @@ export function readAiProviderConfig(
   }
 
   const model = source.AI_MODEL?.trim() || "gemini-3.8-flash";
+  const fallbackModel =
+    source.AI_FALLBACK_MODEL?.trim() || "gemini-3.7-flash";
   const parsedTimeout = Number(source.AI_TIMEOUT_MS ?? 30_000);
 
   if (!Number.isInteger(parsedTimeout) || parsedTimeout < 1_000 || parsedTimeout > 120_000) {
@@ -326,6 +328,7 @@ export function readAiProviderConfig(
     apiKey,
     baseUrl: normalizedBaseUrl,
     model,
+    fallbackModel: fallbackModel === model ? undefined : fallbackModel,
     timeoutMs: parsedTimeout
   };
 }
@@ -504,87 +507,139 @@ export async function generateAiInterpretation(
     );
   }
 
-  const cacheKey = cache
-    ? buildAiInterpretationCacheKey(report.fingerprint, config.model)
-    : null;
+  const models: string[] = [];
+  for (const candidate of [config.model, config.fallbackModel]) {
+    if (candidate && !models.includes(candidate)) {
+      models.push(candidate);
+    }
+  }
 
-  if (cache && cacheKey) {
-    try {
-      const cached = await cache.get(cacheKey);
+  if (models.length === 0) {
+    throw new AiInterpretationNotConfiguredError(
+      "No AI interpretation model is configured."
+    );
+  }
 
-      if (cached) {
-        return {
-          ...cached,
-          cacheHit: true
-        };
+  if (cache) {
+    for (const model of models) {
+      const cacheKey = buildAiInterpretationCacheKey(
+        report.fingerprint,
+        model
+      );
+
+      try {
+        const cached = await cache.get(cacheKey);
+
+        if (cached) {
+          return {
+            ...cached,
+            cacheHit: true
+          };
+        }
+      } catch {
+        // Cache is an optimization. A cache read failure must not block AI interpretation.
       }
-    } catch {
-      // Cache is an optimization. A cache read failure must not block AI interpretation.
     }
   }
 
   const sleepFn = runtime?.sleep ?? sleep;
   const randomFn = runtime?.random ?? Math.random;
   const nowFn = runtime?.now ?? Date.now;
-  const deadlineMs = nowFn() + AI_PROVIDER_MAX_TOTAL_TIME_MS;
 
-  for (
-    let attempt = 1;
-    attempt <= AI_PROVIDER_MAX_ATTEMPTS;
-    attempt += 1
-  ) {
-    const remainingMs = deadlineMs - nowFn();
+  for (const [modelIndex, model] of models.entries()) {
+    const deadlineMs = nowFn() + AI_PROVIDER_MAX_TOTAL_TIME_MS;
 
-    if (remainingMs <= 0) {
-      throw new AiInterpretationProviderError(
-        "AI provider retry deadline exceeded."
-      );
-    }
+    for (
+      let attempt = 1;
+      attempt <= AI_PROVIDER_MAX_ATTEMPTS;
+      attempt += 1
+    ) {
+      const remainingMs = deadlineMs - nowFn();
 
-    const controller = new AbortController();
-    const timeoutMs = Math.min(config.timeoutMs, remainingMs);
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      if (remainingMs <= 0) {
+        if (modelIndex < models.length - 1) {
+          break;
+        }
 
-    try {
-      let response: Response;
+        throw new AiInterpretationProviderError(
+          "AI provider retry deadline exceeded."
+        );
+      }
+
+      const controller = new AbortController();
+      const timeoutMs = Math.min(config.timeoutMs, remainingMs);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
       try {
-        response = await fetchFn(
-          config.baseUrl + "/interactions",
-          {
-            method: "POST",
-            headers: {
-              "x-goog-api-key": config.apiKey,
-              "content-type": "application/json"
-            },
-            "redirect": "error",
-            body: JSON.stringify({
-              model: config.model,
-              system_instruction: system,
-              input: user,
-              response_format: [
-                {
-                  type: "text",
-                  mime_type: "application/json",
-                  schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+        let response: Response;
+
+        try {
+          response = await fetchFn(
+            config.baseUrl + "/interactions",
+            {
+              method: "POST",
+              headers: {
+                "x-goog-api-key": config.apiKey,
+                "content-type": "application/json"
+              },
+              "redirect": "error",
+              body: JSON.stringify({
+                model,
+                system_instruction: system,
+                input: user,
+                response_format: [
+                  {
+                    type: "text",
+                    mime_type: "application/json",
+                    schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+                  }
+                ],
+                generation_config: {
+                  thinking_level: "medium",
+                  max_output_tokens: 4_096
                 }
-              ],
-              generation_config: {
-                thinking_level: "medium",
-                max_output_tokens: 4_096
+              }),
+              signal: controller.signal
+            }
+          );
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.name === "AbortError"
+          ) {
+            if (attempt === AI_PROVIDER_MAX_ATTEMPTS) {
+              if (modelIndex < models.length - 1) {
+                break;
               }
-            }),
-            signal: controller.signal
+
+              throw new AiInterpretationProviderError(
+                "AI provider request timed out."
+              );
+            }
+
+            const retryDelayMs = calculateRetryDelayMs(
+              null,
+              attempt,
+              nowFn(),
+              randomFn
+            );
+
+            ensureRetryTimeAvailable(
+              retryDelayMs,
+              deadlineMs,
+              nowFn
+            );
+            await sleepFn(retryDelayMs);
+            continue;
           }
-        );
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.name === "AbortError"
-        ) {
+
           if (attempt === AI_PROVIDER_MAX_ATTEMPTS) {
+            if (modelIndex < models.length - 1) {
+              break;
+            }
+
             throw new AiInterpretationProviderError(
-              "AI provider request timed out."
+              "AI provider request failed."
             );
           }
 
@@ -595,12 +650,6 @@ export async function generateAiInterpretation(
             randomFn
           );
 
-          if (retryDelayMs === null) {
-            throw new AiInterpretationProviderError(
-              "AI provider retry delay is outside the configured limit."
-            );
-          }
-
           ensureRetryTimeAvailable(
             retryDelayMs,
             deadlineMs,
@@ -610,133 +659,142 @@ export async function generateAiInterpretation(
           continue;
         }
 
-        if (attempt === AI_PROVIDER_MAX_ATTEMPTS) {
-          throw new AiInterpretationProviderError(
-            "AI provider request failed."
+        if (!response.ok) {
+          const errorCode = await readProviderErrorCode(response);
+          const retryAfterMs = parseRetryAfterMs(
+            response.headers.get("retry-after"),
+            nowFn()
           );
-        }
-
-        const retryDelayMs = calculateRetryDelayMs(
-          null,
-          attempt,
-          nowFn(),
-          randomFn
-        );
-
-        ensureRetryTimeAvailable(
-          retryDelayMs,
-          deadlineMs,
-          nowFn
-        );
-        await sleepFn(retryDelayMs);
-        continue;
-      }
-
-      if (!response.ok) {
-        const errorCode = await readProviderErrorCode(response);
-
-        if (
-          attempt < AI_PROVIDER_MAX_ATTEMPTS &&
-          isRetryableProviderResponse(response, errorCode)
-        ) {
-          const retryDelayMs = calculateRetryDelayMs(
+          const retryable = isRetryableProviderResponse(
             response,
-            attempt,
-            nowFn(),
-            randomFn
+            errorCode
           );
 
-          if (retryDelayMs === null) {
-            throw new AiInterpretationProviderError(
-              "AI provider retry delay is outside the configured limit."
+          const primaryFallbackEligible =
+            modelIndex === 0 &&
+            models.length > 1 &&
+            retryable &&
+            (
+              response.status === 503 ||
+              (
+                retryAfterMs !== null &&
+                retryAfterMs > AI_PROVIDER_MAX_RETRY_DELAY_MS
+              )
             );
+
+          if (primaryFallbackEligible) {
+            break;
           }
 
-          ensureRetryTimeAvailable(
-            retryDelayMs,
-            deadlineMs,
-            nowFn
+          if (attempt < AI_PROVIDER_MAX_ATTEMPTS && retryable) {
+            const retryDelayMs = calculateRetryDelayMs(
+              response,
+              attempt,
+              nowFn(),
+              randomFn
+            );
+
+            if (retryDelayMs === null) {
+              if (modelIndex < models.length - 1) {
+                break;
+              }
+
+              throw new AiInterpretationProviderError(
+                "AI provider retry delay is outside the configured limit."
+              );
+            }
+
+            ensureRetryTimeAvailable(
+              retryDelayMs,
+              deadlineMs,
+              nowFn
+            );
+            await sleepFn(retryDelayMs);
+            continue;
+          }
+
+          throw new AiInterpretationProviderError(
+            "AI provider request failed with HTTP " +
+              String(response.status) +
+              "."
           );
-          await sleepFn(retryDelayMs);
-          continue;
         }
 
-        throw new AiInterpretationProviderError(
-          "AI provider request failed with HTTP " +
-            String(response.status) +
-            "."
-        );
-      }
+        const raw = await readResponseText(response);
+        let body: unknown;
 
-      const raw = await readResponseText(response);
-      let body: unknown;
-
-      try {
-        body = JSON.parse(raw);
-      } catch {
-        throw new AiInterpretationProviderError(
-          "AI provider returned invalid JSON."
-        );
-      }
-
-      const rawText = parseProviderResponse(body);
-      let parsed: unknown;
-
-      try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        throw new AiInterpretationProviderError(
-          "AI provider returned non-JSON structured output."
-        );
-      }
-
-      const interpretation = interpretationOutputSchema.safeParse(parsed);
-
-      if (!interpretation.success) {
-        throw new AiInterpretationValidationError(
-          "AI provider output did not satisfy the interpretation contract."
-        );
-      }
-
-      validateEvidenceKeys(interpretation.data, grounding);
-
-      const result: InterpretationResult = {
-        interpretationVersion: INTERPRETATION_VERSION,
-        provider: "gemini",
-        model: config.model,
-        reportFingerprint: report.fingerprint,
-        groundingClaimCount: grounding.length,
-        generatedAt: new Date().toISOString(),
-        cacheHit: false,
-        interpretation: interpretation.data
-      };
-
-      if (cache && cacheKey) {
         try {
-          await cache.set(cacheKey, result);
+          body = JSON.parse(raw);
         } catch {
-          // Cache is an optimization. A cache write failure must not fail a valid provider result.
+          throw new AiInterpretationProviderError(
+            "AI provider returned invalid JSON."
+          );
         }
-      }
 
-      return result;
-    } catch (error) {
-      if (
-        error instanceof AiInterpretationProviderError ||
-        error instanceof AiInterpretationValidationError
-      ) {
-        throw error;
-      }
+        const rawText = parseProviderResponse(body);
+        let parsed: unknown;
 
-      throw new AiInterpretationProviderError(
-        "AI provider request failed."
-      );
-    } finally {
-      clearTimeout(timeout);
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          throw new AiInterpretationProviderError(
+            "AI provider returned non-JSON structured output."
+          );
+        }
+
+        const interpretation = interpretationOutputSchema.safeParse(parsed);
+
+        if (!interpretation.success) {
+          throw new AiInterpretationValidationError(
+            "AI provider output did not satisfy the interpretation contract."
+          );
+        }
+
+        validateEvidenceKeys(interpretation.data, grounding);
+
+        const result: InterpretationResult = {
+          interpretationVersion: INTERPRETATION_VERSION,
+          provider: "gemini",
+          model,
+          reportFingerprint: report.fingerprint,
+          groundingClaimCount: grounding.length,
+          generatedAt: new Date().toISOString(),
+          cacheHit: false,
+          interpretation: interpretation.data
+        };
+
+        if (cache) {
+          const cacheKey = buildAiInterpretationCacheKey(
+            report.fingerprint,
+            model
+          );
+
+          try {
+            await cache.set(cacheKey, result);
+          } catch {
+            // Cache is an optimization. A cache write failure must not fail a valid provider result.
+          }
+        }
+
+        return result;
+      } catch (error) {
+        if (
+          error instanceof AiInterpretationProviderError ||
+          error instanceof AiInterpretationValidationError
+        ) {
+          throw error;
+        }
+
+        throw new AiInterpretationProviderError(
+          "AI provider request failed."
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
     }
   }
 
   throw new AiInterpretationProviderError(
-    "AI provider request failed."
+    "AI provider request failed for all configured models."
   );
 }
