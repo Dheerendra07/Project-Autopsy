@@ -31,9 +31,18 @@ export class AiInterpretationNotConfiguredError extends Error {
 }
 
 export class AiInterpretationProviderError extends Error {
-  constructor(message: string) {
+  readonly statusCode?: number;
+  readonly retryAfterMs?: number;
+
+  constructor(
+    message: string,
+    statusCode?: number,
+    retryAfterMs?: number
+  ) {
     super(message);
     this.name = "AiInterpretationProviderError";
+    this.statusCode = statusCode;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -322,10 +331,15 @@ export function readAiProviderConfig(
     );
   }
 
+  const fallbackModel =
+    source.AI_FALLBACK_MODEL?.trim() || "gemini-3.7-flash";
+
   return {
     apiKey,
     baseUrl: normalizedBaseUrl,
     model,
+    fallbackModel:
+      fallbackModel === model ? undefined : fallbackModel,
     timeoutMs: parsedTimeout
   };
 }
@@ -501,35 +515,61 @@ export async function generateAiInterpretation(
     );
   }
 
-  const cacheKey = cache
-    ? buildAiInterpretationCacheKey(report.fingerprint, config.model)
-    : null;
+  const models = [
+    config.model,
+    config.fallbackModel
+  ].filter(
+    (model, index, all) =>
+      typeof model === "string" &&
+      model.trim() &&
+      all.indexOf(model) === index
+  );
 
-  if (cache && cacheKey) {
-    try {
-      const cached = await cache.get(cacheKey);
+  if (models.length === 0) {
+    throw new AiInterpretationNotConfiguredError(
+      "No AI interpretation model is configured."
+    );
+  }
 
-      if (cached) {
-        return {
-          ...cached,
-          cacheHit: true
-        };
+  if (cache) {
+    for (const model of models) {
+      const cacheKey = buildAiInterpretationCacheKey(
+        report.fingerprint,
+        model
+      );
+
+      try {
+        const cached = await cache.get(cacheKey);
+
+        if (cached) {
+          return {
+            ...cached,
+            cacheHit: true
+          };
+        }
+      } catch {
+        // Cache is an optimization. A cache read failure must not block AI interpretation.
       }
-    } catch {
-      // Cache is an optimization. A cache read failure must not block AI interpretation.
     }
   }
 
   const sleepFn = runtime?.sleep ?? sleep;
   const randomFn = runtime?.random ?? Math.random;
   const nowFn = runtime?.now ?? Date.now;
-  const deadlineMs = nowFn() + AI_PROVIDER_MAX_TOTAL_TIME_MS;
 
   for (
-    let attempt = 1;
-    attempt <= AI_PROVIDER_MAX_ATTEMPTS;
-    attempt += 1
+    let modelIndex = 0;
+    modelIndex < models.length;
+    modelIndex += 1
   ) {
+    const model = models[modelIndex];
+    const deadlineMs = nowFn() + AI_PROVIDER_MAX_TOTAL_TIME_MS;
+
+    for (
+      let attempt = 1;
+      attempt <= AI_PROVIDER_MAX_ATTEMPTS;
+      attempt += 1
+    ) {
     const remainingMs = deadlineMs - nowFn();
 
     if (remainingMs <= 0) {
@@ -556,7 +596,7 @@ export async function generateAiInterpretation(
             },
             "redirect": "error",
             body: JSON.stringify({
-              model: config.model,
+              model,
               system_instruction: system,
               input: user,
               response_format: [
@@ -631,6 +671,18 @@ export async function generateAiInterpretation(
 
       if (!response.ok) {
         const errorCode = await readProviderErrorCode(response);
+        const retryAfterMs = parseRetryAfterMs(
+          response.headers.get("retry-after"),
+          nowFn()
+        );
+
+        if (
+          response.status === 503 &&
+          modelIndex === 0 &&
+          models.length > 1
+        ) {
+          break;
+        }
 
         if (
           attempt < AI_PROVIDER_MAX_ATTEMPTS &&
@@ -661,7 +713,9 @@ export async function generateAiInterpretation(
         throw new AiInterpretationProviderError(
           "AI provider request failed with HTTP " +
             String(response.status) +
-            "."
+            ".",
+          response.status,
+          retryAfterMs ?? undefined
         );
       }
 
@@ -700,7 +754,7 @@ export async function generateAiInterpretation(
       const result: InterpretationResult = {
         interpretationVersion: INTERPRETATION_VERSION,
         provider: "gemini",
-        model: config.model,
+        model,
         reportFingerprint: report.fingerprint,
         groundingClaimCount: grounding.length,
         generatedAt: new Date().toISOString(),
@@ -708,7 +762,12 @@ export async function generateAiInterpretation(
         interpretation: interpretation.data
       };
 
-      if (cache && cacheKey) {
+      if (cache) {
+        const cacheKey = buildAiInterpretationCacheKey(
+          report.fingerprint,
+          model
+        );
+
         try {
           await cache.set(cacheKey, result);
         } catch {
@@ -731,6 +790,12 @@ export async function generateAiInterpretation(
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  if (models.length > 1) {
+    throw new AiInterpretationProviderError(
+      "AI provider was temporarily unavailable."
+    );
   }
 
   throw new AiInterpretationProviderError(
