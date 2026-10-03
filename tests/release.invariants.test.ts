@@ -373,7 +373,7 @@ test("frontend overview exposes command-center snapshot context", () => {
     "Exact run boundary",
     "Evidence posture",
     "What this snapshot can support",
-    "Evidence → analysis → inspection"
+    "Every output has a next step"
   ]) {
     assert.ok(surface.includes(marker), "missing overview command-center marker: " + marker);
   }
@@ -2123,7 +2123,10 @@ test("frontend labels snapshot freshness consistently across workspace views", (
   assert.ok(appJs.includes("Snapshot current"));
   assert.ok(appJs.includes("Snapshot stale"));
   assert.ok(appJs.includes("Analysis updating"));
-  assert.ok(appJs.includes("function shell(title,desc,actions){var toolbar=viewFilterMarkup(),snap=snapshotState()"));
+  assert.ok(appJs.includes("function shell(title,desc,actions){"));
+  assert.ok(appJs.includes("var snap=snapshotState();"));
+  assert.ok(appJs.includes("VIEW_GUIDANCE[S.view]"));
+  assert.ok(appJs.includes("view-guide"));
   assert.ok(appJs.includes("snapshot-pill"));
 });
 
@@ -2651,7 +2654,7 @@ test("workspace UI system keeps navigation scrollable and page guidance explicit
     "function syncWorkspaceMeta()",
     "document.body.dataset.view=v;",
     "view-guide",
-    "What to do here"
+    "WHAT TO DO HERE"
   ]) {
     assert.ok(appJs.includes(marker), "missing guided workspace interaction marker: " + marker);
   }
