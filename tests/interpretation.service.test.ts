@@ -519,6 +519,157 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
   assert.deepEqual(retryDelays, [0, 0]);
 });
 
+test("falls back to the configured Gemini model on primary 503", async () => {
+  const requestedModels: string[] = [];
+
+  const fakeFetch: typeof fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+    requestedModels.push(String(body.model));
+
+    if (body.model === "gemini-3.8-flash") {
+      return new Response(
+        JSON.stringify({ error: { status: "service_unavailable" } }),
+        {
+          status: 503,
+          headers: {
+            "content-type": "application/json",
+            "retry-after": "120"
+          }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-3.8-flash",
+      fallbackModel: "gemini-3.7-flash",
+      timeoutMs: 5_000
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.provider, "gemini");
+  assert.equal(result.model, "gemini-3.7-flash");
+  assert.equal(result.cacheHit, false);
+  assert.deepEqual(requestedModels, [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash"
+  ]);
+});
+
+test("falls back when primary Gemini Retry-After exceeds the bounded retry window", async () => {
+  const requestedModels: string[] = [];
+
+  const fakeFetch: typeof fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+    requestedModels.push(String(body.model));
+
+    if (body.model === "gemini-3.8-flash") {
+      return new Response(
+        JSON.stringify({ error: { status: "slow_down" } }),
+        {
+          status: 429,
+          headers: {
+            "content-type": "application/json",
+            "retry-after": "121"
+          }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-3.8-flash",
+      fallbackModel: "gemini-3.7-flash",
+      timeoutMs: 5_000
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.model, "gemini-3.7-flash");
+  assert.deepEqual(requestedModels, [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash"
+  ]);
+});
+
+test("keeps non-retryable exhausted-credit 429 responses on the configured primary model", async () => {
+  let fetchCalls = 0;
+
+  const fakeFetch: typeof fetch = async (_input, init) => {
+    fetchCalls += 1;
+    const body = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+    assert.equal(body.model, "gemini-3.8-flash");
+
+    return new Response(
+      JSON.stringify({ error: { status: "RESOURCE_EXHAUSTED" } }),
+      {
+        status: 429,
+        headers: { "content-type": "application/json" }
+      }
+    );
+  };
+
+  await assert.rejects(
+    () =>
+      generateAiInterpretation(
+        reportFixture(),
+        {
+          apiKey: "test-key",
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+          model: "gemini-3.8-flash",
+          fallbackModel: "gemini-3.7-flash",
+          timeoutMs: 5_000
+        },
+        fakeFetch
+      ),
+    (error: unknown) => {
+      assert.ok(error instanceof AiInterpretationProviderError);
+      assert.match((error as Error).message, /HTTP 429/);
+      return true;
+    }
+  );
+
+  assert.equal(fetchCalls, 1);
+});
+
 test("does not retry exhausted-credit 429 responses", async () => {
   let fetchCalls = 0;
 

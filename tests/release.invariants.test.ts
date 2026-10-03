@@ -154,6 +154,9 @@ test("production smoke covers public surface and protected API boundaries", () =
     "AUTOPSY_PRODUCTION_URL",
     "AUTOPSY_BOOTSTRAP_EMAIL",
     "AUTOPSY_BOOTSTRAP_PASSWORD",
+    "AUTOPSY_EXPECTED_AI_PROVIDER",
+    "AUTOPSY_EXPECTED_AI_MODEL",
+    "AUTOPSY_EXPECTED_AI_FALLBACK_MODEL",
     '"/favicon.svg"',
     '"/favicon.ico"',
     '"/health"',
@@ -191,6 +194,9 @@ test("production smoke covers public surface and protected API boundaries", () =
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_EMAIL"));
   assert.ok(workflow.includes("secrets.AUTOPSY_BOOTSTRAP_PASSWORD"));
   assert.ok(workflow.includes("node scripts/production-smoke.mjs"));
+  assert.ok(workflow.includes("AUTOPSY_EXPECTED_AI_FALLBACK_MODEL: gemini-3.7-flash"));
+  assert.ok(script.includes("const expectedAiFallbackModel"));
+  assert.ok(script.includes("[expectedAiModel, expectedAiFallbackModel].includes"));
 });
 test("Operations queue health checks are bounded by the operational timeout", () => {
   const service = readRepoFile("src/modules/observability/observability.service.ts");
@@ -1795,6 +1801,8 @@ test("environment example stays synchronized with the runtime configuration", ()
   const env = readRepoFile("src/config/env.ts");
   const example = readRepoFile(".env.example");
   const names = [...env.matchAll(/^\s{4}([A-Z][A-Z0-9_]+):/gm)].map((match) => match[1]);
+  assert.ok(env.includes("AI_FALLBACK_MODEL"));
+  assert.ok(example.includes("AI_FALLBACK_MODEL=gemini-3.7-flash"));
   for (const name of names) {
     assert.ok(
       new RegExp("^" + name + "=", "m").test(example),
