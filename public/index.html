@@ -448,3 +448,68 @@ body{background:
 <script src="app.js" defer></script>
 </body>
 </html>
+
+/* Final product theme authority */
+.btn.primary,
+.import > #importButton.btn.primary{
+  background:linear-gradient(180deg,#9a9fff 0%,#7479e6 100%);
+  border-color:#a2a6ff;
+  color:#fff;
+  box-shadow:0 10px 26px rgba(116,121,230,.2);
+}
+.btn.primary:hover,
+.import > #importButton.btn.primary:hover{
+  background:linear-gradient(180deg,#a8acff 0%,#8186f0 100%);
+  border-color:#b0b4ff;
+}
+.banner{
+  background:linear-gradient(180deg,rgba(20,24,34,.96),rgba(14,17,24,.96));
+  border-color:#3a4153;
+}
+.overview-warning{
+  border-color:#4a476a;
+  background:rgba(139,143,247,.045);
+}
+.workspace-preview{
+  border-color:#303747;
+  background:
+    radial-gradient(450px 240px at 80% 0%,rgba(139,143,247,.1),transparent 62%),
+    linear-gradient(180deg,#141923 0%,#0f131a 100%);
+}
+.preview-chrome{background:rgba(10,13,19,.56)}
+.preview-mark{
+  border-color:#4b5278;
+  color:var(--gold);
+  background:rgba(139,143,247,.07);
+}
+.preview-nav{background:rgba(10,13,19,.32)}
+.preview-nav-item.active{
+  background:rgba(139,143,247,.09);
+  border-color:#464d70;
+}
+.preview-nav-item.active span{color:var(--gold)}
+.preview-metrics > div{
+  border-color:rgba(255,255,255,.07);
+  background:rgba(18,22,31,.74);
+}
+.preview-panel{background:rgba(11,15,22,.62);border-color:rgba(255,255,255,.07)}
+.preview-panel-head span:last-child{color:#a8adff}
+.preview-line i{border-color:#4f5675;background:#23283a;box-shadow:0 0 0 3px rgba(139,143,247,.025)}
+.preview-footline{
+  border-color:rgba(139,143,247,.14);
+  background:rgba(139,143,247,.045);
+}
+.preview-footline > span{background:var(--gold);box-shadow:0 0 0 4px rgba(139,143,247,.07)}
+.history-signalbar,
+.runtime-lineage,
+.ops-posture{
+  background:linear-gradient(180deg,rgba(19,23,31,.98),rgba(14,18,24,.98));
+}
+.getting-step{background:linear-gradient(180deg,rgba(18,22,30,.88),rgba(13,17,23,.78))}
+.recent-repositories{border-top-color:#29313e}
+.recent-repo{border-color:#2b3340;background:#12161e}
+.recent-repo:hover{border-color:#49536a}
+
+/* Final theme regression guardrail: warnings remain semantic, not decorative */
+.pill.warn{color:#dfb86a;border-color:#554d38}
+
