@@ -1125,7 +1125,7 @@
           label='Refresh report';
         }else if(/AI_INTERPRETATION_NOT_CONFIGURED|AI interpretation is not configured/i.test(message)){
           title='Insights are not configured';
-          body='The current report remains available. Server-side AI interpretation is not configured for this workspace.';
+          body='The current report remains available. Server-side interpretation is not configured for this workspace.';
         }else if(/AI_INTERPRETATION_PROVIDER_ERROR|AI provider/i.test(message)){
           title='Insights provider unavailable';
           body='The report is intact, but the configured AI provider did not complete the interpretation request. Retry after the provider is available.';
