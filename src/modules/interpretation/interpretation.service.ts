@@ -559,14 +559,16 @@ export async function generateAiInterpretation(
               model: config.model,
               system_instruction: system,
               input: user,
-              response_format: {
-                type: "text",
-                mime_type: "application/json",
-                schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
-              },
+              response_format: [
+                {
+                  type: "text",
+                  mime_type: "application/json",
+                  schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+                }
+              ],
               generation_config: {
                 thinking_level: "medium",
-                max_output_tokens: 1_600
+                max_output_tokens: 4_096
               }
             }),
             signal: controller.signal

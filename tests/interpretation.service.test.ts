@@ -304,7 +304,71 @@ test("generates structured interpretation and preserves report fingerprint", asy
   assert.equal(result.model, "gemini-3.8-flash");
   assert.equal(result.reportFingerprint, "f".repeat(64));
   assert.equal(result.groundingClaimCount, 2);
-  assert.match(capturedBody, /response_format/);
+  const requestBody = JSON.parse(capturedBody) as {
+    response_format?: unknown;
+    generation_config?: {
+      thinking_level?: string;
+      max_output_tokens?: number;
+    };
+  };
+  assert.ok(Array.isArray(requestBody.response_format));
+  assert.deepEqual(requestBody.response_format, [
+    {
+      type: "text",
+      mime_type: "application/json",
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          executiveSummary: { type: "string" },
+          themes: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                id: { type: "string" },
+                title: { type: "string" },
+                analysis: { type: "string" },
+                evidenceKeys: {
+                  type: "array",
+                  items: { type: "string" }
+                }
+              },
+              required: ["id", "title", "analysis", "evidenceKeys"]
+            }
+          },
+          investigationQuestions: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                question: { type: "string" },
+                evidenceKeys: {
+                  type: "array",
+                  items: { type: "string" }
+                }
+              },
+              required: ["question", "evidenceKeys"]
+            }
+          },
+          uncertainties: {
+            type: "array",
+            items: { type: "string" }
+          }
+        },
+        required: [
+          "executiveSummary",
+          "themes",
+          "investigationQuestions",
+          "uncertainties"
+        ]
+      }
+    }
+  ]);
+  assert.equal(requestBody.generation_config?.thinking_level, "medium");
+  assert.equal(requestBody.generation_config?.max_output_tokens, 4_096);
   assert.doesNotMatch(capturedBody, /test-key/);
 });
 
