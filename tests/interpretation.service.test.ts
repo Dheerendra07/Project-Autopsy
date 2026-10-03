@@ -268,7 +268,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
   const fakeFetch: typeof fetch = async (input, init) => {
     assert.equal(
       String(input),
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+      "https://generativelanguage.googleapis.com/v1beta/interactions"
     );
     assert.equal(
       new Headers(init?.headers).get("x-goog-api-key"),
