@@ -2607,4 +2607,24 @@ test("landing repository form keeps controls contained and action hierarchy expl
   assert.ok(html.includes("@media(max-width:760px)"));
   assert.ok(html.includes("@media(max-width:520px)"));
 });
+test("final UI theme uses the consolidated indigo/slate visual system", () => {
+  const html = readRepoFile("public/index.html");
+
+  for (const marker of [
+    ".import > #importButton.btn.primary{",
+    "background:linear-gradient(180deg,#9a9fff 0%,#7479e6 100%);",
+    ".workspace-preview{",
+    "rgba(139,143,247,.1)",
+    ".preview-footline{",
+    ".history-signalbar,",
+    ".recent-repo{border-color:#2b3340;background:#12161e}"
+  ]) {
+    assert.ok(html.includes(marker), "missing final UI theme marker: " + marker);
+  }
+
+  assert.ok(
+    html.lastIndexOf(".btn.primary,") > html.indexOf("/* Visual system consolidation */"),
+    "final CTA styling must be later than the legacy theme layers"
+  );
+});
 
