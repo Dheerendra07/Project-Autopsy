@@ -41,7 +41,7 @@ test("uses documented defaults for AI provider configuration", () => {
   const config = parseEnvironment(baseEnvironment());
 
   assert.equal(config.AI_BASE_URL, "https://generativelanguage.googleapis.com/v1beta");
-  assert.equal(config.AI_MODEL, "gemini-2.5-flash");
+  assert.equal(config.AI_MODEL, "gemini-3.8-flash");
   assert.equal(config.AI_TIMEOUT_MS, 30_000);
 });
 
