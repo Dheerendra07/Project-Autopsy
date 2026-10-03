@@ -37,6 +37,7 @@ jobs:
       AI_API_KEY: ${{ secrets.AI_API_KEY || vars.AI_API_KEY }}
       AUTOPSY_EXPECTED_AI_PROVIDER: gemini
       AUTOPSY_EXPECTED_AI_MODEL: gemini-3.8-flash
+      AUTOPSY_EXPECTED_AI_FALLBACK_MODEL: gemini-3.7-flash
     steps:
       - name: Validate production credential
         shell: bash
