@@ -62,3 +62,5 @@ jobs:
 
       - name: Run production smoke
         run: node scripts/production-smoke.mjs
+
+# Live Gemini E2E verification: rate-limit handling deployed.
