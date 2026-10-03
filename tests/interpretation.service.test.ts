@@ -15,7 +15,7 @@ test("uses a cached interpretation without calling the provider", async () => {
   const cachedResult = {
     interpretationVersion: "1.0" as const,
     provider: "gemini" as const,
-    model: "gemini-2.5-flash",
+    model: "gemini-3.8-flash",
     reportFingerprint: report.fingerprint,
     groundingClaimCount: 2,
     generatedAt: "2026-09-29T00:00:00.000Z",
@@ -40,7 +40,7 @@ test("uses a cached interpretation without calling the provider", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     async () => {
@@ -89,7 +89,7 @@ test("persists a fresh provider result after a cache miss", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -133,7 +133,7 @@ test("continues provider flow when cache read or write fails", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -268,7 +268,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
   const fakeFetch: typeof fetch = async (input, init) => {
     assert.equal(
       String(input),
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
     );
     assert.equal(
       new Headers(init?.headers).get("x-goog-api-key"),
@@ -294,17 +294,17 @@ test("generates structured interpretation and preserves report fingerprint", asy
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     fakeFetch
   );
 
   assert.equal(result.provider, "gemini");
-  assert.equal(result.model, "gemini-2.5-flash");
+  assert.equal(result.model, "gemini-3.8-flash");
   assert.equal(result.reportFingerprint, "f".repeat(64));
   assert.equal(result.groundingClaimCount, 2);
-  assert.match(capturedBody, /responseJsonSchema/);
+  assert.match(capturedBody, /response_format/);
   assert.doesNotMatch(capturedBody, /test-key/);
 });
 
@@ -342,7 +342,7 @@ test("rejects provider output that references unknown evidence", async () => {
         {
           apiKey: "test-key",
           baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-          model: "gemini-2.5-flash",
+          model: "gemini-3.8-flash",
           timeoutMs: 5_000
         },
         fakeFetch
@@ -365,7 +365,7 @@ test("maps upstream provider failures without exposing response bodies", async (
         {
           apiKey: "test-key",
           baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-          model: "gemini-2.5-flash",
+          model: "gemini-3.8-flash",
           timeoutMs: 5_000
         },
         fakeFetch
@@ -429,7 +429,7 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -470,7 +470,7 @@ test("does not retry exhausted-credit 429 responses", async () => {
         {
           apiKey: "test-key",
           baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-          model: "gemini-2.5-flash",
+          model: "gemini-3.8-flash",
           timeoutMs: 5_000
         },
         fakeFetch,
@@ -528,7 +528,7 @@ test("honors Retry-After before a temporary retry", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -574,7 +574,7 @@ test("retries transient network failures without leaking error details", async (
     {
       apiKey: "test-key",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -612,7 +612,7 @@ test("stops retrying when the provider asks for an excessive delay", async () =>
         {
           apiKey: "test-key",
           baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-          model: "gemini-2.5-flash",
+          model: "gemini-3.8-flash",
           timeoutMs: 5_000
         },
         fakeFetch,
