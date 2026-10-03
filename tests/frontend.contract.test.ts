@@ -201,6 +201,41 @@ test("developer command center is keyboard-first, contextual and accessible", ()
   );
 });
  
+test("evidence explorer exposes local evidence-family filters without extra API traffic", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+
+  for (const marker of [
+    'data-evidence-family="all"',
+    'data-evidence-family="git"',
+    'data-evidence-family="runtime"',
+    'data-evidence-family="schema"',
+    'id="evidenceScopeCount"',
+    'id="evidenceSearchCount"',
+    'id="evidenceEmpty"',
+    "EVIDENCE INVESTIGATION V2"
+  ]) {
+    assert.ok(html.includes(marker), "missing evidence investigation UI marker: " + marker);
+  }
+
+  for (const marker of [
+    "evidenceFamily:'all'",
+    "function evidencePage(){",
+    "var activeFamily=S.evidenceFamily||'all';",
+    "data-family=",
+    "var familyOk=family==='all'||row.getAttribute('data-family')===family;",
+    "S.evidenceFamily='all'",
+    "[data-evidence-family]",
+    "q.dispatchEvent(evt)"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing evidence investigation interaction marker: " + marker);
+  }
+
+  assert.ok(
+    appJs.includes("Search and family filters stay local to records already loaded into this snapshot; they never trigger extra API traffic.")
+  );
+});
+ 
 test("frontend does not embed an API access secret", () => {
   const secretAssignment = /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY|x-autopsy-api-key)\s*[:=]\s*['"][^'"]{12,}['"]/i;
   assert.equal(secretAssignment.test(html), false);
