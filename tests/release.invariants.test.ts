@@ -2766,6 +2766,11 @@ test("developer command center preserves evidence-first workspace boundaries", (
   assert.ok(appJs.includes("if(S.view==='operations')return loadOperations(true)"));
   assert.ok(appJs.includes("if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');"));
   assert.ok(appJs.includes("if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}"));
+  assert.ok(appJs.includes("var searchInput=$('viewSearch')||($('evidenceSearch')&&S.view==='evidence'?$('evidenceSearch'):null);"));
+  assert.ok(appJs.includes("searchInput.focus();return;"));
+  assert.ok(appJs.includes("if(searchInput.id==='viewSearch'){S.viewFilter[S.view]='';applyViewFilter();}"));
+  assert.ok(appJs.includes("searchInput.dispatchEvent(evt);"));
+
 });
  
 test("evidence-family filtering stays a client-side projection over loaded records", () => {
