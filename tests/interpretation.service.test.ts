@@ -265,7 +265,15 @@ test("builds deterministic grounded prompt without exposing report source URL", 
 
 test("generates structured interpretation and preserves report fingerprint", async () => {
   let capturedBody = "";
-  const fakeFetch: typeof fetch = async (_input, init) => {
+  const fakeFetch: typeof fetch = async (input, init) => {
+    assert.equal(
+      String(input),
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    );
+    assert.equal(
+      new Headers(init?.headers).get("x-goog-api-key"),
+      "test-key"
+    );
     capturedBody = String(init?.body ?? "");
     return new Response(
       JSON.stringify({
