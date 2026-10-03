@@ -554,12 +554,7 @@ export async function generateAiInterpretation(
   const randomFn = runtime?.random ?? Math.random;
   const nowFn = runtime?.now ?? Date.now;
 
-  for (
-    let modelIndex = 0;
-    modelIndex < models.length;
-    modelIndex += 1
-  ) {
-    const model = models[modelIndex];
+  for (const [modelIndex, model] of models.entries()) {
     const deadlineMs = nowFn() + AI_PROVIDER_MAX_TOTAL_TIME_MS;
 
     for (
