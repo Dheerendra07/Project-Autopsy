@@ -42,6 +42,7 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
     executiveSummary: { type: "string" },
     themes: {
       type: "array",
+      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,
@@ -51,6 +52,8 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
           analysis: { type: "string" },
           evidenceKeys: {
             type: "array",
+            minItems: 1,
+            maxItems: 5,
             items: { type: "string" }
           }
         },
@@ -59,6 +62,7 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
     },
     investigationQuestions: {
       type: "array",
+      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,
@@ -66,6 +70,8 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
           question: { type: "string" },
           evidenceKeys: {
             type: "array",
+            minItems: 1,
+            maxItems: 3,
             items: { type: "string" }
           }
         },
@@ -74,6 +80,7 @@ export const INTERPRETATION_OUTPUT_JSON_SCHEMA = {
     },
     uncertainties: {
       type: "array",
+      maxItems: 8,
       items: { type: "string" }
     }
   },

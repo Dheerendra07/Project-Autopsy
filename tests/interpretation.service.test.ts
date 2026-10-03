@@ -304,6 +304,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
   assert.equal(result.model, "gemini-3.8-flash");
   assert.equal(result.reportFingerprint, "f".repeat(64));
   assert.equal(result.groundingClaimCount, 2);
+  assert.match(capturedBody, /Return only the requested JSON object with exactly the schema-defined fields and no additional properties/);
   const requestBody = JSON.parse(capturedBody) as {
     response_format?: unknown;
     generation_config?: {
@@ -323,6 +324,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
           executiveSummary: { type: "string" },
           themes: {
             type: "array",
+            maxItems: 6,
             items: {
               type: "object",
               additionalProperties: false,
@@ -332,6 +334,8 @@ test("generates structured interpretation and preserves report fingerprint", asy
                 analysis: { type: "string" },
                 evidenceKeys: {
                   type: "array",
+                  minItems: 1,
+                  maxItems: 5,
                   items: { type: "string" }
                 }
               },
@@ -340,6 +344,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
           },
           investigationQuestions: {
             type: "array",
+            maxItems: 6,
             items: {
               type: "object",
               additionalProperties: false,
@@ -347,6 +352,8 @@ test("generates structured interpretation and preserves report fingerprint", asy
                 question: { type: "string" },
                 evidenceKeys: {
                   type: "array",
+                  minItems: 1,
+                  maxItems: 3,
                   items: { type: "string" }
                 }
               },
@@ -355,6 +362,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
           },
           uncertainties: {
             type: "array",
+            maxItems: 8,
             items: { type: "string" }
           }
         },
