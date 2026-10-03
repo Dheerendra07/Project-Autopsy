@@ -1477,7 +1477,7 @@
     landing();
     if(location.hash)history.replaceState(null,'',location.pathname+location.search);
   };
-  applyTheme(themeStorageGet()||'dark',false);
+  applyTheme(themeStorageGet()||document.documentElement.dataset.theme||'dark',false);
   $('themeToggle').onclick=function(){applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light',true)};
   $('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('saveRepoAccess').onclick=function(){saveRepositoryAccess(false)};$('clearRepoAccess').onclick=function(){saveRepositoryAccess(true)};$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){
     try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}
