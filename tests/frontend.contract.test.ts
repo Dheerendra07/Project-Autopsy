@@ -140,11 +140,17 @@ test("product frontend supports persistent dark and light themes without inline 
     themeJs.includes("document.documentElement.dataset.theme"),
     "theme bootstrap must set the root theme state"
   );
-  assert.ok(appJs.includes("function applyTheme(theme,announce)"));
-  assert.ok(appJs.includes("function syncThemeButton()"));
+  assert.ok(appJs.includes("function applyTheme(theme,announce,persistPreference)"));
+  assert.ok(appJs.includes("if(persistPreference!==false)themeStorageSet(mode);"));
+  assert.ok(appJs.includes("var storedTheme=themeStorageGet();"));
+  assert.ok(appJs.includes("applyTheme(storedTheme||document.documentElement.dataset.theme||'dark',false,!!storedTheme)"));
+  assert.ok(appJs.includes("window.addEventListener('storage',function(e)"));
+  assert.ok(appJs.includes("applyTheme(e.newValue,false,false)"));
   assert.ok(appJs.includes("$('themeToggle').onclick"));
+  assert.ok(appJs.includes("light?'☾':'☀'"));
   assert.ok(html.includes('html[data-theme="light"]'));
   assert.ok(html.includes("--ui-accent:#6366f1"));
+  assert.ok(html.includes("--ui-bg:#0a0f17"));
   assert.ok(html.includes("color-scheme:light"));
 });
 
