@@ -34,7 +34,7 @@ export interface AiInterpretation {
 
 export interface InterpretationResult {
   interpretationVersion: typeof INTERPRETATION_VERSION;
-  provider: "openai";
+  provider: "gemini";
   model: string;
   reportFingerprint: string;
   groundingClaimCount: number;
