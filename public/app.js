@@ -1492,16 +1492,17 @@
   document.querySelector('.skip-link').addEventListener('click',function(e){
     var href=this.getAttribute('href')||'';
     var target=href.charAt(0)==='#'?$(href.slice(1)):null;
-    if(target&&target.hidden){
+    var targetHidden=target&&target.closest('[hidden]');
+    if(target&&(target.hidden||targetHidden)){
       var fallback=$('url');
-      if(fallback&&!fallback.hidden){
+      if(fallback&&!fallback.closest('[hidden]')){
         e.preventDefault();
         fallback.focus();
         fallback.scrollIntoView({block:'center'});
       }
       return;
     }
-    if(target&&typeof target.focus==='function'){
+    if(target&&typeof target.focus==='function'&&!target.closest('[hidden]')){
       e.preventDefault();
       target.focus();
       target.scrollIntoView({block:'center'});
