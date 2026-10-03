@@ -2693,6 +2693,20 @@ test("settings surface remains scroll-safe for long account state", () => {
   assert.ok(html.includes('id="dangerZone"'));
 });
 
+test("workspace source health rail remains visible for partial data failures", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(appJs.includes("function viewSourceStatusMarkup()"));
+  assert.ok(appJs.includes("S.dataErrors.filter(function(error){return keys.indexOf(error.key)>=0;})"));
+  assert.ok(appJs.includes("All '+keys.length+' evidence sources loaded"));
+  assert.ok(appJs.includes("sources loaded"));
+  assert.ok(html.includes(".view-source-status"));
+  assert.ok(html.includes(".view-source-dot"));
+  assert.ok(html.includes("source health rail"));
+});
+
+
 test("workspace flow rail gives every view an explicit next action", () => {
   const appJs = readRepoFile("public/app.js");
   const html = readRepoFile("public/index.html");
