@@ -426,7 +426,7 @@ test("frontend history exposes an investigation surface with structural loading"
   assert.ok(start >= 0);
   assert.ok(end > start);
   const history = appJs.slice(start, end);
-  assert.ok(history.includes("Timeline signals"));
+  assert.ok(history.includes("TIMELINE SIGNALS"));
   assert.ok(history.includes("Recent commit footprint"));
   assert.ok(history.includes("Persisted metadata and numstat evidence."));
   assert.ok(appJs.includes("else if(view==='history')$('root').innerHTML=historyLoadingPage();"));
