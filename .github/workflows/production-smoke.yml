@@ -28,6 +28,7 @@ concurrency:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 15
     env:
       AUTOPSY_PRODUCTION_URL: ${{ inputs.url || 'https://project-autopsy.onrender.com' }}
