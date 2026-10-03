@@ -404,6 +404,35 @@ test("frontend overview exposes command-center snapshot context", () => {
   assert.ok(appJs.slice(overviewStart, overviewEnd).includes("a.targetHeadSha"));
 });
 
+test("frontend history exposes an investigation surface with structural loading", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const surface = html + "\n" + appJs;
+
+  for (const marker of [
+    "history-signalbar",
+    "history-overview",
+    "commit-footprint",
+    "history-timeline",
+    "history-table",
+    "history-skeleton",
+    "data-view-skeleton=\"history\""
+  ]) {
+    assert.ok(surface.includes(marker), "missing history UI marker: " + marker);
+  }
+
+  const start = appJs.indexOf("function historyView()");
+  const end = appJs.indexOf("function structure()", start);
+  assert.ok(start >= 0);
+  assert.ok(end > start);
+  const history = appJs.slice(start, end);
+  assert.ok(history.includes("Timeline signals"));
+  assert.ok(history.includes("Recent commit footprint"));
+  assert.ok(history.includes("Persisted metadata and numstat evidence."));
+  assert.ok(appJs.includes("else if(view==='history')$('root').innerHTML=historyLoadingPage();"));
+  assert.ok(appJs.includes('function historyLoadingPage(){'));
+});
+
 test("frontend structure workspace exposes the architecture map surface", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
