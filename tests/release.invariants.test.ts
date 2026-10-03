@@ -930,7 +930,7 @@ test("frontend Evidence structure family includes architecture and dependency re
   const appJs = readRepoFile("public/app.js");
 
   assert.ok(
-    appJs.includes("{label:'Structure',items:arr(d.architecture,'events').concat(arr(d.dependencies,'changes')),detail:'architecture + dependency change events'}")
+    appJs.includes("id:'structure',label:'Structure',items:arr(d.architecture,'events').concat(arr(d.dependencies,'changes')),detail:'architecture + dependency change events'")
   );
 });
 
@@ -948,7 +948,7 @@ test("frontend evidence explorer search exposes count and reset controls", () =>
   const indexHtml = readRepoFile("public/index.html");
   assert.ok(appJs.includes("evidenceSearchCount"));
   assert.ok(appJs.includes("evidenceSearchClear"));
-  assert.ok(appJs.includes("var term=q.value.trim().toLowerCase(),shown=0,total=0"));
+  assert.ok(appJs.includes("var term=q.value.trim().toLowerCase(),family=S.evidenceFamily||'all',shown=0,total=0"));
   assert.ok(indexHtml.includes(".evidence-search-row"));
 });
 
@@ -2764,10 +2764,10 @@ test("evidence-family filtering stays a client-side projection over loaded recor
     assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence local-filter marker: " + marker);
   }
 
-  assert.ok(html.includes('type="button" class="evidence-family'));
-  assert.ok(html.includes('data-evidence-family="git"'));
-  assert.ok(html.includes('data-evidence-family="runtime"'));
-  assert.ok(html.includes('data-evidence-family="contributors"'));
+  assert.ok(appJs.includes('type="button" class="evidence-family'));
+  assert.ok(appJs.includes('data-evidence-family="git"'));
+  assert.ok(appJs.includes('data-evidence-family="runtime"'));
+  assert.ok(appJs.includes('data-evidence-family="contributors"'));
 });
 
 test("workspace views stay backed by mounted API contracts", () => {
