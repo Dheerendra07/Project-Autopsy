@@ -2573,6 +2573,13 @@ test("frontend clears transient overlays when a page is restored", () => {
   assert.ok(appJs.includes("if($('drawer'))$('drawer').hidden=true"));
 });
 
+test("frontend navigation dismisses a live evidence inspector before replacing the workspace view", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function closeEvidence(restoreFocus)"));
+  assert.ok(appJs.includes("if($('drawer')&&!$('drawer').hidden)closeEvidence(false);"));
+  assert.ok(appJs.includes("S.currentEvidence=null"));
+});
+
 
 test("repository access middleware reconstructs mounted paths before machine-ingest matching", () => {
   const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
