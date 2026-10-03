@@ -41,7 +41,7 @@ test("uses documented defaults for AI provider configuration", () => {
   const config = parseEnvironment(baseEnvironment());
 
   assert.equal(config.AI_BASE_URL, "https://api.openai.com/v1");
-  assert.equal(config.AI_MODEL, "gpt-5.6-luna");
+  assert.equal(config.AI_MODEL, "gpt-6-luna");
   assert.equal(config.AI_TIMEOUT_MS, 30_000);
 });
 
