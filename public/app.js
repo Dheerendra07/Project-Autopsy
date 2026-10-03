@@ -1085,9 +1085,9 @@
     if(id==='search'){var input=$('viewSearch');if(input){closeCommandPalette();input.focus();input.select()}else toast('This view has no search filter','warn');return}
     if(id==='refresh-view'){closeCommandPalette();reloadCurrentView();return}
     if(id==='settings'){closeCommandPalette();S.user?openSettings($('settings')):openAuth('login');return}
-    if(id==='source'){var url=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));if(url)window.open(url,'_blank','noopener,noreferrer');return}
+    if(id==='source'){var url=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));if(url){closeCommandPalette();window.open(url,'_blank','noopener,noreferrer')}return}
     if(id==='landing'){closeCommandPalette();$('new').click();return}
-    if(id==='theme'){var next=document.documentElement.dataset.theme==='light'?'dark':'light';applyTheme(next,true,true);return}
+    if(id==='theme'){var next=document.documentElement.dataset.theme==='light'?'dark':'light';closeCommandPalette();applyTheme(next,true,true);return}
     if(id&&VALID_VIEWS.indexOf(id)>=0){closeCommandPalette();setView(id);return}
   }
   function renderCommandPalette(){
