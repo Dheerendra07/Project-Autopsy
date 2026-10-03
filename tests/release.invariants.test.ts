@@ -909,6 +909,24 @@ test("frontend Evidence structure family includes architecture and dependency re
   );
 });
 
+test("frontend interpretation failure states remain actionable and evidence-safe", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("Insights are not configured"));
+  assert.ok(appJs.includes("Insights provider unavailable"));
+  assert.ok(appJs.includes("Insights output could not be validated"));
+  assert.ok(appJs.includes("action='report'"));
+  assert.ok(appJs.includes("Refresh report"));
+});
+
+test("frontend evidence explorer search exposes count and reset controls", () => {
+  const appJs = readRepoFile("public/app.js");
+  const indexHtml = readRepoFile("public/index.html");
+  assert.ok(appJs.includes("evidenceSearchCount"));
+  assert.ok(appJs.includes("evidenceSearchClear"));
+  assert.ok(appJs.includes("var term=q.value.trim().toLowerCase(),shown=0,total=0"));
+  assert.ok(indexHtml.includes(".evidence-search-row"));
+});
+
 test("frontend AI interpretation keeps validated evidence keys inspectable", () => {
   const appJs = readRepoFile("public/app.js");
 
