@@ -1690,13 +1690,17 @@
     }
     if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('authModal').hidden)trapFocus($('authModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
     var target=e.target;
-    if(e.key==='/'&&$('viewSearch')&&target&&['INPUT','TEXTAREA','SELECT'].indexOf(target.tagName)<0&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
-      e.preventDefault();$('viewSearch').focus();return;
+    var searchInput=$('viewSearch')||($('evidenceSearch')&&S.view==='evidence'?$('evidenceSearch'):null);
+    if(e.key==='/'&&searchInput&&target&&['INPUT','TEXTAREA','SELECT'].indexOf(target.tagName)<0&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      e.preventDefault();searchInput.focus();return;
     }
     if(e.key==='Escape'){
       if(!$('confirmModal').hidden){e.preventDefault();finishConfirm(false);return}
-      if($('viewSearch')&&document.activeElement===$('viewSearch')&&$('viewSearch').value){
-        e.preventDefault();$('viewSearch').value='';S.viewFilter[S.view]='';applyViewFilter();return;
+      if(searchInput&&document.activeElement===searchInput&&searchInput.value){
+        e.preventDefault();searchInput.value='';
+        if(searchInput.id==='viewSearch'){S.viewFilter[S.view]='';applyViewFilter();}
+        else {var evt=document.createEvent('Event');evt.initEvent('input',true,true);searchInput.dispatchEvent(evt);}
+        return;
       }
       if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings();else if(!$('authModal').hidden)closeAuth()
     }
