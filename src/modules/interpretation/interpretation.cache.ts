@@ -105,7 +105,7 @@ export class RedisAiInterpretationCache implements AiInterpretationCache {
 
       if (
         result.interpretationVersion !== INTERPRETATION_VERSION ||
-        result.provider !== "openai" ||
+        result.provider !== "gemini" ||
         typeof result.model !== "string" ||
         typeof result.reportFingerprint !== "string" ||
         typeof result.groundingClaimCount !== "number" ||
@@ -127,7 +127,7 @@ export class RedisAiInterpretationCache implements AiInterpretationCache {
 
       return {
         interpretationVersion: INTERPRETATION_VERSION,
-        provider: "openai",
+        provider: "gemini",
         model: result.model,
         reportFingerprint: result.reportFingerprint,
         groundingClaimCount: result.groundingClaimCount,
