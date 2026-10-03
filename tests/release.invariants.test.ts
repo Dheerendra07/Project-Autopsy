@@ -2699,3 +2699,20 @@ test("workspace flow rail gives every view an explicit next action", () => {
   assert.ok(html.includes("--gold:var(--ui-accent)"));
 });
 
+
+
+test("overview command center keeps primary evidence text readable and product-hierarchy sized", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const overviewStart = appJs.indexOf("function overview()");
+  const overviewEnd = appJs.indexOf("function historyView()", overviewStart);
+  assert.ok(overviewStart >= 0 && overviewEnd > overviewStart);
+  const overview = appJs.slice(overviewStart, overviewEnd);
+  for (const marker of ["overview-context", "overview-journey", "overview-metrics", "overview-insight-grid", "EVIDENCE POSTURE", "ANALYSIS HISTORY", "RECENT HISTORY"]) {
+    assert.ok(overview.includes(marker), "missing overview hierarchy marker: " + marker);
+  }
+  assert.ok(html.includes("OVERVIEW COMMAND CENTER V5"));
+  assert.ok(html.includes(".journey-step b{margin-top:9px!important;color:#e3e8ef!important;font-size:12px!important"));
+  assert.ok(html.includes(".posture-row small{font-size:10px!important"));
+  assert.ok(html.includes(".overview-warning small{font-size:10px!important"));
+});
