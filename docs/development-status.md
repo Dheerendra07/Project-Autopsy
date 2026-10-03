@@ -404,7 +404,7 @@ Continuation rule: preserve explicit hidden-overlay behavior for every transient
 
 ## Current release checkpoint — 2026-10-03
 
-Main is currently at `951c5ebc0558c6cb8a36217ea83df2834839c84e` after merging PR #192 (outputs and Evidence Explorer hardening).
+Main is currently at `4d9f658b1db01493885d1ff4f6ded743ba5100be` after merging PR #194 (OpenAI interpretation model default alignment), following PR #192 (outputs and Evidence Explorer hardening).
 
 - PR #192 added evidence-count/clear controls to Evidence Explorer, functional report-map navigation, evidence-specific interview draft copy, and actionable Insights failure states.
 - The final PR quality run `b530835f4b0a33a056e70b8f3d9e3803bbe6fe03` passed the full repository gate. The post-merge main quality run `37097708805` also completed all substantive checks successfully.
