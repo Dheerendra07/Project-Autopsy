@@ -404,7 +404,7 @@ Continuation rule: preserve explicit hidden-overlay behavior for every transient
 
 ## Current release checkpoint — 2026-10-03
 
-Main is currently at `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` after merging PR #195 (release checkpoint documentation), following PR #194 (OpenAI interpretation model default alignment) and PR #192 (outputs and Evidence Explorer hardening).
+Main is currently at `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` after merging PR #195 (release checkpoint documentation), following PR #194 (Gemini interpretation provider default alignment) and PR #192 (outputs and Evidence Explorer hardening).
 
 - PR #192 added evidence-count/clear controls to Evidence Explorer, functional report-map navigation, evidence-specific interview draft copy, and actionable Insights failure states.
 - The final PR quality run `b530835f4b0a33a056e70b8f3d9e3803bbe6fe03` passed the full repository gate. The post-merge main quality run `37097708805` also completed all substantive checks successfully.
@@ -418,4 +418,4 @@ Main is currently at `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` after merging PR
 
 Continuation rule: treat `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` as the newest main baseline until the Gemini provider migration is merged. Preserve the existing 11-view information architecture, evidence-first semantics, protected API boundary, bounded execution contracts, stale-state handling, focus management, mobile layout, deterministic report fingerprints, and secret non-disclosure.
 
-- The 2026-10-03 configuration audit moved the default interpretation provider from OpenAI to Google's Gemini `gemini-2.5-flash` across runtime configuration, Render configuration, examples, documentation, cache validation, and interpretation tests.
+- The 2026-10-03 configuration audit moved the default interpretation provider from OpenAI to Google's Gemini `gemini-3.8-flash` across runtime configuration, Render configuration, examples, documentation, cache validation, and interpretation tests.
