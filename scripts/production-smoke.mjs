@@ -24,21 +24,32 @@ if (url.username || url.password || url.search || url.hash) {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(new URL(path, baseUrl), {
-    method: options.method ?? "GET",
-    headers: { Accept: "application/json, text/html", ...(options.headers ?? {}) },
-    body: options.body,
-    redirect: "manual",
-    signal: AbortSignal.timeout(15_000)
-  });
-  const text = await response.text();
-  let body = null;
+  const method = options.method ?? "GET";
+  const timeoutMs = options.timeoutMs ?? 15_000;
+  try {
+    const response = await fetch(new URL(path, baseUrl), {
+      method,
+      headers: { Accept: "application/json, text/html", ...(options.headers ?? {}) },
+      body: options.body,
+      redirect: "manual",
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+    const text = await response.text();
+    let body = null;
   try {
     body = text ? JSON.parse(text) : null;
-  } catch {
-    body = null;
+    } catch {
+      body = null;
+    }
+    return { response, text, body };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      throw new Error(
+        `Production smoke request timed out after ${timeoutMs}ms: ${method} ${path}`
+      );
+    }
+    throw error;
   }
-  return { response, text, body };
 }
 
 const PUBLIC_WARMUP_RETRY_STATUSES = new Set([502, 503, 504]);
