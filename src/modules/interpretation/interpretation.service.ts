@@ -305,7 +305,7 @@ export function readAiProviderConfig(
     );
   }
 
-  const model = source.AI_MODEL?.trim() || "gpt-5.6-luna";
+  const model = source.AI_MODEL?.trim() || "gpt-6-luna";
   const parsedTimeout = Number(source.AI_TIMEOUT_MS ?? 30_000);
 
   if (!Number.isInteger(parsedTimeout) || parsedTimeout < 1_000 || parsedTimeout > 120_000) {
