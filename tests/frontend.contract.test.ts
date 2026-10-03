@@ -214,9 +214,8 @@ test("evidence explorer exposes local evidence-family filters without extra API 
 
   for (const marker of [
     'data-evidence-family="all"',
-    'data-evidence-family="git"',
-    'data-evidence-family="runtime"',
-    'data-evidence-family="schema"',
+    'data-evidence-family="'+esc(f.id)+'"',
+    'activeFamily===f.id',
     'id="evidenceScopeCount"',
     "EVIDENCE INVESTIGATION V2",
   ]) {
