@@ -11,7 +11,7 @@ const app = readFileSync(
 test("interview stories expose a copy-ready evidence-backed draft action", () => {
   assert.match(app, /async function copyInterviewStory\(storyId\)/);
   assert.ok(app.includes("navigator.clipboard.writeText(lines.join('\\n'))"));
-  assert.ok(app.includes("data-action==='copy-story'"));
+  assert.ok(app.includes("a.getAttribute('data-action')==='copy-story'"));
   assert.ok(app.includes("data-story-id"));
   assert.ok(app.includes(">Copy draft</button>"));
 });
