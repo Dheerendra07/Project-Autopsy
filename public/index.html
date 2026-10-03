@@ -356,6 +356,46 @@ main{max-width:1720px!important;margin:0 auto}
 @media(max-width:1000px){.workspace{grid-template-columns:1fr!important}.side{position:static!important;top:auto!important;height:auto!important;max-height:420px!important;grid-template-rows:auto minmax(0,1fr) auto!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.08)!important}.nav{grid-template-columns:repeat(3,minmax(0,1fr))!important}.nav .nav-group{grid-column:1/-1!important}.sidefoot{grid-template-columns:1fr 1fr!important}.import{grid-template-columns:minmax(0,1fr) minmax(160px,190px)!important}.import > #importButton{grid-column:1/-1;width:100%!important}}
 @media(max-width:760px){.top{height:64px!important;padding:0 15px!important}.workspace{min-height:calc(100vh - 64px)!important}.side{max-height:360px!important;padding:13px 11px!important}.nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}.content{padding:20px 15px 52px!important}.landing{padding:54px 16px 58px!important}.landing-copy{padding-top:8px}.landing-copy h1{font-size:clamp(42px,13vw,60px)!important}.lead{font-size:16px!important}.landing-proof{display:grid;grid-template-columns:1fr}.product-preview{min-height:0}.preview-grid{grid-template-columns:110px 1fr!important;min-height:0}.preview-nav{padding:13px 8px!important}.preview-nav-item{font-size:8px!important;padding:8px 6px!important}.preview-main{padding:15px 12px!important}.preview-head strong{font-size:15px!important}.preview-metrics{grid-template-columns:1fr!important}.preview-metrics>div{min-height:80px!important}.getting-started,.capability-grid{grid-template-columns:1fr!important}.view-guide{grid-template-columns:38px minmax(0,1fr)!important}.view-guide-icon{width:36px;height:36px}.view-guide-flow{grid-column:2;justify-content:flex-start}.head{align-items:flex-start!important;flex-direction:column!important}.actions{justify-content:flex-start!important}.actions .btn,.actions a{width:auto!important}.grid.g4,.grid.g3,.grid.g2{grid-template-columns:1fr!important}.bar{grid-template-columns:120px minmax(0,1fr) 35px auto!important}.settings-sheet{width:100%!important}.settings-head{padding:18px 16px 15px}.settings-scroll{padding:0 16px 22px}.settings-section{padding:19px 0}.settings-actions-row .btn{flex:1 1 auto}.evidence-detail{grid-template-columns:92px minmax(0,1fr)}}
 @media(max-width:520px){.import{grid-template-columns:1fr!important}.import > #importButton{grid-column:auto!important;width:100%!important}.side{max-height:430px!important}.nav{grid-template-columns:1fr!important}.sidefoot{grid-template-columns:1fr!important}.top-account{min-width:82px!important}.brand b{font-size:13px!important}.brand small{display:none!important}.head h2{font-size:27px!important}.view-guide-copy strong{font-size:11px}.view-guide-copy small{font-size:9px}.view-guide-flow{font-size:7px}.loading-state,.error-state{grid-template-columns:1fr!important;text-align:left}}
+
+/* WORKSPACE FLOW V4 */
+:root{
+  --bg:var(--ui-bg);
+  --panel:var(--ui-surface);
+  --panel2:var(--ui-surface-2);
+  --panel3:var(--ui-surface-3);
+  --line:var(--ui-border);
+  --line-strong:var(--ui-border-strong);
+  --text:var(--ui-text);
+  --muted:var(--ui-text-2);
+  --dim:var(--ui-text-3);
+  --gold:var(--ui-accent);
+  --gold-soft:var(--ui-accent-soft);
+  --good:var(--ui-success);
+  --bad:var(--ui-danger);
+  --warn:var(--ui-warning);
+}
+.content{font-size:14px}
+.content .card p{font-size:12px;line-height:1.6;color:var(--ui-text-3)}
+.content .card small,.content .card .sub,.content .card .dim{font-size:11px;line-height:1.55}
+.content .card h3,.content .card h4{letter-spacing:-.018em}
+.field input,.field select,.field textarea{font-size:14px!important}
+.view-flow{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;margin:0 0 16px!important;padding:13px 15px!important;background:#0d141e!important;border-color:#2a3749!important;box-shadow:none!important}
+.view-flow-copy{min-width:0}
+.view-flow-copy strong{display:block;margin-top:4px;font-size:13px;color:#e9edf4}
+.view-flow-copy small{display:block;margin-top:2px;color:#78869a;font-size:10px}
+.view-flow-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.view-flow-link{min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border-radius:10px;text-decoration:none;font-size:10px;font-weight:700;white-space:nowrap;transition:all .16s ease}
+.view-flow-link.secondary{background:#111a26;border:1px solid #2e3b4e;color:#a8b3c2}
+.view-flow-link.secondary:hover{background:#182232;border-color:#46556d;color:#fff}
+.view-flow-link.primary{background:linear-gradient(180deg,#959bff,#7379e8);border:1px solid #a6abff;color:#fff;box-shadow:0 8px 22px rgba(115,121,232,.18)}
+.view-flow-link.primary:hover{background:linear-gradient(180deg,#a5aaff,#8188f3);border-color:#b7bbff;transform:translateY(-1px)}
+.view-flow-link:focus-visible{outline:2px solid #c0c4ff;outline-offset:2px}
+.view-flow-link span:last-child{font-size:13px;line-height:1}
+@media(max-width:680px){
+  .view-flow{align-items:flex-start!important;flex-direction:column!important;gap:12px!important}
+  .view-flow-actions{width:100%;justify-content:flex-start}
+  .view-flow-link{flex:1 1 auto}
+}
 </style>
 </head>
 <body>
