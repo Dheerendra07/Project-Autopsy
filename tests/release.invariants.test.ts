@@ -2741,3 +2741,18 @@ test("overview first-load and refresh states are perceived-performance safe", ()
     assert.ok(html.includes(marker), "missing overview loading CSS marker: " + marker);
   }
 });
+
+
+test("overview loading presentation avoids flicker and surfaces complete load failures", () => {
+  const appJs = readRepoFile("public/app.js");
+  for (const marker of [
+    "presentationTimer=null",
+    "window.setTimeout(function(){",
+    "},180);",
+    "window.clearTimeout(presentationTimer)",
+    "errs.length===keys.length&&!hadExisting",
+    "Retry evidence load"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing resilient loading marker: " + marker);
+  }
+});
