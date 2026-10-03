@@ -604,7 +604,7 @@ export async function generateAiInterpretation(
                 },
                 generation_config: {
                   thinking_level: "medium",
-                  max_output_tokens: 4_096
+                  max_output_tokens: 16_384
                 }
               }),
               signal: controller.signal
