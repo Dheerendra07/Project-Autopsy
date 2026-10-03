@@ -64,7 +64,7 @@ const report = {
 const config = {
   apiKey: "a".repeat(48),
   baseUrl: "https://api.example.com/v1",
-  model: "gpt-5.6-luna",
+  model: "gpt-6-luna",
   timeoutMs: 30_000
 };
 
