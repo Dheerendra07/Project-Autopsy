@@ -63,8 +63,8 @@ const report = {
 
 const config = {
   apiKey: "a".repeat(48),
-  baseUrl: "https://api.example.com/v1",
-  model: "gpt-6-luna",
+  baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+  model: "gemini-2.5-flash",
   timeoutMs: 30_000
 };
 
@@ -90,7 +90,13 @@ const validOutput = {
 test("accepts a bounded structured provider response", async () => {
   const response = new Response(
     JSON.stringify({
-      output_text: JSON.stringify(validOutput)
+      candidates: [
+        {
+          content: {
+            parts: [{ text: JSON.stringify(validOutput) }]
+          }
+        }
+      ]
     }),
     {
       status: 200,
