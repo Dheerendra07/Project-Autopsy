@@ -768,7 +768,7 @@
     var rows=items.map(function(x){return '<div class="evidence-row" data-search="'+esc(x.search)+'"><div><strong>'+esc(x.label)+'</strong><small>'+esc(x.basis)+'</small></div>'+inspectButton(x.label,x.basis,x.payload)+'</div>'}).join('');
     return shell('Evidence explorer','Inspect the structured records behind the product views. This is the direct path from a visual signal back to its persisted evidence payload.')+
       '<div class="evidence-overview card"><div class="arch-title"><div><h3>Evidence index</h3><div class="sub">A bounded map of the evidence families currently loaded into this workspace.</div></div><span class="tag">'+n(items.length)+' inspectable records</span></div><div class="evidence-families">'+familyCards+'</div><div class="evidence-boundary"><span>BOUNDARY</span><strong>Counts describe the loaded UI sample, not repository totals.</strong><small>Open a dedicated view for full pagination, API-level totals and filters.</small></div></div>'+
-      '<div class="card"><input id="evidenceSearch" class="search" aria-label="Filter evidence records" placeholder="Filter commits, paths, runtime, deployments, tests, migrations…" autocomplete="off" spellcheck="false"><div class="sub" style="margin-top:8px">Search stays local to records already loaded into this snapshot; it never triggers extra API traffic.</div><div id="evidenceList" class="evidence-list">'+rows+'</div><div id="evidenceEmpty" class="empty evidence-empty" hidden>No evidence matches this filter.</div></div>';
+      '<div class="card"><div class="evidence-search-row"><input id="evidenceSearch" class="search" aria-label="Filter evidence records" placeholder="Filter commits, paths, runtime, deployments, tests, migrations…" autocomplete="off" spellcheck="false"><span id="evidenceSearchCount" class="tag" aria-live="polite"></span><button id="evidenceSearchClear" class="btn" type="button">Clear</button></div><div class="sub" style="margin-top:8px">Search stays local to records already loaded into this snapshot; it never triggers extra API traffic.</div><div id="evidenceList" class="evidence-list">'+rows+'</div><div id="evidenceEmpty" class="empty evidence-empty" hidden>No evidence matches this filter.</div></div>';
   }
     function interview(){var stories=S.data.interview,a=S.analysis||{},current=!!(stories&&currentAnalysisSnapshot()&&stories.analysisRunId===S.runId&&a.status==='completed'),ready=currentAnalysisSnapshot()&&a.status==='completed';return shell('Interview stories','Evidence anchors for preparing truthful project explanations',ready?'<button class="btn" data-action="interview"'+(S.interviewLoading?' disabled aria-busy="true"':'')+'>'+(S.interviewLoading?'Loading…':(current?'Refresh stories':'Load stories'))+'</button>':'')+'<div id="stories" class="section">'+(current?storiesHtml(stories):'<div class="empty"><strong>Interview preparation requires current evidence</strong>Refresh analysis and regenerate the story scaffolds before using an older snapshot.</div>')+'</div>'}
   function storiesHtml(x){
@@ -906,7 +906,7 @@
     bindViewSearch();
     if(v==='evidence'){
       var q=$('evidenceSearch');
-      if(q)q.oninput=function(){var term=q.value.trim().toLowerCase(),shown=0;document.querySelectorAll('.evidence-row').forEach(function(row){var ok=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;row.hidden=!ok;if(ok)shown++});var empty=$('evidenceEmpty');if(empty)empty.hidden=shown!==0}
+      if(q){var clear=$('evidenceSearchClear'),count=$('evidenceSearchCount'),apply=function(){var term=q.value.trim().toLowerCase(),shown=0,total=0;document.querySelectorAll('.evidence-row').forEach(function(row){total++;var ok=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;row.hidden=!ok;if(ok)shown++});var empty=$('evidenceEmpty');if(empty)empty.hidden=shown!==0;if(count)count.textContent=term?(shown+' of '+total+' matching'):(total+' loaded')};q.oninput=apply;if(clear)clear.onclick=function(){q.value='';apply();q.focus()};apply()}
     }
     if(v==='operations'&&!options.skipLoad&&S.data.operational===undefined)loadOperations();else if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v);
     syncOperationsMonitoring()
@@ -1116,8 +1116,25 @@
       toast('Insights refreshed','good');
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interpretation'){
-        $('root').innerHTML=errorPage('Engineering insights',e.message||'Insights could not be generated.','Try again','interpretation');
-        toast(e.message,'bad');
+        var message=e&&e.message?String(e.message):'Insights could not be generated.';
+        var action='interpretation',label='Try again',title='Engineering insights',body=message;
+        if(/REPORT_NOT_READY|Generate the latest report|current report/i.test(message)){
+          title='Report needs refresh';
+          body='The insights endpoint no longer matches the current repository snapshot. Refresh the report, then generate insights again.';
+          action='report';
+          label='Refresh report';
+        }else if(/AI_INTERPRETATION_NOT_CONFIGURED|AI interpretation is not configured/i.test(message)){
+          title='Insights are not configured';
+          body='The current report remains available. Server-side AI interpretation is not configured for this workspace.';
+        }else if(/AI_INTERPRETATION_PROVIDER_ERROR|AI provider/i.test(message)){
+          title='Insights provider unavailable';
+          body='The report is intact, but the configured AI provider did not complete the interpretation request. Retry after the provider is available.';
+        }else if(/AI_INTERPRETATION_INVALID_OUTPUT|structured output|invalid output/i.test(message)){
+          title='Insights output could not be validated';
+          body='The provider returned a response that did not satisfy the evidence-grounded output contract. No interpretation was persisted from that response.';
+        }
+        $('root').innerHTML=errorPage(title,body,label,action);
+        toast(body,'bad');
       }
     }finally{
       S.interpretationLoading=false;
