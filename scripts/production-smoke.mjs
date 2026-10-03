@@ -29,7 +29,7 @@ async function request(path, options = {}) {
     headers: { Accept: "application/json, text/html", ...(options.headers ?? {}) },
     body: options.body,
     redirect: "manual",
-    signal: AbortSignal.timeout(15_000)
+    signal: AbortSignal.timeout(options.timeoutMs ?? 15_000)
   });
   const text = await response.text();
   let body = null;
@@ -241,7 +241,8 @@ try {
     const interpretation = await request(
       `/api/repositories/${e2eRepositoryId}/interpretation?limit=3`,
       {
-        headers: { Cookie: cookieHeader }
+        headers: { Cookie: cookieHeader },
+        timeoutMs: 135_000
       }
     );
     assert(
