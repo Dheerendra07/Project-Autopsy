@@ -1,6 +1,14 @@
 const baseUrl = (process.env.AUTOPSY_PRODUCTION_URL ?? process.argv[2] ?? "").trim().replace(/\/$/, "");
 const email = (process.env.AUTOPSY_BOOTSTRAP_EMAIL ?? "").trim();
 const password = process.env.AUTOPSY_BOOTSTRAP_PASSWORD ?? "";
+const expectedAiProvider = (process.env.AUTOPSY_EXPECTED_AI_PROVIDER ?? "gemini").trim();
+const expectedAiModel = (process.env.AUTOPSY_EXPECTED_AI_MODEL ?? "gemini-3.8-flash").trim();
+const e2eRepositoryUrl = (process.env.AUTOPSY_E2E_REPOSITORY_URL ?? "https://github.com/octocat/Hello-World.git").trim();
+const e2eAnalysisTimeoutMs = Number.parseInt(process.env.AUTOPSY_E2E_ANALYSIS_TIMEOUT_MS ?? "240000", 10);
+
+if (!Number.isSafeInteger(e2eAnalysisTimeoutMs) || e2eAnalysisTimeoutMs < 30_000 || e2eAnalysisTimeoutMs > 600_000) {
+  throw new Error("AUTOPSY_E2E_ANALYSIS_TIMEOUT_MS must be between 30000 and 600000 milliseconds.");
+}
 
 if (!baseUrl) {
   throw new Error("Usage: AUTOPSY_PRODUCTION_URL=https://... AUTOPSY_BOOTSTRAP_EMAIL=... AUTOPSY_BOOTSTRAP_PASSWORD=... node scripts/production-smoke.mjs");
@@ -35,6 +43,44 @@ async function request(path, options = {}) {
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+async function waitForAnalysis(
+  repositoryId,
+  analysisRunId,
+  cookieHeader,
+  timeoutMs
+) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const response = await request(
+      `/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
+      {
+        headers: { Cookie: cookieHeader }
+      }
+    );
+
+    assert(
+      response.response.status === 200,
+      `Analysis status returned HTTP ${response.response.status}.`
+    );
+    assert(
+      response.body?.success === true && response.body?.analysis,
+      "Analysis status response returned the wrong response contract."
+    );
+
+    const analysis = response.body.analysis;
+    if (analysis.status === "completed" || analysis.status === "failed") {
+      return analysis;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+
+  throw new Error(
+    `Production E2E analysis did not reach a terminal state within ${timeoutMs}ms.`
+  );
 }
 
 const home = await request("/");
@@ -122,6 +168,155 @@ try {
   assert(protectedWithSession.response.status === 404, `Authenticated protected route returned HTTP ${protectedWithSession.response.status}.`);
   assert(protectedWithSession.body?.error?.code === "REPOSITORY_NOT_FOUND", "Authenticated protected-route smoke returned the wrong error contract.");
 
+  let e2eRepositoryId = null;
+  let e2eAnalysisRunId = null;
+  let e2eCleanupSucceeded = false;
+
+  try {
+    const importResponse = await request("/api/repositories/import", {
+      method: "POST",
+      headers: {
+        Cookie: cookieHeader,
+        "x-autopsy-csrf-token": csrfToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url: e2eRepositoryUrl
+      })
+    });
+
+    assert(
+      importResponse.response.status === 202,
+      `Production E2E repository import returned HTTP ${importResponse.response.status}. Body: ${importResponse.text.slice(0, 500)}`
+    );
+    assert(
+      importResponse.body?.success === true,
+      "Production E2E repository import returned the wrong response contract."
+    );
+    assert(
+      importResponse.body?.repository?.id &&
+        importResponse.body?.analysis?.id &&
+        importResponse.body?.analysis?.status === "queued",
+      "Production E2E repository import did not return queued repository/analysis identifiers."
+    );
+
+    e2eRepositoryId = importResponse.body.repository.id;
+    e2eAnalysisRunId = importResponse.body.analysis.id;
+
+    const analysis = await waitForAnalysis(
+      e2eRepositoryId,
+      e2eAnalysisRunId,
+      cookieHeader,
+      e2eAnalysisTimeoutMs
+    );
+
+    assert(
+      analysis.status === "completed",
+      `Production E2E analysis failed: ${String(analysis.errorMessage ?? "no public error message returned.")}`
+    );
+    assert(
+      /^[0-9a-f]{40}$/i.test(analysis.targetHeadSha ?? ""),
+      "Production E2E analysis did not produce a valid target head SHA."
+    );
+
+    const report = await request(
+      `/api/repositories/${e2eRepositoryId}/report?limit=3`,
+      {
+        headers: { Cookie: cookieHeader }
+      }
+    );
+    assert(
+      report.response.status === 200,
+      `Production E2E report generation returned HTTP ${report.response.status}. Body: ${report.text.slice(0, 500)}`
+    );
+    assert(
+      report.body?.success === true &&
+        report.body?.report?.analysis?.runId === e2eAnalysisRunId &&
+        report.body?.report?.analysis?.status === "completed" &&
+        Array.isArray(report.body?.report?.sections) &&
+        report.body.report.sections.length > 0,
+      "Production E2E report did not return the expected completed evidence report."
+    );
+
+    const interpretation = await request(
+      `/api/repositories/${e2eRepositoryId}/interpretation?limit=3`,
+      {
+        headers: { Cookie: cookieHeader }
+      }
+    );
+    assert(
+      interpretation.response.status === 200,
+      `Production Gemini interpretation returned HTTP ${interpretation.response.status}. Body: ${interpretation.text.slice(0, 500)}`
+    );
+    assert(
+      interpretation.body?.success === true &&
+        interpretation.body?.result?.provider === expectedAiProvider &&
+        interpretation.body?.result?.model === expectedAiModel,
+      `Production Gemini interpretation returned an unexpected provider/model: provider=${String(interpretation.body?.result?.provider)} model=${String(interpretation.body?.result?.model)}`
+    );
+    assert(
+      interpretation.body?.result?.cacheHit === false,
+      "Production Gemini E2E unexpectedly returned a cached interpretation; a fresh provider call was required."
+    );
+    assert(
+      Number.isInteger(interpretation.body?.result?.groundingClaimCount) &&
+        interpretation.body.result.groundingClaimCount > 0,
+      "Production Gemini interpretation did not contain grounded evidence claims."
+    );
+
+    const aiOutput = interpretation.body.result.interpretation;
+    assert(
+      typeof aiOutput?.executiveSummary === "string" &&
+        aiOutput.executiveSummary.trim().length > 0,
+      "Production Gemini interpretation returned an empty executive summary."
+    );
+    assert(
+      Array.isArray(aiOutput?.themes) &&
+        Array.isArray(aiOutput?.investigationQuestions) &&
+        Array.isArray(aiOutput?.uncertainties),
+      "Production Gemini interpretation returned an incomplete structured output."
+    );
+
+    console.log(
+      `✓ Production Gemini E2E passed: fresh import ${e2eRepositoryId}, analysis ${e2eAnalysisRunId}, evidence report, live provider=${expectedAiProvider}, model=${expectedAiModel}, uncached structured interpretation, and evidence grounding.`
+    );
+  } finally {
+    if (e2eRepositoryId) {
+      try {
+        const deleteResponse = await request(
+          `/api/repositories/${e2eRepositoryId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Cookie: cookieHeader,
+              "x-autopsy-csrf-token": csrfToken
+            }
+          }
+        );
+
+        assert(
+          deleteResponse.response.status === 200 ||
+            deleteResponse.response.status === 202,
+          `Production E2E cleanup returned HTTP ${deleteResponse.response.status}. Body: ${deleteResponse.text.slice(0, 500)}`
+        );
+        assert(
+          deleteResponse.body?.success === true &&
+            deleteResponse.body?.deleted === true,
+          "Production E2E cleanup returned the wrong response contract."
+        );
+        e2eCleanupSucceeded = true;
+      } catch (error) {
+        console.error(
+          "Production E2E cleanup failed:",
+          error instanceof Error ? error.message : "unknown cleanup error"
+        );
+        throw error;
+      }
+    }
+  }
+
+  assert(e2eCleanupSucceeded, "Production E2E did not confirm cleanup of its temporary repository.");
+
   const logout = await request("/api/auth/logout", {
     method: "POST",
     headers: {
@@ -148,4 +343,4 @@ try {
   }
 }
 
-console.log("✓ Production smoke passed: frontend, asset, health, readiness, unauthenticated wall, account login/session, /auth/me, session listing, CSRF rejection, protected-route boundary, and smoke-session cleanup.");
+console.log("✓ Production smoke passed: frontend, assets, health, readiness, unauthenticated wall, account login/session, /auth/me, session listing, CSRF rejection, protected-route boundary, fresh import→analysis→report→Gemini interpretation E2E, temporary repository cleanup, and smoke-session cleanup.");
