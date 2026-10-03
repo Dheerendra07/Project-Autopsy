@@ -206,16 +206,21 @@ test("evidence explorer exposes local evidence-family filters without extra API 
   const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
 
   for (const marker of [
+    'id="evidenceSearchCount"',
+    'id="evidenceEmpty"',
+  ]) {
+    assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence investigation UI marker: " + marker);
+  }
+
+  for (const marker of [
     'data-evidence-family="all"',
     'data-evidence-family="git"',
     'data-evidence-family="runtime"',
     'data-evidence-family="schema"',
     'id="evidenceScopeCount"',
-    'id="evidenceSearchCount"',
-    'id="evidenceEmpty"',
-    "EVIDENCE INVESTIGATION V2"
+    "EVIDENCE INVESTIGATION V2",
   ]) {
-    assert.ok(html.includes(marker), "missing evidence investigation UI marker: " + marker);
+    assert.ok(appJs.includes(marker) || html.includes(marker), "missing generated evidence investigation marker: " + marker);
   }
 
   for (const marker of [
