@@ -174,7 +174,9 @@ test("production smoke covers public surface and protected API boundaries", () =
     "autopsy_session=",
     "autopsy_csrf=",
     'redirect: "manual"',
-    "AbortSignal.timeout(15_000)"
+    "const timeoutMs = options.timeoutMs ?? 30_000;",
+    "signal: AbortSignal.timeout(timeoutMs)",
+    "timeoutMs: 210_000"
   ]) {
     assert.ok(
       script.includes(marker) || workflow.includes(marker),
