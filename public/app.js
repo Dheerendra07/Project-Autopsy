@@ -42,7 +42,7 @@
     legacyMigrationKey:'',
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',authInterrupt:false,dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
+    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',authInterrupt:false,dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,commandPaletteFocus:null,commandPaletteIndex:0,commandPaletteQuery:'',focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -193,6 +193,7 @@
   }
   function closeEvidence(){$('drawer').hidden=true;var focus=S.focusReturn;S.focusReturn=null;S.currentEvidence=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
   function closeTransientOverlays(){
+    if($('commandPalette'))$('commandPalette').hidden=true;
     if($('drawer'))$('drawer').hidden=true;
     if($('modal'))$('modal').hidden=true;
     if($('confirmModal'))$('confirmModal').hidden=true;
@@ -1043,6 +1044,95 @@
     if(v==='operations'&&!options.skipLoad&&S.data.operational===undefined)loadOperations();else if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v);
     syncOperationsMonitoring()
   }
+  const COMMAND_DEFS=[
+    {id:'overview',group:'NAVIGATE',label:'Open Overview',detail:'Current snapshot, analysis boundary and repository posture.'},
+    {id:'history',group:'NAVIGATE',label:'Open History',detail:'Chronological commits and timeline evidence.'},
+    {id:'structure',group:'NAVIGATE',label:'Open Structure',detail:'Architecture, dependencies and complexity evidence.'},
+    {id:'quality',group:'NAVIGATE',label:'Open Quality',detail:'Tests, repeated change, refactor and bug-area signals.'},
+    {id:'runtime',group:'NAVIGATE',label:'Open Runtime',detail:'Telemetry, deployments and revision provenance.'},
+    {id:'report',group:'NAVIGATE',label:'Open Report',detail:'Evidence-backed engineering report.'},
+    {id:'interview',group:'NAVIGATE',label:'Open Interview',detail:'Evidence-linked interview story scaffolds.'},
+    {id:'interpretation',group:'NAVIGATE',label:'Open Insights',detail:'Current-report engineering interpretation with evidence boundaries.'},
+    {id:'evidence',group:'NAVIGATE',label:'Open Evidence Explorer',detail:'Search and inspect the exact records behind workspace outputs.'},
+    {id:'contributors',group:'NAVIGATE',label:'Open Contributors',detail:'Contributor history and change distribution.'},
+    {id:'operations',group:'NAVIGATE',label:'Open Operations',detail:'Live API, database, Redis and queue posture.'}
+  ];
+  function commandPaletteCommands(){
+    var commands=COMMAND_DEFS.slice();
+    if(S.repoId){
+      commands.push({id:'search',group:'ACTIONS',label:'Focus page search',detail:'Jump to the current workspace filter.',shortcut:'/'});
+      commands.push({id:'refresh-view',group:'ACTIONS',label:'Refresh current view',detail:'Reload the evidence backing this page.',shortcut:'R'});
+      commands.push({id:'settings',group:'ACTIONS',label:'Open account & workspace settings',detail:'Manage account, sessions, repository access and trusted connection.'});
+      var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));
+      if(source)commands.push({id:'source',group:'ACTIONS',label:'Open source repository',detail:'Open the tracked repository in a new tab.'});
+      commands.push({id:'landing',group:'ACTIONS',label:'Analyze another repository',detail:'Return to the repository import surface.'});
+    }else{
+      commands.push({id:'landing',group:'ACTIONS',label:'Analyze a repository',detail:'Return to the repository import surface.'});
+      commands.push({id:'settings',group:'ACTIONS',label:'Open sign in',detail:'Authenticate to access a private workspace.'});
+    }
+    commands.push({id:'theme',group:'PREFERENCES',label:document.documentElement.dataset.theme==='light'?'Switch to dark theme':'Switch to light theme',detail:'Change the product theme. Your explicit choice is remembered.'});
+    return commands;
+  }
+  function commandPaletteMatches(){
+    var term=S.commandPaletteQuery.trim().toLowerCase(),all=commandPaletteCommands();
+    if(!term)return all;
+    return all.filter(function(command){
+      return (command.label+' '+command.detail+' '+command.group).toLowerCase().indexOf(term)>=0;
+    });
+  }
+  function commandPaletteRun(id){
+    if(id&&id.indexOf('view:')===0){setView(id.slice(5));return}
+    if(id==='search'){var input=$('viewSearch');if(input){closeCommandPalette();input.focus();input.select()}else toast('This view has no search filter','warn');return}
+    if(id==='refresh-view'){closeCommandPalette();reloadCurrentView();return}
+    if(id==='settings'){closeCommandPalette();S.user?openSettings($('settings')):openAuth('login');return}
+    if(id==='source'){var url=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));if(url)window.open(url,'_blank','noopener,noreferrer');return}
+    if(id==='landing'){closeCommandPalette();$('new').click();return}
+    if(id==='theme'){var next=document.documentElement.dataset.theme==='light'?'dark':'light';applyTheme(next,true,true);return}
+    if(id&&VALID_VIEWS.indexOf(id)>=0){closeCommandPalette();setView(id);return}
+  }
+  function renderCommandPalette(){
+    var list=$('commandList'),input=$('commandSearch');
+    if(!list)return;
+    var commands=commandPaletteMatches();
+    if(!commands.length){
+      S.commandPaletteIndex=0;
+      list.innerHTML='<div class="command-empty"><strong>No matching commands</strong><span>Try a page name, action or filter.</span></div>';
+      if(input)input.removeAttribute('aria-activedescendant');
+      return;
+    }
+    S.commandPaletteIndex=Math.max(0,Math.min(S.commandPaletteIndex,commands.length-1));
+    var html='',lastGroup='';
+    commands.forEach(function(command,index){
+      if(command.group!==lastGroup){html+='<div class="command-group">'+esc(command.group)+'</div>';lastGroup=command.group}
+      var selected=index===S.commandPaletteIndex;
+      html+='<button type="button" class="command-item'+(selected?' active':'')+'" role="option" aria-selected="'+selected+'" data-command-id="'+esc(command.id)+'" id="command-option-'+esc(command.id)+'"><span class="command-glyph">'+esc(command.group==='NAVIGATE'?'→':command.group==='ACTIONS'?'⌁':'◐')+'</span><span class="command-copy"><strong>'+esc(command.label)+'</strong><small>'+esc(command.detail)+'</small></span>'+(command.shortcut?'<kbd>'+esc(command.shortcut)+'</kbd>':'')+' </button>';
+    });
+    list.innerHTML=html;
+    var selectedEl=list.querySelector('.command-item.active');
+    if(selectedEl&&input)input.setAttribute('aria-activedescendant',selectedEl.id);
+    selectedEl&&selectedEl.scrollIntoView({block:'nearest'});
+  }
+  function moveCommandSelection(delta){
+    var commands=commandPaletteMatches();if(!commands.length)return;
+    S.commandPaletteIndex=(S.commandPaletteIndex+delta+commands.length)%commands.length;
+    renderCommandPalette();
+  }
+  function openCommandPalette(trigger){
+    if(!$('commandPalette')||!$('commandPalette').hidden)return;
+    if(!$('authModal').hidden||!$('modal').hidden||!$('confirmModal').hidden||!$('drawer').hidden)return;
+    S.commandPaletteFocus=trigger||document.activeElement;
+    S.commandPaletteQuery='';S.commandPaletteIndex=0;
+    $('commandPalette').hidden=false;
+    renderCommandPalette();
+    requestAnimationFrame(function(){var input=$('commandSearch');if(input){input.focus();input.select()}});
+  }
+  function closeCommandPalette(){
+    var palette=$('commandPalette');if(!palette||palette.hidden)return;
+    palette.hidden=true;
+    var focus=S.commandPaletteFocus;S.commandPaletteFocus=null;S.commandPaletteQuery='';S.commandPaletteIndex=0;
+    if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}});
+  }
+
   async function loadRuntimeEvents(reset){if(S.runtimeLoading)return;var token=S.workspaceToken,id=S.repoId,runId=S.runId;S.runtimeLoading=true;actionBusy(reset?'runtime-filter':'runtime-more',true,reset?'Applying…':'Loading…');actionBusy('runtime-clear-filter',true,'Clear');var previousEvents=S.runtimeEvents,previousPage=S.runtimePagination,previousFilter=S.runtimeFilter;try{var f={from:($('rtFrom')&&$('rtFrom').value)||S.runtimeFilter.from||'',to:($('rtTo')&&$('rtTo').value)||S.runtimeFilter.to||'',deploymentId:($('rtDeployment')&&$('rtDeployment').value.trim())||S.runtimeFilter.deploymentId||'',revisionSha:($('rtRevision')&&$('rtRevision').value.trim())||S.runtimeFilter.revisionSha||'',environment:($('rtEnvironment')&&$('rtEnvironment').value.trim())||S.runtimeFilter.environment||'',operationName:($('rtOperation')&&$('rtOperation').value.trim())||S.runtimeFilter.operationName||'',signalType:($('rtSignal')&&$('rtSignal').value)||S.runtimeFilter.signalType||''};var page=reset?1:Number(S.runtimePagination&&S.runtimePagination.page||1)+1;if(f.from&&f.to&&new Date(f.from).getTime()>=new Date(f.to).getTime())throw new Error('From must be earlier than To.');if(f.revisionSha&&!/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(f.revisionSha))throw new Error('Revision SHA must be exactly 40 or 64 hexadecimal characters.');var r=await api(runtimeEventsPathWithFilter(page,40,f));if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;var next=arr(r,'events');S.runtimeFilter=f;S.runtimeEvents=reset?next:previousEvents.concat(next);S.runtimePagination=r.pagination;S.data.runtimeEvents=r;S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='runtimeEvents'});setView('runtime');toast(next.length?'Runtime evidence loaded':'No runtime events matched the filters','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId){S.runtimeEvents=previousEvents;S.runtimePagination=previousPage;S.runtimeFilter=previousFilter;toast(e.message||'Runtime evidence load failed','bad')}}finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false;actionBusy('runtime-filter',false);actionBusy('runtime-more',false);actionBusy('runtime-clear-filter',false)}}
   async function reloadCurrentView(){
     var view=S.view;
@@ -1554,6 +1644,17 @@
     }
   });
   document.addEventListener('keydown',function(e){
+    if(!$('commandPalette').hidden){
+      trapFocus($('commandPalette'),e);
+      if(e.key==='Escape'){e.preventDefault();closeCommandPalette();return}
+      if(e.key==='ArrowDown'){e.preventDefault();moveCommandSelection(1);return}
+      if(e.key==='ArrowUp'){e.preventDefault();moveCommandSelection(-1);return}
+      if(e.key==='Enter'&&document.activeElement===$('commandSearch')){e.preventDefault();var commands=commandPaletteMatches();if(commands[S.commandPaletteIndex])commandPaletteRun(commands[S.commandPaletteIndex].id);return}
+      return;
+    }
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'&&!e.altKey){
+      e.preventDefault();openCommandPalette(document.activeElement);return;
+    }
     if(!$('confirmModal').hidden)trapFocus($('confirmModal'),e);else if(!$('authModal').hidden)trapFocus($('authModal'),e);else if(!$('modal').hidden)trapFocus($('modal'),e);else if(!$('drawer').hidden)trapFocus($('drawer'),e);
     var target=e.target;
     if(e.key==='/'&&$('viewSearch')&&target&&['INPUT','TEXTAREA','SELECT'].indexOf(target.tagName)<0&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
@@ -1567,6 +1668,9 @@
       if(!$('drawer').hidden)closeEvidence();else if(!$('modal').hidden)closeSettings();else if(!$('authModal').hidden)closeAuth()
     }
   });
+  $('commandPalette').onclick=function(e){if(e.target===$('commandPalette'))closeCommandPalette()};
+  $('commandSearch').oninput=function(){S.commandPaletteQuery=this.value;S.commandPaletteIndex=0;renderCommandPalette()};
+  $('commandList').onclick=function(e){var b=e.target.closest('[data-command-id]');if(b)commandPaletteRun(b.getAttribute('data-command-id'))};
   $('new').onclick=function(){stopOperationsMonitoring();S.workspaceToken+=1;S.commitLoadToken+=1;S.timelineLoading=false;S.timelineLoadToken+=1;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.commitLoading=false;S.importing=false;S.refreshLoading=false;S.reportLoading=false;S.interviewLoading=false;S.interpretationLoading=false;S.provenanceLoading=false;clearInterval(S.timer);S.timer=null;S.runtimeLoading=false;S.historicalLoading=false;S.historicalLoadToken+=1;S.repoId='';S.runId='';S.repo=null;S.analysis=null;S.data={};S.dataRunId='';S.dataErrors=[];S.runtimeEvents=[];S.runtimePagination=null;S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};S.viewFilter={};S.tableSort={};S.viewLoading={};persist();landing()}
   $('nav').onclick=function(e){var b=e.target.closest('button[data-view]');if(b)setView(b.getAttribute('data-view'))};window.addEventListener('hashchange',function(){setView(viewFromHash(),{fromHash:true})});window.addEventListener('pageshow',function(){closeTransientOverlays()});document.addEventListener('visibilitychange',function(){syncOperationsMonitoring(!document.hidden)})
   $('root').onclick=function(e){var ev=e.target.closest('[data-evidence-id]');if(ev){e.preventDefault();openEvidence(ev.getAttribute('data-evidence-id'),ev);return}var pd=e.target.closest('[data-deployment-id]');if(pd){e.preventDefault();loadProvenance(pd.getAttribute('data-deployment-id'),pd);return}var a=e.target.closest('[data-action]');if(!a)return;if(a.getAttribute('data-action')==='report')loadReport();if(a.getAttribute('data-action')==='report-jump'){var target=$(a.getAttribute('data-report-section'));if(target)target.scrollIntoView({behavior:'smooth',block:'start'});}if(a.getAttribute('data-action')==='interview')loadInterview();if(a.getAttribute('data-action')==='copy-story')copyInterviewStory(a.getAttribute('data-story-id'));if(a.getAttribute('data-action')==='interpretation')loadInterpretation();if(a.getAttribute('data-action')==='download')downloadReport();if(a.getAttribute('data-action')==='more-commits')loadMoreCommits();if(a.getAttribute('data-action')==='more-timeline')loadMoreTimeline();if(a.getAttribute('data-action')==='analysis-runs-more')loadMoreAnalysisRuns();if(a.getAttribute('data-action')==='reload-data')reloadData();if(a.getAttribute('data-action')==='reload-view')reloadCurrentView();if(a.getAttribute('data-action')==='runtime-filter')loadRuntimeEvents(true);if(a.getAttribute('data-action')==='runtime-clear-filter'){S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''};['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation'].forEach(function(id){if($(id))$(id).value=''});if($('rtSignal'))$('rtSignal').value='';loadRuntimeEvents(true)}if(a.getAttribute('data-action')==='runtime-more')loadRuntimeEvents(false);if(a.getAttribute('data-action')==='historical-filter')loadHistoricalRuntime();if(a.getAttribute('data-action')==='operations-refresh')loadOperations(true);if(a.getAttribute('data-action')==='operations-retry')loadOperations(true);if(a.getAttribute('data-action')==='historical-clear-filter'){S.historicalFilter={windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''};['histWindow','histSamples','histDeployment','histEnvironment','histOperation'].forEach(function(id){if($(id))$(id).value=id==='histWindow'?60:id==='histSamples'?10:''});if($('histSignal'))$('histSignal').value='';loadHistoricalRuntime()}}
