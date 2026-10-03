@@ -1,6 +1,8 @@
 name: production-smoke
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
@@ -26,6 +28,9 @@ jobs:
       AUTOPSY_PRODUCTION_URL: ${{ inputs.url || 'https://project-autopsy.onrender.com' }}
       AUTOPSY_BOOTSTRAP_EMAIL: ${{ secrets.AUTOPSY_BOOTSTRAP_EMAIL }}
       AUTOPSY_BOOTSTRAP_PASSWORD: ${{ secrets.AUTOPSY_BOOTSTRAP_PASSWORD }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY }}
+      AUTOPSY_EXPECTED_AI_PROVIDER: gemini
+      AUTOPSY_EXPECTED_AI_MODEL: gemini-3.8-flash
     steps:
       - name: Validate production credential
         shell: bash
@@ -34,6 +39,12 @@ jobs:
           test -n "$AUTOPSY_BOOTSTRAP_EMAIL"
           test -n "$AUTOPSY_BOOTSTRAP_PASSWORD"
           test "${#AUTOPSY_BOOTSTRAP_PASSWORD}" -ge 12
+
+      - name: Validate AI provider credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$AI_API_KEY"
 
       - name: Checkout
         uses: actions/checkout@v6
