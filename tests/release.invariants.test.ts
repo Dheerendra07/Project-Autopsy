@@ -2590,3 +2590,21 @@ test("frontend clears in-memory csrf state on auth loss and sign-out", () => {
     /logoutLocalState\(showToast\)\{[\s\S]*?S\.user=null;S\.csrfToken='';/
   );
 });
+
+
+test("landing repository form keeps controls contained and action hierarchy explicit", () => {
+  const html = readRepoFile("public/index.html");
+  assert.ok(
+    html.includes(".import{grid-template-columns:minmax(0,1fr) minmax(150px,180px) max-content;align-items:end}")
+  );
+  assert.ok(
+    html.includes(".import .field input{width:100%;min-width:0;height:44px;min-height:44px;line-height:20px}")
+  );
+  assert.ok(
+    html.includes(".import>.btn.primary{height:44px;min-height:44px;align-self:end")
+  );
+  assert.ok(html.includes(".import>.btn.primary::after"));
+  assert.ok(html.includes("@media(max-width:760px)"));
+  assert.ok(html.includes("@media(max-width:520px)"));
+});
+
