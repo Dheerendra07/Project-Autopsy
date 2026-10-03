@@ -41,6 +41,34 @@ async function request(path, options = {}) {
   return { response, text, body };
 }
 
+const PUBLIC_WARMUP_RETRY_STATUSES = new Set([502, 503, 504]);
+const PUBLIC_WARMUP_MAX_ATTEMPTS = 7;
+const PUBLIC_WARMUP_BASE_DELAY_MS = 1_500;
+const PUBLIC_WARMUP_MAX_DELAY_MS = 8_000;
+
+async function requestPublicWarmup(path) {
+  for (let attempt = 1; attempt <= PUBLIC_WARMUP_MAX_ATTEMPTS; attempt += 1) {
+    const result = await request(path);
+    if (
+      !PUBLIC_WARMUP_RETRY_STATUSES.has(result.response.status) ||
+      attempt === PUBLIC_WARMUP_MAX_ATTEMPTS
+    ) {
+      return result;
+    }
+
+    const delayMs = Math.min(
+      PUBLIC_WARMUP_MAX_DELAY_MS,
+      PUBLIC_WARMUP_BASE_DELAY_MS * 2 ** (attempt - 1)
+    );
+    console.log(
+      `⚠ Public probe ${path} returned HTTP ${result.response.status}; retrying in ${delayMs}ms (attempt ${attempt + 1}/${PUBLIC_WARMUP_MAX_ATTEMPTS}).`
+    );
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error(`Public warm-up probe for ${path} exhausted its retry window.`);
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
@@ -83,7 +111,7 @@ async function waitForAnalysis(
   );
 }
 
-const home = await request("/");
+const home = await requestPublicWarmup("/");
 assert(home.response.ok, `Home page returned HTTP ${home.response.status}.`);
 assert(home.text.includes("Project Autopsy"), "Home page does not contain the Project Autopsy surface.");
 assert(home.text.includes('<script src="app.js" defer></script>'), "Home page is missing the dependency-free app.js asset.");
@@ -101,7 +129,7 @@ for (const assetPath of ["/favicon.svg", "/favicon.ico"]) {
   );
 }
 
-const health = await request("/health");
+const health = await requestPublicWarmup("/health");
 assert(health.response.status === 200, `/health returned HTTP ${health.response.status}.`);
 assert(health.body?.success === true && health.body?.status === "healthy", "/health did not report healthy.");
 assert(
@@ -109,7 +137,7 @@ assert(
   "Health response did not expose a valid X-Request-Id."
 );
 
-const ready = await request("/ready");
+const ready = await requestPublicWarmup("/ready");
 assert(ready.response.status === 200, `/ready returned HTTP ${ready.response.status}. Body: ${ready.text.slice(0, 500)}`);
 assert(ready.body?.success === true && ready.body?.status === "ready", "/ready did not report ready.");
 assert(ready.body?.checks?.database === "ready", "PostgreSQL is not ready.");
