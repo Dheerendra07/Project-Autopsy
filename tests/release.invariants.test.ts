@@ -930,7 +930,7 @@ test("frontend Evidence structure family includes architecture and dependency re
   const appJs = readRepoFile("public/app.js");
 
   assert.ok(
-    appJs.includes("{label:'Structure',items:arr(d.architecture,'events').concat(arr(d.dependencies,'changes')),detail:'architecture + dependency change events'}")
+    appJs.includes("id:'structure',label:'Structure',items:arr(d.architecture,'events').concat(arr(d.dependencies,'changes')),detail:'architecture + dependency change events'")
   );
 });
 
@@ -948,7 +948,7 @@ test("frontend evidence explorer search exposes count and reset controls", () =>
   const indexHtml = readRepoFile("public/index.html");
   assert.ok(appJs.includes("evidenceSearchCount"));
   assert.ok(appJs.includes("evidenceSearchClear"));
-  assert.ok(appJs.includes("var term=q.value.trim().toLowerCase(),shown=0,total=0"));
+  assert.ok(appJs.includes("var term=q.value.trim().toLowerCase(),family=S.evidenceFamily||'all',shown=0,total=0"));
   assert.ok(indexHtml.includes(".evidence-search-row"));
 });
 
@@ -2750,6 +2750,27 @@ test("developer command center preserves evidence-first workspace boundaries", (
   );
 });
  
+test("evidence-family filtering stays a client-side projection over loaded records", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+
+  for (const marker of [
+    "evidenceFamily:'all'",
+    "var familyOk=family==='all'||row.getAttribute('data-family')===family;",
+    "var textOk=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;",
+    "q.dispatchEvent(evt)",
+    "Search and family filters stay local to records already loaded into this snapshot"
+  ]) {
+    assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence local-filter marker: " + marker);
+  }
+
+  assert.ok(appJs.includes("var familyCards='<button type=\"button\" class=\"evidence-family "));
+  assert.ok(appJs.includes("data-evidence-family=\"all\""));
+  assert.ok(appJs.includes("data-evidence-family=\"'+esc(f.id)+'\""));
+  assert.ok(appJs.includes("activeFamily===f.id"));
+  assert.ok(appJs.includes("data-family=\"'+esc(x.family)+'\""));
+});
+
 test("workspace views stay backed by mounted API contracts", () => {
   const appJs = readRepoFile("public/app.js");
   const router = readRepoFile("src/routes/index.ts");
