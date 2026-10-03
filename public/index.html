@@ -1073,6 +1073,39 @@ html[data-theme="light"] .content{background-image:linear-gradient(var(--ui-grid
   .landing{padding:54px 16px 48px!important}.import-card.card{padding:18px!important}
 }
 
+ 
+/* DEVELOPER COMMAND CENTER — keyboard-first navigation */
+.command-palette{background:rgba(3,7,13,.64)!important;backdrop-filter:blur(10px);align-items:start!important;padding-top:11vh!important}
+.command-sheet{width:min(680px,100%);overflow:hidden;padding:0!important;background:var(--ui-surface)!important;border:1px solid var(--ui-border-strong)!important;border-radius:16px!important;box-shadow:var(--ui-shadow-float)!important}
+.command-head{padding:14px;border-bottom:1px solid var(--ui-border);background:linear-gradient(180deg,var(--ui-surface-2),var(--ui-surface))}
+.command-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.command-title-row strong{font-size:12px;color:var(--ui-text)}
+.command-title-row small{font:700 8px var(--ui-mono);letter-spacing:.09em;color:var(--ui-text-4);text-transform:uppercase}
+.command-search-wrap{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--ui-border-strong);border-radius:11px;background:var(--ui-bg);min-height:44px}
+.command-search-icon{font:700 12px var(--ui-mono);color:var(--ui-accent-2);text-align:center}
+.command-search-wrap input{width:100%;min-width:0;border:0!important;outline:0!important;background:transparent!important;color:var(--ui-text)!important;box-shadow:none!important;padding:10px 0!important}
+.command-search-wrap kbd{min-width:24px;padding:4px 6px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-surface-2);color:var(--ui-text-4);font:700 8px var(--ui-mono);text-align:center}
+.command-list{max-height:min(56vh,500px);overflow:auto;padding:7px;scrollbar-width:thin;scrollbar-color:var(--ui-border-strong) transparent}
+.command-group{padding:9px 10px 5px;color:var(--ui-text-4);font:700 7px var(--ui-mono);letter-spacing:.12em}
+.command-item{width:100%;display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.command-item:hover{background:var(--ui-surface-2);border-color:var(--ui-border);box-shadow:none}
+.command-item.active{background:var(--ui-accent-soft);border-color:rgba(99,102,241,.32);box-shadow:inset 3px 0 0 var(--ui-accent)}
+.command-glyph{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface-2);color:var(--ui-text-4);font:700 10px var(--ui-mono)}
+.command-item.active .command-glyph{border-color:rgba(99,102,241,.38);background:rgba(99,102,241,.10);color:var(--ui-accent-2)}
+.command-copy{min-width:0}.command-copy strong{display:block;color:var(--ui-text);font-size:11px;line-height:1.35}.command-copy small{display:block;margin-top:2px;color:var(--ui-text-3);font-size:9px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.command-item kbd{min-width:24px;padding:4px 6px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-surface-2);color:var(--ui-text-4);font:700 8px var(--ui-mono);text-align:center}
+.command-empty{padding:30px 14px;text-align:center;color:var(--ui-text-3)}
+.command-empty strong{display:block;color:var(--ui-text);font-size:11px}.command-empty span{display:block;margin-top:4px;font-size:9px}
+.command-foot{display:flex;gap:14px;flex-wrap:wrap;padding:9px 14px;border-top:1px solid var(--ui-border);background:var(--ui-surface-2);color:var(--ui-text-4);font-size:8px}
+.command-foot span{display:inline-flex;align-items:center;gap:5px}.command-foot kbd{padding:3px 5px;border:1px solid var(--ui-border);border-radius:5px;background:var(--ui-surface);font:700 7px var(--ui-mono);color:var(--ui-text-3)}
+html[data-theme="light"] .command-palette{background:rgba(30,42,61,.25)!important}
+html[data-theme="light"] .command-sheet{background:#fff!important}
+html[data-theme="light"] .command-head,html[data-theme="light"] .command-foot{background:#f7f9fc!important}
+html[data-theme="light"] .command-search-wrap{background:#f8fafc!important}
+html[data-theme="light"] .command-item:hover{background:#f4f7fb!important}
+html[data-theme="light"] .command-item.active{background:rgba(79,70,229,.07)!important;border-color:rgba(79,70,229,.24)!important}
+@media(max-width:680px){.command-palette{padding:8px!important;align-items:start!important}.command-sheet{border-radius:14px}.command-list{max-height:58vh}.command-copy small{white-space:normal}}
+
 </style>
 </head>
 <body>
@@ -1331,5 +1364,15 @@ html[data-theme="light"] .content{background-image:linear-gradient(var(--ui-grid
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div><div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden><div class="drawer-panel"><div class="drawer-head"><div><div class="kicker">EVIDENCE INSPECTOR</div><h3 id="drawerTitle">Evidence</h3></div><div class="drawer-actions"><button id="drawerCopy" class="btn">Copy JSON</button><button id="drawerClose" class="btn" aria-label="Close evidence inspector">Close</button></div></div><div id="drawerBasis" class="drawer-basis"></div><div id="drawerSummary" class="evidence-summary"></div><details id="drawerRaw" class="raw-evidence"><summary>View raw evidence record</summary><pre id="drawerJson" class="json"></pre></details></div></div>
 
 <script src="app.js" defer></script>
+<div id="commandPalette" class="modal command-palette" role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle" hidden>
+  <div class="command-sheet">
+    <div class="command-head">
+      <div class="command-title-row"><strong id="commandPaletteTitle">Command Center</strong><small>Developer navigation</small></div>
+      <div class="command-search-wrap"><span class="command-search-icon" aria-hidden="true">⌘</span><input id="commandSearch" type="search" autocomplete="off" spellcheck="false" placeholder="Search pages, actions or filters…" aria-controls="commandList" aria-activedescendant=""><kbd>Esc</kbd></div>
+    </div>
+    <div id="commandList" class="command-list" role="listbox" aria-label="Developer commands"></div>
+    <div class="command-foot"><span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>Enter</kbd> Run</span><span><kbd>Esc</kbd> Close</span><span><kbd>Ctrl</kbd><kbd>K</kbd> Command Center</span></div>
+  </div>
+</div>
 </body>
 </html>

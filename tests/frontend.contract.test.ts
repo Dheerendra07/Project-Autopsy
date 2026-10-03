@@ -155,6 +155,52 @@ test("product frontend supports persistent dark and light themes without inline 
 });
 
 
+test("developer command center is keyboard-first, contextual and accessible", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+
+  for (const marker of [
+    'id="commandPalette"',
+    'role="dialog"',
+    'aria-labelledby="commandPaletteTitle"',
+    'id="commandSearch"',
+    'id="commandList"',
+    'role="listbox"',
+    'Ctrl</kbd><kbd>K</kbd> Command Center',
+    '.command-palette',
+    '.command-item.active'
+  ]) {
+    assert.ok(html.includes(marker), "missing command center markup/style: " + marker);
+  }
+
+  for (const marker of [
+    "const COMMAND_DEFS=",
+    "function commandPaletteCommands()",
+    "function commandPaletteMatches()",
+    "function commandPaletteRun(id)",
+    "function renderCommandPalette()",
+    "function moveCommandSelection(delta)",
+    "function openCommandPalette(trigger)",
+    "function closeCommandPalette()",
+    "e.key==='ArrowDown'",
+    "e.key==='ArrowUp'",
+    "e.key==='Enter'&&document.activeElement===$('commandSearch')",
+    "(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'",
+    "S.commandPaletteFocus",
+    "S.commandPaletteIndex",
+    "S.commandPaletteQuery"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing command center interaction marker: " + marker);
+  }
+
+  assert.ok(appJs.includes("if($('commandPalette'))$('commandPalette').hidden=true"));
+  assert.ok(appJs.includes("$('commandSearch').oninput=function()"));
+  assert.ok(appJs.includes("$('commandList').onclick=function(e)"));
+  assert.ok(
+    appJs.includes("var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));")
+  );
+});
+ 
 test("frontend does not embed an API access secret", () => {
   const secretAssignment = /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY|x-autopsy-api-key)\s*[:=]\s*['"][^'"]{12,}['"]/i;
   assert.equal(secretAssignment.test(html), false);
