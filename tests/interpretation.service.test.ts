@@ -372,7 +372,6 @@ test("generates structured interpretation and preserves report fingerprint", asy
           "uncertainties"
         ]
       }
-    }
   });
   assert.equal(requestBody.generation_config?.thinking_level, "medium");
   assert.equal(requestBody.generation_config?.max_output_tokens, 4_096);
