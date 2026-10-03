@@ -2764,10 +2764,11 @@ test("evidence-family filtering stays a client-side projection over loaded recor
     assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence local-filter marker: " + marker);
   }
 
-  assert.ok(appJs.includes('type="button" class="evidence-family'));
-  assert.ok(appJs.includes('data-evidence-family="git"'));
-  assert.ok(appJs.includes('data-evidence-family="runtime"'));
-  assert.ok(appJs.includes('data-evidence-family="contributors"'));
+  assert.ok(appJs.includes("var familyCards='<button type=\"button\" class=\"evidence-family "));
+  assert.ok(appJs.includes("data-evidence-family=\"all\""));
+  assert.ok(appJs.includes("data-evidence-family=\"'+esc(f.id)+'\""));
+  assert.ok(appJs.includes("activeFamily===f.id"));
+  assert.ok(appJs.includes("data-family=\"'+esc(x.family)+'\""));
 });
 
 test("workspace views stay backed by mounted API contracts", () => {
