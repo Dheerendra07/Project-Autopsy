@@ -14,8 +14,8 @@ test("uses a cached interpretation without calling the provider", async () => {
   const report = reportFixture();
   const cachedResult = {
     interpretationVersion: "1.0" as const,
-    provider: "openai" as const,
-    model: "gpt-6-luna",
+    provider: "gemini" as const,
+    model: "gemini-2.5-flash",
     reportFingerprint: report.fingerprint,
     groundingClaimCount: 2,
     generatedAt: "2026-09-29T00:00:00.000Z",
@@ -39,8 +39,8 @@ test("uses a cached interpretation without calling the provider", async () => {
     report,
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     async () => {
@@ -73,8 +73,13 @@ test("persists a fresh provider result after a cache miss", async () => {
   const fakeFetch: typeof fetch = async () =>
     new Response(
       JSON.stringify({
-        status: "completed",
-        output_text: JSON.stringify(validAiOutput)
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
       }),
       { status: 200, headers: { "content-type": "application/json" } }
     );
@@ -83,8 +88,8 @@ test("persists a fresh provider result after a cache miss", async () => {
     report,
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -111,8 +116,13 @@ test("continues provider flow when cache read or write fails", async () => {
     fetchCalls += 1;
     return new Response(
       JSON.stringify({
-        status: "completed",
-        output_text: JSON.stringify(validAiOutput)
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
       }),
       { status: 200 }
     );
@@ -122,8 +132,8 @@ test("continues provider flow when cache read or write fails", async () => {
     reportFixture(),
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -255,15 +265,23 @@ test("builds deterministic grounded prompt without exposing report source URL", 
 
 test("generates structured interpretation and preserves report fingerprint", async () => {
   let capturedBody = "";
-  const fakeFetch: typeof fetch = async (_input, init) => {
+  const fakeFetch: typeof fetch = async (input, init) => {
+    assert.equal(
+      String(input),
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    );
+    assert.equal(
+      new Headers(init?.headers).get("x-goog-api-key"),
+      "test-key"
+    );
     capturedBody = String(init?.body ?? "");
     return new Response(
       JSON.stringify({
-        status: "completed",
-        output: [
+        candidates: [
           {
-            type: "message",
-            content: [{ type: "output_text", text: JSON.stringify(validAiOutput) }]
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
           }
         ]
       }),
@@ -275,18 +293,18 @@ test("generates structured interpretation and preserves report fingerprint", asy
     reportFixture(),
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     fakeFetch
   );
 
-  assert.equal(result.provider, "openai");
-  assert.equal(result.model, "gpt-6-luna");
+  assert.equal(result.provider, "gemini");
+  assert.equal(result.model, "gemini-2.5-flash");
   assert.equal(result.reportFingerprint, "f".repeat(64));
   assert.equal(result.groundingClaimCount, 2);
-  assert.match(capturedBody, /project_autopsy_interpretation/);
+  assert.match(capturedBody, /responseJsonSchema/);
   assert.doesNotMatch(capturedBody, /test-key/);
 });
 
@@ -294,15 +312,25 @@ test("rejects provider output that references unknown evidence", async () => {
   const fakeFetch: typeof fetch = async () =>
     new Response(
       JSON.stringify({
-        output_text: JSON.stringify({
-          ...validAiOutput,
-          themes: [
-            {
-              ...validAiOutput.themes[0],
-              evidenceKeys: ["not-supplied"]
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    ...validAiOutput,
+                    themes: [
+                      {
+                        ...validAiOutput.themes[0],
+                        evidenceKeys: ["not-supplied"]
+                      }
+                    ]
+                  })
+                }
+              ]
             }
-          ]
-        })
+          }
+        ]
       }),
       { status: 200 }
     );
@@ -313,8 +341,8 @@ test("rejects provider output that references unknown evidence", async () => {
         reportFixture(),
         {
           apiKey: "test-key",
-          baseUrl: "https://api.openai.com/v1",
-          model: "gpt-6-luna",
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+          model: "gemini-2.5-flash",
           timeoutMs: 5_000
         },
         fakeFetch
@@ -336,8 +364,8 @@ test("maps upstream provider failures without exposing response bodies", async (
         reportFixture(),
         {
           apiKey: "test-key",
-          baseUrl: "https://api.openai.com/v1",
-          model: "gpt-6-luna",
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+          model: "gemini-2.5-flash",
           timeoutMs: 5_000
         },
         fakeFetch
@@ -361,7 +389,7 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
     if (fetchCalls === 1) {
       return new Response(
         JSON.stringify({
-          error: { code: "slow_down" }
+          error: { status: "slow_down" }
         }),
         {
           status: 429,
@@ -373,7 +401,7 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
     if (fetchCalls === 2) {
       return new Response(
         JSON.stringify({
-          error: { code: "server_is_overloaded" }
+          error: { status: "server_is_overloaded" }
         }),
         {
           status: 503,
@@ -384,8 +412,13 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
 
     return new Response(
       JSON.stringify({
-        status: "completed",
-        output_text: JSON.stringify(validAiOutput)
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
       }),
       { status: 200 }
     );
@@ -395,8 +428,8 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
     reportFixture(),
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -421,7 +454,7 @@ test("does not retry exhausted-credit 429 responses", async () => {
     fetchCalls += 1;
     return new Response(
       JSON.stringify({
-        error: { code: "credit_balance_exhausted" }
+        error: { status: "RESOURCE_EXHAUSTED" }
       }),
       {
         status: 429,
@@ -436,8 +469,8 @@ test("does not retry exhausted-credit 429 responses", async () => {
         reportFixture(),
         {
           apiKey: "test-key",
-          baseUrl: "https://api.openai.com/v1",
-          model: "gpt-6-luna",
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+          model: "gemini-2.5-flash",
           timeoutMs: 5_000
         },
         fakeFetch,
@@ -467,7 +500,7 @@ test("honors Retry-After before a temporary retry", async () => {
     if (fetchCalls === 1) {
       return new Response(
         JSON.stringify({
-          error: { code: "slow_down" }
+          error: { status: "slow_down" }
         }),
         {
           status: 429,
@@ -478,8 +511,13 @@ test("honors Retry-After before a temporary retry", async () => {
 
     return new Response(
       JSON.stringify({
-        status: "completed",
-        output_text: JSON.stringify(validAiOutput)
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
       }),
       { status: 200 }
     );
@@ -489,8 +527,8 @@ test("honors Retry-After before a temporary retry", async () => {
     reportFixture(),
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -519,8 +557,13 @@ test("retries transient network failures without leaking error details", async (
 
     return new Response(
       JSON.stringify({
-        status: "completed",
-        output_text: JSON.stringify(validAiOutput)
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
       }),
       { status: 200 }
     );
@@ -530,8 +573,8 @@ test("retries transient network failures without leaking error details", async (
     reportFixture(),
     {
       apiKey: "test-key",
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-6-luna",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-2.5-flash",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -553,7 +596,7 @@ test("stops retrying when the provider asks for an excessive delay", async () =>
     fetchCalls += 1;
     return new Response(
       JSON.stringify({
-        error: { code: "slow_down" }
+        error: { status: "slow_down" }
       }),
       {
         status: 429,
@@ -568,8 +611,8 @@ test("stops retrying when the provider asks for an excessive delay", async () =>
         reportFixture(),
         {
           apiKey: "test-key",
-          baseUrl: "https://api.openai.com/v1",
-          model: "gpt-6-luna",
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+          model: "gemini-2.5-flash",
           timeoutMs: 5_000
         },
         fakeFetch,
@@ -597,7 +640,7 @@ test("requires an AI API key", () => {
     () =>
       readAiProviderConfig({
         AI_API_KEY: "",
-        AI_BASE_URL: "https://api.openai.com/v1"
+        AI_BASE_URL: "https://generativelanguage.googleapis.com/v1beta"
       }),
     /AI interpretation is not configured/
   );
