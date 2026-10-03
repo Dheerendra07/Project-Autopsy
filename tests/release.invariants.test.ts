@@ -2750,6 +2750,26 @@ test("developer command center preserves evidence-first workspace boundaries", (
   );
 });
  
+test("evidence-family filtering stays a client-side projection over loaded records", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+
+  for (const marker of [
+    "evidenceFamily:'all'",
+    "var familyOk=family==='all'||row.getAttribute('data-family')===family;",
+    "var textOk=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;",
+    "q.dispatchEvent(evt)",
+    "Search and family filters stay local to records already loaded into this snapshot"
+  ]) {
+    assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence local-filter marker: " + marker);
+  }
+
+  assert.ok(html.includes('type="button" class="evidence-family'));
+  assert.ok(html.includes('data-evidence-family="git"'));
+  assert.ok(html.includes('data-evidence-family="runtime"'));
+  assert.ok(html.includes('data-evidence-family="contributors"'));
+});
+
 test("workspace views stay backed by mounted API contracts", () => {
   const appJs = readRepoFile("public/app.js");
   const router = readRepoFile("src/routes/index.ts");
