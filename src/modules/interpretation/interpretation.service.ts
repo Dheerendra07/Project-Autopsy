@@ -430,6 +430,14 @@ function parseProviderResponse(body: unknown): string {
         text?: unknown;
       }>;
     }>;
+    candidates?: Array<{
+      finishReason?: unknown;
+      content?: {
+        parts?: Array<{
+          text?: unknown;
+        }>;
+      };
+    }>;
   };
 
   if (
@@ -458,6 +466,16 @@ function parseProviderResponse(body: unknown): string {
     )
     .map((item) => item.text as string)
     .join("");
+
+  const legacyCandidateText = (candidate.candidates ?? [])
+    .flatMap((item) => item.content?.parts ?? [])
+    .filter((item) => typeof item.text === "string")
+    .map((item) => item.text as string)
+    .join("");
+
+  if (legacyCandidateText.trim()) {
+    return legacyCandidateText;
+  }
 
   if (outputText.trim()) {
     return outputText;
