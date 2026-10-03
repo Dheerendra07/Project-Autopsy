@@ -12,12 +12,12 @@ test("accepts HTTPS AI provider URLs", () => {
   const config = readAiProviderConfig({
     AI_API_KEY: key,
     AI_BASE_URL: "https://api.example.com/v1",
-    AI_MODEL: "gpt-6-luna",
+    AI_MODEL: "gemini-3.8-flash",
     AI_TIMEOUT_MS: "30000"
   });
 
   assert.equal(config.baseUrl, "https://api.example.com/v1");
-  assert.equal(config.model, "gpt-6-luna");
+  assert.equal(config.model, "gemini-3.8-flash");
   assert.equal(config.timeoutMs, 30_000);
 });
 

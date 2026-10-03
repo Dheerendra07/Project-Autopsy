@@ -63,8 +63,8 @@ const report = {
 
 const config = {
   apiKey: "a".repeat(48),
-  baseUrl: "https://api.example.com/v1",
-  model: "gpt-6-luna",
+  baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+  model: "gemini-3.8-flash",
   timeoutMs: 30_000
 };
 

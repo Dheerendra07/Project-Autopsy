@@ -54,6 +54,10 @@ const AI_PROVIDER_MAX_TOTAL_TIME_MS = 45_000;
 const AI_PROVIDER_INITIAL_RETRY_DELAY_MS = 500;
 const AI_PROVIDER_JITTER_MS = 250;
 const NON_RETRYABLE_429_CODES = new Set([
+  "RESOURCE_EXHAUSTED",
+  "PERMISSION_DENIED",
+  "API_KEY_INVALID",
+  "QUOTA_EXHAUSTED",
   "credit_balance_exhausted",
   "organization_spend_limit_exceeded",
   "project_spend_limit_exceeded",
@@ -138,8 +142,12 @@ async function readProviderErrorCode(
     }
 
     const body = JSON.parse(raw) as {
-      error?: { code?: unknown };
+      error?: { code?: unknown; status?: unknown };
     };
+
+    if (typeof body.error?.status === "string") {
+      return body.error.status;
+    }
 
     return typeof body.error?.code === "string"
       ? body.error.code
@@ -290,7 +298,7 @@ export function readAiProviderConfig(
     throw new AiInterpretationNotConfiguredError();
   }
 
-  const baseUrl = source.AI_BASE_URL?.trim() || "https://api.openai.com/v1";
+  const baseUrl = source.AI_BASE_URL?.trim() || "https://generativelanguage.googleapis.com/v1beta";
   let normalizedBaseUrl: string;
 
   try {
@@ -305,7 +313,7 @@ export function readAiProviderConfig(
     );
   }
 
-  const model = source.AI_MODEL?.trim() || "gpt-6-luna";
+  const model = source.AI_MODEL?.trim() || "gemini-3.8-flash";
   const parsedTimeout = Number(source.AI_TIMEOUT_MS ?? 30_000);
 
   if (!Number.isInteger(parsedTimeout) || parsedTimeout < 1_000 || parsedTimeout > 120_000) {
@@ -412,50 +420,65 @@ function parseProviderResponse(body: unknown): string {
   }
 
   const candidate = body as {
-    status?: unknown;
-    incomplete_details?: { reason?: unknown } | null;
     output_text?: unknown;
-    output?: Array<{
+    status?: unknown;
+    steps?: Array<{
       type?: unknown;
+      status?: unknown;
       content?: Array<{
         type?: unknown;
         text?: unknown;
-        refusal?: unknown;
       }>;
+    }>;
+    candidates?: Array<{
+      finishReason?: unknown;
+      content?: {
+        parts?: Array<{
+          text?: unknown;
+        }>;
+      };
     }>;
   };
 
   if (
-    candidate.status === "incomplete" &&
-    candidate.incomplete_details?.reason === "max_output_tokens"
+    candidate.status === "failed" ||
+    candidate.status === "incomplete"
   ) {
     throw new AiInterpretationProviderError(
       "AI provider returned an incomplete interpretation."
     );
   }
 
-  if (typeof candidate.output_text === "string" && candidate.output_text.trim()) {
+  if (
+    typeof candidate.output_text === "string" &&
+    candidate.output_text.trim()
+  ) {
     return candidate.output_text;
   }
 
-  const outputText = (candidate.output ?? [])
-    .flatMap((item) => item.content ?? [])
-    .filter((item) => item.type === "output_text" && typeof item.text === "string")
+  const outputText = (candidate.steps ?? [])
+    .filter((step) => step.type === "model_output")
+    .flatMap((step) => step.content ?? [])
+    .filter(
+      (item) =>
+        item.type === "text" &&
+        typeof item.text === "string"
+    )
     .map((item) => item.text as string)
     .join("");
 
-  if (outputText.trim()) {
-    return outputText;
+  const legacyCandidateText = (candidate.candidates ?? [])
+    .flatMap((item) => item.content?.parts ?? [])
+    .filter((item) => typeof item.text === "string")
+    .map((item) => item.text as string)
+    .join("");
+
+  if (legacyCandidateText.trim()) {
+    return legacyCandidateText;
   }
 
-  const refusal = (candidate.output ?? [])
-    .flatMap((item) => item.content ?? [])
-    .find((item) => typeof item.refusal === "string");
-
-  if (refusal) {
-    throw new AiInterpretationProviderError(
-      "AI provider refused the interpretation request."
-    );
+  if (outputText.trim()) {
+    return outputText;
   }
 
   throw new AiInterpretationProviderError(
@@ -523,31 +546,32 @@ export async function generateAiInterpretation(
       let response: Response;
 
       try {
-        response = await fetchFn(config.baseUrl + "/responses", {
-          method: "POST",
-          headers: {
-            authorization: "Bearer " + config.apiKey,
-            "content-type": "application/json"
-          },
-          "redirect": "error",
-          body: JSON.stringify({
-            model: config.model,
-            input: [
-              { role: "system", content: system },
-              { role: "user", content: user }
-            ],
-            max_output_tokens: 1_600,
-            text: {
-              format: {
-                type: "json_schema",
-                name: "project_autopsy_interpretation",
-                strict: true,
+        response = await fetchFn(
+          config.baseUrl + "/interactions",
+          {
+            method: "POST",
+            headers: {
+              "x-goog-api-key": config.apiKey,
+              "content-type": "application/json"
+            },
+            "redirect": "error",
+            body: JSON.stringify({
+              model: config.model,
+              system_instruction: system,
+              input: user,
+              response_format: {
+                type: "text",
+                mime_type: "application/json",
                 schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+              },
+              generation_config: {
+                thinking_level: "medium",
+                max_output_tokens: 1_600
               }
-            }
-          }),
-          signal: controller.signal
-        });
+            }),
+            signal: controller.signal
+          }
+        );
       } catch (error) {
         if (
           error instanceof Error &&
@@ -673,7 +697,7 @@ export async function generateAiInterpretation(
 
       const result: InterpretationResult = {
         interpretationVersion: INTERPRETATION_VERSION,
-        provider: "openai",
+        provider: "gemini",
         model: config.model,
         reportFingerprint: report.fingerprint,
         groundingClaimCount: grounding.length,

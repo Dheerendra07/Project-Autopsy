@@ -165,13 +165,13 @@ export const envSchema = z
     AI_BASE_URL: z
       .string()
       .url()
-      .default("https://api.openai.com/v1"),
+      .default("https://generativelanguage.googleapis.com/v1beta"),
 
     AI_MODEL: z
       .string()
       .trim()
       .min(1)
-      .default("gpt-6-luna"),
+      .default("gemini-3.8-flash"),
 
     AI_TIMEOUT_MS: z.coerce
       .number()
