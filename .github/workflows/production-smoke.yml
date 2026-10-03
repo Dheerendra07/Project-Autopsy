@@ -31,9 +31,9 @@ jobs:
     timeout-minutes: 15
     env:
       AUTOPSY_PRODUCTION_URL: ${{ inputs.url || 'https://project-autopsy.onrender.com' }}
-      AUTOPSY_BOOTSTRAP_EMAIL: ${{ secrets.AUTOPSY_BOOTSTRAP_EMAIL }}
-      AUTOPSY_BOOTSTRAP_PASSWORD: ${{ secrets.AUTOPSY_BOOTSTRAP_PASSWORD }}
-      AI_API_KEY: ${{ secrets.AI_API_KEY }}
+      AUTOPSY_BOOTSTRAP_EMAIL: ${{ secrets.AUTOPSY_BOOTSTRAP_EMAIL || vars.AUTOPSY_BOOTSTRAP_EMAIL }}
+      AUTOPSY_BOOTSTRAP_PASSWORD: ${{ secrets.AUTOPSY_BOOTSTRAP_PASSWORD || vars.AUTOPSY_BOOTSTRAP_PASSWORD }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY || vars.AI_API_KEY }}
       AUTOPSY_EXPECTED_AI_PROVIDER: gemini
       AUTOPSY_EXPECTED_AI_MODEL: gemini-3.8-flash
     steps:
