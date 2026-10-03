@@ -1076,13 +1076,16 @@
     {id:'contributors',group:'NAVIGATE',label:'Open Contributors',detail:'Contributor history and change distribution.'},
     {id:'operations',group:'NAVIGATE',label:'Open Operations',detail:'Live API, database, Redis and queue posture.'}
   ];
+  const SEARCHABLE_VIEWS=['history','structure','quality','evidence','contributors'];
   function commandPaletteCommands(){
     var commands=COMMAND_DEFS.slice().sort(function(a,b){
       return a.id===S.view?-1:b.id===S.view?1:0;
     });
     if(S.repoId){
-      commands.push({id:'search',group:'ACTIONS',label:'Focus page search',detail:'Jump to the current workspace filter.',shortcut:'/'});
-      commands.push({id:'refresh-view',group:'ACTIONS',label:'Refresh current view',detail:'Reload the evidence backing this page.',shortcut:'R'});
+      if(SEARCHABLE_VIEWS.indexOf(S.view)>=0){
+        commands.push({id:'search',group:'ACTIONS',label:S.view==='evidence'?'Focus evidence search':'Focus page search',detail:S.view==='evidence'?'Search the loaded evidence records locally.':'Jump to the current workspace filter.',shortcut:'/'});
+      }
+      commands.push({id:'refresh-view',group:'ACTIONS',label:'Refresh current view',detail:'Reload the evidence or live data backing this page.',shortcut:'R'});
       commands.push({id:'settings',group:'ACTIONS',label:'Open account & workspace settings',detail:'Manage account, sessions, repository access and trusted connection.'});
       var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));
       if(source)commands.push({id:'source',group:'ACTIONS',label:'Open source repository',detail:'Open the tracked repository in a new tab.'});
@@ -1101,10 +1104,19 @@
       return (command.label+' '+command.detail+' '+command.group).toLowerCase().indexOf(term)>=0;
     });
   }
+  function refreshVisibleView(){
+    if(!S.repoId)return;
+    if(S.view==='runtime')return loadRuntimeEvents(true);
+    if(S.view==='report')return loadReport();
+    if(S.view==='interview')return loadInterview();
+    if(S.view==='interpretation')return loadInterpretation();
+    if(S.view==='operations')return loadOperations(true);
+    return reloadCurrentView();
+  }
   function commandPaletteRun(id){
     if(id&&id.indexOf('view:')===0){setView(id.slice(5));return}
-    if(id==='search'){var input=$('viewSearch');if(input){closeCommandPalette();input.focus();input.select()}else toast('This view has no search filter','warn');return}
-    if(id==='refresh-view'){closeCommandPalette();reloadCurrentView();return}
+    if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');if(input){closeCommandPalette();input.focus();input.select()}else toast('This view has no local search filter','warn');return}
+    if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}
     if(id==='settings'){closeCommandPalette();S.user?openSettings($('settings')):openAuth('login');return}
     if(id==='source'){var url=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));if(url){closeCommandPalette();window.open(url,'_blank','noopener,noreferrer')}return}
     if(id==='landing'){closeCommandPalette();$('new').click();return}
