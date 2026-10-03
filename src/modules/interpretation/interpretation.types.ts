@@ -48,6 +48,7 @@ export interface AiProviderConfig {
   baseUrl: string;
   model: string;
   fallbackModel?: string | undefined;
+  lastResortModel?: string | undefined;
   timeoutMs: number;
 }
 
