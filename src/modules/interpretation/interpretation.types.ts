@@ -47,6 +47,7 @@ export interface AiProviderConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  fallbackModel?: string;
   timeoutMs: number;
 }
 
