@@ -1,3 +1,4 @@
+# Hosted post-merge verification trigger.
 name: production-smoke
 
 on:
