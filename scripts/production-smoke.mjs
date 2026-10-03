@@ -42,8 +42,9 @@ async function request(path, options = {}) {
 }
 
 const PUBLIC_WARMUP_RETRY_STATUSES = new Set([502, 503, 504]);
-const PUBLIC_WARMUP_MAX_ATTEMPTS = 4;
+const PUBLIC_WARMUP_MAX_ATTEMPTS = 7;
 const PUBLIC_WARMUP_BASE_DELAY_MS = 1_500;
+const PUBLIC_WARMUP_MAX_DELAY_MS = 8_000;
 
 async function requestPublicWarmup(path) {
   for (let attempt = 1; attempt <= PUBLIC_WARMUP_MAX_ATTEMPTS; attempt += 1) {
@@ -55,7 +56,10 @@ async function requestPublicWarmup(path) {
       return result;
     }
 
-    const delayMs = PUBLIC_WARMUP_BASE_DELAY_MS * 2 ** (attempt - 1);
+    const delayMs = Math.min(
+      PUBLIC_WARMUP_MAX_DELAY_MS,
+      PUBLIC_WARMUP_BASE_DELAY_MS * 2 ** (attempt - 1)
+    );
     console.log(
       `⚠ Public probe ${path} returned HTTP ${result.response.status}; retrying in ${delayMs}ms (attempt ${attempt + 1}/${PUBLIC_WARMUP_MAX_ATTEMPTS}).`
     );
