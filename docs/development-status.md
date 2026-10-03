@@ -408,7 +408,7 @@ Main is currently at `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` after merging PR
 
 - PR #192 added evidence-count/clear controls to Evidence Explorer, functional report-map navigation, evidence-specific interview draft copy, and actionable Insights failure states.
 - The final PR quality run `b530835f4b0a33a056e70b8f3d9e3803bbe6fe03` passed the full repository gate. The post-merge main quality run `37097708805` also completed all substantive checks successfully.
-- The repository currently has 1 open pull request and 0 open issues while the Gemini provider migration is under CI validation.
+- The repository currently has 0 open pull requests and 0 open issues.
 - PR #184 was closed as superseded because its landing/auth navigation changes are already contained in the newer main baseline; it was not merged.
 - The production-smoke workflow is scheduled every six hours and is manually dispatchable. It consumes the GitHub Actions repository secrets `AUTOPSY_BOOTSTRAP_EMAIL` and `AUTOPSY_BOOTSTRAP_PASSWORD`.
 - GitHub Actions secrets are separate from Render runtime environment variables. The first production bootstrap account must exist in the production database, which is normally created by configuring the same bootstrap variables in the Render service for an initial deployment/startup. After the first successful login, those Render bootstrap variables can be removed as documented; the GitHub Actions smoke credentials can remain independently configured for recurring authentication checks against the existing account.
@@ -416,6 +416,6 @@ Main is currently at `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` after merging PR
 - The raw source still explicitly marks transient overlays and the workspace as `hidden`; do not re-introduce CSS/HTML patterns that rely on JavaScript alone for initial overlay state.
 - Firecrawl verification is currently credit-constrained; preserve credits for targeted production checks rather than broad recrawls.
 
-Continuation rule: treat `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` as the newest main baseline until the Gemini provider migration is merged. Preserve the existing 11-view information architecture, evidence-first semantics, protected API boundary, bounded execution contracts, stale-state handling, focus management, mobile layout, deterministic report fingerprints, and secret non-disclosure.
+Continuation rule: treat `5df0e69f71ace0d4bbdd6d64d9a813d9594daa1a` as the newest main baseline. Preserve the existing 11-view information architecture, evidence-first semantics, protected API boundary, bounded execution contracts, stale-state handling, focus management, mobile layout, deterministic report fingerprints, and secret non-disclosure.
 
 - The 2026-10-03 configuration audit moved the default interpretation provider from OpenAI to Google's Gemini `gemini-3.8-flash` across runtime configuration, Render configuration, examples, documentation, cache validation, and interpretation tests.
