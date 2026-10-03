@@ -279,7 +279,7 @@ test("normalizes and trims configured CORS origins", () => {
 test("defaults AI model and provider URL while retaining explicit values", () => {
   const defaults = parseEnvironment(base);
   assert.equal(defaults.AI_BASE_URL, "https://generativelanguage.googleapis.com/v1beta");
-  assert.equal(defaults.AI_MODEL, "gemini-2.5-flash");
+  assert.equal(defaults.AI_MODEL, "gemini-3.8-flash");
 
   const explicit = parseEnvironment({
     ...base,
