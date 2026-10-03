@@ -64,7 +64,7 @@ const report = {
 const config = {
   apiKey: "a".repeat(48),
   baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-  model: "gemini-2.5-flash",
+  model: "gemini-3.8-flash",
   timeoutMs: 30_000
 };
 
@@ -90,13 +90,7 @@ const validOutput = {
 test("accepts a bounded structured provider response", async () => {
   const response = new Response(
     JSON.stringify({
-      candidates: [
-        {
-          content: {
-            parts: [{ text: JSON.stringify(validOutput) }]
-          }
-        }
-      ]
+      output_text: JSON.stringify(validOutput)
     }),
     {
       status: 200,
