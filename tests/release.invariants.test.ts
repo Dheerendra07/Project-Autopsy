@@ -682,7 +682,9 @@ test("frontend navigation, DOM ids and delegated actions stay one-to-one", () =>
     "historical-filter",
     "historical-clear-filter",
     "operations-refresh",
-    "operations-retry"
+    "operations-retry",
+    "report-jump",
+    "copy-story"
   ];
   const rootHandlerStart = appJs.indexOf("$('root').onclick=function(e){");
   const rootHandlerEnd = appJs.indexOf("\n  function setAuthMode(", rootHandlerStart);

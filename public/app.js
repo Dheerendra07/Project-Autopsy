@@ -188,7 +188,7 @@
       'Verification: '+(v.ownership||'Ownership verification required.')+' '+(v.runtimeImpact||'Runtime impact verification required.')
     ];
     if(evidence.length)lines.push('','Evidence references: '+evidence.map(function(item){return (item.source||'evidence')+':'+(item.key||'')}).join(' | '));
-    try{await navigator.clipboard.writeText(lines.join('\\n'));toast('Interview draft copied','good')}catch(e){toast('Clipboard access is unavailable in this browser','bad')}
+    try{await navigator.clipboard.writeText(lines.join('\n'));toast('Interview draft copied','good')}catch(e){toast('Clipboard access is unavailable in this browser','bad')}
   }
   function architectureMap(ar){
     var groups={};
