@@ -1,3 +1,4 @@
+# Live post-merge Gemini verification trigger.
 name: production-smoke
 
 on:
