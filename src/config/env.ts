@@ -173,6 +173,12 @@ export const envSchema = z
       .min(1)
       .default("gemini-3.8-flash"),
 
+    AI_FALLBACK_MODEL: z
+      .string()
+      .trim()
+      .min(1)
+      .default("gemini-3.7-flash"),
+
     AI_TIMEOUT_MS: z.coerce
       .number()
       .int()
