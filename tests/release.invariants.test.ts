@@ -2628,3 +2628,40 @@ test("final UI theme uses the consolidated indigo/slate visual system", () => {
   );
 });
 
+test("workspace UI system keeps navigation scrollable and page guidance explicit", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  for (const marker of [
+    'id="repoStatus"',
+    'class="repo-hint"',
+    'title="Current snapshot and what to inspect first"',
+    'class="settings-sheet"',
+    'class="settings-scroll"',
+    'class="landing-proof"',
+    'class="landing-how"',
+    'class="landing-capabilities"',
+    'PRODUCT UI SYSTEM V3',
+    '.nav{display:grid!important;align-content:start;gap:3px!important;min-height:0;overflow-y:auto',
+    '.side{position:sticky!important;top:72px!important;height:calc(100vh - 72px)!important;min-height:0!important;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;overflow:hidden!important'
+  ]) {
+    assert.ok(html.includes(marker), "missing UI system marker: " + marker);
+  }
+  for (const marker of [
+    "const VIEW_GUIDANCE=",
+    "function syncWorkspaceMeta()",
+    "document.body.dataset.view=v;",
+    "view-guide",
+    "What to do here"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing guided workspace interaction marker: " + marker);
+  }
+});
+
+test("settings surface remains scroll-safe for long account state", () => {
+  const html = readRepoFile("public/index.html");
+  assert.ok(html.includes('class="settings-scroll"'));
+  assert.ok(html.includes('id="sessionsList"'));
+  assert.ok(html.includes('id="repoAccessZone"'));
+  assert.ok(html.includes('id="dangerZone"'));
+});
+
