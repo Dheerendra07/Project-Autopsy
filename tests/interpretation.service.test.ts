@@ -511,6 +511,69 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
   assert.deepEqual(retryDelays, [0, 0]);
 });
 
+test("falls back to the configured Gemini model on primary 503", async () => {
+  const requestedModels: string[] = [];
+
+  const fakeFetch: typeof fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+    requestedModels.push(String(body.model));
+
+    if (body.model === "gemini-3.8-flash") {
+      return new Response(
+        JSON.stringify({
+          error: {
+            status: "service_unavailable",
+            message: "temporary capacity"
+          }
+        }),
+        {
+          status: 503,
+          headers: {
+            "content-type": "application/json",
+            "retry-after": "120"
+          }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-3.8-flash",
+      fallbackModel: "gemini-3.7-flash",
+      timeoutMs: 5_000
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.provider, "gemini");
+  assert.equal(result.model, "gemini-3.7-flash");
+  assert.equal(result.cacheHit, false);
+  assert.deepEqual(requestedModels, [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash"
+  ]);
+});
+
 test("does not retry exhausted-credit 429 responses", async () => {
   let fetchCalls = 0;
 
