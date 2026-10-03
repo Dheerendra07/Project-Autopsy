@@ -11,7 +11,7 @@ import {
 const value: InterpretationResult = {
   interpretationVersion: "1.0",
   provider: "gemini",
-  model: "gemini-2.5-flash",
+  model: "gemini-3.8-flash",
   reportFingerprint: "f".repeat(64),
   groundingClaimCount: 3,
   generatedAt: "2026-09-29T00:00:00.000Z",
