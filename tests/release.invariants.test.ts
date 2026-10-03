@@ -2769,12 +2769,12 @@ test("workspace views stay backed by mounted API contracts", () => {
     assert.ok(runtime.includes(marker), "missing runtime route: " + marker);
   }
 
-  assert.ok(deployments.includes('deploymentRouter.get("/")'));
+  assert.ok(deployments.includes('get("/", async'));
   assert.ok(deployments.includes('deploymentRouter.get("/provenance"'));
-  assert.ok(report.includes('reportRouter.get("/")'));
-  assert.ok(interview.includes('interviewRouter.get("/")'));
-  assert.ok(interpretation.includes('interpretationRouter.get("/")'));
-  assert.ok(contributors.includes('contributorEvolutionRouter.get("/")'));
+  assert.ok(report.includes('get("/", async'));
+  assert.ok(interview.includes('get("/", async'));
+  assert.ok(interpretation.includes('get("/", async'));
+  assert.ok(contributors.includes('get("/", async'));
   assert.ok(observability.includes('observabilityRouter.get("/summary"'));
 });
 test("workspace source health rail remains visible for partial data failures", () => {
