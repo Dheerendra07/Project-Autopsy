@@ -2676,3 +2676,26 @@ test("settings surface remains scroll-safe for long account state", () => {
   assert.ok(html.includes('id="dangerZone"'));
 });
 
+test("workspace flow rail gives every view an explicit next action", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+
+  for (const marker of [
+    "const VIEW_FLOW={",
+    "function viewFlowMarkup(){",
+    'nextLabel:"Open History"',
+    'nextLabel:"Build Report"',
+    'nextLabel:"Inspect Evidence"',
+    'href="#\'+esc(flow.next)+\'"',
+    "WORKSPACE PATH",
+    "view-flow-link primary",
+    "view-flow-link secondary"
+  ]) {
+    assert.ok(appJs.includes(marker) || html.includes(marker), "missing workspace flow marker: " + marker);
+  }
+
+  assert.ok(html.includes("WORKSPACE FLOW V4"));
+  assert.ok(html.includes(":root{"));
+  assert.ok(html.includes("--gold:var(--ui-accent)"));
+});
+

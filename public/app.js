@@ -537,8 +537,36 @@
         '<div class="view-guide-copy"><span class="kicker">WHAT TO DO HERE</span><strong>'+esc(guide.answer)+'</strong><small>'+esc(guide.next)+'</small></div>'+
         '<div class="view-guide-flow"><span>READ</span><i>→</i><span>INSPECT</span><i>→</i><span>ACT</span></div>'+
       '</div>'+
+      viewFlowMarkup()+
       toolbar
   }
+  const VIEW_FLOW={
+    overview:{previous:null,next:"history",nextLabel:"Open History",nextWhy:"Trace the commit timeline behind this snapshot."},
+    history:{previous:"overview",next:"structure",nextLabel:"Open Structure",nextWhy:"See how the codebase shape changed."},
+    structure:{previous:"history",next:"quality",nextLabel:"Validate Quality",nextWhy:"Check tests, repeated changes and refactor signals."},
+    quality:{previous:"structure",next:"runtime",nextLabel:"Open Runtime",nextWhy:"Connect engineering signals to runtime and deployment evidence."},
+    runtime:{previous:"quality",next:"report",nextLabel:"Build Report",nextWhy:"Turn the current evidence snapshot into a readable output."},
+    report:{previous:"runtime",next:"interview",nextLabel:"Open Interview",nextWhy:"Turn evidence-backed findings into verifiable talking points."},
+    interview:{previous:"report",next:"interpretation",nextLabel:"Open Insights",nextWhy:"Ground the current report into themes, questions and uncertainties."},
+    interpretation:{previous:"interview",next:"evidence",nextLabel:"Inspect Evidence",nextWhy:"Verify the exact records behind the current insights."},
+    evidence:{previous:"interpretation",next:"contributors",nextLabel:"Open Contributors",nextWhy:"Add contributor history as context for the evidence."},
+    contributors:{previous:"evidence",next:"operations",nextLabel:"Check Operations",nextWhy:"Separate live service health from repository evidence."},
+    operations:{previous:"contributors",next:"overview",nextLabel:"Return to Overview",nextWhy:"Start another inspection pass from the current snapshot."}
+  };
+  function viewFlowMarkup(){
+    var flow=VIEW_FLOW[S.view];
+    if(!flow)return "";
+    var current=VIEW_TITLES[S.view]||S.view;
+    var previous=flow.previous?'<a class="view-flow-link secondary" href="#'+esc(flow.previous)+'"><span>‹</span> Back</a>':'';
+    var next=flow.next
+      ? '<a class="view-flow-link primary" href="#'+esc(flow.next)+'"><span>'+esc(flow.nextLabel)+'</span><span aria-hidden="true">→</span></a>'
+      : '';
+    return '<div class="view-flow card">'+
+      '<div class="view-flow-copy"><span class="kicker">WORKSPACE PATH</span><strong>'+esc(current)+'</strong><small>'+esc(flow.nextWhy)+'</small></div>'+
+      '<div class="view-flow-actions">'+previous+next+'</div>'+
+      '</div>';
+  }
+
   const VIEW_GUIDANCE={
     overview:{answer:'Start here. Read the current snapshot, run boundary and recent changes before opening derived outputs.',next:'Next: open History for chronology, Structure for codebase shape, or Report when you need a shareable output.'},
     history:{answer:'Trace what changed and when. Open Inspect on a commit or timeline event to see the exact persisted record.',next:'Next: use Structure to understand what those changes did to the codebase shape.'},
