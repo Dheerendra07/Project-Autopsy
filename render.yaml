@@ -55,9 +55,9 @@ services:
       - key: AI_API_KEY
         sync: false
       - key: AI_BASE_URL
-        value: https://api.openai.com/v1
+        value: https://generativelanguage.googleapis.com/v1beta
       - key: AI_MODEL
-        value: gpt-6-luna
+        value: gemini-2.5-flash
       - key: AI_TIMEOUT_MS
         value: "30000"
       - key: AUTOPSY_CORS_ORIGINS
