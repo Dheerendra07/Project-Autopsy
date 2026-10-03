@@ -571,7 +571,7 @@ export async function generateAiInterpretation(
             }),
             signal: controller.signal
           }
-        );        );
+        );
       } catch (error) {
         if (
           error instanceof Error &&
