@@ -2720,10 +2720,19 @@ test("developer command center preserves evidence-first workspace boundaries", (
     assert.ok(appJs.includes(marker), "missing command center release marker: " + marker);
   }
 
+  const capabilityStart = html.indexOf('class="capability-grid"');
+  const capabilityEnd = html.indexOf("</div>", capabilityStart);
+  const capabilityMarkup = capabilityStart >= 0 && capabilityEnd > capabilityStart
+    ? html.slice(capabilityStart, capabilityEnd)
+    : "";
+  assert.ok(
+    capabilityMarkup.includes("<article>"),
+    "landing capability map must remain semantic content cards"
+  );
   assert.equal(
-    html.includes('class="capability-grid"') && html.includes('cursor:pointer'),
+    capabilityMarkup.includes("<button") || capabilityMarkup.includes("<a "),
     false,
-    "static landing capability cards must not gain clickable affordance"
+    "static landing capability cards must not gain interactive elements"
   );
 });
  
