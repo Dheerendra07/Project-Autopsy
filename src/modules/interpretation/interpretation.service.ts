@@ -313,7 +313,7 @@ export function readAiProviderConfig(
     );
   }
 
-  const model = source.AI_MODEL?.trim() || "gemini-2.5-flash";
+  const model = source.AI_MODEL?.trim() || "gemini-3.8-flash";
   const parsedTimeout = Number(source.AI_TIMEOUT_MS ?? 30_000);
 
   if (!Number.isInteger(parsedTimeout) || parsedTimeout < 1_000 || parsedTimeout > 120_000) {
@@ -420,33 +420,42 @@ function parseProviderResponse(body: unknown): string {
   }
 
   const candidate = body as {
-    candidates?: Array<{
-      finishReason?: unknown;
-      content?: {
-        parts?: Array<{
-          text?: unknown;
-        }>;
-      };
+    output_text?: unknown;
+    status?: unknown;
+    steps?: Array<{
+      type?: unknown;
+      status?: unknown;
+      content?: Array<{
+        type?: unknown;
+        text?: unknown;
+      }>;
     }>;
   };
 
-  const candidates = candidate.candidates ?? [];
-
   if (
-    candidates.some(
-      (item) =>
-        item.finishReason === "MAX_TOKENS" ||
-        item.finishReason === "LENGTH"
-    )
+    candidate.status === "failed" ||
+    candidate.status === "incomplete"
   ) {
     throw new AiInterpretationProviderError(
       "AI provider returned an incomplete interpretation."
     );
   }
 
-  const outputText = candidates
-    .flatMap((item) => item.content?.parts ?? [])
-    .filter((item) => typeof item.text === "string")
+  if (
+    typeof candidate.output_text === "string" &&
+    candidate.output_text.trim()
+  ) {
+    return candidate.output_text;
+  }
+
+  const outputText = (candidate.steps ?? [])
+    .filter((step) => step.type === "model_output")
+    .flatMap((step) => step.content ?? [])
+    .filter(
+      (item) =>
+        item.type === "text" &&
+        typeof item.text === "string"
+    )
     .map((item) => item.text as string)
     .join("");
 
@@ -520,10 +529,7 @@ export async function generateAiInterpretation(
 
       try {
         response = await fetchFn(
-          config.baseUrl +
-            "/models/" +
-            encodeURIComponent(config.model) +
-            ":generateContent",
+          config.baseUrl + "/interactions",
           {
             method: "POST",
             headers: {
@@ -532,24 +538,22 @@ export async function generateAiInterpretation(
             },
             "redirect": "error",
             body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: system }]
+              model: config.model,
+              system_instruction: system,
+              input: user,
+              response_format: {
+                type: "text",
+                mime_type: "application/json",
+                schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
               },
-              contents: [
-                {
-                  role: "user",
-                  parts: [{ text: user }]
-                }
-              ],
-              generationConfig: {
-                responseMimeType: "application/json",
-                responseJsonSchema: INTERPRETATION_OUTPUT_JSON_SCHEMA,
-                maxOutputTokens: 1_600
+              generation_config: {
+                thinking_level: "medium",
+                max_output_tokens: 1_600
               }
             }),
             signal: controller.signal
           }
-        );
+        );        );
       } catch (error) {
         if (
           error instanceof Error &&
