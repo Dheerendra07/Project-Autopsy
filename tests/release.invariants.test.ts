@@ -2777,6 +2777,31 @@ test("workspace views stay backed by mounted API contracts", () => {
   assert.ok(contributors.includes('get("/", async'));
   assert.ok(observability.includes('observabilityRouter.get("/summary"'));
 });
+test("final V6 visual authority is later than legacy theme layers", () => {
+  const html = readRepoFile("public/index.html");
+  const v5 = html.indexOf("PRODUCT UI SYSTEM V5");
+  const v6 = html.indexOf("PRODUCT UI SYSTEM V6 — final visual authority");
+  assert.ok(v5 >= 0, "V5 system marker must remain traceable");
+  assert.ok(v6 > v5, "V6 must be the final visual authority layer");
+  assert.ok(html.includes("--ui-accent:#6366f1"));
+  assert.ok(html.includes("--ui-bg:#0a0f17"));
+  assert.ok(html.includes("color-scheme:dark"));
+  assert.ok(html.includes('html[data-theme="light"]'));
+  assert.ok(html.includes(".btn.primary,.import>.btn.primary"));
+  assert.ok(html.includes(".view-source-status"));
+});
+
+test("theme bootstrap keeps system fallback implicit until the user chooses a theme", () => {
+  const appJs = readRepoFile("public/app.js");
+  const themeJs = readRepoFile("public/theme.js");
+  assert.ok(themeJs.includes("prefers-color-scheme: light"));
+  assert.ok(appJs.includes("var storedTheme=themeStorageGet();"));
+  assert.ok(appJs.includes("applyTheme(storedTheme||document.documentElement.dataset.theme||'dark',false,!!storedTheme)"));
+  assert.ok(appJs.includes("if(persistPreference!==false)themeStorageSet(mode);"));
+  assert.ok(appJs.includes("window.addEventListener('storage',function(e)"));
+  assert.ok(appJs.includes("applyTheme(e.newValue,false,false)"));
+});
+
 test("workspace source health rail remains visible for partial data failures", () => {
   const appJs = readRepoFile("public/app.js");
   const html = readRepoFile("public/index.html");
