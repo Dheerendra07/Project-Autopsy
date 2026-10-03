@@ -792,6 +792,8 @@ export async function generateAiInterpretation(
     }
   }
 
+  }
+
   if (models.length > 1) {
     throw new AiInterpretationProviderError(
       "AI provider was temporarily unavailable."
