@@ -2073,7 +2073,7 @@ test("frontend view filters provide local search state without extra API traffic
   assert.ok(appJs.includes("Filters the already-loaded evidence locally"));
   assert.ok(appJs.includes("S.viewFilter[S.view]=input.value"));
   assert.ok(appJs.includes("e.key==='/'"));
-  assert.ok(appJs.includes("document.activeElement===$('viewSearch')"));
+  assert.ok(appJs.includes("var searchInput=$('viewSearch')||($('evidenceSearch')&&S.view==='evidence'?$('evidenceSearch'):null);"));
   assert.ok(appJs.includes("S.viewFilter={}"));
 });
 
@@ -2573,6 +2573,13 @@ test("frontend clears transient overlays when a page is restored", () => {
   assert.ok(appJs.includes("if($('drawer'))$('drawer').hidden=true"));
 });
 
+test("frontend navigation dismisses a live evidence inspector before replacing the workspace view", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function closeEvidence(restoreFocus)"));
+  assert.ok(appJs.includes("if($('drawer')&&!$('drawer').hidden)closeEvidence(false);"));
+  assert.ok(appJs.includes("S.currentEvidence=null"));
+});
+
 
 test("repository access middleware reconstructs mounted paths before machine-ingest matching", () => {
   const middleware = readRepoFile("src/middleware/repository-access.middleware.ts");
@@ -2748,6 +2755,22 @@ test("developer command center preserves evidence-first workspace boundaries", (
     false,
     "static landing capability cards must not gain interactive elements"
   );
+
+  assert.ok(appJs.includes("const SEARCHABLE_VIEWS=['history','structure','quality','evidence','contributors']"));
+  assert.ok(appJs.includes("label:S.view==='evidence'?'Focus evidence search':'Focus page search'"));
+  assert.ok(appJs.includes("function refreshVisibleView()"));
+  assert.ok(appJs.includes("if(S.view==='runtime')return loadRuntimeEvents(true)"));
+  assert.ok(appJs.includes("if(S.view==='report')return loadReport()"));
+  assert.ok(appJs.includes("if(S.view==='interview')return loadInterview()"));
+  assert.ok(appJs.includes("if(S.view==='interpretation')return loadInterpretation()"));
+  assert.ok(appJs.includes("if(S.view==='operations')return loadOperations(true)"));
+  assert.ok(appJs.includes("if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');"));
+  assert.ok(appJs.includes("if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}"));
+  assert.ok(appJs.includes("var searchInput=$('viewSearch')||($('evidenceSearch')&&S.view==='evidence'?$('evidenceSearch'):null);"));
+  assert.ok(appJs.includes("searchInput.focus();return;"));
+  assert.ok(appJs.includes("if(searchInput.id==='viewSearch'){S.viewFilter[S.view]='';applyViewFilter();}"));
+  assert.ok(appJs.includes("searchInput.dispatchEvent(evt);"));
+
 });
  
 test("evidence-family filtering stays a client-side projection over loaded records", () => {
