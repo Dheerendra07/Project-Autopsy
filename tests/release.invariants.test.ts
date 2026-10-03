@@ -359,6 +359,15 @@ test("frontend product surface stays guided, progressive and evidence-readable",
 });
 
 
+test("skip link focuses a visible workspace target or landing import fallback", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("document.querySelector('.skip-link').addEventListener('click'"));
+  assert.ok(appJs.includes("var targetHidden=target&&target.closest('[hidden]')"));
+  assert.ok(appJs.includes("var fallback=$('url')"));
+  assert.ok(appJs.includes("fallback.focus()"));
+  assert.ok(appJs.includes("target.focus()"));
+});
+
 test("frontend overview exposes command-center snapshot context", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
