@@ -2716,3 +2716,28 @@ test("overview command center keeps primary evidence text readable and product-h
   assert.ok(html.includes(".posture-row small{font-size:10px!important"));
   assert.ok(html.includes(".overview-warning small{font-size:10px!important"));
 });
+
+
+test("overview first-load and refresh states are perceived-performance safe", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+  for (const marker of [
+    "function overviewLoadingPage()",
+    "data-view-skeleton=\"overview\"",
+    "showViewRefreshState(label[0],label[1])",
+    "var hadExisting=hasViewData(view);",
+    "if(view==='overview')",
+    "root.setAttribute('aria-busy','true')"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing perceived-performance marker: " + marker);
+  }
+  for (const marker of [
+    "/* OVERVIEW LOADING V5",
+    "@keyframes overview-shimmer",
+    ".overview-skeleton-context",
+    ".view-refresh-state",
+    "prefers-reduced-motion"
+  ]) {
+    assert.ok(html.includes(marker), "missing overview loading CSS marker: " + marker);
+  }
+});
