@@ -123,7 +123,11 @@
       button.title=verified?'Account & security settings':'Sign in to your private workspace';
     }
   }
-  function syncAnalysisRefreshControl(){var b=$('refresh'),running=!!(S.analysis&&['queued','running'].indexOf(S.analysis.status)>=0);if(!b)return;b.disabled=running||S.refreshLoading;b.setAttribute('aria-busy',running||S.refreshLoading?'true':'false');b.textContent=S.refreshLoading?'Refreshing…':running?'Analysis running…':'Refresh analysis'}
+  function syncAnalysisRefreshControl(){
+    var b=$('refresh'),running=!!(S.analysis&&['queued','running'].indexOf(S.analysis.status)>=0);
+    if(b){b.disabled=running||S.refreshLoading;b.setAttribute('aria-busy',running||S.refreshLoading?'true':'false');b.textContent=S.refreshLoading?'Refreshing…':running?'Analysis running…':'Refresh analysis'}
+    syncWorkspaceMeta();
+  }
   function trapFocus(container,event){if(!container||event.key!=='Tab'||container.hidden)return;var focusable=Array.prototype.slice.call(container.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')).filter(function(el){return !el.hidden&&el.getClientRects().length>0});if(!focusable.length){event.preventDefault();return}var first=focusable[0],last=focusable[focusable.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
   function resetEvidence(){S.evidence=[];S.evidenceSeq=0}
   function addEvidence(label,basis,payload){var id=++S.evidenceSeq;S.evidence.push({id:id,label:label,basis:basis,payload:payload});return id}
@@ -510,7 +514,44 @@
     }
     applyViewFilter();
   }
-  function shell(title,desc,actions){var toolbar=viewFilterMarkup(),snap=snapshotState(),loading=!!S.viewLoading[S.view],reload=RELOADABLE_VIEWS.indexOf(S.view)>=0?'<button class="btn" data-action="reload-view"'+(loading?' disabled aria-busy="true"':'')+'>'+(loading?'Refreshing…':'Refresh data')+'</button>':'',source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl)),sourceAction=source?'<a class="btn link" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Open repository ↗</a>':'';return '<div class="head"><div><div class="kicker">WORKSPACE</div><div class="head-title"><h2>'+esc(title)+'</h2><span class="snapshot-pill '+esc(snap.tone)+'">'+esc(snap.label)+'</span></div><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+reload+sourceAction+'</div></div>'+toolbar}
+  function shell(title,desc,actions){
+    var toolbar=viewFilterMarkup();
+    var snap=snapshotState();
+    var loading=!!S.viewLoading[S.view];
+    var reload=RELOADABLE_VIEWS.indexOf(S.view)>=0
+      ? '<button class="btn" data-action="reload-view"'+(loading?' disabled aria-busy="true"':'')+'>'+(loading?'Refreshing…':'Refresh data')+'</button>'
+      : '';
+    var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));
+    var sourceAction=source?'<a class="btn link" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Open repository ↗</a>':'';
+    var guide=VIEW_GUIDANCE[S.view]||{answer:'Review the current evidence snapshot and use Inspect whenever you need the underlying record.',next:'Choose an action from the page header or open another workspace section.'};
+    return '<div class="head">'+
+      '<div class="head-copy">'+
+        '<div class="kicker">WORKSPACE / '+esc(VIEW_TITLES[S.view]||title).toUpperCase()+'</div>'+
+        '<div class="head-title"><h2>'+esc(title)+'</h2><span class="snapshot-pill '+esc(snap.tone)+'">'+esc(snap.label)+'</span></div>'+
+        '<p>'+esc(desc)+'</p>'+
+      '</div>'+
+      '<div class="actions">'+(actions||'')+reload+sourceAction+'</div>'+
+      '</div>'+
+      '<div class="view-guide card">'+
+        '<div class="view-guide-icon">'+esc(S.view==='overview'?'01':S.view==='history'?'02':S.view==='structure'?'03':S.view==='quality'?'04':S.view==='runtime'?'05':S.view==='report'?'06':S.view==='interview'?'07':S.view==='interpretation'?'08':S.view==='evidence'?'09':S.view==='contributors'?'10':'11')+'</div>'+
+        '<div class="view-guide-copy"><span class="kicker">WHAT TO DO HERE</span><strong>'+esc(guide.answer)+'</strong><small>'+esc(guide.next)+'</small></div>'+
+        '<div class="view-guide-flow"><span>READ</span><i>→</i><span>INSPECT</span><i>→</i><span>ACT</span></div>'+
+      '</div>'+
+      toolbar
+  }
+  const VIEW_GUIDANCE={
+    overview:{answer:'Start here. Read the current snapshot, run boundary and recent changes before opening derived outputs.',next:'Next: open History for chronology, Structure for codebase shape, or Report when you need a shareable output.'},
+    history:{answer:'Trace what changed and when. Open Inspect on a commit or timeline event to see the exact persisted record.',next:'Next: use Structure to understand what those changes did to the codebase shape.'},
+    structure:{answer:'Understand the repository shape: architecture events, dependencies, complexity and coupled changes.',next:'Next: open Inspect on a surface or signal when you need the supporting evidence.'},
+    quality:{answer:'Validate engineering signals across tests, repeated changes, bug areas, refactors and migrations.',next:'Next: treat signals as evidence to investigate, not as a score. Inspect rows before drawing conclusions.'},
+    runtime:{answer:'Connect runtime telemetry and deployment records to explicit revisions without inventing causality.',next:'Next: apply filters, inspect a deployment or event, then compare it with the relevant Git evidence.'},
+    report:{answer:'Read the current evidence-backed report as a structured engineering summary.',next:'Next: use the section actions to jump around, then inspect evidence for any claim you want to verify.'},
+    interview:{answer:'Use evidence-linked story scaffolds to prepare truthful explanations of engineering work.',next:'Next: open story evidence and verify ownership and runtime impact before reusing a draft.'},
+    interpretation:{answer:'Generate insights only from a current report and keep cited claims and uncertainties visible.',next:'Next: generate or refresh insights after the current report is ready, then inspect cited evidence.'},
+    evidence:{answer:'Search the loaded evidence index and inspect the exact record behind a signal, claim or timeline event.',next:'Next: narrow locally with search, then use Inspect. This view does not mutate the analysis.'},
+    contributors:{answer:'Understand who contributed and how their changes appear across the persisted history.',next:'Next: use the contributor evidence as context, then follow the linked repository history for detail.'},
+    operations:{answer:'Monitor the running API, PostgreSQL, Redis and analysis queue separately from repository evidence.',next:'Next: refresh live status when needed; operational telemetry never rewrites repository evidence.'}
+  };
   const VIEW_DATA={overview:['commits','analysisRuns','hotspots','contributors'],history:['commits','timeline'],structure:['architecture','dependencies','complexity','coupling'],quality:['bugs','repeated','refactors','migrations','tests','testSummary'],runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext'],evidence:['commits','timeline','hotspots','architecture','dependencies','complexity','coupling','bugs','repeated','refactors','migrations','tests','testSummary','runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext'],contributors:['contributors']};
   const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];
   const VIEW_LABELS={overview:['Engineering overview','Loading the workspace evidence needed for the overview…'],history:['History','Loading chronological repository evidence…'],structure:['Structure','Loading architecture and codebase-structure evidence…'],quality:['Quality evidence','Loading historical quality signals…'],runtime:['Runtime & provenance','Loading runtime and deployment evidence…'],evidence:['Evidence explorer','Loading the evidence index…'],contributors:['Contributors','Loading contributor history…'],operations:['Operations','Checking live service health and queue telemetry…']};
@@ -894,6 +935,7 @@
     var previous=S.view;
     if(previous)S.viewScroll[previous]=window.scrollY||0;
     S.view=v;
+    document.body.dataset.view=v;
     if(!options.fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);
     resetEvidence();
     document.querySelectorAll('#nav button').forEach(function(b){var active=b.getAttribute('data-view')===v;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});document.title='Project Autopsy — '+(VIEW_TITLES[v]||'Workspace');
@@ -1259,11 +1301,21 @@
     if(tokenInput)tokenInput.value='';
     if(clearButton)clearButton.disabled=!configured;
   }
+  function syncWorkspaceMeta(){
+    var repo=S.repo||{},a=S.analysis||{},status=a.status||'idle';
+    var label=status==='completed'?'READY':status==='running'?'RUNNING':status==='queued'?'QUEUED':status==='failed'?'FAILED':'IDLE';
+    var tone=status==='completed'?'good':status==='failed'?'bad':(status==='running'||status==='queued')?'warn':'neutral';
+    var statusEl=$('repoStatus');
+    if(statusEl){statusEl.textContent=label;statusEl.className='side-status '+tone;}
+    var repoName=$('repoName'),repoBranch=$('repoBranch');
+    if(repoName)repoName.textContent=repo.name||'Repository';
+    if(repoBranch)repoBranch.textContent=repo.tracked_branch||repo.trackedBranch||repo.default_branch||repo.defaultBranch||'branch unavailable';
+  }
   function workspace(){
     $('landing').hidden=true;
     $('workspace').hidden=false;
-    $('repoName').textContent=S.repo&&S.repo.name||'Repository';
-    $('repoBranch').textContent=(S.repo&&(S.repo.tracked_branch||S.repo.trackedBranch||S.repo.default_branch||S.repo.defaultBranch))||'branch unavailable';
+    document.body.dataset.view=S.view||'overview';
+    syncWorkspaceMeta();
     connected(S.connectionState);
     syncAnalysisRefreshControl();
     syncRepositoryAccessSettings();
