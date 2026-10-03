@@ -305,17 +305,24 @@ test("rejects provider output that references unknown evidence", async () => {
     new Response(
       JSON.stringify({
         candidates: [
-        {
-          content: {
-            parts: [{ text: JSON.stringify({
-              ...validAiOutput,
-              themes: [
-            {
-              ...validAiOutput.themes[0],
-              evidenceKeys: ["not-supplied"]
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    ...validAiOutput,
+                    themes: [
+                      {
+                        ...validAiOutput.themes[0],
+                        evidenceKeys: ["not-supplied"]
+                      }
+                    ]
+                  })
+                }
+              ]
             }
-          ]
-        })
+          }
+        ]
       }),
       { status: 200 }
     );
