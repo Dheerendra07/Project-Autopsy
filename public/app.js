@@ -1058,7 +1058,9 @@
     {id:'operations',group:'NAVIGATE',label:'Open Operations',detail:'Live API, database, Redis and queue posture.'}
   ];
   function commandPaletteCommands(){
-    var commands=COMMAND_DEFS.slice();
+    var commands=COMMAND_DEFS.slice().sort(function(a,b){
+      return a.id===S.view?-1:b.id===S.view?1:0;
+    });
     if(S.repoId){
       commands.push({id:'search',group:'ACTIONS',label:'Focus page search',detail:'Jump to the current workspace filter.',shortcut:'/'});
       commands.push({id:'refresh-view',group:'ACTIONS',label:'Refresh current view',detail:'Reload the evidence backing this page.',shortcut:'R'});
