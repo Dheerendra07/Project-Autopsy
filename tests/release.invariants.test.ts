@@ -2693,6 +2693,40 @@ test("settings surface remains scroll-safe for long account state", () => {
   assert.ok(html.includes('id="dangerZone"'));
 });
 
+test("developer command center preserves evidence-first workspace boundaries", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(html.includes('id="commandPalette"'));
+  assert.ok(html.includes('id="commandSearch"'));
+  assert.ok(html.includes('id="commandList"'));
+  assert.ok(html.includes('role="listbox"'));
+  assert.ok(html.includes('Ctrl</kbd><kbd>K</kbd> Command Center'));
+
+  for (const marker of [
+    "const COMMAND_DEFS=",
+    "function commandPaletteCommands()",
+    "function commandPaletteMatches()",
+    "function commandPaletteRun(id)",
+    "function renderCommandPalette()",
+    "function moveCommandSelection(delta)",
+    "function openCommandPalette(trigger)",
+    "function closeCommandPalette()",
+    "COMMAND_DEFS.slice()",
+    "if(S.repoId)",
+    "safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl))",
+    "if($('commandPalette'))$('commandPalette').hidden=true"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing command center release marker: " + marker);
+  }
+
+  assert.equal(
+    html.includes('class="capability-grid"') && html.includes('cursor:pointer'),
+    false,
+    "static landing capability cards must not gain clickable affordance"
+  );
+});
+ 
 test("workspace views stay backed by mounted API contracts", () => {
   const appJs = readRepoFile("public/app.js");
   const router = readRepoFile("src/routes/index.ts");
