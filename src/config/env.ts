@@ -171,7 +171,7 @@ export const envSchema = z
       .string()
       .trim()
       .min(1)
-      .default("gpt-5.6-luna"),
+      .default("gpt-6-luna"),
 
     AI_TIMEOUT_MS: z.coerce
       .number()
