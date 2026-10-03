@@ -3,11 +3,6 @@ name: production-smoke
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/production-smoke.yml"
-      - "scripts/production-smoke.mjs"
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
@@ -38,6 +33,7 @@ jobs:
       AUTOPSY_EXPECTED_AI_PROVIDER: gemini
       AUTOPSY_EXPECTED_AI_MODEL: gemini-3.8-flash
       AUTOPSY_EXPECTED_AI_FALLBACK_MODEL: gemini-3.7-flash
+      AUTOPSY_EXPECTED_AI_LAST_RESORT_MODEL: gemini-3.5-flash
     steps:
       - name: Validate production credential
         shell: bash
