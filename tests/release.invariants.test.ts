@@ -2699,3 +2699,60 @@ test("workspace flow rail gives every view an explicit next action", () => {
   assert.ok(html.includes("--gold:var(--ui-accent)"));
 });
 
+
+
+test("overview command center keeps primary evidence text readable and product-hierarchy sized", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const overviewStart = appJs.indexOf("function overview()");
+  const overviewEnd = appJs.indexOf("function historyView()", overviewStart);
+  assert.ok(overviewStart >= 0 && overviewEnd > overviewStart);
+  const overview = appJs.slice(overviewStart, overviewEnd);
+  for (const marker of ["overview-context", "overview-journey", "overview-metrics", "overview-insight-grid", "EVIDENCE POSTURE", "ANALYSIS HISTORY", "RECENT HISTORY"]) {
+    assert.ok(overview.includes(marker), "missing overview hierarchy marker: " + marker);
+  }
+  assert.ok(html.includes("OVERVIEW COMMAND CENTER V5"));
+  assert.ok(html.includes(".journey-step b{margin-top:9px!important;color:#e3e8ef!important;font-size:12px!important"));
+  assert.ok(html.includes(".posture-row small{font-size:10px!important"));
+  assert.ok(html.includes(".overview-warning small{font-size:10px!important"));
+});
+
+
+test("overview first-load and refresh states are perceived-performance safe", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+  for (const marker of [
+    "function overviewLoadingPage()",
+    "data-view-skeleton=\"overview\"",
+    "showViewRefreshState(label[0],label[1])",
+    "var hadExisting=hasViewData(view);",
+    "if(view==='overview')",
+    "root.setAttribute('aria-busy','true')"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing perceived-performance marker: " + marker);
+  }
+  for (const marker of [
+    "/* OVERVIEW LOADING V5",
+    "@keyframes overview-shimmer",
+    ".overview-skeleton-context",
+    ".view-refresh-state",
+    "prefers-reduced-motion"
+  ]) {
+    assert.ok(html.includes(marker), "missing overview loading CSS marker: " + marker);
+  }
+});
+
+
+test("overview loading presentation avoids flicker and surfaces complete load failures", () => {
+  const appJs = readRepoFile("public/app.js");
+  for (const marker of [
+    "presentationTimer=null",
+    "window.setTimeout(function(){",
+    "},180);",
+    "window.clearTimeout(presentationTimer)",
+    "errs.length===keys.length&&!hadExisting",
+    "Retry evidence load"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing resilient loading marker: " + marker);
+  }
+});
