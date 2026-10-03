@@ -603,7 +603,7 @@ export async function generateAiInterpretation(
                   schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
                 },
                 generation_config: {
-                  thinking_level: "medium",
+                  thinking_level: "low",
                   max_output_tokens: 16_384
                 }
               }),
