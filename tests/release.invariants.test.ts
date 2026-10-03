@@ -2693,6 +2693,20 @@ test("settings surface remains scroll-safe for long account state", () => {
   assert.ok(html.includes('id="dangerZone"'));
 });
 
+test("production smoke proves the deployed product shell is current", () => {
+  const smoke = readRepoFile("scripts/production-smoke.mjs");
+
+  for (const marker of [
+    'assert(home.text.includes("PRODUCT UI SYSTEM V6")',
+    'assert(home.text.includes(\'<script src="theme.js"></script>\')',
+    'assert(appJs.text.includes("const COMMAND_DEFS=")',
+    'const themeJs = await request("/theme.js")',
+    'assert(themeJs.text.includes("prefers-color-scheme: light")'
+  ]) {
+    assert.ok(smoke.includes(marker), "missing production UI smoke guardrail: " + marker);
+  }
+});
+
 test("developer command center preserves evidence-first workspace boundaries", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
