@@ -304,9 +304,12 @@ test("rejects provider output that references unknown evidence", async () => {
   const fakeFetch: typeof fetch = async () =>
     new Response(
       JSON.stringify({
-        output_text: JSON.stringify({
-          ...validAiOutput,
-          themes: [
+        candidates: [
+        {
+          content: {
+            parts: [{ text: JSON.stringify({
+              ...validAiOutput,
+              themes: [
             {
               ...validAiOutput.themes[0],
               evidenceKeys: ["not-supplied"]
