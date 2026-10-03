@@ -2073,7 +2073,7 @@ test("frontend view filters provide local search state without extra API traffic
   assert.ok(appJs.includes("Filters the already-loaded evidence locally"));
   assert.ok(appJs.includes("S.viewFilter[S.view]=input.value"));
   assert.ok(appJs.includes("e.key==='/'"));
-  assert.ok(appJs.includes("document.activeElement===$('viewSearch')"));
+  assert.ok(appJs.includes("var searchInput=$('viewSearch')||($('evidenceSearch')&&S.view==='evidence'?$('evidenceSearch'):null);"));
   assert.ok(appJs.includes("S.viewFilter={}"));
 });
 
