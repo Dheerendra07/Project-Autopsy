@@ -253,6 +253,30 @@ body{background:
 
 /* Responsive grid containment */
 .grid>*{min-width:0}
+/* Landing form containment + action hierarchy */
+
+/* Landing form containment + action hierarchy */
+.import{grid-template-columns:minmax(0,1fr) minmax(150px,180px) max-content;align-items:end}
+.import .field{min-width:0}
+.import .field input{width:100%;min-width:0;height:44px;min-height:44px;line-height:20px}
+.import>.btn.primary{height:44px;min-height:44px;align-self:end;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.import>.btn.primary::after{content:"";width:5px;height:5px;border-top:1px solid currentColor;border-right:1px solid currentColor;transform:rotate(45deg);transition:transform .16s ease}
+.import>.btn.primary:hover::after{transform:translateX(2px) rotate(45deg)}
+.import>.btn.primary:focus-visible{box-shadow:0 0 0 3px rgba(139,143,247,.2),0 10px 26px rgba(116,121,230,.18)}
+.import>.btn.primary:disabled{filter:saturate(.7);opacity:.68}
+.field input:hover{border-color:#394252}
+.field input:focus{background:#10141b;border-color:#6670b9;box-shadow:0 0 0 3px rgba(139,143,247,.07)}
+@media(max-width:1000px){
+  .import{grid-template-columns:minmax(0,1fr) minmax(150px,180px) max-content}
+}
+@media(max-width:760px){
+  .import{grid-template-columns:1fr 160px}
+  .import>.btn.primary{grid-column:1/-1;width:100%}
+}
+@media(max-width:520px){
+  .import{grid-template-columns:1fr}
+  .import>.btn.primary{grid-column:auto;width:100%}
+}
 </style>
 </head>
 <body>
