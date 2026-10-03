@@ -15,7 +15,7 @@ test("uses a cached interpretation without calling the provider", async () => {
   const cachedResult = {
     interpretationVersion: "1.0" as const,
     provider: "openai" as const,
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     reportFingerprint: report.fingerprint,
     groundingClaimCount: 2,
     generatedAt: "2026-09-29T00:00:00.000Z",
@@ -40,7 +40,7 @@ test("uses a cached interpretation without calling the provider", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     async () => {
@@ -84,7 +84,7 @@ test("persists a fresh provider result after a cache miss", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -123,7 +123,7 @@ test("continues provider flow when cache read or write fails", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -276,14 +276,14 @@ test("generates structured interpretation and preserves report fingerprint", asy
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     fakeFetch
   );
 
   assert.equal(result.provider, "openai");
-  assert.equal(result.model, "gpt-5.6-luna");
+  assert.equal(result.model, "gpt-6-luna");
   assert.equal(result.reportFingerprint, "f".repeat(64));
   assert.equal(result.groundingClaimCount, 2);
   assert.match(capturedBody, /project_autopsy_interpretation/);
@@ -314,7 +314,7 @@ test("rejects provider output that references unknown evidence", async () => {
         {
           apiKey: "test-key",
           baseUrl: "https://api.openai.com/v1",
-          model: "gpt-5.6-luna",
+          model: "gpt-6-luna",
           timeoutMs: 5_000
         },
         fakeFetch
@@ -337,7 +337,7 @@ test("maps upstream provider failures without exposing response bodies", async (
         {
           apiKey: "test-key",
           baseUrl: "https://api.openai.com/v1",
-          model: "gpt-5.6-luna",
+          model: "gpt-6-luna",
           timeoutMs: 5_000
         },
         fakeFetch
@@ -396,7 +396,7 @@ test("retries temporary rate limits and overloads with bounded backoff", async (
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -437,7 +437,7 @@ test("does not retry exhausted-credit 429 responses", async () => {
         {
           apiKey: "test-key",
           baseUrl: "https://api.openai.com/v1",
-          model: "gpt-5.6-luna",
+          model: "gpt-6-luna",
           timeoutMs: 5_000
         },
         fakeFetch,
@@ -490,7 +490,7 @@ test("honors Retry-After before a temporary retry", async () => {
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -531,7 +531,7 @@ test("retries transient network failures without leaking error details", async (
     {
       apiKey: "test-key",
       baseUrl: "https://api.openai.com/v1",
-      model: "gpt-5.6-luna",
+      model: "gpt-6-luna",
       timeoutMs: 5_000
     },
     fakeFetch,
@@ -569,7 +569,7 @@ test("stops retrying when the provider asks for an excessive delay", async () =>
         {
           apiKey: "test-key",
           baseUrl: "https://api.openai.com/v1",
-          model: "gpt-5.6-luna",
+          model: "gpt-6-luna",
           timeoutMs: 5_000
         },
         fakeFetch,

@@ -401,3 +401,21 @@ PR #180 merged on main at `e0d8a1c078f34b06336d68290cfea09fb801fd20`.
 - Open pull requests: 0.
 
 Continuation rule: preserve explicit hidden-overlay behavior for every transient UI surface; never rely on `hidden` alone when author CSS supplies an explicit display rule.
+
+## Current release checkpoint — 2026-10-03
+
+Main is currently at `951c5ebc0558c6cb8a36217ea83df2834839c84e` after merging PR #192 (outputs and Evidence Explorer hardening).
+
+- PR #192 added evidence-count/clear controls to Evidence Explorer, functional report-map navigation, evidence-specific interview draft copy, and actionable Insights failure states.
+- The final PR quality run `b530835f4b0a33a056e70b8f3d9e3803bbe6fe03` passed the full repository gate. The post-merge main quality run `37097708805` also completed all substantive checks successfully.
+- The repository currently has 0 open pull requests and 0 open issues.
+- PR #184 was closed as superseded because its landing/auth navigation changes are already contained in the newer main baseline; it was not merged.
+- The production-smoke workflow is scheduled every six hours and is manually dispatchable. It consumes the GitHub Actions repository secrets `AUTOPSY_BOOTSTRAP_EMAIL` and `AUTOPSY_BOOTSTRAP_PASSWORD`.
+- GitHub Actions secrets are separate from Render runtime environment variables. The first production bootstrap account must exist in the production database, which is normally created by configuring the same bootstrap variables in the Render service for an initial deployment/startup. After the first successful login, those Render bootstrap variables can be removed as documented; the GitHub Actions smoke credentials can remain independently configured for recurring authentication checks against the existing account.
+- Live canonical production HTML was successfully retrieved after the latest release and returned HTTP 200 with the current Project Autopsy surface.
+- The raw source still explicitly marks transient overlays and the workspace as `hidden`; do not re-introduce CSS/HTML patterns that rely on JavaScript alone for initial overlay state.
+- Firecrawl verification is currently credit-constrained; preserve credits for targeted production checks rather than broad recrawls.
+
+Continuation rule: treat `951c5ebc0558c6cb8a36217ea83df2834839c84e` as the newest code baseline. Preserve the existing 11-view information architecture, evidence-first semantics, protected API boundary, bounded execution contracts, stale-state handling, focus management, mobile layout, deterministic report fingerprints, and secret non-disclosure.
+
+- The 2026-10-03 configuration audit also corrected the default OpenAI interpretation model from `gpt-5.6-luna` to the currently listed `gpt-6-luna` across runtime configuration, Render configuration, examples, documentation, and interpretation tests.
