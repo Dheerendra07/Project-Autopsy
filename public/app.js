@@ -191,7 +191,7 @@
     $('drawer').hidden=false;
     requestAnimationFrame(function(){$('drawerClose').focus()});
   }
-  function closeEvidence(){$('drawer').hidden=true;var focus=S.focusReturn;S.focusReturn=null;S.currentEvidence=null;if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
+  function closeEvidence(restoreFocus){$('drawer').hidden=true;var focus=S.focusReturn;S.focusReturn=null;S.currentEvidence=null;if(restoreFocus!==false&&focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}})}
   function closeTransientOverlays(){
     if($('commandPalette'))$('commandPalette').hidden=true;
     if($('drawer'))$('drawer').hidden=true;
@@ -1024,6 +1024,7 @@
   function viewFromHash(){var v=(location.hash||'').replace(/^#/,'').trim();return VALID_VIEWS.indexOf(v)>=0?v:'overview'}
   function setView(v,options){
     options=options||{};
+    if($('drawer')&&!$('drawer').hidden)closeEvidence(false);
     var previous=S.view;
     if(previous)S.viewScroll[previous]=window.scrollY||0;
     S.view=v;
