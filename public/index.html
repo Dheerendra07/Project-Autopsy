@@ -897,6 +897,24 @@ html[data-theme="light"] .report-posture,html[data-theme="light"] .interview-pos
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 
+
+/* PRODUCT UI V5.1 — compact source health rail */
+.view-source-status{
+  display:flex!important;align-items:center!important;gap:10px!important;min-height:40px!important;
+  margin:-8px 0 18px!important;padding:9px 12px!important;border:1px solid var(--ui-border)!important;
+  border-radius:11px!important;background:var(--ui-surface)!important;box-shadow:var(--ui-shadow-soft)!important;
+}
+.view-source-status>div{display:grid!important;gap:1px!important;min-width:0!important}
+.view-source-status .kicker{font-size:7px!important;letter-spacing:.11em!important}
+.view-source-status strong{font-size:10px!important;color:var(--ui-text)!important}
+.view-source-status small{margin-left:auto!important;color:var(--ui-text-3)!important;font:700 8px var(--ui-mono)!important;white-space:nowrap!important}
+.view-source-dot{width:7px;height:7px;border-radius:50%;background:var(--ui-success);box-shadow:0 0 0 4px rgba(105,211,160,.09);flex:0 0 auto}
+.view-source-status.warn .view-source-dot{background:var(--ui-warning);box-shadow:0 0 0 4px rgba(228,189,114,.10)}
+html[data-theme="light"] .view-source-status{background:#fff!important;border-color:#d7dfe9!important;box-shadow:0 10px 26px rgba(29,45,68,.055)!important}
+html[data-theme="light"] .view-source-dot{box-shadow:0 0 0 4px rgba(22,131,91,.08)}
+html[data-theme="light"] .view-source-status.warn .view-source-dot{box-shadow:0 0 0 4px rgba(162,103,22,.09)}
+@media(max-width:680px){.view-source-status{align-items:flex-start!important;flex-wrap:wrap!important}.view-source-status small{margin-left:17px!important;width:calc(100% - 17px)!important;white-space:normal!important}}
+
 </style>
 </head>
 <body>
