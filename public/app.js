@@ -536,6 +536,16 @@
     }
     applyViewFilter();
   }
+  function viewSourceStatusMarkup(){
+    var keys=VIEW_DATA[S.view]||[];
+    if(!keys.length||S.dataRunId!==S.runId)return '';
+    var errors=S.dataErrors.filter(function(error){return keys.indexOf(error.key)>=0;});
+    var loaded=keys.length-errors.length;
+    var tone=errors.length?'warn':'good';
+    var label=errors.length?loaded+' / '+keys.length+' sources loaded':'All '+keys.length+' evidence sources loaded';
+    var detail=errors.length?' · '+errors.length+' source'+(errors.length===1?'':'s')+' unavailable':' · snapshot aligned';
+    return '<div class="view-source-status '+tone+'" role="status"><span class="view-source-dot" aria-hidden="true"></span><div><span class="kicker">SOURCE HEALTH</span><strong>'+esc(label)+'</strong></div><small>'+esc(detail)+'</small></div>';
+  }
   function shell(title,desc,actions){
     var toolbar=viewFilterMarkup();
     var snap=snapshotState();
@@ -560,7 +570,8 @@
         '<div class="view-guide-flow"><span>READ</span><i>→</i><span>INSPECT</span><i>→</i><span>ACT</span></div>'+
       '</div>'+
       viewFlowMarkup()+
-      toolbar
+      toolbar+
+      viewSourceStatusMarkup()
   }
   const VIEW_FLOW={
     overview:{previous:null,next:"history",nextLabel:"Open History",nextWhy:"Trace the commit timeline behind this snapshot."},
