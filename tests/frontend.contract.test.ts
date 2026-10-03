@@ -113,6 +113,41 @@ test("product frontend contains the core evidence workflow", () => {
     );
   }
 });
+test("product frontend supports persistent dark and light themes without inline script", () => {
+  const themePath = fileURLToPath(
+    new URL("../public/theme.js", import.meta.url)
+  );
+  const themeJs = readFileSync(themePath, "utf8");
+
+  assert.ok(
+    html.includes('<script src="theme.js"></script>'),
+    "frontend must bootstrap the theme from an external same-origin asset"
+  );
+  assert.doesNotMatch(
+    html,
+    /<script>\s*[\s\S]*?<\/script>/i,
+    "frontend must not embed inline executable scripts"
+  );
+  assert.ok(
+    themeJs.includes("localStorage.getItem('autopsy.theme')"),
+    "theme preference must persist locally"
+  );
+  assert.ok(
+    themeJs.includes("prefers-color-scheme: light"),
+    "theme bootstrap must respect the system preference when no saved choice exists"
+  );
+  assert.ok(
+    themeJs.includes("document.documentElement.dataset.theme"),
+    "theme bootstrap must set the root theme state"
+  );
+  assert.ok(appJs.includes("function applyTheme(theme,announce)"));
+  assert.ok(appJs.includes("function syncThemeButton()"));
+  assert.ok(appJs.includes("$('themeToggle').onclick"));
+  assert.ok(html.includes('html[data-theme="light"]'));
+  assert.ok(html.includes("--ui-accent:#6366f1"));
+  assert.ok(html.includes("color-scheme:light"));
+});
+
 
 test("frontend does not embed an API access secret", () => {
   const secretAssignment = /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY|x-autopsy-api-key)\s*[:=]\s*['"][^'"]{12,}['"]/i;
