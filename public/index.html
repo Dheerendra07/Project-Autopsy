@@ -404,6 +404,28 @@ main{max-width:1720px!important;margin:0 auto}
 @media(max-width:1100px){.overview-context{grid-template-columns:1fr!important}.overview-journey{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:680px){.overview-context{padding:17px!important}.overview-context-title h3{font-size:21px!important}.overview-journey{grid-template-columns:1fr!important}.journey-step{padding:13px!important}.posture-row{grid-template-columns:28px 1fr!important}.posture-state{grid-column:2!important;justify-self:start!important}}
 
+
+/* OVERVIEW LOADING V5 — structural skeleton for slow first loads */
+.skeleton-block{display:block;position:relative;overflow:hidden;border-radius:7px;background:linear-gradient(90deg,#172131 0%,#213047 48%,#172131 100%);background-size:220% 100%;animation:overview-shimmer 1.6s ease-in-out infinite}
+@keyframes overview-shimmer{0%{background-position:220% 0}100%{background-position:-20% 0}}
+.skeleton-kicker{width:108px;height:8px}.skeleton-title{width:min(280px,65%);height:28px;margin-top:9px}.skeleton-meta{width:min(390px,78%);height:10px;margin-top:11px}
+.overview-skeleton-context{padding:22px 24px!important;overflow:hidden}.overview-skeleton-journey{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:22px}
+.skeleton-card{min-width:0;padding:14px;border:1px solid #29384d;border-radius:12px;background:#101824}.skeleton-icon{width:25px;height:25px;border-radius:8px}
+.skeleton-line{width:72px;height:9px;margin-top:8px}.skeleton-line.short{width:48px}.skeleton-line.medium{width:120px}.skeleton-line.wide{width:min(180px,100%)}
+.overview-skeleton-metrics{margin-top:14px}.skeleton-metric{min-height:106px}.skeleton-value{width:78px;height:30px;margin-top:11px;border-radius:6px}
+.skeleton-panel{min-height:230px}.skeleton-heading{display:grid;gap:8px;padding-bottom:14px;border-bottom:1px solid #233043}
+.skeleton-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #202d3d}.skeleton-row:last-child{border-bottom:0}
+.skeleton-pill{width:62px;height:20px;border-radius:999px}.skeleton-field{display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #202d3d}
+.skeleton-table{min-height:315px}.skeleton-table-row{display:grid;grid-template-columns:72px 110px minmax(120px,1fr) 88px 62px;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #202d3d}
+.skeleton-history-row{display:grid;grid-template-columns:12px minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid #202d3d}.skeleton-dot{width:9px;height:9px;border-radius:50%;margin-top:3px}
+.skeleton-bar-row{display:grid;grid-template-columns:90px minmax(0,1fr) 28px 58px;align-items:center;gap:9px;padding:12px 0}.skeleton-bar{height:8px;border-radius:99px}.skeleton-count{width:24px;height:10px}
+.view-refresh-state{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:10px 13px;border:1px solid #2b3b51;border-radius:11px;background:linear-gradient(180deg,#111b28,#0e1621);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.view-refresh-state strong{display:block;font-size:11px;color:#dfe6ef}.view-refresh-state small{display:block;margin-top:2px;font-size:9px;line-height:1.45;color:#7e8da2}
+.view-refresh-spinner{width:18px;height:18px;flex:0 0 auto;border:2px solid #304058;border-top-color:#9ba2ff;border-radius:50%;animation:view-refresh-spin .8s linear infinite}@keyframes view-refresh-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.skeleton-block,.view-refresh-spinner{animation:none}}
+@media(max-width:1100px){.overview-skeleton-journey{grid-template-columns:repeat(2,minmax(0,1fr))}.skeleton-table-row{grid-template-columns:62px 90px minmax(90px,1fr) 70px 54px}}
+@media(max-width:680px){.overview-skeleton-context{padding:17px!important}.skeleton-title{height:23px}.overview-skeleton-journey{grid-template-columns:1fr}.skeleton-table{overflow:hidden}.skeleton-table-row{grid-template-columns:62px 92px minmax(110px,1fr);gap:10px}.skeleton-table-row .skeleton-pill:last-child,.skeleton-table-row .skeleton-line:nth-child(4){display:none}.skeleton-field{grid-template-columns:62px minmax(0,1fr)}.skeleton-bar-row{grid-template-columns:62px minmax(0,1fr) 24px 52px}}
+
 /* WORKSPACE FLOW V4 */
 :root{
   --bg:var(--ui-bg);
