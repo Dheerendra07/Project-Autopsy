@@ -720,7 +720,7 @@ test("stops retrying when the provider asks for a delay beyond the configured bo
       }),
       {
         status: 429,
-        headers: { "content-type": "application/json", "retry-after": "61" }
+        headers: { "content-type": "application/json", "retry-after": "121" }
       }
     );
   };
