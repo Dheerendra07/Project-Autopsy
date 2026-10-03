@@ -312,12 +312,11 @@ test("generates structured interpretation and preserves report fingerprint", asy
       max_output_tokens?: number;
     };
   };
-  assert.ok(Array.isArray(requestBody.response_format));
-  assert.deepEqual(requestBody.response_format, [
-    {
-      type: "text",
-      mime_type: "application/json",
-      schema: {
+  assert.ok(requestBody.response_format);
+  assert.deepEqual(requestBody.response_format, {
+    type: "text",
+    mime_type: "application/json",
+    schema: {
         type: "object",
         additionalProperties: false,
         properties: {
@@ -373,8 +372,7 @@ test("generates structured interpretation and preserves report fingerprint", asy
           "uncertainties"
         ]
       }
-    }
-  ]);
+  });
   assert.equal(requestBody.generation_config?.thinking_level, "medium");
   assert.equal(requestBody.generation_config?.max_output_tokens, 4_096);
   assert.doesNotMatch(capturedBody, /test-key/);
@@ -912,6 +910,62 @@ test("stops retrying when the provider asks for a delay beyond the configured bo
   );
 
   assert.equal(fetchCalls, 1);
+});
+
+test("falls back to the tertiary Gemini model after secondary 503", async () => {
+  const requestedModels: string[] = [];
+
+  const fakeFetch: typeof fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { model?: string };
+    requestedModels.push(String(body.model));
+
+    if (
+      body.model === "gemini-3.8-flash" ||
+      body.model === "gemini-3.7-flash"
+    ) {
+      return new Response(
+        JSON.stringify({ error: { status: "service_unavailable" } }),
+        {
+          status: 503,
+          headers: { "content-type": "application/json" }
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: JSON.stringify(validAiOutput) }]
+            }
+          }
+        ]
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  };
+
+  const result = await generateAiInterpretation(
+    reportFixture(),
+    {
+      apiKey: "test-key",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      model: "gemini-3.8-flash",
+      fallbackModel: "gemini-3.7-flash",
+      lastResortModel: "gemini-3.5-flash",
+      timeoutMs: 5_000
+    },
+    fakeFetch
+  );
+
+  assert.equal(result.provider, "gemini");
+  assert.equal(result.model, "gemini-3.5-flash");
+  assert.deepEqual(requestedModels, [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.5-flash"
+  ]);
 });
 
 test("requires an AI API key", () => {

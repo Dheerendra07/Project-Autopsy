@@ -4,6 +4,7 @@ const password = process.env.AUTOPSY_BOOTSTRAP_PASSWORD ?? "";
 const expectedAiProvider = (process.env.AUTOPSY_EXPECTED_AI_PROVIDER ?? "gemini").trim();
 const expectedAiModel = (process.env.AUTOPSY_EXPECTED_AI_MODEL ?? "gemini-3.8-flash").trim();
 const expectedAiFallbackModel = (process.env.AUTOPSY_EXPECTED_AI_FALLBACK_MODEL ?? "gemini-3.7-flash").trim();
+const expectedAiLastResortModel = (process.env.AUTOPSY_EXPECTED_AI_LAST_RESORT_MODEL ?? "gemini-3.5-flash").trim();
 const e2eRepositoryUrl = (process.env.AUTOPSY_E2E_REPOSITORY_URL ?? "https://github.com/octocat/Hello-World.git").trim();
 const e2eAnalysisTimeoutMs = Number.parseInt(process.env.AUTOPSY_E2E_ANALYSIS_TIMEOUT_MS ?? "240000", 10);
 
@@ -293,9 +294,11 @@ try {
     assert(
       interpretation.body?.success === true &&
         interpretation.body?.result?.provider === expectedAiProvider &&
-        [expectedAiModel, expectedAiFallbackModel].includes(
-          interpretation.body?.result?.model
-        ),
+        [
+          expectedAiModel,
+          expectedAiFallbackModel,
+          expectedAiLastResortModel
+        ].includes(interpretation.body?.result?.model),
       `Production Gemini interpretation returned an unexpected provider/model: provider=${String(interpretation.body?.result?.provider)} model=${String(interpretation.body?.result?.model)}`
     );
     assert(
@@ -322,7 +325,7 @@ try {
     );
 
     console.log(
-      `✓ Production Gemini E2E passed: fresh import ${e2eRepositoryId}, analysis ${e2eAnalysisRunId}, evidence report, live provider=${expectedAiProvider}, model=${expectedAiModel}, uncached structured interpretation, and evidence grounding.`
+      `✓ Production Gemini E2E passed: fresh import ${e2eRepositoryId}, analysis ${e2eAnalysisRunId}, evidence report, live provider=${expectedAiProvider}, accepted models=${[expectedAiModel, expectedAiFallbackModel, expectedAiLastResortModel].join(", ")}, uncached structured interpretation, and evidence grounding.`
     );
   } finally {
     if (e2eRepositoryId) {

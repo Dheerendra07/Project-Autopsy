@@ -316,6 +316,8 @@ export function readAiProviderConfig(
   const model = source.AI_MODEL?.trim() || "gemini-3.8-flash";
   const fallbackModel =
     source.AI_FALLBACK_MODEL?.trim() || "gemini-3.7-flash";
+  const lastResortModel =
+    source.AI_LAST_RESORT_MODEL?.trim() || "gemini-3.5-flash";
   const parsedTimeout = Number(source.AI_TIMEOUT_MS ?? 30_000);
 
   if (!Number.isInteger(parsedTimeout) || parsedTimeout < 1_000 || parsedTimeout > 120_000) {
@@ -329,6 +331,10 @@ export function readAiProviderConfig(
     baseUrl: normalizedBaseUrl,
     model,
     fallbackModel: fallbackModel === model ? undefined : fallbackModel,
+    lastResortModel:
+      lastResortModel === model || lastResortModel === fallbackModel
+        ? undefined
+        : lastResortModel,
     timeoutMs: parsedTimeout
   };
 }
@@ -508,7 +514,11 @@ export async function generateAiInterpretation(
   }
 
   const models: string[] = [];
-  for (const candidate of [config.model, config.fallbackModel]) {
+  for (const candidate of [
+    config.model,
+    config.fallbackModel,
+    config.lastResortModel
+  ]) {
     if (candidate && !models.includes(candidate)) {
       models.push(candidate);
     }
@@ -587,13 +597,11 @@ export async function generateAiInterpretation(
                 model,
                 system_instruction: system,
                 input: user,
-                response_format: [
-                  {
-                    type: "text",
-                    mime_type: "application/json",
-                    schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
-                  }
-                ],
+                response_format: {
+                  type: "text",
+                  mime_type: "application/json",
+                  schema: INTERPRETATION_OUTPUT_JSON_SCHEMA
+                },
                 generation_config: {
                   thinking_level: "medium",
                   max_output_tokens: 4_096
@@ -670,9 +678,8 @@ export async function generateAiInterpretation(
             errorCode
           );
 
-          const primaryFallbackEligible =
-            modelIndex === 0 &&
-            models.length > 1 &&
+          const nextModelFallbackEligible =
+            modelIndex < models.length - 1 &&
             retryable &&
             (
               response.status === 503 ||
@@ -682,7 +689,7 @@ export async function generateAiInterpretation(
               )
             );
 
-          if (primaryFallbackEligible) {
+          if (nextModelFallbackEligible) {
             break;
           }
 
