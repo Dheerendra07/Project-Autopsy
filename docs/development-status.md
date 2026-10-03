@@ -419,3 +419,8 @@ Main is currently at `0aa2488b7a3666b77461c62bdebbfc989fb02d0e` after merging PR
 Continuation rule: treat `5df0e69f71ace0d4bbdd6d64d9a813d9594daa1a` as the newest main baseline. Preserve the existing 11-view information architecture, evidence-first semantics, protected API boundary, bounded execution contracts, stale-state handling, focus management, mobile layout, deterministic report fingerprints, and secret non-disclosure.
 
 - The 2026-10-03 configuration audit moved the default interpretation provider from OpenAI to Google's Gemini `gemini-3.8-flash` across runtime configuration, Render configuration, examples, documentation, cache validation, and interpretation tests.
+
+
+## 2026-10-03 production verification checkpoint
+
+The production smoke workflow now exercises a fresh authenticated import -> analysis -> evidence report -> uncached Gemini interpretation path against the hosted Project Autopsy service, with temporary repository cleanup.
