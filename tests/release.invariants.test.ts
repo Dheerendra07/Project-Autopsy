@@ -2693,6 +2693,104 @@ test("settings surface remains scroll-safe for long account state", () => {
   assert.ok(html.includes('id="dangerZone"'));
 });
 
+test("workspace views stay backed by mounted API contracts", () => {
+  const appJs = readRepoFile("public/app.js");
+  const router = readRepoFile("src/routes/index.ts");
+  const repositories = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const runtime = readRepoFile("src/modules/runtime/runtime.routes.ts");
+  const deployments = readRepoFile("src/modules/deployments/deployment.routes.ts");
+  const report = readRepoFile("src/modules/reports/report.routes.ts");
+  const interview = readRepoFile("src/modules/interview/interview.routes.ts");
+  const interpretation = readRepoFile("src/modules/interpretation/interpretation.routes.ts");
+  const contributors = readRepoFile("src/modules/contributors/contributor-evolution.routes.ts");
+  const observability = readRepoFile("src/modules/observability/observability.routes.ts");
+
+  for (const marker of [
+    "function viewEndpoints(id)",
+    "commits:'/api/repositories/'+id+'/commits?page=1&limit=50'",
+    "timeline:'/api/repositories/'+id+'/timeline?page=1&limit=50'",
+    "architecture:'/api/repositories/'+id+'/architecture?limit=100'",
+    "dependencies:'/api/repositories/'+id+'/dependencies?limit=100'",
+    "complexity:'/api/repositories/'+id+'/complexity?limit=100'",
+    "coupling:'/api/repositories/'+id+'/coupling?minCoChanges=2&limit=50'",
+    "bugs:'/api/repositories/'+id+'/repeated-bug-areas?limit=20'",
+    "repeated:'/api/repositories/'+id+'/repeatedly-modified-files?minTouches=3&limit=20'",
+    "refactors:'/api/repositories/'+id+'/refactors?limit=20'",
+    "migrations:'/api/repositories/'+id+'/database-migrations?limit=100'",
+    "tests:'/api/repositories/'+id+'/test-evolution?limit=100'",
+    "testSummary:'/api/repositories/'+id+'/test-evolution/summary'",
+    "runtime:'/api/repositories/'+id+'/runtime/telemetry/summary'",
+    "runtimeEvents:'/api/repositories/'+id+'/runtime/telemetry?page=1&limit=40'",
+    "deployments:'/api/repositories/'+id+'/deployments?limit=50'",
+    "historicalSummary:'/api/repositories/'+id+'/runtime/historical-correlation/summary?limit=25'",
+    "historicalCorrelation:'/api/repositories/'+id+'/runtime/historical-correlation?limit=25'",
+    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'"
+  ]) {
+    assert.ok(appJs.includes(marker), "missing UI endpoint contract: " + marker);
+  }
+
+  for (const marker of [
+    'router.use("/repositories/:repositoryId", requireRepositoryAccess);',
+    'router.use("/repositories/:repositoryId/runtime", runtimeRouter);',
+    'router.use("/repositories/:repositoryId/deployments", deploymentRouter);',
+    'router.use("/repositories/:repositoryId/report", reportRouter);',
+    'router.use("/repositories/:repositoryId/interview-stories", interviewRouter);',
+    'router.use("/repositories/:repositoryId/interpretation", interpretationRouter);',
+    'router.use("/repositories/:repositoryId/contributors", contributorEvolutionRouter);',
+    'router.use("/observability", observabilityRouter);'
+  ]) {
+    assert.ok(router.includes(marker), "missing route mount: " + marker);
+  }
+
+  for (const marker of [
+    'router.get("/:repositoryId/commits"',
+    'router.get("/:repositoryId/timeline"',
+    'router.get("/:repositoryId/architecture"',
+    'router.get("/:repositoryId/dependencies"',
+    'router.get("/:repositoryId/complexity"',
+    'router.get("/:repositoryId/coupling"',
+    'router.get("/:repositoryId/repeated-bug-areas"',
+    'router.get("/:repositoryId/repeatedly-modified-files"',
+    'router.get("/:repositoryId/refactors"',
+    'router.get("/:repositoryId/database-migrations"',
+    'router.get("/:repositoryId/test-evolution"',
+    'router.get("/:repositoryId/hotspots"'
+  ]) {
+    assert.ok(repositories.includes(marker), "missing repository evidence route: " + marker);
+  }
+
+  for (const marker of [
+    'runtimeRouter.get("/telemetry"',
+    'runtimeRouter.get("/telemetry/summary"',
+    'runtimeRouter.get("/historical-correlation"',
+    'runtimeRouter.get("/historical-correlation/summary"',
+    'runtimeRouter.get("/historical-correlation/source-context"'
+  ]) {
+    assert.ok(runtime.includes(marker), "missing runtime route: " + marker);
+  }
+
+  assert.ok(deployments.includes('get("/", async'));
+  assert.ok(deployments.includes('deploymentRouter.get("/provenance"'));
+  assert.ok(report.includes('get("/", async'));
+  assert.ok(interview.includes('get("/", async'));
+  assert.ok(interpretation.includes('get("/", async'));
+  assert.ok(contributors.includes('get("/", async'));
+  assert.ok(observability.includes('observabilityRouter.get("/summary"'));
+});
+test("workspace source health rail remains visible for partial data failures", () => {
+  const appJs = readRepoFile("public/app.js");
+  const html = readRepoFile("public/index.html");
+
+  assert.ok(appJs.includes("function viewSourceStatusMarkup()"));
+  assert.ok(appJs.includes("S.dataErrors.filter(function(error){return keys.indexOf(error.key)>=0;})"));
+  assert.ok(appJs.includes("All '+keys.length+' evidence sources loaded"));
+  assert.ok(appJs.includes("sources loaded"));
+  assert.ok(html.includes(".view-source-status"));
+  assert.ok(html.includes(".view-source-dot"));
+  assert.ok(html.includes("source health rail"));
+});
+
+
 test("workspace flow rail gives every view an explicit next action", () => {
   const appJs = readRepoFile("public/app.js");
   const html = readRepoFile("public/index.html");

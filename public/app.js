@@ -77,6 +77,28 @@
     return{label:'Snapshot '+(a.status||'unknown'),tone:'warn'};
   }
   function storageGet(key){try{return sessionStorage.getItem(key)||''}catch(e){return''}}
+  function themeStorageGet(){try{return localStorage.getItem('autopsy.theme')||''}catch(e){return''}}
+  function themeStorageSet(value){try{localStorage.setItem('autopsy.theme',value);return true}catch(e){return false}}
+  function syncThemeButton(){
+    var button=$('themeToggle');
+    if(!button)return;
+    var light=document.documentElement.dataset.theme==='light';
+    button.setAttribute('aria-pressed',String(!light));
+    button.setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');
+    button.setAttribute('title',light?'Switch to dark theme':'Switch to light theme');
+    var label=button.querySelector('.theme-toggle-label'),icon=button.querySelector('.theme-toggle-icon');
+    if(label)label.textContent=light?'Dark':'Light';
+    if(icon)icon.textContent=light?'◐':'☼';
+  }
+  function applyTheme(theme,announce){
+    var mode=theme==='light'?'light':'dark';
+    document.documentElement.dataset.theme=mode;
+    themeStorageSet(mode);
+    var meta=$('themeColor');
+    if(meta)meta.setAttribute('content',mode==='light'?'#f3f6fb':'#070b12');
+    syncThemeButton();
+    if(announce)toast((mode==='light'?'Light':'Dark')+' theme enabled.','good');
+  }
   function storageSet(key,value){try{sessionStorage.setItem(key,value);return true}catch(e){return false}}
   function storageRemove(key){try{sessionStorage.removeItem(key);return true}catch(e){return false}}
   function readCookie(name){var prefix=encodeURIComponent(name)+'=';return document.cookie.split(';').map(function(x){return x.trim()}).find(function(x){return x.indexOf(prefix)===0})?.slice(prefix.length)||''}
@@ -514,6 +536,16 @@
     }
     applyViewFilter();
   }
+  function viewSourceStatusMarkup(){
+    var keys=VIEW_DATA[S.view]||[];
+    if(!keys.length||S.dataRunId!==S.runId)return '';
+    var errors=S.dataErrors.filter(function(error){return keys.indexOf(error.key)>=0;});
+    var loaded=keys.length-errors.length;
+    var tone=errors.length?'warn':'good';
+    var label=errors.length?loaded+' / '+keys.length+' sources loaded':'All '+keys.length+' evidence sources loaded';
+    var detail=errors.length?' · '+errors.length+' source'+(errors.length===1?'':'s')+' unavailable':' · snapshot aligned';
+    return '<div class="view-source-status '+tone+'" role="status"><span class="view-source-dot" aria-hidden="true"></span><div><span class="kicker">SOURCE HEALTH</span><strong>'+esc(label)+'</strong></div><small>'+esc(detail)+'</small></div>';
+  }
   function shell(title,desc,actions){
     var toolbar=viewFilterMarkup();
     var snap=snapshotState();
@@ -538,7 +570,8 @@
         '<div class="view-guide-flow"><span>READ</span><i>→</i><span>INSPECT</span><i>→</i><span>ACT</span></div>'+
       '</div>'+
       viewFlowMarkup()+
-      toolbar
+      toolbar+
+      viewSourceStatusMarkup()
   }
   const VIEW_FLOW={
     overview:{previous:null,next:"history",nextLabel:"Open History",nextWhy:"Trace the commit timeline behind this snapshot."},
@@ -1455,6 +1488,8 @@
     landing();
     if(location.hash)history.replaceState(null,'',location.pathname+location.search);
   };
+  applyTheme(themeStorageGet()||document.documentElement.dataset.theme||'dark',false);
+  $('themeToggle').onclick=function(){applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light',true)};
   $('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('saveRepoAccess').onclick=function(){saveRepositoryAccess(false)};$('clearRepoAccess').onclick=function(){saveRepositoryAccess(true)};$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){
     try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}
     persist();
