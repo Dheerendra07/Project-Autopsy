@@ -2755,6 +2755,17 @@ test("developer command center preserves evidence-first workspace boundaries", (
     false,
     "static landing capability cards must not gain interactive elements"
   );
+
+  assert.ok(appJs.includes("const SEARCHABLE_VIEWS=['history','structure','quality','evidence','contributors']"));
+  assert.ok(appJs.includes("label:S.view==='evidence'?'Focus evidence search':'Focus page search'"));
+  assert.ok(appJs.includes("function refreshVisibleView()"));
+  assert.ok(appJs.includes("if(S.view==='runtime')return loadRuntimeEvents(true)"));
+  assert.ok(appJs.includes("if(S.view==='report')return loadReport()"));
+  assert.ok(appJs.includes("if(S.view==='interview')return loadInterview()"));
+  assert.ok(appJs.includes("if(S.view==='interpretation')return loadInterpretation()"));
+  assert.ok(appJs.includes("if(S.view==='operations')return loadOperations(true)"));
+  assert.ok(appJs.includes("if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');"));
+  assert.ok(appJs.includes("if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}"));
 });
  
 test("evidence-family filtering stays a client-side projection over loaded records", () => {
