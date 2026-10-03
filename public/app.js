@@ -77,7 +77,12 @@
     return{label:'Snapshot '+(a.status||'unknown'),tone:'warn'};
   }
   function storageGet(key){try{return sessionStorage.getItem(key)||''}catch(e){return''}}
-  function themeStorageGet(){try{return localStorage.getItem('autopsy.theme')||''}catch(e){return''}}
+  function themeStorageGet(){
+    try{
+      var value=localStorage.getItem('autopsy.theme')||'';
+      return value==='light'||value==='dark'?value:'';
+    }catch(e){return''}
+  }
   function themeStorageSet(value){try{localStorage.setItem('autopsy.theme',value);return true}catch(e){return false}}
   function syncThemeButton(){
     var button=$('themeToggle');
@@ -88,14 +93,14 @@
     button.setAttribute('title',light?'Switch to dark theme':'Switch to light theme');
     var label=button.querySelector('.theme-toggle-label'),icon=button.querySelector('.theme-toggle-icon');
     if(label)label.textContent=light?'Dark':'Light';
-    if(icon)icon.textContent=light?'◐':'☼';
+    if(icon)icon.textContent=light?'☾':'☀';
   }
-  function applyTheme(theme,announce){
+  function applyTheme(theme,announce,persistPreference){
     var mode=theme==='light'?'light':'dark';
     document.documentElement.dataset.theme=mode;
-    themeStorageSet(mode);
+    if(persistPreference!==false)themeStorageSet(mode);
     var meta=$('themeColor');
-    if(meta)meta.setAttribute('content',mode==='light'?'#f3f6fb':'#070b12');
+    if(meta)meta.setAttribute('content',mode==='light'?'#f4f7fb':'#0a0f17');
     syncThemeButton();
     if(announce)toast((mode==='light'?'Light':'Dark')+' theme enabled.','good');
   }
@@ -1488,8 +1493,13 @@
     landing();
     if(location.hash)history.replaceState(null,'',location.pathname+location.search);
   };
-  applyTheme(themeStorageGet()||document.documentElement.dataset.theme||'dark',false);
-  $('themeToggle').onclick=function(){applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light',true)};
+  var storedTheme=themeStorageGet();
+  applyTheme(storedTheme||document.documentElement.dataset.theme||'dark',false,!!storedTheme);
+  window.addEventListener('storage',function(e){
+    if(e.key!=='autopsy.theme')return;
+    if(e.newValue==='light'||e.newValue==='dark')applyTheme(e.newValue,false,false);
+  });
+  $('themeToggle').onclick=function(){applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light',true,true)};
   $('settings').onclick=function(){S.user?openSettings(this):openAuth('login')};$('close').onclick=closeSettings;$('drawerCopy').onclick=copyEvidence;$('saveRepoAccess').onclick=function(){saveRepositoryAccess(false)};$('clearRepoAccess').onclick=function(){saveRepositoryAccess(true)};$('confirmCancel').onclick=function(){finishConfirm(false)};$('confirmConfirm').onclick=function(){finishConfirm(true)};$('deleteRepository').onclick=deleteRepository;$('testConnection').onclick=testConnection;$('drawerClose').onclick=closeEvidence;$('drawer').onclick=function(e){if(e.target===$('drawer'))closeEvidence()};$('modal').onclick=function(e){if(e.target===$('modal'))closeSettings()};$('confirmModal').onclick=function(e){if(e.target===$('confirmModal'))finishConfirm(false)};$('save').onclick=function(){
     try{S.api=safeApiBase($('api').value)}catch(e){toast(e.message,'bad');return}
     persist();
