@@ -417,3 +417,5 @@ Main is currently at `951c5ebc0558c6cb8a36217ea83df2834839c84e` after merging PR
 - Firecrawl verification is currently credit-constrained; preserve credits for targeted production checks rather than broad recrawls.
 
 Continuation rule: treat `951c5ebc0558c6cb8a36217ea83df2834839c84e` as the newest code baseline. Preserve the existing 11-view information architecture, evidence-first semantics, protected API boundary, bounded execution contracts, stale-state handling, focus management, mobile layout, deterministic report fingerprints, and secret non-disclosure.
+
+- The 2026-10-03 configuration audit also corrected the default OpenAI interpretation model from `gpt-5.6-luna` to the currently listed `gpt-6-luna` across runtime configuration, Render configuration, examples, documentation, and interpretation tests.
