@@ -133,6 +133,13 @@ assert(home.text.includes('<script src="app.js" defer></script>'), "Home page is
 const appJs = await request("/app.js");
 assert(appJs.response.ok, `Frontend asset returned HTTP ${appJs.response.status}.`);
 assert(appJs.text.includes("function storageGet(key)"), "Frontend asset is not the expected Autopsy client.");
+assert(appJs.text.includes("const COMMAND_DEFS="), "Production frontend is missing the developer command center.");
+assert(home.text.includes("PRODUCT UI SYSTEM V6"), "Production page is not serving the final V6 visual system.");
+assert(home.text.includes('<script src="theme.js"></script>'), "Production page is missing the CSP-safe theme bootstrap asset.");
+
+const themeJs = await request("/theme.js");
+assert(themeJs.response.ok, `Theme bootstrap asset returned HTTP ${themeJs.response.status}.`);
+assert(themeJs.text.includes("prefers-color-scheme: light"), "Theme bootstrap asset is not the expected Autopsy implementation.");
 
 for (const assetPath of ["/favicon.svg", "/favicon.ico"]) {
   const asset = await request(assetPath);
