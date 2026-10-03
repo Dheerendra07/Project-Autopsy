@@ -31,8 +31,8 @@ export class AiInterpretationNotConfiguredError extends Error {
 }
 
 export class AiInterpretationProviderError extends Error {
-  readonly statusCode?: number;
-  readonly retryAfterMs?: number;
+  readonly statusCode?: number | undefined;
+  readonly retryAfterMs?: number | undefined;
 
   constructor(
     message: string,
@@ -515,15 +515,12 @@ export async function generateAiInterpretation(
     );
   }
 
-  const models = [
-    config.model,
-    config.fallbackModel
-  ].filter(
-    (model, index, all) =>
-      typeof model === "string" &&
-      model.trim() &&
-      all.indexOf(model) === index
-  );
+  const models: string[] = [];
+  for (const candidate of [config.model, config.fallbackModel]) {
+    if (candidate && !models.includes(candidate)) {
+      models.push(candidate);
+    }
+  }
 
   if (models.length === 0) {
     throw new AiInterpretationNotConfiguredError(
