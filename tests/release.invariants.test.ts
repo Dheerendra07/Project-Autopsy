@@ -351,6 +351,8 @@ test("frontend product surface stays guided, progressive and evidence-readable",
   assert.ok(appJs.includes("if($('drawerSummary'))$('drawerSummary').innerHTML"));
   assert.ok(appJs.includes("if($('drawerRaw'))$('drawerRaw').open=false"));
   const css = html.match(/<style>([\s\S]*?)<\/style>/i)?.[1] || "";
+  assert.ok(css.includes("/* Final product theme authority */"));
+  assert.equal((html.match(/<\/html>\s*$/i) || [])[0] !== undefined, true, "document must end at </html> without trailing text");
   assert.ok(css.includes(".drawer-actions{display:flex;gap:7px;align-items:center;flex:0 0 auto}"));
   assert.equal(css.includes("}gap:7px;"), false);
 
