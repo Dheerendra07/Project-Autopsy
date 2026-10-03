@@ -171,7 +171,7 @@ export const envSchema = z
       .string()
       .trim()
       .min(1)
-      .default("gemini-2.5-flash"),
+      .default("gemini-3.8-flash"),
 
     AI_TIMEOUT_MS: z.coerce
       .number()
