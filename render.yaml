@@ -57,7 +57,7 @@ services:
       - key: AI_BASE_URL
         value: https://api.openai.com/v1
       - key: AI_MODEL
-        value: gpt-5.6-luna
+        value: gpt-6-luna
       - key: AI_TIMEOUT_MS
         value: "30000"
       - key: AUTOPSY_CORS_ORIGINS
