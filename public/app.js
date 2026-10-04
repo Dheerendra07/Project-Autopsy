@@ -552,7 +552,21 @@
     var detail=errors.length?' · '+errors.length+' source'+(errors.length===1?'':'s')+' unavailable':' · snapshot aligned';
     return '<div class="view-source-status '+tone+'" role="status"><span class="view-source-dot" aria-hidden="true"></span><div><span class="kicker">SOURCE HEALTH</span><strong>'+esc(label)+'</strong></div><small>'+esc(detail)+'</small></div>';
   }
-  function shell(title,desc,actions){
+    const VIEW_WORKFLOW={
+    overview:['Read snapshot','Trace history','Choose output'],
+    history:['Trace commits','Inspect event','Map structure'],
+    structure:['Map shape','Inspect change','Validate quality'],
+    quality:['Find signal','Inspect evidence','Compare runtime'],
+    runtime:['Filter observations','Inspect provenance','Build report'],
+    report:['Read claims','Inspect evidence','Prepare story'],
+    interview:['Review story','Verify refs','Use as scaffold'],
+    interpretation:['Generate from report','Inspect grounding','Test uncertainty'],
+    evidence:['Filter family','Inspect record','Return to context'],
+    contributors:['Read contribution','Inspect Git evidence','Add context'],
+    operations:['Check service','Inspect dependencies','Return to snapshot']
+  };
+
+function shell(title,desc,actions){
     var toolbar=viewFilterMarkup();
     var snap=snapshotState();
     var loading=!!S.viewLoading[S.view];
@@ -570,15 +584,30 @@
       '</div>'+
       '<div class="actions">'+(actions||'')+reload+sourceAction+'</div>'+
       '</div>'+
-      '<div class="view-guide card">'+
+      var guideSteps=VIEW_WORKFLOW[S.view]||['Read the snapshot','Inspect supporting evidence','Take the next useful action'];
+    return '<div class="view-guide card">'+
         '<div class="view-guide-icon">'+esc(S.view==='overview'?'01':S.view==='history'?'02':S.view==='structure'?'03':S.view==='quality'?'04':S.view==='runtime'?'05':S.view==='report'?'06':S.view==='interview'?'07':S.view==='interpretation'?'08':S.view==='evidence'?'09':S.view==='contributors'?'10':'11')+'</div>'+
         '<div class="view-guide-copy"><span class="kicker">WHAT TO DO HERE</span><strong>'+esc(guide.answer)+'</strong><small>'+esc(guide.next)+'</small></div>'+
-        '<div class="view-guide-flow"><span>READ</span><i>→</i><span>INSPECT</span><i>→</i><span>ACT</span></div>'+
+        '<div class="view-guide-flow">'+guideSteps.map(function(step,i){return '<span>'+esc(step)+'</span>'+(i<guideSteps.length-1?'<i aria-hidden="true">→</i>':'')}).join('')+'</div>'+
       '</div>'+
       viewFlowMarkup()+
       toolbar+
       viewSourceStatusMarkup()
   }
+  const WORKFLOW_STEPS=[
+    {number:'01',id:'overview',label:'Overview',detail:'Start from the current analysis snapshot and run boundary.'},
+    {number:'02',id:'history',label:'History',detail:'Trace chronological commits and timeline evidence.'},
+    {number:'03',id:'structure',label:'Structure',detail:'Understand architecture, dependency and complexity changes.'},
+    {number:'04',id:'quality',label:'Quality',detail:'Investigate tests, repeated changes, refactors and bug-area signals.'},
+    {number:'05',id:'runtime',label:'Runtime',detail:'Inspect telemetry, deployment and historical provenance evidence.'},
+    {number:'06',id:'report',label:'Report',detail:'Read the bounded evidence-backed engineering report.'},
+    {number:'07',id:'interview',label:'Interview',detail:'Turn evidence into verifiable talking-point scaffolds.'},
+    {number:'08',id:'interpretation',label:'Insights',detail:'Ground interpretation in current report claims and uncertainty.'},
+    {number:'09',id:'evidence',label:'Evidence',detail:'Search and inspect the exact persisted records.'},
+    {number:'10',id:'contributors',label:'Contributors',detail:'Use literal author history as additional evidence context.'},
+    {number:'11',id:'operations',label:'Operations',detail:'Check live service health separately from repository evidence.'}
+  ];
+
   const VIEW_FLOW={
     overview:{previous:null,next:"history",nextLabel:"Open History",nextWhy:"Trace the commit timeline behind this snapshot."},
     history:{previous:"overview",next:"structure",nextLabel:"Open Structure",nextWhy:"See how the codebase shape changed."},
@@ -595,13 +624,23 @@
   function viewFlowMarkup(){
     var flow=VIEW_FLOW[S.view];
     if(!flow)return "";
+    var currentIndex=WORKFLOW_STEPS.findIndex(function(step){return step.id===S.view});
     var current=VIEW_TITLES[S.view]||S.view;
     var previous=flow.previous?'<a class="view-flow-link secondary" href="#'+esc(flow.previous)+'"><span>‹</span> Back</a>':'';
     var next=flow.next
       ? '<a class="view-flow-link primary" href="#'+esc(flow.next)+'"><span>'+esc(flow.nextLabel)+'</span><span aria-hidden="true">→</span></a>'
       : '';
-    return '<div class="view-flow card">'+
-      '<div class="view-flow-copy"><span class="kicker">WORKSPACE PATH</span><strong>'+esc(current)+'</strong><small>'+esc(flow.nextWhy)+'</small></div>'+
+    var rail=WORKFLOW_STEPS.map(function(step,index){
+      var state=index===currentIndex?' current':index<currentIndex?' complete':'';
+      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'" aria-current="'+(index===currentIndex?'step':'false')+'" title="'+esc(step.detail)+'">'+
+        '<span class="workspace-flow-index">'+esc(step.number)+'</span><span class="workspace-flow-label">'+esc(step.label)+'</span></a>';
+    }).join('<span class="workspace-flow-connector" aria-hidden="true">→</span>');
+    return '<div class="view-flow card" aria-label="Workspace workflow navigation">'+
+      '<div class="view-flow-head">'+
+        '<div class="view-flow-copy"><span class="kicker">WORKSPACE PATH</span><strong>'+esc(current)+'</strong><small>'+esc(flow.nextWhy)+'</small></div>'+
+        '<div class="view-flow-meta"><span>STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))+'</span><span>navigation only</span></div>'+
+      '</div>'+
+      '<div class="workspace-flow-rail" role="list" aria-label="Project Autopsy workflow stages">'+rail+'</div>'+
       '<div class="view-flow-actions">'+previous+next+'</div>'+
       '</div>';
   }
