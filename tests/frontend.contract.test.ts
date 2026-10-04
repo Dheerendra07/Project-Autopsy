@@ -306,6 +306,8 @@ test("frontend account security exposes a working revoke-all-sessions action", (
   }
 
   assert.ok(appJs.includes("for(var i=0;i<others.length;i++)"));
+  assert.ok(appJs.includes("var revokedOthers=0,failedOthers=0"));
+  assert.ok(appJs.includes("This browser session remains active so you can retry."));
   assert.ok(appJs.includes("currentResult.signedOutCurrentSession"));
   assert.ok(appJs.includes("S.user=null"));
   assert.ok(appJs.includes("openAuth('login')"));
