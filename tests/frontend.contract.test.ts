@@ -315,7 +315,7 @@ test("frontend account security exposes a working revoke-all-sessions action", (
 
 
 test("light theme keeps primary text and primary actions at readable contrast values", () => {
-  const html = readRepoFile("public/index.html");
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
 
   assert.ok(
     html.includes("--ui-text-3:#5f6b7d"),
