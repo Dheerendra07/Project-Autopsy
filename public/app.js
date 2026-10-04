@@ -1114,8 +1114,8 @@
     return reloadCurrentView();
   }
   function commandPaletteRun(id){
-    if(id&&id.indexOf('view:')===0){setView(id.slice(5));return}
-    if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');if(input){closeCommandPalette();input.focus();input.select()}else toast('This view has no local search filter','warn');return}
+    if(id&&id.indexOf('view:')===0){closeCommandPalette();setView(id.slice(5));return}
+    if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');if(input){closeCommandPalette(false);input.focus();input.select()}else toast('This view has no local search filter','warn');return}
     if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}
     if(id==='settings'){closeCommandPalette();S.user?openSettings($('settings')):openAuth('login');return}
     if(id==='source'){var url=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));if(url){closeCommandPalette();window.open(url,'_blank','noopener,noreferrer')}return}
