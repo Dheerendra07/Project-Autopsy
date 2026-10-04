@@ -2732,7 +2732,7 @@ test("developer command center preserves evidence-first workspace boundaries", (
     "function renderCommandPalette()",
     "function moveCommandSelection(delta)",
     "function openCommandPalette(trigger)",
-    "function closeCommandPalette()",
+    "function closeCommandPalette(restoreFocus)",
     "COMMAND_DEFS.slice()",
     "if(S.repoId)",
     "safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl))",
