@@ -1553,14 +1553,36 @@ function shell(title,desc,actions){
       var sessions=arr(response,'sessions');
       var current=sessions.find(function(session){return !!session.isCurrent});
       var others=sessions.filter(function(session){return !session.isCurrent});
-      var revokedOthers=0;
+      var revokedOthers=0,failedOthers=0;
       for(var i=0;i<others.length;i++){
         try{
           await api('/api/auth/sessions/'+encodeURIComponent(others[i].id),{method:'DELETE'});
           revokedOthers++;
         }catch(e){
-          // Keep going so one stale session does not block the rest.
+          failedOthers++;
         }
+      }
+      if(failedOthers){
+        try{
+          var retryResponse=await api('/api/auth/sessions');
+          var remainingOthers=arr(retryResponse,'sessions').filter(function(session){return !session.isCurrent});
+          for(var j=0;j<remainingOthers.length;j++){
+            try{
+              await api('/api/auth/sessions/'+encodeURIComponent(remainingOthers[j].id),{method:'DELETE'});
+            }catch(e){
+              // Leave the current session active when another session cannot be revoked.
+            }
+          }
+          var verifyResponse=await api('/api/auth/sessions');
+          failedOthers=arr(verifyResponse,'sessions').filter(function(session){return !session.isCurrent}).length;
+        }catch(e){
+          failedOthers=Math.max(failedOthers,1);
+        }
+      }
+      if(failedOthers){
+        await loadSecuritySessions();
+        toast('Could not revoke '+failedOthers+' active session'+(failedOthers===1?'':'s')+'. This browser session remains active so you can retry.','bad');
+        return;
       }
       if(!current){
         await loadSecuritySessions();
