@@ -761,3 +761,19 @@ html[data-theme="light"] .modal{background:rgba(25,31,41,.34)!important}html[dat
 @media(max-width:1000px){.side{top:0!important;height:auto!important}.workspace{grid-template-columns:1fr!important}}
 @media(max-width:680px){.landing{padding:72px 16px 48px!important}.content{padding:18px 14px 46px!important}.top{padding:0 14px!important}.top-account{min-width:78px!important}.report-posture-grid,.interview-posture-grid,.insight-posture-grid{grid-template-columns:1fr 1fr!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+
+/* FINAL LIGHT THEME CTA AUTHORITY V4 */
+html[data-theme="light"] .btn.primary,
+html[data-theme="light"] .import > #importButton.btn.primary{
+  background:linear-gradient(180deg,#5c67ca 0%,#4c58b8 100%)!important;
+  border-color:#6671d0!important;
+  color:#fff!important;
+  box-shadow:0 8px 20px rgba(76,88,184,.18)!important;
+}
+html[data-theme="light"] .btn.primary:hover,
+html[data-theme="light"] .import > #importButton.btn.primary:hover{
+  background:linear-gradient(180deg,#6570d1 0%,#5360c1 100%)!important;
+  border-color:#737ed7!important;
+  color:#fff!important;
+}
