@@ -326,6 +326,23 @@ test("light theme keeps primary text and primary actions at readable contrast va
     "hero lead copy should use the stronger light-theme text token"
   );
   assert.ok(
+    html.includes(
+      'html[data-theme="light"] .import > #importButton.btn.primary{'
+    ),
+    "landing CTA must have a dedicated light-theme contrast override"
+  );
+  assert.ok(
+    html.includes(
+      'html[data-theme="light"] .import > #importButton.btn.primary:hover{'
+    ),
+    "landing CTA hover must have a dedicated light-theme contrast override"
+  );
+  assert.ok(
+    html.lastIndexOf("html[data-theme=\"light\"] .import > #importButton.btn.primary{") >
+      html.lastIndexOf(".btn.primary,.import > #importButton.btn.primary{"),
+    "light-theme landing CTA override must come after the generic primary rules"
+  );
+  assert.ok(
     html.includes("linear-gradient(180deg,#5f63dc,#514bd5)"),
     "light-theme primary action should avoid a low-contrast top gradient"
   );
