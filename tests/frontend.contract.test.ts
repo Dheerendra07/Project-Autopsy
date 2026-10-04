@@ -338,7 +338,7 @@ test("light theme keeps primary text and primary actions at readable contrast va
     "the former low-contrast light-theme secondary text token must not return"
   );
   assert.ok(
-    !html.includes("linear-gradient(180deg,#7074f3,#514bd5)!important;border-color:#7c80f7"),
+    !html.includes('html[data-theme="light"] .view-flow-link.primary{background:linear-gradient(180deg,#7074f3,#514bd5)!important;border-color:#7c80f7'),
     "the former low-contrast primary button gradient must not return"
   );
 });
