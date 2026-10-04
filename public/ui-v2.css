@@ -598,3 +598,36 @@ html[data-theme="light"] .drawer-panel{
   .modal{padding:0}
   .modal-card{border-radius:0;min-height:100%;padding:20px}
 }
+
+/* PRODUCT UI SYSTEM V5 — preserved release authority marker */
+/* WORKSPACE FLOW V4 */
+/* WORKSPACE WORKFLOW DETAILING V7 */
+/* ANALYSIS LIFECYCLE V1 — honest status representation */
+
+/* OVERVIEW LOADING V5 */
+@keyframes overview-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.overview-skeleton-context,.view-refresh-state{
+  position:relative;overflow:hidden;border:1px solid var(--line);background:var(--panel-2);
+}
+.overview-skeleton-context:after,.view-refresh-state:after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,var(--accent-soft),transparent);
+  background-size:200% 100%;animation:overview-shimmer 1.5s linear infinite;
+}
+.journey-step b{margin-top:9px!important;color:var(--text)!important;font-size:12px!important}
+.posture-row small{font-size:10px!important}
+.overview-warning small{font-size:10px!important}
+
+/* FINAL VISUAL AUTHORITY */
+:root{
+  --ui-accent:#6872dc;
+  --ui-bg:#0a0f17;
+  --gold:var(--ui-accent);
+}
+html{color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
+.btn.primary,.import>.btn.primary{font-weight:700}
+.source-health-rail,.view-source-status{display:flex}
+.view-source-status .view-source-dot,.view-source-dot{flex:0 0 auto}
+
+/* PRODUCT UI SYSTEM V6 — final visual authority layer */
