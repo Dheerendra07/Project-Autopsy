@@ -631,8 +631,8 @@ function shell(title,desc,actions){
       ? '<a class="view-flow-link primary" href="#'+esc(flow.next)+'"><span>'+esc(flow.nextLabel)+'</span><span aria-hidden="true">→</span></a>'
       : '';
     var rail=WORKFLOW_STEPS.map(function(step,index){
-      var state=index===currentIndex?' current':index<currentIndex?' complete':'';
-      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'" aria-current="'+(index===currentIndex?'step':'false')+'" title="'+esc(step.detail)+'">'+
+      var state=index===currentIndex?' current':index<currentIndex?' past':'';
+      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'" (index===currentIndex?' aria-current="step"':'') title="'+esc(step.detail)+'">'+
         '<span class="workspace-flow-index">'+esc(step.number)+'</span><span class="workspace-flow-label">'+esc(step.label)+'</span></a>';
     }).join('<span class="workspace-flow-connector" aria-hidden="true">→</span>');
     return '<div class="view-flow card" aria-label="Workspace workflow navigation">'+
