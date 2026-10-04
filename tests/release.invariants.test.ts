@@ -2732,7 +2732,7 @@ test("developer command center preserves evidence-first workspace boundaries", (
     "function renderCommandPalette()",
     "function moveCommandSelection(delta)",
     "function openCommandPalette(trigger)",
-    "function closeCommandPalette()",
+    "function closeCommandPalette(restoreFocus)",
     "COMMAND_DEFS.slice()",
     "if(S.repoId)",
     "safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl))",
@@ -2771,6 +2771,11 @@ test("developer command center preserves evidence-first workspace boundaries", (
   assert.ok(appJs.includes("if(searchInput.id==='viewSearch'){S.viewFilter[S.view]='';applyViewFilter();}"));
   assert.ok(appJs.includes("searchInput.dispatchEvent(evt);"));
 
+
+  assert.ok(appJs.includes("function closeCommandPalette(restoreFocus)"));
+  assert.ok(appJs.includes("if(restoreFocus!==false&&focus&&typeof focus.focus==='function')"));
+  assert.ok(appJs.includes("if(id&&id.indexOf('view:')===0){closeCommandPalette();setView(id.slice(5));return}"));
+  assert.ok(appJs.includes("if(input){closeCommandPalette(false);input.focus();input.select()}"));
 });
  
 test("evidence-family filtering stays a client-side projection over loaded records", () => {

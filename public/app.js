@@ -1114,8 +1114,8 @@
     return reloadCurrentView();
   }
   function commandPaletteRun(id){
-    if(id&&id.indexOf('view:')===0){setView(id.slice(5));return}
-    if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');if(input){closeCommandPalette();input.focus();input.select()}else toast('This view has no local search filter','warn');return}
+    if(id&&id.indexOf('view:')===0){closeCommandPalette();setView(id.slice(5));return}
+    if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');if(input){closeCommandPalette(false);input.focus();input.select()}else toast('This view has no local search filter','warn');return}
     if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}
     if(id==='settings'){closeCommandPalette();S.user?openSettings($('settings')):openAuth('login');return}
     if(id==='source'){var url=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));if(url){closeCommandPalette();window.open(url,'_blank','noopener,noreferrer')}return}
@@ -1159,11 +1159,11 @@
     renderCommandPalette();
     requestAnimationFrame(function(){var input=$('commandSearch');if(input){input.focus();input.select()}});
   }
-  function closeCommandPalette(){
+  function closeCommandPalette(restoreFocus){
     var palette=$('commandPalette');if(!palette||palette.hidden)return;
     palette.hidden=true;
     var focus=S.commandPaletteFocus;S.commandPaletteFocus=null;S.commandPaletteQuery='';S.commandPaletteIndex=0;
-    if(focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}});
+    if(restoreFocus!==false&&focus&&typeof focus.focus==='function')requestAnimationFrame(function(){try{focus.focus()}catch(e){}});
   }
 
   async function loadRuntimeEvents(reset){if(S.runtimeLoading)return;var token=S.workspaceToken,id=S.repoId,runId=S.runId;S.runtimeLoading=true;actionBusy(reset?'runtime-filter':'runtime-more',true,reset?'Applying…':'Loading…');actionBusy('runtime-clear-filter',true,'Clear');var previousEvents=S.runtimeEvents,previousPage=S.runtimePagination,previousFilter=S.runtimeFilter;try{var f={from:($('rtFrom')&&$('rtFrom').value)||S.runtimeFilter.from||'',to:($('rtTo')&&$('rtTo').value)||S.runtimeFilter.to||'',deploymentId:($('rtDeployment')&&$('rtDeployment').value.trim())||S.runtimeFilter.deploymentId||'',revisionSha:($('rtRevision')&&$('rtRevision').value.trim())||S.runtimeFilter.revisionSha||'',environment:($('rtEnvironment')&&$('rtEnvironment').value.trim())||S.runtimeFilter.environment||'',operationName:($('rtOperation')&&$('rtOperation').value.trim())||S.runtimeFilter.operationName||'',signalType:($('rtSignal')&&$('rtSignal').value)||S.runtimeFilter.signalType||''};var page=reset?1:Number(S.runtimePagination&&S.runtimePagination.page||1)+1;if(f.from&&f.to&&new Date(f.from).getTime()>=new Date(f.to).getTime())throw new Error('From must be earlier than To.');if(f.revisionSha&&!/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(f.revisionSha))throw new Error('Revision SHA must be exactly 40 or 64 hexadecimal characters.');var r=await api(runtimeEventsPathWithFilter(page,40,f));if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId)return;var next=arr(r,'events');S.runtimeFilter=f;S.runtimeEvents=reset?next:previousEvents.concat(next);S.runtimePagination=r.pagination;S.data.runtimeEvents=r;S.dataErrors=S.dataErrors.filter(function(e){return e.key!=='runtimeEvents'});setView('runtime');toast(next.length?'Runtime evidence loaded':'No runtime events matched the filters','good')}catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId){S.runtimeEvents=previousEvents;S.runtimePagination=previousPage;S.runtimeFilter=previousFilter;toast(e.message||'Runtime evidence load failed','bad')}}finally{if(token===S.workspaceToken&&id===S.repoId)S.runtimeLoading=false;actionBusy('runtime-filter',false);actionBusy('runtime-more',false);actionBusy('runtime-clear-filter',false)}}
