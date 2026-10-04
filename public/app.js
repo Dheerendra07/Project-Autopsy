@@ -632,7 +632,7 @@ function shell(title,desc,actions){
       : '';
     var rail=WORKFLOW_STEPS.map(function(step,index){
       var state=index===currentIndex?' current':index<currentIndex?' past':'';
-      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'" (index===currentIndex?' aria-current="step"':'') title="'+esc(step.detail)+'">'+
+      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'"'+(index===currentIndex?' aria-current="step"':'')+' title="'+esc(step.detail)+'">'+
         '<span class="workspace-flow-index">'+esc(step.number)+'</span><span class="workspace-flow-label">'+esc(step.label)+'</span></a>';
     }).join('<span class="workspace-flow-connector" aria-hidden="true">→</span>');
     return '<div class="view-flow card" aria-label="Workspace workflow navigation">'+
