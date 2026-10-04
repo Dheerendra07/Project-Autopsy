@@ -1524,6 +1524,81 @@ function shell(title,desc,actions){
       toast(e.message||'Could not revoke the session.','bad');
     }
   }
+  function confirmRevokeAllSessions(){
+    if(S.confirmResolver)return Promise.resolve(false);
+    return new Promise(function(resolve){
+      S.confirmResolver=resolve;
+      S.confirmFocus=document.activeElement;
+      $('confirmTitle').textContent='Revoke all active sessions?';
+      $('confirmText').textContent='This signs out every active session on this account, including this browser.';
+      var warning=$('confirmWarning');
+      if(warning)warning.textContent='The current browser will be signed out too. You will need to sign in again.';
+      $('confirmConfirm').textContent='Revoke all sessions';
+      $('confirmModal').hidden=false;
+      requestAnimationFrame(function(){$('confirmCancel').focus()});
+    });
+  }
+  async function revokeAllSessions(){
+    if(S.sessionRevoking||!S.user)return;
+    S.sessionRevoking=true;
+    var button=$('revokeSessions'),idle=button&&button.textContent;
+    if(button){
+      button.disabled=true;
+      button.setAttribute('aria-busy','true');
+      button.textContent='Revoking…';
+    }
+    try{
+      if(!await confirmRevokeAllSessions())return;
+      var response=await api('/api/auth/sessions');
+      var sessions=arr(response,'sessions');
+      var current=sessions.find(function(session){return !!session.isCurrent});
+      var others=sessions.filter(function(session){return !session.isCurrent});
+      var revokedOthers=0;
+      for(var i=0;i<others.length;i++){
+        try{
+          await api('/api/auth/sessions/'+encodeURIComponent(others[i].id),{method:'DELETE'});
+          revokedOthers++;
+        }catch(e){
+          // Keep going so one stale session does not block the rest.
+        }
+      }
+      if(!current){
+        await loadSecuritySessions();
+        toast(revokedOthers+' other session'+(revokedOthers===1?'':'s')+' revoked.','good');
+        return;
+      }
+      try{
+        var currentResult=await api('/api/auth/sessions/'+encodeURIComponent(current.id),{method:'DELETE'});
+        if(!currentResult.signedOutCurrentSession)throw new Error('The current session was not confirmed as signed out.');
+        S.user=null;
+        S.csrfToken='';
+        S.connectionState='unknown';
+        clearWorkspaceState();
+        connected('unknown');
+        closeSettings();
+        landing();
+        openAuth('login');
+        toast('All active sessions revoked.','good');
+      }catch(e){
+        await loadSecuritySessions();
+        throw new Error('Other sessions were revoked, but this browser session could not be signed out: '+(e.message||'unknown error'));
+      }
+    }catch(e){
+      toast(e.message||'Could not revoke all sessions.','bad');
+    }finally{
+      $('confirmTitle').textContent='Confirm deletion';
+      $('confirmText').textContent='';
+      var warning=$('confirmWarning');
+      if(warning)warning.textContent='This removes the repository data stored by Autopsy. Your source repository is not modified.';
+      $('confirmConfirm').textContent='Delete repository data';
+      S.sessionRevoking=false;
+      if(button){
+        button.disabled=false;
+        button.removeAttribute('aria-busy');
+        button.textContent=idle||'Revoke all sessions';
+      }
+    }
+  }
   async function changePassword(){
     if(!S.user)return;
     var current=$('currentPassword').value;
