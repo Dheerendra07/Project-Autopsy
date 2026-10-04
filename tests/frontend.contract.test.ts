@@ -286,3 +286,29 @@ test("frontend analysis lifecycle workflow has a real status renderer and truthf
   }
   assert.ok(html.includes("/* ANALYSIS LIFECYCLE V1 — honest status representation */"));
 });
+
+
+test("frontend account security exposes a working revoke-all-sessions action", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+
+  for (const marker of [
+    'id="revokeSessions"',
+    'id="confirmWarning"',
+    'Revoke all sessions',
+    "function confirmRevokeAllSessions()",
+    "async function revokeAllSessions()",
+    "/api/auth/sessions",
+    "session.isCurrent",
+    "The current browser will be signed out too."
+  ]) {
+    assert.ok(html.includes(marker) || appJs.includes(marker), "missing session revocation marker: " + marker);
+  }
+
+  assert.ok(appJs.includes("for(var i=0;i<others.length;i++)"));
+  assert.ok(appJs.includes("var revokedOthers=0,failedOthers=0"));
+  assert.ok(appJs.includes("This browser session remains active so you can retry."));
+  assert.ok(appJs.includes("currentResult.signedOutCurrentSession"));
+  assert.ok(appJs.includes("S.user=null"));
+  assert.ok(appJs.includes("openAuth('login')"));
+});
