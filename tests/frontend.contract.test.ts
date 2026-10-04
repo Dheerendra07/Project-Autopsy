@@ -181,7 +181,7 @@ test("developer command center is keyboard-first, contextual and accessible", ()
     "function renderCommandPalette()",
     "function moveCommandSelection(delta)",
     "function openCommandPalette(trigger)",
-    "function closeCommandPalette()",
+    "function closeCommandPalette(restoreFocus)",
     "e.key==='ArrowDown'",
     "e.key==='ArrowUp'",
     "e.key==='Enter'&&document.activeElement===$('commandSearch')",
