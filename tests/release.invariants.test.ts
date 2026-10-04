@@ -3044,3 +3044,24 @@ test("frontend analysis lifecycle workflow has a real status renderer and truthf
   }
   assert.ok(html.includes("/* ANALYSIS LIFECYCLE V1 — honest status representation */"));
 });
+
+
+test("frontend account security keeps the revoke-all-sessions control wired", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  for (const marker of [
+    'id="revokeSessions"',
+    'id="confirmWarning"',
+    "function confirmRevokeAllSessions()",
+    "async function revokeAllSessions()",
+    "/api/auth/sessions",
+    "session.isCurrent",
+    "currentResult.signedOutCurrentSession"
+  ]) {
+    assert.ok(
+      html.includes(marker) || appJs.includes(marker),
+      "missing revoke-all-sessions invariant: " + marker
+    );
+  }
+});
