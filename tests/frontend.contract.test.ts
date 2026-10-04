@@ -244,3 +244,23 @@ test("frontend does not embed an API access secret", () => {
   const secretAssignment = /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY|x-autopsy-api-key)\s*[:=]\s*['"][^'"]{12,}['"]/i;
   assert.equal(secretAssignment.test(html), false);
 });
+
+test("frontend workflow detailing exposes a contextual micro-flow and fully clickable eleven-stage path", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+  for (const marker of [
+    "const VIEW_WORKFLOW={",
+    "const WORKFLOW_STEPS=[",
+    "function viewFlowMarkup()",
+    "workspace-flow-rail",
+    "workspace-flow-step",
+    "navigation only",
+    "STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))",
+    "Open History",
+    "Inspect Evidence"
+  ]) {
+    assert.ok((html + "\n" + appJs).includes(marker), "missing workflow-detailing marker: " + marker);
+  }
+  assert.ok(html.includes("/* WORKSPACE WORKFLOW DETAILING V7"));
+  assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g) || []).length, 11);
+});
