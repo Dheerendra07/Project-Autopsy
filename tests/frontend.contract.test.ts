@@ -312,3 +312,33 @@ test("frontend account security exposes a working revoke-all-sessions action", (
   assert.ok(appJs.includes("S.user=null"));
   assert.ok(appJs.includes("openAuth('login')"));
 });
+
+
+test("light theme keeps primary text and primary actions at readable contrast values", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+
+  assert.ok(
+    html.includes("--ui-text-3:#5f6b7d"),
+    "light-theme secondary text token should remain readable"
+  );
+  assert.ok(
+    html.includes("html[data-theme=\"light\"] .lead{color:var(--ui-text-2)!important}"),
+    "hero lead copy should use the stronger light-theme text token"
+  );
+  assert.ok(
+    html.includes("linear-gradient(180deg,#5f63dc,#514bd5)"),
+    "light-theme primary action should avoid a low-contrast top gradient"
+  );
+  assert.ok(
+    html.includes("linear-gradient(180deg,#5a5ed8,#5356d1)"),
+    "light-theme primary hover action should remain readable"
+  );
+  assert.ok(
+    !html.includes("--ui-text-3:#728097"),
+    "the former low-contrast light-theme secondary text token must not return"
+  );
+  assert.ok(
+    !html.includes('html[data-theme="light"] .view-flow-link.primary{background:linear-gradient(180deg,#7074f3,#514bd5)!important;border-color:#7c80f7'),
+    "the former low-contrast primary button gradient must not return"
+  );
+});
