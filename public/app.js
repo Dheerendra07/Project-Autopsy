@@ -576,6 +576,7 @@ function shell(title,desc,actions){
     var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));
     var sourceAction=source?'<a class="btn link" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Open repository ↗</a>':'';
     var guide=VIEW_GUIDANCE[S.view]||{answer:'Review the current evidence snapshot and use Inspect whenever you need the underlying record.',next:'Choose an action from the page header or open another workspace section.'};
+    var guideSteps=VIEW_WORKFLOW[S.view]||['Read the snapshot','Inspect supporting evidence','Take the next useful action'];
     return '<div class="head">'+
       '<div class="head-copy">'+
         '<div class="kicker">WORKSPACE / '+esc(VIEW_TITLES[S.view]||title).toUpperCase()+'</div>'+
@@ -584,8 +585,7 @@ function shell(title,desc,actions){
       '</div>'+
       '<div class="actions">'+(actions||'')+reload+sourceAction+'</div>'+
       '</div>'+
-      var guideSteps=VIEW_WORKFLOW[S.view]||['Read the snapshot','Inspect supporting evidence','Take the next useful action'];
-    return '<div class="view-guide card">'+
+      '<div class="view-guide card">'+
         '<div class="view-guide-icon">'+esc(S.view==='overview'?'01':S.view==='history'?'02':S.view==='structure'?'03':S.view==='quality'?'04':S.view==='runtime'?'05':S.view==='report'?'06':S.view==='interview'?'07':S.view==='interpretation'?'08':S.view==='evidence'?'09':S.view==='contributors'?'10':'11')+'</div>'+
         '<div class="view-guide-copy"><span class="kicker">WHAT TO DO HERE</span><strong>'+esc(guide.answer)+'</strong><small>'+esc(guide.next)+'</small></div>'+
         '<div class="view-guide-flow">'+guideSteps.map(function(step,i){return '<span>'+esc(step)+'</span>'+(i<guideSteps.length-1?'<i aria-hidden="true">→</i>':'')}).join('')+'</div>'+
