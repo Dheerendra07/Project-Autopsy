@@ -1135,6 +1135,56 @@ html[data-theme="light"] .evidence-family:hover{background:#f0f4f9!important}
 html[data-theme="light"] .evidence-family.active{background:linear-gradient(180deg,rgba(79,70,229,.08),#f8fafc)!important;border-color:rgba(79,70,229,.30)!important}
 html[data-theme="light"] .evidence-track{background:#e5ebf3!important}
 
+
+/* WORKSPACE WORKFLOW DETAILING V7 — explicit navigation path */
+.view-flow{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:10px 14px!important;
+  padding:13px 14px!important;
+  margin:0 0 20px!important;
+  border-radius:13px!important;
+  background:linear-gradient(180deg,var(--ui-surface-3),var(--ui-surface-2))!important;
+  border:1px solid var(--ui-border)!important;
+  box-shadow:var(--ui-shadow-soft)!important;
+}
+.view-flow-head{grid-column:1/-1;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;min-width:0}
+.view-flow-meta{display:flex;align-items:center;gap:7px;flex:0 0 auto;white-space:nowrap}
+.view-flow-meta span{font:700 7px var(--ui-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ui-text-4);padding:5px 7px;border:1px solid var(--ui-border);border-radius:7px;background:var(--ui-surface-2)}
+.view-flow-meta span:first-child{color:var(--ui-accent-2);border-color:rgba(99,102,241,.30);background:var(--ui-accent-soft)}
+.workspace-flow-rail{grid-column:1/-1;display:flex;align-items:stretch;gap:0;min-width:0;overflow-x:auto;overflow-y:hidden;padding:1px 1px 5px;scrollbar-width:thin;scrollbar-color:var(--ui-border-strong) transparent}
+.workspace-flow-step{position:relative;flex:1 0 92px;display:flex;align-items:center;gap:8px;min-width:92px;min-height:43px;padding:8px 9px;border:1px solid var(--ui-border);border-radius:9px;background:var(--ui-surface-2);color:var(--ui-text-3);text-decoration:none;transition:background .16s ease,border-color .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease}
+.workspace-flow-step:hover{background:var(--ui-surface-3);border-color:var(--ui-border-strong);color:var(--ui-text-2);transform:translateY(-1px)}
+.workspace-flow-step:focus-visible{outline:2px solid var(--ui-accent-2);outline-offset:2px}
+.workspace-flow-step.past{color:var(--ui-text-2);border-color:#33445b}
+.workspace-flow-step.past .workspace-flow-index{color:var(--ui-accent-2);background:rgba(99,102,241,.09);border-color:rgba(99,102,241,.24)}
+.workspace-flow-step.current{background:linear-gradient(180deg,rgba(99,102,241,.15),var(--ui-surface-2));border-color:rgba(99,102,241,.52);color:var(--ui-text);box-shadow:inset 0 0 0 1px rgba(99,102,241,.08),0 7px 18px rgba(99,102,241,.08)}
+.workspace-flow-step.current .workspace-flow-index{background:var(--ui-accent);border-color:var(--ui-accent);color:#fff}
+.workspace-flow-index{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:7px;border:1px solid var(--ui-border-strong);background:var(--ui-surface-3);color:var(--ui-text-4);font:800 7px var(--ui-mono)}
+.workspace-flow-label{font-size:10px;font-weight:700;line-height:1.2;white-space:nowrap}
+.workspace-flow-connector{display:grid;place-items:center;flex:0 0 18px;color:var(--ui-text-4);font:700 9px var(--ui-mono);user-select:none}
+.workspace-flow-step.current+.workspace-flow-connector{color:var(--ui-accent-2)}
+.view-flow-actions{grid-column:2;display:flex;align-items:center;gap:8px;justify-content:flex-end;flex:0 0 auto}
+.view-flow-link{min-height:36px;padding:8px 11px!important}
+.view-guide-flow{max-width:100%;overflow:hidden;display:flex;align-items:center;gap:8px;flex-wrap:wrap;white-space:normal}
+.view-guide-flow span{white-space:nowrap}
+@media(max-width:900px){
+  .view-flow{grid-template-columns:1fr!important}
+  .view-flow-actions{grid-column:1!important;width:100%;justify-content:flex-start}
+  .workspace-flow-step{flex-basis:104px}
+}
+@media(max-width:680px){
+  .view-flow-head{flex-direction:column;gap:8px}
+  .view-flow-meta{align-self:flex-start}
+  .workspace-flow-rail{margin-right:-2px}
+  .workspace-flow-step{flex-basis:118px}
+  .view-flow-actions{flex-wrap:wrap}
+  .view-flow-link.primary,.view-flow-link.secondary{flex:1 1 140px!important}
+}
+html[data-theme="light"] .view-flow{background:linear-gradient(180deg,#ffffff,#f7f9fc)!important}
+html[data-theme="light"] .workspace-flow-step{background:#ffffff;color:#66758a}
+html[data-theme="light"] .workspace-flow-step:hover{background:#f4f7fb}
+html[data-theme="light"] .workspace-flow-step.current{background:linear-gradient(180deg,rgba(79,70,229,.09),#ffffff)}
 </style>
 </head>
 <body>
