@@ -150,6 +150,39 @@
       button.title=verified?'Account & security settings':'Sign in to your private workspace';
     }
   }
+  function banner(show,title,subtitle,status){
+    var box=$('banner');
+    if(!box)return;
+    box.hidden=!show;
+    if(!show){
+      box.removeAttribute('data-analysis-state');
+      box.setAttribute('aria-busy','false');
+      return;
+    }
+    var state=status||'queued';
+    var normalized=['queued','running','completed','failed'].indexOf(state)>=0?state:'queued';
+    box.setAttribute('data-analysis-state',normalized);
+    box.setAttribute('aria-busy',normalized==='queued'||normalized==='running'?'true':'false');
+    var titleNode=$('btitle'),subNode=$('bsub'),statusNode=$('bstatus');
+    if(titleNode)titleNode.textContent=title||'Analysis in progress';
+    if(subNode)subNode.textContent=subtitle||'Working through the current analysis…';
+    if(statusNode){
+      var tone=normalized==='completed'?'good':normalized==='failed'?'bad':'warn';
+      statusNode.className='pill '+tone;
+      statusNode.textContent=normalized;
+    }
+    document.querySelectorAll('#banner .analysis-stage').forEach(function(stage){
+      var stageState=stage.getAttribute('data-stage');
+      var active=(normalized==='queued'&&stageState==='queued')||(normalized==='running'&&stageState==='running')||(normalized==='completed'&&stageState==='snapshot');
+      stage.classList.toggle('current',active);
+      stage.classList.toggle('complete',
+        (normalized==='running'&&stageState==='queued')||
+        (normalized==='completed'&&(stageState==='queued'||stageState==='running'||stageState==='snapshot'))||
+        (normalized==='failed'&&stageState==='queued')
+      );
+    });
+  }
+
   function syncAnalysisRefreshControl(){
     var b=$('refresh'),running=!!(S.analysis&&['queued','running'].indexOf(S.analysis.status)>=0);
     if(b){b.disabled=running||S.refreshLoading;b.setAttribute('aria-busy',running||S.refreshLoading?'true':'false');b.textContent=S.refreshLoading?'Refreshing…':running?'Analysis running…':'Refresh analysis'}

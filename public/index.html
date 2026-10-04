@@ -1185,6 +1185,29 @@ html[data-theme="light"] .view-flow{background:linear-gradient(180deg,#ffffff,#f
 html[data-theme="light"] .workspace-flow-step{background:#ffffff;color:#66758a}
 html[data-theme="light"] .workspace-flow-step:hover{background:#f4f7fb}
 html[data-theme="light"] .workspace-flow-step.current{background:linear-gradient(180deg,rgba(79,70,229,.09),#ffffff)}
+
+/* ANALYSIS LIFECYCLE V1 — honest status representation */
+.banner{align-items:flex-start!important;gap:12px!important}
+.banner-copy{min-width:170px;display:grid;gap:2px;align-self:center}
+.banner-copy strong{font-size:11px;font-weight:750;letter-spacing:.005em}
+.banner-copy small{color:var(--ui-text-3);font-size:9px;line-height:1.4}
+.analysis-progress{display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow-x:auto;padding:1px 0 2px;scrollbar-width:none}
+.analysis-progress::-webkit-scrollbar{display:none}
+.analysis-progress>i{font-style:normal;color:var(--ui-text-4);font:700 8px var(--ui-mono);flex:0 0 auto}
+.analysis-stage{display:flex;align-items:center;gap:5px;min-width:max-content;padding:5px 7px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface-2);color:var(--ui-text-4);transition:background .16s ease,border-color .16s ease,color .16s ease}
+.analysis-stage b{display:grid;place-items:center;width:18px;height:18px;border-radius:6px;background:var(--ui-surface-3);border:1px solid var(--ui-border-strong);font:800 7px var(--ui-mono)}
+.analysis-stage span{font-size:8px;font-weight:700;white-space:nowrap}
+.analysis-stage.complete{color:var(--ui-text-2);border-color:#34455b}
+.analysis-stage.complete b{color:var(--ui-accent-2);border-color:rgba(99,102,241,.26);background:var(--ui-accent-soft)}
+.analysis-stage.current{color:var(--ui-text);border-color:rgba(99,102,241,.50);background:var(--ui-accent-soft);box-shadow:inset 2px 0 0 var(--ui-accent)}
+.analysis-stage.current b{color:#fff;background:var(--ui-accent);border-color:var(--ui-accent)}
+#banner[data-analysis-state="completed"] .spinner{border-top-color:var(--ui-success)!important}
+#banner[data-analysis-state="failed"] .spinner{border-top-color:var(--ui-danger)!important;animation:none}
+#banner[data-analysis-state="failed"] .analysis-progress{opacity:.72}
+@media(max-width:980px){.banner{flex-wrap:wrap!important}.analysis-progress{order:3;flex-basis:100%}.banner .pill{margin-left:auto}}
+@media(max-width:680px){.banner-copy{min-width:0;flex:1}.analysis-progress{width:100%}.analysis-stage{flex-basis:auto}.banner .pill{margin-left:0}}
+html[data-theme="light"] .analysis-stage{background:#fff}
+html[data-theme="light"] .analysis-stage.current{background:rgba(79,70,229,.08)}
 </style>
 </head>
 <body>
@@ -1346,7 +1369,20 @@ html[data-theme="light"] .workspace-flow-step.current{background:linear-gradient
     </div>
   </aside>
   <div class="content">
-    <div id="banner" class="banner" role="status" aria-live="polite" hidden><div class="spinner"></div><div><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div><span id="bstatus" class="pill warn">queued</span></div>
+    <div id="banner" class="banner" role="status" aria-live="polite" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="banner-copy"><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div>
+      <div class="analysis-progress" aria-label="Analysis lifecycle">
+        <span class="analysis-stage" data-stage="queued"><b>01</b><span>Queued</span></span>
+        <i aria-hidden="true">→</i>
+        <span class="analysis-stage" data-stage="running"><b>02</b><span>Analyzing</span></span>
+        <i aria-hidden="true">→</i>
+        <span class="analysis-stage" data-stage="snapshot"><b>03</b><span>Snapshot ready</span></span>
+        <i aria-hidden="true">→</i>
+        <span class="analysis-stage" data-stage="workspace"><b>04</b><span>Workspace ready</span></span>
+      </div>
+      <span id="bstatus" class="pill warn">queued</span>
+    </div>
     <div id="root" tabindex="-1"></div>
   </div>
 </section>
