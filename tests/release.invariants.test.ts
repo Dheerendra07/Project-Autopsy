@@ -3057,7 +3057,9 @@ test("frontend account security keeps the revoke-all-sessions control wired", ()
     "async function revokeAllSessions()",
     "/api/auth/sessions",
     "session.isCurrent",
-    "currentResult.signedOutCurrentSession"
+    "currentResult.signedOutCurrentSession",
+    "var revokedOthers=0,failedOthers=0",
+    "This browser session remains active so you can retry."
   ]) {
     assert.ok(
       html.includes(marker) || appJs.includes(marker),
