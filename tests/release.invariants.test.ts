@@ -3022,3 +3022,25 @@ test("frontend workflow detailing exposes a contextual micro-flow and fully clic
   assert.ok(html.includes("/* WORKSPACE WORKFLOW DETAILING V7"));
   assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g) || []).length, 11);
 });
+
+test("frontend analysis lifecycle workflow has a real status renderer and truthful stage markup", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+  for (const marker of [
+    "function banner(show,title,subtitle,status)",
+    "data-analysis-state",
+    "analysis-progress",
+    "data-stage=\"queued\"",
+    "data-stage=\"running\"",
+    "data-stage=\"snapshot\"",
+    "data-stage=\"workspace\"",
+    "Queued",
+    "Analyzing",
+    "Snapshot ready",
+    "Workspace ready",
+    "banner(true,'Analysis complete','Loading the current workspace evidence…','completed')"
+  ]) {
+    assert.ok((html + "\n" + appJs).includes(marker), "missing analysis lifecycle marker: " + marker);
+  }
+  assert.ok(html.includes("/* ANALYSIS LIFECYCLE V1 — honest status representation */"));
+});
