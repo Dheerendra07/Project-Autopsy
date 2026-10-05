@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta id="themeColor" name="theme-color" content="#070b12">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<title>Project Autopsy — Engineering Evidence</title>
+<title>Project Autopsy — Engineering history, from evidence</title>
 <script src="theme.js"></script>
 <style>
 :root{--bg:#11110f;--panel:#181815;--panel2:#1f1f1a;--line:#303028;--text:#f3f0e8;--muted:#aaa69b;--dim:#77736a;--gold:#d5bf87;--good:#91c79f;--bad:#d98578;--warn:#d6b16b;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
@@ -1336,13 +1336,13 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </div>
 
-  <section class="spacez-section">
-    <div class="spacez-section-head">
+  <section class="spacez-section landing-how">
+    <div class="spacez-section-head"><span class="sr-only">HOW TO USE IT</span>
       <div class="kicker">THE EVIDENCE MODEL</div>
       <h2>Observed facts first. Interpretation only where the evidence supports it.</h2>
       <p>The product boundary is deliberate: repository and runtime systems provide the source of truth; higher-level interpretation is grounded on top of that source.</p>
     </div>
-    <div class="evidence-model">
+    <div class="evidence-model getting-started">
       <article class="evidence-card">
         <div class="evidence-label"><span>OBSERVED EVIDENCE</span><span>01 / SOURCE</span></div>
         <h3>What the systems actually recorded.</h3>
@@ -1362,13 +1362,13 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </section>
 
-  <section class="spacez-section">
+  <section class="spacez-section landing-capabilities">
     <div class="spacez-section-head">
-      <div class="kicker">REPORTS &amp; INTERPRETATION</div>
+      <div class="kicker">WORKSPACE MAP</div>
       <h2>A report is an evidence surface, not a black box.</h2>
       <p>Every claim can be followed to the records that support it, while the interpretation layer keeps its scope visible.</p>
     </div>
-    <div class="report-preview">
+    <div class="report-preview capability-grid">
       <div class="report-preview-main">
         <div class="evidence-label"><span>EVIDENCE-BACKED REPORT</span><span>DETERMINISTIC</span></div>
         <div class="report-claim">
@@ -1410,7 +1410,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </section>
 
-  <p class="note landing-boundary">The workflow is intentionally traceable: observe → validate → interpret → inspect. Evidence remains the source of truth.</p>
+  <p class="note landing-boundary">The workflow is intentionally traceable: observe → validate → interpret → inspect. Every output has a next step. Evidence remains the source of truth.</p>
 </section>
 
 <section id="workspace" class="workspace" hidden>
