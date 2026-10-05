@@ -1336,13 +1336,35 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </div>
 
-  <section class="spacez-section landing-how">
-    <div class="spacez-section-head"><span class="sr-only">HOW TO USE IT</span>
+  <section class="landing-how spacez-section">
+    <div class="spacez-section-head">
+      <div class="kicker">HOW TO USE IT</div>
+      <h2>Three moves. No guessing.</h2>
+      <p>Move from repository facts to engineering signals, then inspect the exact evidence behind the output.</p>
+    </div>
+    <div class="getting-started">
+      <article class="getting-step">
+        <b>01 · Understand</b>
+        <small>Start with repository history and structure before reading derived engineering signals.</small>
+      </article>
+      <article class="getting-step">
+        <b>02 · Validate</b>
+        <small>Use Quality and Runtime to check tests, repeated changes, telemetry and deployment provenance.</small>
+      </article>
+      <article class="getting-step">
+        <b>03 · Output &amp; inspect</b>
+        <small>Generate a report or insight, then follow its evidence references back to the persisted record.</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="spacez-section">
+    <div class="spacez-section-head">
       <div class="kicker">THE EVIDENCE MODEL</div>
       <h2>Observed facts first. Interpretation only where the evidence supports it.</h2>
       <p>The product boundary is deliberate: repository and runtime systems provide the source of truth; higher-level interpretation is grounded on top of that source.</p>
     </div>
-    <div class="evidence-model getting-started">
+    <div class="evidence-model">
       <article class="evidence-card">
         <div class="evidence-label"><span>OBSERVED EVIDENCE</span><span>01 / SOURCE</span></div>
         <h3>What the systems actually recorded.</h3>
@@ -1362,30 +1384,37 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </section>
 
-  <section class="spacez-section landing-capabilities">
+  <section class="landing-capabilities spacez-section">
     <div class="spacez-section-head">
       <div class="kicker">WORKSPACE MAP</div>
+      <h2>One workflow, eleven focused surfaces.</h2>
+      <p>Each surface answers a different engineering question while keeping the same evidence-first interaction model.</p>
+    </div>
+    <div class="capability-grid">
+      <article><b>01 · Overview</b><p>Current analysis snapshot, run boundary and the fastest route into the evidence.</p></article>
+      <article><b>02 · History</b><p>Trace commits and timeline events with inspectable chronology.</p></article>
+      <article><b>03 · Structure</b><p>Understand architecture, dependencies, complexity and codebase shape.</p></article>
+      <article><b>04 · Quality</b><p>Investigate tests, repeated changes, refactors, bug areas and migrations.</p></article>
+      <article><b>05 · Runtime</b><p>Connect observed telemetry and deployments to explicit revisions.</p></article>
+      <article><b>06–08 · Outputs</b><p>Report, Interview and Insights turn the current evidence snapshot into usable outputs.</p></article>
+      <article><b>09 · Evidence</b><p>Search and inspect the exact persisted record behind a signal or claim.</p></article>
+      <article><b>10 · Contributors</b><p>Use literal author history as additional evidence context.</p></article>
+      <article><b>11 · Operations</b><p>Check the running service separately from repository evidence.</p></article>
+    </div>
+  </section>
+
+  <section class="spacez-section">
+    <div class="spacez-section-head">
+      <div class="kicker">REPORTS &amp; INTERPRETATION</div>
       <h2>A report is an evidence surface, not a black box.</h2>
       <p>Every claim can be followed to the records that support it, while the interpretation layer keeps its scope visible.</p>
     </div>
-    <div class="report-preview capability-grid">
+    <div class="report-preview">
       <div class="report-preview-main">
         <div class="evidence-label"><span>EVIDENCE-BACKED REPORT</span><span>DETERMINISTIC</span></div>
-        <div class="report-claim">
-          <div class="report-claim-head"><span>CHURN</span><span>OBSERVED</span></div>
-          <p>A change center can be identified from persisted commit history and file-level churn without guessing why the work happened.</p>
-          <div class="evidence-ref">commit:&lt;sha&gt; · hotspot:&lt;path&gt;</div>
-        </div>
-        <div class="report-claim">
-          <div class="report-claim-head"><span>RUNTIME</span><span>CORRELATION</span></div>
-          <p>Runtime windows can be compared with code changes, while causal language stays constrained unless stronger evidence exists.</p>
-          <div class="evidence-ref">runtime:&lt;window&gt; · commit:&lt;sha&gt;</div>
-        </div>
-        <div class="report-claim">
-          <div class="report-claim-head"><span>DEPLOYMENT</span><span>PROVENANCE</span></div>
-          <p>Revision, artifact, build and release identifiers are reconciled from observed records instead of being reconstructed from timestamps.</p>
-          <div class="evidence-ref">deployment:&lt;id&gt; · runtime:&lt;id&gt;</div>
-        </div>
+        <div class="report-claim"><div class="report-claim-head"><span>CHURN</span><span>OBSERVED</span></div><p>A change center can be identified from persisted commit history and file-level churn without guessing why the work happened.</p><div class="evidence-ref">commit:&lt;sha&gt; · hotspot:&lt;path&gt;</div></div>
+        <div class="report-claim"><div class="report-claim-head"><span>RUNTIME</span><span>CORRELATION</span></div><p>Runtime windows can be compared with code changes, while causal language stays constrained unless stronger evidence exists.</p><div class="evidence-ref">runtime:&lt;window&gt; · commit:&lt;sha&gt;</div></div>
+        <div class="report-claim"><div class="report-claim-head"><span>DEPLOYMENT</span><span>PROVENANCE</span></div><p>Revision, artifact, build and release identifiers are reconciled from observed records instead of being reconstructed from timestamps.</p><div class="evidence-ref">deployment:&lt;id&gt; · runtime:&lt;id&gt;</div></div>
       </div>
       <aside class="report-preview-side">
         <div class="evidence-label"><span>WORKFLOW</span><span>06 / 08</span></div>
@@ -1410,7 +1439,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </section>
 
-  <p class="note landing-boundary">The workflow is intentionally traceable: observe → validate → interpret → inspect. Every output has a next step. Evidence remains the source of truth.</p>
+<p class="note landing-boundary">The workflow is intentionally traceable: observe → validate → interpret → inspect. Every output has a next step. Evidence remains the source of truth.</p>
 </section>
 
 <section id="workspace" class="workspace" hidden>
