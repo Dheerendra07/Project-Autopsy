@@ -251,3 +251,91 @@ html[data-theme="light"] .report-preview-side,
 html[data-theme="light"] .policy-card{
   background:var(--sz-surface)!important;
 }
+
+/* Workspace system pass: carry the same Space-Z product language into real views. */
+.content{max-width:1600px!important}
+.side{display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;min-height:0!important;overflow:hidden!important}
+.nav{display:grid!important;align-content:start!important;min-height:0!important;overflow-y:auto!important;scrollbar-width:thin}
+.nav-group{margin:14px 8px 6px!important;color:var(--sz-text-3)!important;font:700 8px var(--mono)!important;letter-spacing:.12em!important}
+.repo-meta{background:var(--sz-surface)!important;border-bottom-color:var(--sz-border)!important}
+.repo-meta strong{color:var(--sz-text)!important}.repo-meta span{color:var(--sz-text-3)!important}
+.sidefoot{padding-top:12px!important;border-top:1px solid var(--sz-border)!important}
+.content .head{padding-bottom:2px!important}
+.head h2{font-size:30px!important;letter-spacing:-.04em!important}
+.actions .btn,.actions a{min-height:38px!important}
+.view-guide{
+  background:var(--sz-surface)!important;
+  border:1px solid var(--sz-border)!important;
+  border-radius:11px!important;
+  box-shadow:none!important;
+}
+.view-guide-icon{
+  background:var(--sz-primary-soft)!important;
+  border-color:rgba(57,134,228,.25)!important;
+  color:#65a6ed!important;
+}
+.view-guide-copy strong{color:var(--sz-text)!important}.view-guide-copy small{color:var(--sz-text-3)!important}
+.view-guide-flow{color:var(--sz-text-3)!important}.view-guide-flow i{color:var(--sz-border-strong)!important}
+.view-flow{
+  background:var(--sz-surface)!important;
+  border-color:var(--sz-border)!important;
+  border-radius:11px!important;
+  box-shadow:none!important;
+}
+.workspace-flow-rail{overflow-x:auto!important;scrollbar-width:thin}
+.workspace-flow-step{border-color:transparent!important;color:var(--sz-text-3)!important;background:transparent!important}
+.workspace-flow-step:hover{background:var(--sz-surface-2)!important;color:var(--sz-text)!important}
+.workspace-flow-step.current{background:var(--sz-primary-soft)!important;border-color:rgba(57,134,228,.20)!important;color:var(--sz-text)!important}
+.workspace-flow-index{border-color:var(--sz-border)!important;color:var(--sz-text-3)!important;background:var(--sz-surface-2)!important}
+.workspace-flow-step.current .workspace-flow-index{border-color:rgba(57,134,228,.30)!important;color:#67a7ec!important;background:rgba(57,134,228,.08)!important}
+.workspace-flow-connector{color:var(--sz-text-3)!important}
+.view-source-status,.view-filter,.source-health-rail{
+  background:var(--sz-surface)!important;
+  border-color:var(--sz-border)!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+.snapshot-pill{background:var(--sz-surface-2)!important;border-color:var(--sz-border)!important;color:var(--sz-text-2)!important}
+.analysis-progress{gap:5px!important;overflow-x:auto!important;scrollbar-width:none!important}
+.analysis-stage{background:var(--sz-surface-2)!important;border-color:var(--sz-border)!important;color:var(--sz-text-3)!important}
+.analysis-stage b{background:var(--sz-surface-3)!important;border-color:var(--sz-border)!important;color:var(--sz-text-3)!important}
+.analysis-stage.current,.analysis-stage.complete{background:var(--sz-primary-soft)!important;border-color:rgba(57,134,228,.22)!important;color:var(--sz-text)!important}
+.analysis-stage.current b,.analysis-stage.complete b{border-color:rgba(57,134,228,.30)!important;color:#67a7ec!important}
+.history-signalbar,.recent-repo,.advanced-filter,.filter-bar{
+  background:var(--sz-surface)!important;border-color:var(--sz-border)!important;color:var(--sz-text-2)!important;
+}
+.recent-repo:hover{background:var(--sz-surface-2)!important;border-color:var(--sz-border-strong)!important}
+.table,.report,.story,.archmap,.evidence-row{
+  border-radius:10px!important;overflow:hidden!important;
+}
+.table td,.table th{vertical-align:middle!important}
+.inspect{
+  background:var(--sz-surface-2)!important;
+  border-color:var(--sz-border)!important;
+  color:var(--sz-text-2)!important;
+  border-radius:7px!important;
+}
+.inspect:hover{background:var(--sz-surface-3)!important;border-color:var(--sz-border-strong)!important;color:var(--sz-text)!important}
+.view-filter-tools .btn{min-height:36px!important}
+.notice,.callout,.empty{background:var(--sz-surface)!important;border-color:var(--sz-border)!important}
+html[data-theme="light"] .view-guide,
+html[data-theme="light"] .view-flow,
+html[data-theme="light"] .view-source-status,
+html[data-theme="light"] .view-filter,
+html[data-theme="light"] .source-health-rail,
+html[data-theme="light"] .history-signalbar,
+html[data-theme="light"] .recent-repo,
+html[data-theme="light"] .advanced-filter,
+html[data-theme="light"] .filter-bar,
+html[data-theme="light"] .notice,
+html[data-theme="light"] .callout,
+html[data-theme="light"] .empty{
+  background:var(--sz-surface)!important;
+  border-color:var(--sz-border)!important;
+}
+html[data-theme="light"] .nav button:hover{background:#e9eef2!important}
+html[data-theme="light"] .nav button.active{background:rgba(33,113,204,.07)!important;border-color:rgba(33,113,204,.18)!important}
+@media(max-width:1000px){
+  .side{display:block!important;overflow:visible!important}
+  .nav{overflow-x:auto!important;overflow-y:hidden!important;display:grid!important}
+}
