@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta id="themeColor" name="theme-color" content="#070b12">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<title>Project Autopsy — Engineering Evidence</title>
+<title>Project Autopsy — Engineering history, from evidence</title>
 <script src="theme.js"></script>
 <style>
 :root{--bg:#11110f;--panel:#181815;--panel2:#1f1f1a;--line:#303028;--text:#f3f0e8;--muted:#aaa69b;--dim:#77736a;--gold:#d5bf87;--good:#91c79f;--bad:#d98578;--warn:#d6b16b;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
@@ -1225,6 +1225,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 
 </style>
 <link rel="stylesheet" href="ui-v2.css?v=b045b5b7">
+<link rel="stylesheet" href="ui-spacez.css?v=spacez-v1">
 
 </head>
 <body>
@@ -1236,47 +1237,47 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
   <div class="top-actions"><button id="themeToggle" class="btn theme-toggle" type="button" aria-pressed="true" aria-label="Switch to light theme" title="Switch to light theme"><span class="theme-toggle-icon" aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span></button><button id="settings" class="btn top-account" aria-label="Sign in to your private workspace" title="Sign in to your private workspace">Sign in</button></div>
 </header>
 <a class="skip-link" href="#root">Skip to workspace</a><main>
-<section id="landing" class="landing">
+<section id="landing" class="landing spacez-landing">
   <div class="landing-hero">
     <div class="landing-copy">
-      <div class="eyebrow">EVIDENCE-FIRST ENGINEERING HISTORY</div>
-      <h1>Understand how your codebase <em>really changed.</em></h1>
-      <p class="lead">Autopsy turns repository history, structure, quality signals, runtime evidence and deployment records into one inspectable engineering timeline.</p>
+      <div class="eyebrow">EVIDENCE-BACKED ENGINEERING HISTORY</div>
+      <h1>Reconstruct the engineering journey — <em>from evidence.</em></h1>
+      <p class="lead">Project Autopsy connects Git history, code structure, quality signals, runtime telemetry and deployment records into one inspectable engineering timeline. Observed evidence stays separate from interpretation.</p>
       <div class="landing-proof">
-        <span><b>01</b> Observe Git history</span>
-        <span><b>02</b> Validate engineering signals</span>
-        <span><b>03</b> Inspect the evidence behind each output</span>
+        <span><b>01</b> Observe repository history and structure</span>
+        <span><b>02</b> Validate deterministic engineering signals</span>
+        <span><b>03</b> Trace every output back to persisted evidence</span>
       </div>
     </div>
 
     <div class="import-card card">
       <div class="import-head">
         <div>
-          <div class="kicker">START HERE</div>
-          <h2>Open a repository workspace</h2>
-          <p class="import-helper">Paste a public repository URL. Sign in first so your analysis and evidence stay private to your account.</p>
+          <div class="kicker">NEW WORKSPACE</div>
+          <h2>Analyze a repository</h2>
+          <p class="import-helper">Start with a HTTPS repository URL. The analysis is queued asynchronously; the workspace becomes the source for every downstream view.</p>
         </div>
-        <span class="tag">HTTPS sources</span>
+        <span class="tag">202 queued</span>
       </div>
       <form id="form" class="import">
         <label class="field">
           <span>Repository URL</span>
           <input id="url" type="url" placeholder="https://github.com/owner/repository" required>
-          <small>GitHub, GitLab or Bitbucket HTTPS repository</small>
+          <small>GitHub, GitLab or Bitbucket over HTTPS</small>
         </label>
         <label class="field">
           <span>Branch <em class="dim">(optional)</em></span>
           <input id="branch" placeholder="main">
-          <small>Leave blank to use the detected default</small>
+          <small>Uses the detected default branch when blank</small>
         </label>
-        <button id="importButton" class="btn primary" type="submit"><span>Analyze repository</span><span aria-hidden="true">→</span></button>
+        <button id="importButton" class="btn primary" type="submit"><span>Analyze</span><span aria-hidden="true">→</span></button>
       </form>
       <details class="repo-access">
         <summary><span>Private repository access</span><span class="dim">Optional</span></summary>
         <label class="field">
           <span>Repository access token</span>
           <input id="repoAccessToken" type="password" autocomplete="off" placeholder="Paste a read-only repository token">
-          <small>Encrypted on the server and never returned to the browser.</small>
+          <small>Encrypted server-side and never returned to the browser.</small>
         </label>
       </details>
       <div id="formerr" class="bad form-error" hidden></div>
@@ -1284,7 +1285,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </div>
 
-  <div class="workspace-preview product-preview" aria-label="Workspace preview">
+  <div class="workspace-preview product-preview" aria-label="Product workspace preview">
     <div class="preview-chrome">
       <div class="preview-chrome-left"><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span></div>
       <span class="preview-label">PROJECT AUTOPSY / WORKSPACE</span>
@@ -1315,49 +1316,131 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
           <div>
             <span class="preview-kicker">CURRENT SNAPSHOT</span>
             <strong>Repository evolution</strong>
-            <small>One place to understand what changed, what the evidence says, and what still needs inspection.</small>
+            <small>One workspace for history, structure, engineering signals, provenance and grounded outputs.</small>
           </div>
           <span class="snapshot-pill good">CURRENT</span>
         </div>
         <div class="preview-metrics">
-          <div><span>01 · HISTORY</span><b>Commit trail</b><small>Chronological source changes</small></div>
+          <div><span>01 · HISTORY</span><b>Commit trail</b><small>Chronological repository evidence</small></div>
           <div><span>02 · STRUCTURE</span><b>Codebase shape</b><small>Architecture + dependencies</small></div>
-          <div><span>03 · QUALITY</span><b>Engineering signals</b><small>Tests + repeated change + refactors</small></div>
-          <div><span>04 · RUNTIME</span><b>Runtime provenance</b><small>Telemetry + deployments + revision links</small></div>
+          <div><span>03 · QUALITY</span><b>Engineering signals</b><small>Tests + refactors + repeated change</small></div>
+          <div><span>04 · RUNTIME</span><b>Provenance</b><small>Telemetry + deployment revision links</small></div>
         </div>
         <div class="preview-panel">
           <div class="preview-panel-head"><span>EVIDENCE TRAIL</span><span>INSPECT →</span></div>
           <div class="preview-line"><i></i><div><b>Observed evidence</b><small>Commit, file, revision and deployment records</small></div><em>Observed</em></div>
-          <div class="preview-line"><i></i><div><b>Derived signal</b><small>Deterministic historical measurements and classifications</small></div><em>Derived</em></div>
-          <div class="preview-line"><i></i><div><b>Interpretation</b><small>Claims stay grounded in cited evidence and visible uncertainty</small></div><em>Scoped</em></div>
+          <div class="preview-line"><i></i><div><b>Derived signal</b><small>Deterministic measurements computed from persisted evidence</small></div><em>Derived</em></div>
+          <div class="preview-line"><i></i><div><b>Interpretation</b><small>Bounded claims with explicit references and uncertainty</small></div><em>Scoped</em></div>
         </div>
-        <div class="preview-footline"><span>✓</span><div><b>Every output has a next step</b><small>Read the snapshot → inspect the signal → open the exact evidence record.</small></div></div>
+        <div class="preview-footline"><span>✓</span><div><b>Evidence stays inspectable</b><small>Read the snapshot → inspect the signal → open the exact record.</small></div></div>
       </div>
     </div>
   </div>
 
   <section class="landing-how">
-    <div class="landing-section-head"><div class="kicker">HOW TO USE IT</div><h2>Three moves. No guessing.</h2><p>Each workspace section answers a specific engineering question and points you toward the next useful action.</p></div>
+    <div class="spacez-section-head">
+      <div class="kicker">HOW TO USE IT</div>
+      <h2>Three moves. No guessing.</h2>
+      <p>Move from repository facts to engineering signals, then inspect the exact evidence behind the output.</p>
+    </div>
     <div class="getting-started">
-      <article class="getting-step"><span class="step-num">01</span><div><b>Understand</b><small>Start at Overview, then open History and Structure to learn the repository before reading derived signals.</small></div></article>
-      <article class="getting-step"><span class="step-num">02</span><div><b>Validate</b><small>Use Quality and Runtime to check repeated changes, tests, telemetry, deployments and revision provenance.</small></div></article>
-      <article class="getting-step"><span class="step-num">03</span><div><b>Output & inspect</b><small>Generate Report or Insights, then use Evidence Explorer whenever you need to verify a claim.</small></div></article>
+      <article class="getting-step">
+        <b>01 · Understand</b>
+        <small>Start with repository history and structure before reading derived engineering signals.</small>
+      </article>
+      <article class="getting-step">
+        <b>02 · Validate</b>
+        <small>Use Quality and Runtime to check tests, repeated changes, telemetry and deployment provenance.</small>
+      </article>
+      <article class="getting-step">
+        <b>03 · Output &amp; inspect</b>
+        <small>Generate a report or insight, then follow its evidence references back to the persisted record.</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="spacez-section">
+    <div class="spacez-section-head">
+      <div class="kicker">THE EVIDENCE MODEL</div>
+      <h2>Observed facts first. Interpretation only where the evidence supports it.</h2>
+      <p>The product boundary is deliberate: repository and runtime systems provide the source of truth; higher-level interpretation is grounded on top of that source.</p>
+    </div>
+    <div class="evidence-model">
+      <article class="evidence-card">
+        <div class="evidence-label"><span>OBSERVED EVIDENCE</span><span>01 / SOURCE</span></div>
+        <h3>What the systems actually recorded.</h3>
+        <p>Git history, structure, dependencies, complexity, tests, runtime telemetry and deployment records remain the durable basis for analysis.</p>
+        <div class="evidence-list">
+          <div class="evidence-mini"><i></i><div><b>Git history</b><small>Subjects, churn, authorship and change windows.</small></div></div>
+          <div class="evidence-mini"><i></i><div><b>Code structure</b><small>Architecture, dependencies and complexity deltas.</small></div></div>
+          <div class="evidence-mini"><i></i><div><b>Runtime + deployment</b><small>Observed telemetry and revision-linked releases.</small></div></div>
+        </div>
+      </article>
+      <article class="evidence-card">
+        <div class="evidence-label"><span>INTERPRETATION</span><span>02 / BOUNDED</span></div>
+        <h3>Useful context without turning inference into fact.</h3>
+        <p>Grounded outputs may summarize patterns, questions and uncertainty, but they do not invent ownership, developer intent or business impact.</p>
+        <div class="boundary-code"><strong>422</strong>  unknown evidence reference rejected by the server<br>claim.evidenceRefs = ["runtime:invented-id"]</div>
+      </article>
     </div>
   </section>
 
   <section class="landing-capabilities">
-    <div class="landing-section-head"><div class="kicker">WORKSPACE MAP</div><h2>What each section is for</h2></div>
+    <div class="spacez-section-head">
+      <div class="kicker">WORKSPACE MAP</div>
+      <h2>One workflow, eleven focused surfaces.</h2>
+      <p>Each surface answers a different engineering question while keeping the same evidence-first interaction model.</p>
+    </div>
     <div class="capability-grid">
-      <article><span>01</span><b>Overview</b><p>Your current snapshot, run boundary and a compact read of the repository.</p></article>
-      <article><span>02–03</span><b>History & Structure</b><p>What changed over time and how the codebase shape moved with it.</p></article>
-      <article><span>04–05</span><b>Quality & Runtime</b><p>Where repeated changes, tests, telemetry and deployments provide supporting evidence.</p></article>
-      <article><span>06–08</span><b>Report, Interview & Insights</b><p>Turn the current evidence snapshot into usable outputs without hiding uncertainty.</p></article>
-      <article><span>09–10</span><b>Evidence & Contributors</b><p>Trace records back to their source and understand author-level change history.</p></article>
-      <article><span>11</span><b>Operations</b><p>Check the running service separately from repository evidence.</p></article>
+      <article><b>01 · Overview</b><p>Current analysis snapshot, run boundary and the fastest route into the evidence.</p></article>
+      <article><b>02 · History</b><p>Trace commits and timeline events with inspectable chronology.</p></article>
+      <article><b>03 · Structure</b><p>Understand architecture, dependencies, complexity and codebase shape.</p></article>
+      <article><b>04 · Quality</b><p>Investigate tests, repeated changes, refactors, bug areas and migrations.</p></article>
+      <article><b>05 · Runtime</b><p>Connect observed telemetry and deployments to explicit revisions.</p></article>
+      <article><b>06–08 · Outputs</b><p>Report, Interview and Insights turn the current evidence snapshot into usable outputs.</p></article>
+      <article><b>09 · Evidence</b><p>Search and inspect the exact persisted record behind a signal or claim.</p></article>
+      <article><b>10 · Contributors</b><p>Use literal author history as additional evidence context.</p></article>
+      <article><b>11 · Operations</b><p>Check the running service separately from repository evidence.</p></article>
     </div>
   </section>
 
-  <p class="note landing-boundary">Evidence remains separate from interpretation. Autopsy does not present a heuristic as intent, causality or impact without supporting evidence.</p>
+  <section class="spacez-section">
+    <div class="spacez-section-head">
+      <div class="kicker">REPORTS &amp; INTERPRETATION</div>
+      <h2>A report is an evidence surface, not a black box.</h2>
+      <p>Every claim can be followed to the records that support it, while the interpretation layer keeps its scope visible.</p>
+    </div>
+    <div class="report-preview">
+      <div class="report-preview-main">
+        <div class="evidence-label"><span>EVIDENCE-BACKED REPORT</span><span>DETERMINISTIC</span></div>
+        <div class="report-claim"><div class="report-claim-head"><span>CHURN</span><span>OBSERVED</span></div><p>A change center can be identified from persisted commit history and file-level churn without guessing why the work happened.</p><div class="evidence-ref">commit:&lt;sha&gt; · hotspot:&lt;path&gt;</div></div>
+        <div class="report-claim"><div class="report-claim-head"><span>RUNTIME</span><span>CORRELATION</span></div><p>Runtime windows can be compared with code changes, while causal language stays constrained unless stronger evidence exists.</p><div class="evidence-ref">runtime:&lt;window&gt; · commit:&lt;sha&gt;</div></div>
+        <div class="report-claim"><div class="report-claim-head"><span>DEPLOYMENT</span><span>PROVENANCE</span></div><p>Revision, artifact, build and release identifiers are reconciled from observed records instead of being reconstructed from timestamps.</p><div class="evidence-ref">deployment:&lt;id&gt; · runtime:&lt;id&gt;</div></div>
+      </div>
+      <aside class="report-preview-side">
+        <div class="evidence-label"><span>WORKFLOW</span><span>06 / 08</span></div>
+        <div class="evidence-mini"><i></i><div><b>Read claims</b><small>Start from the evidence-backed report.</small></div></div>
+        <div class="evidence-mini"><i></i><div><b>Inspect references</b><small>Open the exact supporting record.</small></div></div>
+        <div class="evidence-mini"><i></i><div><b>Ground insights</b><small>Keep uncertainty visible in the output.</small></div></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="spacez-section">
+    <div class="spacez-section-head">
+      <div class="kicker">SECURITY &amp; BOUNDARY</div>
+      <h2>Built for a developer workflow that treats evidence seriously.</h2>
+      <p>Credentials, sessions, operational health and repository evidence each have their own boundary.</p>
+    </div>
+    <div class="policy-grid">
+      <article class="policy-card"><b>Credentials</b><small>Repository access material stays server-side and encrypted at rest.</small></article>
+      <article class="policy-card"><b>Sessions</b><small>Browser access uses revocable account sessions rather than long-lived bearer tokens.</small></article>
+      <article class="policy-card"><b>Runtime</b><small>Telemetry and deployment ingestion remain separate from the browser access boundary.</small></article>
+      <article class="policy-card"><b>Operations</b><small>Health and readiness describe the running service without rewriting repository evidence.</small></article>
+    </div>
+  </section>
+
+<p class="note landing-boundary">The workflow is intentionally traceable: observe → validate → interpret → inspect. Every output has a next step. Evidence remains the source of truth.</p>
 </section>
 
 <section id="workspace" class="workspace" hidden>
