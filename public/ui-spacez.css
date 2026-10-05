@@ -228,3 +228,26 @@ html[data-theme="light"] .json{background:#f1f4f6!important}
 .landing-how .getting-step small{display:block!important;margin-top:6px!important;color:var(--sz-text-3)!important;font-size:9px!important;line-height:1.55!important}
 html[data-theme="light"] .landing-how .getting-step{background:#fff!important;border-color:var(--sz-border)!important}
 @media(max-width:760px){.landing-how .getting-started{grid-template-columns:1fr!important}}
+
+/* Light surface calibration: neutral product canvas, restrained contrast, no white wall. */
+html[data-theme="light"]{
+  --sz-bg:#f1f3f6;
+  --sz-surface:#f7f9fa;
+  --sz-surface-2:#eef2f5;
+  --sz-surface-3:#e8edf1;
+  --sz-border:#d8dee5;
+  --sz-border-strong:#c6ced8;
+}
+html[data-theme="light"] .import-card{
+  background:linear-gradient(180deg,#f9fafb,#f3f6f8)!important;
+}
+html[data-theme="light"] .product-preview{
+  box-shadow:0 28px 80px rgba(27,39,53,.08)!important;
+}
+html[data-theme="light"] .capability-grid article,
+html[data-theme="light"] .evidence-card,
+html[data-theme="light"] .report-preview-main,
+html[data-theme="light"] .report-preview-side,
+html[data-theme="light"] .policy-card{
+  background:var(--sz-surface)!important;
+}
