@@ -213,3 +213,18 @@ html[data-theme="light"] .json{background:#f1f4f6!important}
   .spacez-section{margin-top:66px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Compatibility polish: keep the new getting-started cards vertically structured. */
+.landing-how .getting-started{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+.landing-how .getting-step{
+  display:block!important;
+  min-width:0!important;
+  padding:16px!important;
+  background:var(--sz-surface)!important;
+  border:1px solid var(--sz-border)!important;
+  border-radius:11px!important;
+}
+.landing-how .getting-step b{display:block!important;font-size:12px!important;color:var(--sz-text)!important}
+.landing-how .getting-step small{display:block!important;margin-top:6px!important;color:var(--sz-text-3)!important;font-size:9px!important;line-height:1.55!important}
+html[data-theme="light"] .landing-how .getting-step{background:#fff!important;border-color:var(--sz-border)!important}
+@media(max-width:760px){.landing-how .getting-started{grid-template-columns:1fr!important}}
