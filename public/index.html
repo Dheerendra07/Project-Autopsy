@@ -1225,275 +1225,321 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 
 </style>
 <link rel="stylesheet" href="ui-v2.css?v=b045b5b7">
-<link rel="stylesheet" href="ui-spacez.css?v=spacez-v1">
+<link rel="stylesheet" href="ui-chatz.css?v=chatz-rebuild-v1">
 
 </head>
 <body>
-<header class="top">
-  <a id="brandLink" class="brand" href="#overview" aria-label="Project Autopsy overview">
-    <span class="mark">A</span>
-    <span><b>Project Autopsy</b><small>Engineering Evidence</small></span>
-  </a>
-  <div class="top-actions"><button id="themeToggle" class="btn theme-toggle" type="button" aria-pressed="true" aria-label="Switch to light theme" title="Switch to light theme"><span class="theme-toggle-icon" aria-hidden="true">☼</span><span class="theme-toggle-label">Light</span></button><button id="settings" class="btn top-account" aria-label="Sign in to your private workspace" title="Sign in to your private workspace">Sign in</button></div>
-</header>
-<a class="skip-link" href="#root">Skip to workspace</a><main>
-<section id="landing" class="landing spacez-landing">
-  <div class="landing-hero">
-    <div class="landing-copy">
-      <div class="eyebrow">EVIDENCE-BACKED ENGINEERING HISTORY</div>
-      <h1>Reconstruct the engineering journey — <em>from evidence.</em></h1>
-      <p class="lead">Project Autopsy connects Git history, code structure, quality signals, runtime telemetry and deployment records into one inspectable engineering timeline. Observed evidence stays separate from interpretation.</p>
-      <div class="landing-proof">
-        <span><b>01</b> Observe repository history and structure</span>
-        <span><b>02</b> Validate deterministic engineering signals</span>
-        <span><b>03</b> Trace every output back to persisted evidence</span>
-      </div>
-    </div>
 
-    <div class="import-card card">
-      <div class="import-head">
-        <div>
-          <div class="kicker">NEW WORKSPACE</div>
-          <h2>Analyze a repository</h2>
-          <p class="import-helper">Start with a HTTPS repository URL. The analysis is queued asynchronously; the workspace becomes the source for every downstream view.</p>
+<a class="skip-link" href="#root">Skip to workspace</a>
+<main class="pa-app">
+  <header class="top">
+      <nav class="pa-nav" aria-label="Primary">
+        <a id="brandLink" class="pa-brand" href="#overview" aria-label="Project Autopsy overview">
+          <span class="pa-brand-mark" aria-hidden="true">✣</span>
+          <span>
+            <b>Project Autopsy</b><small>Engineering Evidence</small>
+          </span>
+        </a>
+        <div class="pa-nav-links">
+          <a href="#import">Import</a>
+          <a href="#evidence">Evidence Model</a>
+          <a href="#workspace-preview">Workspace</a>
+          <a href="#reports">Reports</a>
+          <a href="#security">Security</a>
         </div>
-        <span class="tag">202 queued</span>
-      </div>
-      <form id="form" class="import">
-        <label class="field">
-          <span>Repository URL</span>
-          <input id="url" type="url" placeholder="https://github.com/owner/repository" required>
-          <small>GitHub, GitLab or Bitbucket over HTTPS</small>
-        </label>
-        <label class="field">
-          <span>Branch <em class="dim">(optional)</em></span>
-          <input id="branch" placeholder="main">
-          <small>Uses the detected default branch when blank</small>
-        </label>
-        <button id="importButton" class="btn primary" type="submit"><span>Analyze</span><span aria-hidden="true">→</span></button>
-      </form>
-      <details class="repo-access">
-        <summary><span>Private repository access</span><span class="dim">Optional</span></summary>
-        <label class="field">
-          <span>Repository access token</span>
-          <input id="repoAccessToken" type="password" autocomplete="off" placeholder="Paste a read-only repository token">
-          <small>Encrypted server-side and never returned to the browser.</small>
-        </label>
-      </details>
-      <div id="formerr" class="bad form-error" hidden></div>
-      <div id="recentRepositories" class="recent-repositories" hidden></div>
-    </div>
-  </div>
+        <div class="pa-nav-actions">
+          <button id="themeToggle" class="pa-icon-btn" type="button" aria-label="Switch theme" title="Theme">◐</button>
+          <button id="settings" class="pa-account-btn" type="button" aria-label="Sign in to your private workspace" title="Sign in to your private workspace">Sign in</button>
+        </div>
+      </nav>
+    </header>
+<section id="landing" class="pa-landing">
+    <div class="pa-grain" aria-hidden="true"></div>
+    <div class="pa-grid" aria-hidden="true"></div>
 
-  <div class="workspace-preview product-preview" aria-label="Product workspace preview">
-    <div class="preview-chrome">
-      <div class="preview-chrome-left"><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span></div>
-      <span class="preview-label">PROJECT AUTOPSY / WORKSPACE</span>
-      <span class="preview-state">EVIDENCE MODE</span>
-    </div>
-    <div class="preview-grid">
-      <div class="preview-nav">
-        <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
-        <div class="preview-nav-group">START HERE</div>
-        <div class="preview-nav-item active"><span>01</span><strong>Overview</strong></div>
-        <div class="preview-nav-item"><span>02</span><strong>History</strong></div>
-        <div class="preview-nav-item"><span>03</span><strong>Structure</strong></div>
-        <div class="preview-nav-group">VALIDATE</div>
-        <div class="preview-nav-item"><span>04</span><strong>Quality</strong></div>
-        <div class="preview-nav-item"><span>05</span><strong>Runtime</strong></div>
-        <div class="preview-nav-group">OUTPUTS</div>
-        <div class="preview-nav-item"><span>06</span><strong>Report</strong></div>
-        <div class="preview-nav-item"><span>07</span><strong>Interview</strong></div>
-        <div class="preview-nav-item"><span>08</span><strong>Insights</strong></div>
-        <div class="preview-nav-group">EXPLORE</div>
-        <div class="preview-nav-item"><span>09</span><strong>Evidence</strong></div>
-        <div class="preview-nav-item"><span>10</span><strong>Contributors</strong></div>
-        <div class="preview-nav-group">OPERATE</div>
-        <div class="preview-nav-item"><span>11</span><strong>Operations</strong></div>
+    
+
+    <section id="top" class="pa-hero">
+      <div class="pa-hero-copy">
+        <div class="pa-phase"><span>PHASE</span> Evidence-backed runtime &amp; provenance analysis</div>
+        <h1>Reconstruct the<br>engineering journey —<br><span>from evidence.</span></h1>
+        <p>Project Autopsy analyzes Git history, code structure, dependencies, schema, runtime telemetry, and deployment evidence to build an <strong>evidence-backed engineering history</strong>. Observed evidence is never confused with interpretation.</p>
+
+        <div id="import" class="pa-import-anchor">
+          <form id="form" class="pa-import-card">
+            <div class="pa-import-row">
+              <label class="pa-field pa-field-main">
+                <span>Repository URL</span>
+                <input id="url" type="url" placeholder="https://github.com/owner/repository" required>
+              </label>
+              <label class="pa-field pa-branch-field">
+                <span>Branch <em>(optional)</em></span>
+                <input id="branch" placeholder="main">
+              </label>
+              <button id="importButton" class="pa-submit" type="submit"><span>Import repository</span><b>→</b></button>
+            </div>
+            <div class="pa-import-meta">
+              <span>HTTPS only</span><i>·</i><span>allowlisted hosts</span><i>·</i><span>returns <b>202 Accepted</b></span><i>·</i><span>clone runs in worker</span>
+            </div>
+          </form>
+        </div>
+        <div class="pa-import-support">
+          <details class="pa-private">
+            <summary>Private repository access <span>optional</span></summary>
+            <label class="pa-field">
+              <span>Repository access token</span>
+              <input id="repoAccessToken" type="password" autocomplete="off" placeholder="Paste a read-only repository token">
+              <small>Encrypted server-side and never returned to the browser.</small>
+            </label>
+          </details>
+          <div id="formerr" hidden class="pa-error"></div>
+          <div id="recentRepositories" hidden></div>
+        </div>
       </div>
-      <div class="preview-main">
-        <div class="preview-head">
-          <div>
-            <span class="preview-kicker">CURRENT SNAPSHOT</span>
-            <strong>Repository evolution</strong>
-            <small>One workspace for history, structure, engineering signals, provenance and grounded outputs.</small>
+
+      <div class="pa-hero-console">
+        <div class="pa-window">
+          <div class="pa-window-bar"><span class="pa-window-dots"><i></i><i></i><i></i></span><span>autopsy · live import · stream</span><b>idle</b></div>
+          <div class="pa-terminal">
+            <div><span class="pa-prompt">$</span> autopsy import --url https://github.com/owner/repository.git</div>
+            <div class="pa-dim"># press Import to queue a real async analysis</div>
+            <div class="pa-dim"># POST returns 202 — clone + analysis run in the worker</div>
+            <div class="pa-rule"></div>
+            <div class="pa-deploy"><span><b>Deployment</b> <strong>complete</strong></span><span>runtime reconciled</span></div>
+            <div class="pa-hash">sha256:<span>9a3f…e1f2</span></div>
           </div>
-          <span class="snapshot-pill good">CURRENT</span>
         </div>
-        <div class="preview-metrics">
-          <div><span>01 · HISTORY</span><b>Commit trail</b><small>Chronological repository evidence</small></div>
-          <div><span>02 · STRUCTURE</span><b>Codebase shape</b><small>Architecture + dependencies</small></div>
-          <div><span>03 · QUALITY</span><b>Engineering signals</b><small>Tests + refactors + repeated change</small></div>
-          <div><span>04 · RUNTIME</span><b>Provenance</b><small>Telemetry + deployment revision links</small></div>
+        <div class="landing-proof">
+          <div><b>PostgreSQL + Redis</b><span>bounded checks</span></div>
+          <div><b>Credentials at rest</b><span>encrypted, never returned</span></div>
+          <div><b>120 req/min</b><span>12 for expensive ops</span></div>
         </div>
-        <div class="preview-panel">
-          <div class="preview-panel-head"><span>EVIDENCE TRAIL</span><span>INSPECT →</span></div>
-          <div class="preview-line"><i></i><div><b>Observed evidence</b><small>Commit, file, revision and deployment records</small></div><em>Observed</em></div>
-          <div class="preview-line"><i></i><div><b>Derived signal</b><small>Deterministic measurements computed from persisted evidence</small></div><em>Derived</em></div>
-          <div class="preview-line"><i></i><div><b>Interpretation</b><small>Bounded claims with explicit references and uncertainty</small></div><em>Scoped</em></div>
-        </div>
-        <div class="preview-footline"><span>✓</span><div><b>Evidence stays inspectable</b><small>Read the snapshot → inspect the signal → open the exact record.</small></div></div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <section class="landing-how">
-    <div class="spacez-section-head">
-      <div class="kicker">HOW TO USE IT</div>
-      <h2>Three moves. No guessing.</h2>
-      <p>Move from repository facts to engineering signals, then inspect the exact evidence behind the output.</p>
-    </div>
-    <div class="getting-started">
-      <article class="getting-step">
-        <b>01 · Understand</b>
-        <small>Start with repository history and structure before reading derived engineering signals.</small>
-      </article>
-      <article class="getting-step">
-        <b>02 · Validate</b>
-        <small>Use Quality and Runtime to check tests, repeated changes, telemetry and deployment provenance.</small>
-      </article>
-      <article class="getting-step">
-        <b>03 · Output &amp; inspect</b>
-        <small>Generate a report or insight, then follow its evidence references back to the persisted record.</small>
-      </article>
-    </div>
-  </section>
+    <section class="landing-how" aria-label="Product workflow">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">WORKFLOW</div>
+        <h2>Move through the evidence without losing the thread.</h2>
+        <p>Understand the repository, validate signals, use outputs, explore supporting records, then inspect operations separately.</p>
+      </div>
+      <div class="pa-workflow-strip">
+        <div><span>01</span><b>Understand</b><small>History + Structure</small></div>
+        <i>→</i>
+        <div><span>02</span><b>Validate</b><small>Quality + Runtime</small></div>
+        <i>→</i>
+        <div><span>03</span><b>Outputs</b><small>Report + Interview</small></div>
+        <i>→</i>
+        <div><span>04</span><b>Explore</b><small>Evidence + Contributors</small></div>
+        <i>→</i>
+        <div><span>05</span><b>Insights</b><small>Grounded interpretation</small></div>
+      </div>
+    </section>
 
-  <section class="spacez-section">
-    <div class="spacez-section-head">
-      <div class="kicker">THE EVIDENCE MODEL</div>
-      <h2>Observed facts first. Interpretation only where the evidence supports it.</h2>
-      <p>The product boundary is deliberate: repository and runtime systems provide the source of truth; higher-level interpretation is grounded on top of that source.</p>
-    </div>
-    <div class="evidence-model">
-      <article class="evidence-card">
-        <div class="evidence-label"><span>OBSERVED EVIDENCE</span><span>01 / SOURCE</span></div>
-        <h3>What the systems actually recorded.</h3>
-        <p>Git history, structure, dependencies, complexity, tests, runtime telemetry and deployment records remain the durable basis for analysis.</p>
-        <div class="evidence-list">
-          <div class="evidence-mini"><i></i><div><b>Git history</b><small>Subjects, churn, authorship and change windows.</small></div></div>
-          <div class="evidence-mini"><i></i><div><b>Code structure</b><small>Architecture, dependencies and complexity deltas.</small></div></div>
-          <div class="evidence-mini"><i></i><div><b>Runtime + deployment</b><small>Observed telemetry and revision-linked releases.</small></div></div>
+    <section id="evidence" class="pa-section">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">THE EVIDENCE MODEL</div>
+        <h2>Observed evidence is never confused with interpretation.</h2>
+        <p>Autopsy separates what was actually observed — from Git, runtime, and deployment systems — from what a model infers. Every claim is traceable to evidence keys; unknown references are rejected.</p>
+      </div>
+      <div class="getting-started">
+        <article class="pa-card pa-evidence-card">
+          <div class="pa-card-kicker">OBSERVED EVIDENCE <span>SOURCE OF TRUTH</span></div>
+          <h3>What your systems actually recorded.</h3>
+          <p>Repository and runtime evidence form the durable basis for change history, correlations and provenance.</p>
+          <div class="pa-mini-grid">
+            <div><b>Git history</b><span>Subjects, churn, authorship, co-change.</span></div>
+            <div><b>Code structure</b><span>Architecture and directory evolution.</span></div>
+            <div><b>Dependencies</b><span>Historical package snapshots.</span></div>
+            <div><b>Complexity</b><span>AST-derived deltas.</span></div>
+            <div><b>Schema &amp; tests</b><span>Migration and test evolution.</span></div>
+            <div><b>Runtime telemetry</b><span>Optional, observed — never inferred.</span></div>
+            <div><b>Deployment evidence</b><span>Ingested and reconciled.</span></div>
+          </div>
+        </article>
+        <article class="pa-card pa-interpret-card">
+          <div class="pa-card-kicker">INTERPRETATION LAYER <span>BOUNDED · GROUNDED</span></div>
+          <h3>Useful context without turning inference into fact.</h3>
+          <p>The interpretation layer receives only a bounded set of report claims and may reference only evidence keys supplied by the server.</p>
+          <div class="pa-rule-list">
+            <div><span>01</span><p>No invented ownership, developer intent or business impact.</p></div>
+            <div><span>02</span><p>Bug attribution stays correlation unless stronger evidence exists.</p></div>
+            <div><span>03</span><p>Performance regression claims require runtime evidence.</p></div>
+          </div>
+          <div class="pa-code"><span>// rejected by the server</span><strong>interpretation.claims[2].evidenceRefs = ["runtime:invented-123"]</strong><b>→ 422 · unknown evidence reference</b></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="landing-capabilities">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">SURFACE MAP</div>
+        <h2>Each workspace surface has a job.</h2>
+        <p>The interface keeps navigation close to the evidence so developers can move from signal to source without changing context.</p>
+      </div>
+      <div class="capability-grid">
+        <article><b>Understand</b><p>Overview, History and Structure establish the repository snapshot before derived signals.</p></article>
+        <article><b>Validate</b><p>Quality and Runtime expose tests, refactors, telemetry and deployment provenance.</p></article>
+        <article><b>Outputs</b><p>Report, Interview and Insights turn the current evidence snapshot into usable outputs.</p></article>
+        <article><b>Explore</b><p>Evidence and Contributors let you trace records and authorship without guessing intent.</p></article>
+        <article><b>Insights</b><p>Grounded interpretation stays scoped to a current report and its evidence references.</p></article>
+        <article><b>Operations</b><p>Live service health is separate from repository evidence and analysis history.</p></article>
+      </div>
+    </section>
+
+    <section id="workspace-preview" class="pa-section">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">THE WORKSPACE</div>
+        <h2>Every claim, traceable to an evidence key.</h2>
+        <p class="pa-subline">Every output has a next step: read → inspect → verify.</p>
+        <p>The real workspace keeps repository facts, derived signals and grounded outputs in one inspectable surface.</p>
+      </div>
+      <div class="pa-workspace-card">
+        <div class="pa-workspace-head">
+          <div class="pa-repo">
+            <span class="pa-repo-mark">⌁</span>
+            <div><strong>repository / current snapshot</strong><small>Git + runtime + deployments · evidence boundary</small></div>
+          </div>
+          <div class="pa-repo-actions">
+            <button type="button">Compare runs</button>
+            <button type="button">Run history</button>
+            <button type="button" class="active">Re-analyze</button>
+          </div>
         </div>
-      </article>
-      <article class="evidence-card">
-        <div class="evidence-label"><span>INTERPRETATION</span><span>02 / BOUNDED</span></div>
-        <h3>Useful context without turning inference into fact.</h3>
-        <p>Grounded outputs may summarize patterns, questions and uncertainty, but they do not invent ownership, developer intent or business impact.</p>
-        <div class="boundary-code"><strong>422</strong>  unknown evidence reference rejected by the server<br>claim.evidenceRefs = ["runtime:invented-id"]</div>
-      </article>
-    </div>
-  </section>
-
-  <section class="landing-capabilities">
-    <div class="spacez-section-head">
-      <div class="kicker">WORKSPACE MAP</div>
-      <h2>One workflow, eleven focused surfaces.</h2>
-      <p>Each surface answers a different engineering question while keeping the same evidence-first interaction model.</p>
-    </div>
-    <div class="capability-grid">
-      <article><b>01 · Overview</b><p>Current analysis snapshot, run boundary and the fastest route into the evidence.</p></article>
-      <article><b>02 · History</b><p>Trace commits and timeline events with inspectable chronology.</p></article>
-      <article><b>03 · Structure</b><p>Understand architecture, dependencies, complexity and codebase shape.</p></article>
-      <article><b>04 · Quality</b><p>Investigate tests, repeated changes, refactors, bug areas and migrations.</p></article>
-      <article><b>05 · Runtime</b><p>Connect observed telemetry and deployments to explicit revisions.</p></article>
-      <article><b>06–08 · Outputs</b><p>Report, Interview and Insights turn the current evidence snapshot into usable outputs.</p></article>
-      <article><b>09 · Evidence</b><p>Search and inspect the exact persisted record behind a signal or claim.</p></article>
-      <article><b>10 · Contributors</b><p>Use literal author history as additional evidence context.</p></article>
-      <article><b>11 · Operations</b><p>Check the running service separately from repository evidence.</p></article>
-    </div>
-  </section>
-
-  <section class="spacez-section">
-    <div class="spacez-section-head">
-      <div class="kicker">REPORTS &amp; INTERPRETATION</div>
-      <h2>A report is an evidence surface, not a black box.</h2>
-      <p>Every claim can be followed to the records that support it, while the interpretation layer keeps its scope visible.</p>
-    </div>
-    <div class="report-preview">
-      <div class="report-preview-main">
-        <div class="evidence-label"><span>EVIDENCE-BACKED REPORT</span><span>DETERMINISTIC</span></div>
-        <div class="report-claim"><div class="report-claim-head"><span>CHURN</span><span>OBSERVED</span></div><p>A change center can be identified from persisted commit history and file-level churn without guessing why the work happened.</p><div class="evidence-ref">commit:&lt;sha&gt; · hotspot:&lt;path&gt;</div></div>
-        <div class="report-claim"><div class="report-claim-head"><span>RUNTIME</span><span>CORRELATION</span></div><p>Runtime windows can be compared with code changes, while causal language stays constrained unless stronger evidence exists.</p><div class="evidence-ref">runtime:&lt;window&gt; · commit:&lt;sha&gt;</div></div>
-        <div class="report-claim"><div class="report-claim-head"><span>DEPLOYMENT</span><span>PROVENANCE</span></div><p>Revision, artifact, build and release identifiers are reconciled from observed records instead of being reconstructed from timestamps.</p><div class="evidence-ref">deployment:&lt;id&gt; · runtime:&lt;id&gt;</div></div>
+        <div class="preview-grid">
+          <div class="preview-nav">
+            <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
+            <div class="preview-nav-group">UNDERSTAND</div>
+            <div class="preview-nav-item active"><span>01</span><strong>Overview</strong></div>
+            <div class="preview-nav-item"><span>02</span><strong>History</strong></div>
+            <div class="preview-nav-item"><span>03</span><strong>Structure</strong></div>
+            <div class="preview-nav-group">VALIDATE</div>
+            <div class="preview-nav-item"><span>04</span><strong>Quality</strong></div>
+            <div class="preview-nav-item"><span>05</span><strong>Runtime</strong></div>
+            <div class="preview-nav-group">OUTPUTS</div>
+            <div class="preview-nav-item"><span>06</span><strong>Report</strong></div>
+            <div class="preview-nav-item"><span>07</span><strong>Interview</strong></div>
+            <div class="preview-nav-item"><span>08</span><strong>Insights</strong></div>
+            <div class="preview-nav-group">EXPLORE</div>
+            <div class="preview-nav-item"><span>09</span><strong>Evidence</strong></div>
+            <div class="preview-nav-item"><span>10</span><strong>Contributors</strong></div>
+            <div class="preview-nav-group">OPERATE</div>
+            <div class="preview-nav-item"><span>11</span><strong>Operations</strong></div>
+          </div>
+          <div class="preview-main">
+            <div class="pa-metric-grid">
+              <div><span>COMMITS</span><b>1,840</b><small>stored Git history</small></div>
+              <div><span>HOTSPOTS</span><b>10</b><small>change centers</small></div>
+              <div><span>COMPLEXITY</span><b>5</b><small>tracked deltas</small></div>
+              <div><span>DEPLOYMENTS</span><b>12</b><small>revision-linked</small></div>
+            </div>
+            <div class="pa-table-preview">
+              <div class="pa-table-head"><span>STORED COMMIT EVIDENCE</span><code>GET /api/repositories/:id/commits</code></div>
+              <div class="pa-table-row pa-table-row-head"><span>SHA</span><span>TYPE</span><span>SUBJECT</span><span>AUTHOR</span><span>+ / −</span><span>WHEN</span></div>
+              <div class="pa-table-row"><b>f4a9c7b2</b><span>feat</span><strong>Idempotent invoice finalization with Redis guard</strong><span>Priya Anand</span><span>+312 / −88</span><span>Sep 29</span></div>
+              <div class="pa-table-row"><b>e7c1d3a9</b><span>fix</span><strong>Webhook retries with bounded backoff</strong><span>Marcus Bélanger</span><span>+64 / −12</span><span>Sep 26</span></div>
+              <div class="pa-table-row"><b>d3b8f2c1</b><span>refactor</span><strong>Collapse invoicing service boundary</strong><span>Sofia Marenco</span><span>+410 / −528</span><span>Sep 24</span></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <aside class="report-preview-side">
-        <div class="evidence-label"><span>WORKFLOW</span><span>06 / 08</span></div>
-        <div class="evidence-mini"><i></i><div><b>Read claims</b><small>Start from the evidence-backed report.</small></div></div>
-        <div class="evidence-mini"><i></i><div><b>Inspect references</b><small>Open the exact supporting record.</small></div></div>
-        <div class="evidence-mini"><i></i><div><b>Ground insights</b><small>Keep uncertainty visible in the output.</small></div></div>
-      </aside>
-    </div>
-  </section>
+    </section>
 
-  <section class="spacez-section">
-    <div class="spacez-section-head">
-      <div class="kicker">SECURITY &amp; BOUNDARY</div>
-      <h2>Built for a developer workflow that treats evidence seriously.</h2>
-      <p>Credentials, sessions, operational health and repository evidence each have their own boundary.</p>
-    </div>
-    <div class="policy-grid">
-      <article class="policy-card"><b>Credentials</b><small>Repository access material stays server-side and encrypted at rest.</small></article>
-      <article class="policy-card"><b>Sessions</b><small>Browser access uses revocable account sessions rather than long-lived bearer tokens.</small></article>
-      <article class="policy-card"><b>Runtime</b><small>Telemetry and deployment ingestion remain separate from the browser access boundary.</small></article>
-      <article class="policy-card"><b>Operations</b><small>Health and readiness describe the running service without rewriting repository evidence.</small></article>
-    </div>
-  </section>
-
-<p class="note landing-boundary">The workflow is intentionally traceable: observe → validate → interpret → inspect. Every output has a next step. Evidence remains the source of truth.</p>
-</section>
-
-<section id="workspace" class="workspace" hidden>
-  <aside class="side">
-    <div class="repo-meta">
-      <div class="repo-topline"><span class="repo-label kicker">CURRENT REPOSITORY</span><span id="repoStatus" class="side-status">—</span></div>
-      <strong id="repoName">—</strong>
-      <span id="repoBranch">—</span>
-      <small class="repo-hint">Evidence is scoped to the selected analysis run.</small>
-    </div>
-    <nav id="nav" class="nav" aria-label="Workspace sections">
-      <div class="nav-group">Understand</div>
-      <button class="active" data-view="overview" title="Current snapshot and what to inspect first"><span>01</span><strong>Overview</strong></button>
-      <button data-view="history" title="Chronological commits and timeline events"><span>02</span><strong>History</strong></button>
-      <button data-view="structure" title="Architecture, dependencies and complexity"><span>03</span><strong>Structure</strong></button>
-      <div class="nav-group">Validate</div>
-      <button data-view="quality" title="Tests, repeated changes, bug areas and refactor signals"><span>04</span><strong>Quality</strong></button>
-      <button data-view="runtime" title="Telemetry, deployments and revision provenance"><span>05</span><strong>Runtime</strong></button>
-      <div class="nav-group">Outputs</div>
-      <button data-view="report" title="Evidence-backed engineering report"><span>06</span><strong>Report</strong></button>
-      <button data-view="interview" title="Evidence-linked interview story scaffolds"><span>07</span><strong>Interview</strong></button>
-      <button data-view="interpretation" title="Current-report engineering insights"><span>08</span><strong>Insights</strong></button>
-      <div class="nav-group">Explore</div>
-      <button data-view="evidence" title="Search and inspect the exact records behind the workspace"><span>09</span><strong>Evidence explorer</strong></button>
-      <button data-view="contributors" title="Contributor history and change distribution"><span>10</span><strong>Contributors</strong></button>
-      <div class="nav-group">Operate</div>
-      <button data-view="operations" title="Live API, database, Redis and queue health"><span>11</span><strong>Operations</strong></button>
-    </nav>
-    <div class="sidefoot">
-      <button id="refresh" class="btn">Refresh analysis</button>
-      <button id="new" class="btn link">← Analyze another repository</button>
-    </div>
-  </aside>
-  <div class="content">
-    <div id="banner" class="banner" role="status" aria-live="polite" hidden>
-      <div class="spinner" aria-hidden="true"></div>
-      <div class="banner-copy"><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div>
-      <div class="analysis-progress" aria-label="Analysis lifecycle">
-        <span class="analysis-stage" data-stage="queued"><b>01</b><span>Queued</span></span>
-        <i aria-hidden="true">→</i>
-        <span class="analysis-stage" data-stage="running"><b>02</b><span>Analyzing</span></span>
-        <i aria-hidden="true">→</i>
-        <span class="analysis-stage" data-stage="snapshot"><b>03</b><span>Snapshot ready</span></span>
-        <i aria-hidden="true">→</i>
-        <span class="analysis-stage" data-stage="workspace"><b>04</b><span>Workspace ready</span></span>
+    <section id="reports" class="pa-section">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">REPORTS &amp; INTERPRETATION</div>
+        <h2>Evidence-backed reports, then grounded AI on top.</h2>
+        <p>A report is generated only from a completed analysis run. Each claim carries evidence references, and the interpretation layer stays bounded to that evidence.</p>
       </div>
-      <span id="bstatus" class="pill warn">queued</span>
+      <div class="pa-report-shell">
+        <article class="pa-card pa-report">
+          <div class="pa-report-head"><div><span>Evidence-backed report</span><code>rpt_8f3a2c1e9b4d7f0a</code></div><button type="button">Export</button></div>
+          <div class="pa-report-flow"><span>Evidence</span><i>→</i><span>Claims</span><i>→</i><span>Interpretation</span></div>
+          <div class="pa-report-list">
+            <div><span class="pa-claim-id">01</span><div><strong>Invoicing is the primary change center</strong><p>142 commits touch the service boundary; the signal is grounded in persisted commit and hotspot evidence.</p><code>commit:&lt;sha&gt; · hotspot:&lt;path&gt;</code></div></div>
+            <div><span class="pa-claim-id">02</span><div><strong>Complexity reduction is observable</strong><p>Before/after AST evidence can distinguish measurable reduction from a subjective cleanup claim.</p><code>complexity:&lt;commit&gt; · commit:&lt;sha&gt;</code></div></div>
+            <div><span class="pa-claim-id">03</span><div><strong>Deployment provenance stays explicit</strong><p>Revision, artifact, build and release records are reconciled from what was actually observed.</p><code>deployment:&lt;id&gt; · runtime:&lt;id&gt;</code></div></div>
+          </div>
+        </article>
+        <aside class="pa-card pa-report-aside">
+          <div class="pa-card-kicker">GROUNDED OUTPUT</div>
+          <h3>Interpretation posture</h3>
+          <div class="pa-status-stack">
+            <div><b>Evidence refs</b><span>Required</span></div>
+            <div><b>Unknown refs</b><span>Rejected</span></div>
+            <div><b>Causality</b><span>Bounded</span></div>
+            <div><b>Ownership</b><span>Never inferred</span></div>
+          </div>
+          <div class="pa-question">Use the report as an inspection surface, not an answer generator.</div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="security" class="pa-section pa-security">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">SECURITY &amp; EVIDENCE POLICY</div>
+        <h2>Engineered to be auditable and safe.</h2>
+        <p>Credentials, sessions, operational health and repository evidence each keep a deliberate boundary.</p>
+      </div>
+      <div class="pa-security-grid">
+        <div class="pa-card"><span>01</span><h3>Credentials encrypted at rest</h3><p>Repository access material remains server-side and never enters browser-visible evidence.</p></div>
+        <div class="pa-card"><span>02</span><h3>Import restricted &amp; allowlisted</h3><p>HTTPS-only imports with supported Git hosts and a separate private-repository boundary.</p></div>
+        <div class="pa-card"><span>03</span><h3>Account sessions, not bearer tokens</h3><p>Opaque HttpOnly sessions with CSRF protection and revocation controls.</p></div>
+        <div class="pa-card"><span>04</span><h3>Health vs. readiness</h3><p>Liveness is separate from dependency readiness, so operational state never rewrites evidence.</p></div>
+      </div>
+    </section>
+
+    <footer class="pa-footer"><span>Project Autopsy</span><span>observe → validate → interpret → inspect</span><span>⌘K command center</span></footer>
+  </section>
+
+  <section id="workspace" class="workspace" hidden>
+    <div class="pa-workspace-live">
+      <div class="pa-live-topbar">
+        <div class="pa-live-repo">
+          <span class="pa-brand-mark">✣</span>
+          <div><strong id="repoName">—</strong><small><span id="repoBranch">—</span> · <span id="repoStatus">—</span></small><span class="repo-hint" hidden>Evidence is scoped to the selected analysis run.</span></div>
+        </div>
+        <div class="pa-live-actions">
+          <button id="refresh" class="btn" type="button">Refresh</button>
+          <button id="new" class="btn link" type="button">Analyze another</button>
+        </div>
+      </div>
+
+      <div id="banner" class="banner" role="status" aria-live="polite" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="banner-copy"><strong id="btitle">Analysis in progress</strong><small id="bsub">Building evidence…</small></div>
+        <div class="analysis-progress" aria-label="Analysis lifecycle">
+          <span class="analysis-stage" data-stage="queued"><b>01</b><span>Queued</span></span><i aria-hidden="true">→</i>
+          <span class="analysis-stage" data-stage="running"><b>02</b><span>Analyzing</span></span><i aria-hidden="true">→</i>
+          <span class="analysis-stage" data-stage="snapshot"><b>03</b><span>Snapshot ready</span></span><i aria-hidden="true">→</i>
+          <span class="analysis-stage" data-stage="workspace"><b>04</b><span>Workspace ready</span></span>
+        </div>
+        <span id="bstatus" class="pill warn">queued</span>
+      </div>
+
+      <nav id="nav" class="pa-live-tabs nav" aria-label="Workspace sections">
+        <div class="nav-group">Understand</div>
+        <button class="active" data-view="overview" title="Current snapshot and what to inspect first"><span>01</span><strong>Overview</strong></button>
+        <button data-view="history"><span>02</span><strong>History</strong></button>
+        <button data-view="structure"><span>03</span><strong>Structure</strong></button>
+        <div class="nav-group">Validate</div>
+        <button data-view="quality"><span>04</span><strong>Quality</strong></button>
+        <button data-view="runtime"><span>05</span><strong>Runtime</strong></button>
+        <div class="nav-group">Outputs</div>
+        <button data-view="report"><span>06</span><strong>Report</strong></button>
+        <button data-view="interview"><span>07</span><strong>Interview</strong></button>
+        <button data-view="interpretation"><span>08</span><strong>Insights</strong></button>
+        <div class="nav-group">Explore</div>
+        <button data-view="evidence"><span>09</span><strong>Evidence</strong></button>
+        <button data-view="contributors"><span>10</span><strong>Contributors</strong></button>
+        <div class="nav-group">Operate</div>
+        <button data-view="operations"><span>11</span><strong>Operations</strong></button>
+      </nav>
+
+      <div class="pa-live-content content"><div id="root" tabindex="-1"></div></div>
     </div>
-    <div id="root" tabindex="-1"></div>
-  </div>
-</section>
+  </section>
 </main>
-
 <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden><div>
   <div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">PRIVATE WORKSPACE</div><h3 id="authTitle">Sign in to Project Autopsy</h3><div id="authSubtitle" class="sub">Use the account that owns your Autopsy repositories.</div></div><button id="authClose" class="btn" aria-label="Close sign in dialog">Close</button></div>
   <form id="authForm" style="display:grid;gap:12px;margin-top:18px">
