@@ -790,7 +790,8 @@ function shell(title,desc,actions){
     var signalMax=Math.max(1,...signalTypes.map(function(k){return counts[k]}));
     var newest=c[0],oldest=c[c.length-1];
     function commitFootprint(x){
-      return '<div class="footprint-row"><span class="mono">'+esc(sha(x.sha))+'</span><strong>'+esc(x.subject||'Repository change')+'</strong><small>'+n(x.files_changed??x.filesChanged??0)+' files · +'+n(x.additions??0)+' / −'+n(x.deletions??0)+'</small></div>';
+      var commitSha=x.sha||x.commit_sha||x.commitSha||'';
+      return '<div class="footprint-row"><span class="mono">'+esc(sha(commitSha))+'</span><div class="footprint-main"><strong>'+esc(x.subject||'Repository change')+'</strong><small>'+n(x.files_changed??x.filesChanged??0)+' files · +'+n(x.additions??0)+' / −'+n(x.deletions??0)+'</small></div>'+inspectButton('Inspect '+sha(commitSha),'Persisted Git commit metadata and numstat evidence.',x)+'</div>';
     }
     function timelineItem(x){
       return '<div class="item"><i></i><strong>'+esc(x.subject||'Timeline event')+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at||x.committedAt))+'</p>'+inspectButton('Inspect timeline '+sha(x.sha),'Descriptive timeline classification attached to persisted commit evidence.',x)+'</div>';
