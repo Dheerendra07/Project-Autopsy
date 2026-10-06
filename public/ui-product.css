@@ -308,3 +308,16 @@ main{margin:0;max-width:none}
 @media(max-width:1000px){.structure-model{grid-template-columns:1fr}}
 @media(max-width:760px){.structure-stat-strip{grid-template-columns:1fr 1fr}.structure-stat{border-bottom:1px solid var(--pa-border)}.structure-stat:nth-child(2n){border-right:0}}
 @media(max-width:520px){.structure-stat-strip{grid-template-columns:1fr}.structure-stat{border-right:0}}
+
+/* Quality surface */
+.quality-stat-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--pa-border);border-bottom:1px solid var(--pa-border);margin-top:16px}
+.quality-stat{padding:12px 13px;border-right:1px solid var(--pa-border)}.quality-stat:last-child{border-right:0}
+.quality-stat span{display:block;color:var(--pa-text-4);font:700 7px var(--pa-mono);letter-spacing:.1em}.quality-stat strong{display:block;margin-top:6px;font-size:19px;letter-spacing:-.035em}.quality-stat small{display:block;margin-top:2px;color:var(--pa-text-4);font-size:7px}
+.quality-intro{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:10px;margin-top:10px}
+.quality-boundary{border-top:1px solid var(--pa-border);margin-top:12px;padding-top:10px;color:var(--pa-text-3);font-size:8px;line-height:1.55}
+.quality-mini-list{display:grid;margin-top:11px;border-top:1px solid var(--pa-border)}.quality-mini-list span{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--pa-border);color:var(--pa-text-3);font-size:8px}.quality-mini-list b{color:var(--pa-text-2);font:700 8px var(--pa-mono)}
+.quality-signal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-left:1px solid var(--pa-border);border-bottom:1px solid var(--pa-border)}
+.quality-signal{padding:14px;border-right:1px solid var(--pa-border);border-top:1px solid var(--pa-border)}.quality-signal .kicker{color:var(--pa-text-4)}.quality-signal strong{display:block;margin-top:5px;font-size:12px}.quality-signal p{margin:4px 0 0;color:var(--pa-text-3);font-size:8px;line-height:1.45}
+@media(max-width:1000px){.quality-intro{grid-template-columns:1fr}.quality-signal-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.quality-stat-strip{grid-template-columns:1fr 1fr}.quality-stat{border-bottom:1px solid var(--pa-border)}.quality-stat:nth-child(2n){border-right:0}.quality-signal-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.quality-stat-strip{grid-template-columns:1fr}.quality-stat{border-right:0}}
