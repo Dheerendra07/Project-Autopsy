@@ -797,6 +797,7 @@ function shell(title,desc,actions){
       return '<div class="item"><i></i><strong>'+esc(x.subject||'Timeline event')+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at||x.committedAt))+'</p>'+inspectButton('Inspect timeline '+sha(x.sha),'Descriptive timeline classification attached to persisted commit evidence.',x)+'</div>';
     }
     return shell('History','Trace the repository chronologically. This page separates the raw commit ledger from descriptive timeline signals so neither is mistaken for developer intent.',actions.join(''))+
+      viewFilterMarkup()+
       '<section class="history-signalbar">'+
         '<div class="history-stat"><span>LOADED COMMITS</span><b>'+n(c.length)+'</b><small>'+(commitPagination.total!=null?n(commitPagination.total)+' persisted':'current page')+'</small></div>'+
         '<div class="history-stat"><span>LOADED EVENTS</span><b>'+n(t.length)+'</b><small>'+(timelinePagination.total!=null?n(timelinePagination.total)+' persisted':'current page')+'</small></div>'+
@@ -829,6 +830,7 @@ function shell(title,desc,actions){
       return Number.isFinite(delta)?(delta>0?'+'+n(delta):n(delta)):'—';
     }
     return shell('Structure','Understand the codebase shape before drawing quality or runtime conclusions. Architecture, dependency, complexity and co-change records stay separately inspectable.')+
+      viewFilterMarkup()+
       '<section class="structure-stat-strip">'+
         structureStat('ARCHITECTURE',n(ar.length),'loaded structural events')+
         structureStat('DEPENDENCIES',n(de.length),'package manifest changes')+
@@ -860,6 +862,7 @@ function shell(title,desc,actions){
     var testDelta=Number(ts.testCaseDelta||0),migrationOps=m.reduce(function(sum,x){return sum+Number(x.operationCount||0)},0),signalTotal=b.length+rep.length+rf.length;
     function stat(label,value,detail){return '<div class="quality-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>'}
     return shell('Quality','Validate the historical signals that deserve investigation. Quality evidence is intentionally presented without collapsing different evidence families into a misleading health score.')+
+      viewFilterMarkup()+
       '<section class="quality-stat-strip">'+stat('BUG / FIX SIGNALS',n(b.length),'subject-based historical signals')+stat('REPEATED FILES',n(rep.length),'files with repeated change')+stat('REFACTOR SIGNALS',n(rf.length),'commit-subject heuristics')+stat('TEST / MIGRATION',n(t.length+m.length),n(t.length)+' test events · '+n(m.length)+' migration events')+'</section>'+
       '<section class="quality-intro section">'+
         '<div class="card"><div class="panel-head"><div><div class="kicker">READING THE SIGNALS</div><h3>Change pressure is not a quality score</h3><div class="sub">Repeated edits, bug/fix subjects and refactor labels point to places worth opening. They do not prove defects, ownership or poor engineering.</div></div><span class="tag">investigate, do not rank</span></div>'+
@@ -986,6 +989,7 @@ function shell(title,desc,actions){
     var max=Math.max(1,...pulse.map(function(x){return Number(x.commitCount||0)}));
     var pulseHtml=pulse.map(function(x){var count=Number(x.commitCount||0);return '<div class="contrib-pulse-row"><div class="contrib-pulse-head"><b>'+esc(x.authorName||'Unknown author')+'</b><span>'+n(count)+' commits</span></div><div class="contrib-track"><span style="width:'+Math.max(4,count/max*100).toFixed(1)+'%"></span></div><div class="contrib-pulse-meta">'+n(x.pathsTouched||0)+' paths · last '+esc(date(x.lastCommittedAt))+'</div></div>'}).join('');
     return shell('Contributors','Understand who appears in the Git history without turning commit counts into assumptions about ownership, effort, seniority or impact.')+
+      viewFilterMarkup()+
       '<section class="contributor-topology"><div class="contributor-stat"><span>AUTHOR TUPLES</span><strong>'+n(total)+'</strong><small>persisted Git author identities</small></div><div class="contributor-stat"><span>DISPLAYED</span><strong>'+n(shown.length)+'</strong><small>bounded result set</small></div><div class="contributor-stat"><span>IDENTITY RULE</span><strong>Literal</strong><small>name/email tuples are not merged by inference</small></div></section>'+
       '<section class="contributor-overview section"><div class="card"><div class="panel-head"><div><div class="kicker">ACTIVITY PULSE</div><h3>Most active author tuples in this snapshot</h3><div class="sub">Commit count is a descriptive Git-history measure. It is not a measure of individual effort or code quality.</div></div><span class="tag">top '+n(pulse.length)+'</span></div><div class="contrib-pulse">'+(pulseHtml||'<div class="empty"><strong>No contributor activity loaded.</strong> Refresh Contributors to retry the source.</div>')+'</div></div>'+
       '<div class="card"><div class="kicker">ATTRIBUTION BOUNDARY</div><h3 style="margin-top:5px">What Autopsy does not infer</h3><div class="sub">The product keeps authorship literal to avoid manufacturing identity or ownership claims.</div><div class="contrib-boundary"><div><span>Measured</span><b>Git author name + email tuple</b></div><div><span>Not measured</span><b>Ownership of a feature</b></div><div><span>Not measured</span><b>Individual effort or seniority</b></div><div><span>Not measured</span><b>Business or runtime impact</b></div></div></div></section>'+
