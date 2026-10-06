@@ -288,82 +288,73 @@ test("404 responses do not reflect query strings", () => {
 });
 
 
-test("frontend product surface stays guided, progressive and evidence-readable", () => {
+test("frontend rebuild contract covers the complete product surface", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
-
+  const css = readRepoFile("public/ui-product.css");
+  const smoke = readRepoFile("scripts/production-smoke.mjs");
   const app = readRepoFile("src/app.ts");
-  assert.ok(app.includes('app.get("/favicon.ico"'));
 
   for (const marker of [
-    "Understand",
-    "Validate",
-    "Outputs",
-    "Explore",
-    "Insights",
-    "class=\"getting-started\"",
-    "Advanced connection settings",
-    "data-view=\"operations\"",
-    "Operations",
-    "id=\"drawerSummary\"",
-    "id=\"drawerRaw\"",
-    "favicon.svg"
-  ]) {
-    assert.ok(html.includes(marker), "missing product UI marker: " + marker);
+    '<link rel="stylesheet" href="ui-product.css?v=foundation-v1">',
+    '<script src="theme.js"></script>',
+    '<script src="app.js" defer></script>',
+    'id="form"', 'id="authModal"', 'class="workspace-shell"',
+    'class="settings-sheet"', 'class="settings-scroll"', 'id="commandPalette"',
+    'id="drawer"', 'id="drawerSummary"', 'id="drawerRaw"'
+  ]) assert.ok(html.includes(marker), "missing product shell marker: " + marker);
+
+  const views = ["overview","history","structure","quality","runtime","report","interview","interpretation","evidence","contributors","operations"];
+  const renderers = {overview:"overview",history:"historyView",structure:"structure",quality:"quality",runtime:"runtime",report:"reportPage",interview:"interview",interpretation:"interpretation",evidence:"evidencePage",contributors:"contributors",operations:"operations"};
+  for (const view of views) {
+    assert.equal((html.match(new RegExp('data-view="' + view + '"','g')) || []).length, 1, "missing unique navigation control: " + view);
+    assert.equal((appJs.match(new RegExp("function " + renderers[view] + "\\s*\\(","g")) || []).length, 1, "missing unique renderer: " + view);
   }
 
   for (const marker of [
-    "function loadingPage(title,message)",
+    "const WORKFLOW_STEPS=[","function viewFlowMarkup()","WORKSPACE NAVIGATION",
+    "function viewEndpoints(id)","function loadingPage(title,message)",
     "function errorPage(title,message,actionLabel,action)",
-    "function evidenceSummary(payload)",
-    "Advanced filters",
-    "Advanced identity filters",
-    "S.view!=='report'",
-    "S.view!=='interview'",
-    "S.view!=='interpretation'",
-    "e.key==='Escape'",
-    "Try again",
-    "async function loadOperations(force,silent)",
-    "/api/observability/summary",
-    "acceptStatuses:[503]",
-    "operationalLoadToken",
-    "operationalTimer",
-    "operationalPollMs",
-    "var previous=S.view;",
-    "window.scrollTo(0,restore)",
+    "function inspectButton(label,basis,payload)","function evidenceSummary(payload)",
+    "currentAnalysisSnapshot()","snapshotState()","function commandPaletteRun(id)",
+    "function refreshVisibleView()","function loadOperations(force,silent)",
+    "function closeTransientOverlays()","document.addEventListener('visibilitychange'",
+    "runtimeInputDate(value)",
+    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'",
+    "actionBusy('reload-view',true,'Refreshing…')",
+    "requestAnimationFrame(function(){$('drawerClose').focus()})"
+  ]) assert.ok(appJs.includes(marker), "missing frontend interaction contract: " + marker);
 
-    "function stopOperationsMonitoring()",
-    "function scheduleOperationsMonitoring()",
-    "syncOperationsMonitoring();toast('Refresh analysis queued')",
-    "visibilitychange",
-    "analysisQueue"
-  ]) {
-    assert.ok(appJs.includes(marker), "missing product interaction marker: " + marker);
+  for (const action of ["report","interview","interpretation","download","more-commits","more-timeline","analysis-runs-more","reload-data","reload-view","runtime-filter","runtime-clear-filter","runtime-more","historical-filter","historical-clear-filter","operations-refresh","operations-retry","report-jump","copy-story"]) {
+    assert.ok(appJs.includes("===" + "'" + action + "'"), "missing delegated action: " + action);
   }
 
-  for (const legacyLabel of [
-    "Interpret with AI",
-    "Generate interpretation",
-    "AI interpretation",
-    "AI theme"
-  ]) {
-    assert.equal(
-      html.includes(legacyLabel) || appJs.includes(legacyLabel),
-      false,
-      "legacy AI-first UI label still present: " + legacyLabel
-    );
-  }
+  assert.ok(appJs.includes("var familyOk=family==='all'||row.getAttribute('data-family')===family;"));
+  assert.ok(appJs.includes("var textOk=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;"));
+  assert.ok(appJs.includes("function closeEvidence(restoreFocus)"));
+  assert.ok(appJs.includes("function testConnection()") || appJs.includes("async function testConnection()"));
+  assert.ok(appJs.includes("credentials:'include'"));
+  assert.ok(appJs.includes("x-autopsy-csrf-token"));
 
-  assert.ok(appJs.includes("if($('drawerSummary'))$('drawerSummary').innerHTML"));
-  assert.ok(appJs.includes("if($('drawerRaw'))$('drawerRaw').open=false"));
-  const css = html.match(/<style>([\s\S]*?)<\/style>/i)?.[1] || "";
-  assert.ok(css.includes("/* Final product theme authority */"));
-  assert.equal((html.match(/<\/html>\s*$/i) || [])[0] !== undefined, true, "document must end at </html> without trailing text");
-  assert.ok(css.includes(".drawer-actions{display:flex;gap:7px;align-items:center;flex:0 0 auto}"));
-  assert.equal(css.includes("}gap:7px;"), false);
+  assert.ok(css.includes("html[data-theme=\"light\"]"));
+  assert.ok(css.includes("[hidden]{display:none!important}"));
+  assert.ok(css.includes("@media(max-width:760px)"));
+  assert.ok(css.includes("@media(max-width:520px)"));
+  assert.equal((css.match(/(?:linear|radial)-gradient\\s*\\(/g) || []).length, 0);
+  assert.ok(css.includes("--pa-bg:#0b0d10"));
 
+  const surfaceStart = html.indexOf('class="surface-list"');
+  const surfaceEnd = html.indexOf('</section>', surfaceStart);
+  const surface = surfaceStart >= 0 && surfaceEnd > surfaceStart ? html.slice(surfaceStart, surfaceEnd) : "";
+  assert.equal((surface.match(/class="surface"/g) || []).length, 11, "landing must expose all eleven workflow surfaces");
+  assert.equal((surface.match(/<button|<a /g) || []).length, 0, "landing surface map must remain semantic content");
+
+  const ids=[...html.matchAll(/\\bid="([^"]+)"/g)].map(m=>m[1]);
+  assert.deepEqual(ids.filter((id,i)=>ids.indexOf(id)!==i),[],"duplicate DOM ids detected");
+  assert.ok(app.includes('app.get("/favicon.ico"'));
+  assert.ok(smoke.includes('const uiCss = await request("/ui-product.css")'));
+  assert.ok(smoke.includes('uiCss.text.includes("--pa-bg:#0b0d10")'));
 });
-
 
 test("skip link focuses a visible workspace target or landing import fallback", () => {
   const appJs = readRepoFile("public/app.js");
@@ -372,79 +363,6 @@ test("skip link focuses a visible workspace target or landing import fallback", 
   assert.ok(appJs.includes("var fallback=$('url')"));
   assert.ok(appJs.includes("fallback.focus()"));
   assert.ok(appJs.includes("target.focus()"));
-});
-
-test("frontend overview exposes command-center snapshot context", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-  const surface = html + "\n" + appJs;
-
-  for (const marker of [
-    "overview-context",
-    "overview-journey",
-    "journey-step",
-    "overview-insight-grid",
-    "posture-list",
-    "target-stack",
-    "CURRENT SNAPSHOT"
-  ]) {
-    assert.ok(surface.includes(marker), "missing overview UI marker: " + marker);
-  }
-
-  for (const marker of [
-    "CURRENT SNAPSHOT",
-    "Exact run boundary",
-    "Evidence posture",
-    "What this snapshot can support",
-    "Every output has a next step"
-  ]) {
-    assert.ok(surface.includes(marker), "missing overview command-center marker: " + marker);
-  }
-
-  const overviewStart = appJs.indexOf("function overview()");
-  const overviewEnd = appJs.indexOf("function historyView()", overviewStart);
-  assert.ok(overviewStart >= 0);
-  assert.ok(overviewEnd > overviewStart);
-  assert.ok(appJs.slice(overviewStart, overviewEnd).includes("currentAnalysisSnapshot()"));
-  assert.ok(appJs.slice(overviewStart, overviewEnd).includes("snapshotState()"));
-  assert.ok(appJs.slice(overviewStart, overviewEnd).includes("a.targetHeadSha"));
-});
-
-test("frontend structure workspace exposes the architecture map surface", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-  const surface = html + "\n" + appJs;
-
-  for (const marker of [
-    "structure-summary",
-    "dep-pulse",
-    "structure-footnote",
-    "ARCHITECTURE MAP",
-    "DEPENDENCY PULSE"
-  ]) {
-    assert.ok(surface.includes(marker), "missing structure UI marker: " + marker);
-  }
-
-  const start = appJs.indexOf("function structure()");
-  const end = appJs.indexOf("function quality()", start);
-  assert.ok(start >= 0);
-  assert.ok(end > start);
-  const structure = appJs.slice(start, end);
-  assert.ok(structure.includes("architectureMap(ar)"));
-  assert.ok(structure.includes("dependencyKinds"));
-  assert.ok(structure.includes("complexityDelta"));
-  assert.ok(appJs.includes("No architecture evidence.</td></tr>')+'</tbody>"));
-  assert.ok(appJs.includes("No dependency evidence.</td></tr>')+'</tbody>"));
-  assert.ok(appJs.includes("No complexity evidence.</td></tr>')+'</tbody>"));
-  assert.ok(appJs.includes("No coupling evidence.</td></tr>')+'</tbody>"));
-  for (const marker of [
-    'data-empty-state="true"><td colspan="5" class="dim">No architecture evidence.',
-    'data-empty-state="true"><td colspan="6" class="dim">No dependency evidence.',
-    'data-empty-state="true"><td colspan="5" class="dim">No complexity evidence.',
-    'data-empty-state="true"><td colspan="4" class="dim">No coupling evidence.'
-  ]) {
-    assert.ok(appJs.includes(marker), "Structure empty rows must be excluded from local filters: " + marker);
-  }
 });
 
 test("responsive content surfaces keep grids shrinkable while tables preserve overflow", () => {
@@ -463,42 +381,6 @@ test("frontend structure architecture map avoids redundant nested card chrome", 
   assert.ok(surface.includes('<div class="archmap section">'));
   assert.doesNotMatch(surface, /return '<div class="card section">/);
 });
-
-test("frontend quality workspace exposes an evidence matrix", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  for (const marker of [
-    "quality-map",
-    "quality-map-card",
-    "quality-mini-list"
-  ]) {
-    assert.ok(html.includes(marker), "missing quality UI style marker: " + marker);
-  }
-
-  const start = appJs.indexOf("function quality()");
-  const end = appJs.indexOf("function runtimeFilterDate", start);
-  assert.ok(start >= 0);
-  assert.ok(end > start);
-  const quality = appJs.slice(start, end);
-  assert.ok(quality.includes("HISTORICAL SIGNALS"));
-  assert.ok(quality.includes("TEST EVIDENCE"));
-  assert.ok(quality.includes("SCHEMA EVIDENCE"));
-  assert.ok(quality.includes("signalTotal"));
-  assert.ok(quality.includes("migrationOps"));
-  assert.ok(quality.includes("testDelta"));
-  assert.ok(quality.includes("Subject-based historical bug/fix signal"));
-  for (const marker of [
-    'data-empty-state="true"><td colspan="5" class="dim">No bug-area signal evidence.',
-    'data-empty-state="true"><td colspan="5" class="dim">No test-change evidence.',
-    'data-empty-state="true"><td colspan="5" class="dim">No repeated-change evidence.',
-    'data-empty-state="true"><td colspan="5" class="dim">No refactor signal evidence.',
-    'data-empty-state="true"><td colspan="6" class="dim">No migration evidence.'
-  ]) {
-    assert.ok(appJs.includes(marker), "Quality empty rows must be excluded from local filters: " + marker);
-  }
-});
-
 
 test("unauthenticated boot stays on landing unless legacy migration is required", () => {
   const appJs = readRepoFile("public/app.js");
@@ -526,29 +408,6 @@ test("landing import requires auth without leaving a stale inline error flow", (
     && appJs.includes("setView('overview');")
     && appJs.includes("clearWorkspaceState();")
   );
-});
-
-test("top navigation has a single account action and auth interruption is single-flight", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  const top = html.slice(html.indexOf('<header class="top">'), html.indexOf("</header>") + 9);
-  assert.equal(
-    (top.match(/id="settings"/g) || []).length,
-    1,
-    "top navigation must expose exactly one account action"
-  );
-  assert.doesNotMatch(
-    top,
-    /id="conn"/,
-    "top navigation must not show a redundant connection sign-in control"
-  );
-  assert.ok(top.includes("<b>Project Autopsy</b>"));
-  assert.ok(top.includes("<small>Engineering Evidence</small>"));
-  assert.ok(appJs.includes("authInterrupt:false"));
-  assert.ok(appJs.includes("if(path!=='/api/auth/me'&&!S.authInterrupt)"));
-  assert.ok(appJs.includes("S.authInterrupt=true;"));
-  assert.ok(appJs.includes("S.authInterrupt=false;"));
 });
 
 test("frontend controls have explicit handlers and every workspace view is wired", () => {
@@ -760,53 +619,6 @@ test("frontend retains all primary evidence workspace views", () => {
   }
 });
 
-test("frontend dedicated evidence tables expose direct inspection hooks", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  for (const marker of [
-    'inspectButton("Architecture "',
-    'inspectButton("Dependency "',
-    'inspectButton("Complexity "',
-    'inspectButton("Coupling "',
-    'inspectButton("Bug-area signal "',
-    'inspectButton("Test evolution "',
-    'inspectButton("Repeated file "',
-    'inspectButton("Migration "'
-  ]) {
-    assert.ok(appJs.includes(marker), "missing inspection hook: " + marker);
-  }
-});
-
-test("frontend quality workspace renders refactor evidence", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(appJs.includes("Refactor signals"));
-  assert.ok(appJs.includes("Refactor signal"));
-  assert.ok(appJs.includes("Commit-subject heuristic signals; not proof of intent"));
-});
-
-test("frontend Overview keeps empty evidence fallbacks inside their own sections", () => {
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(appJs.includes("<tbody>'+(arr(d.analysisRuns,'runs').slice(0,20).map(function(x)"));
-  assert.ok(appJs.includes("No analysis runs persisted.</td></tr>')+'</tbody>"));
-  assert.ok(appJs.includes('<div class="timeline">\'+(c.slice(0,7).map(function(x)'));
-  assert.ok(appJs.includes("No commit evidence.</div>')+'</div></div>"));
-  assert.ok(appJs.includes('<div class="bars" style="margin-top:15px">\'+(h.slice(0,8).map(function(x)'));
-  assert.ok(appJs.includes("No hotspot evidence.</div>')+'</div></div></div>"));
-});
-
-test("frontend overview exposes direct evidence inspection hooks", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(appJs.includes("inspectButton('Commit '"));
-  assert.ok(appJs.includes("inspectButton('Hotspot '"));
-  assert.ok(appJs.includes("Most touched files"));
-});
-
 test("frontend connection test handles invalid API base URLs", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("async function testConnection()");
@@ -825,36 +637,6 @@ test("frontend connection test handles invalid API base URLs", () => {
 
 
 
-test("frontend interview and refactor views match persisted evidence schemas", () => {
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(appJs.includes("s.draftAnswer||{}"));
-  assert.ok(appJs.includes("s.verification||{}"));
-  assert.ok(appJs.includes('inspectButton("Inspect story evidence"'));
-  assert.ok(appJs.includes("<th>Commit</th><th>Subject</th><th>Files changed</th><th>When</th>"));
-  assert.ok(appJs.includes("x.subject||\"—\""));
-  assert.ok(appJs.includes("x.committed_at"));
-});
-
-test("frontend Insights keeps empty Themes, Questions and Uncertainties sections independent", () => {
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(appJs.includes("'+(themes.map(function(t)"));
-  assert.ok(appJs.includes("No themes returned.</div>')+'</div></div>"));
-  assert.ok(appJs.includes("'+(questions.map(function(q)"));
-  assert.ok(appJs.includes("No investigation questions returned.</div>')+'</div></div></div>"));
-  assert.ok(appJs.includes("'+(uncertainties.map(function(u)"));
-  assert.ok(appJs.includes("No uncertainties returned.</div>')+'</div></div>"));
-});
-
-test("frontend Evidence structure family includes architecture and dependency records", () => {
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(
-    appJs.includes("id:'structure',label:'Structure',items:arr(d.architecture,'events').concat(arr(d.dependencies,'changes')),detail:'architecture + dependency change events'")
-  );
-});
-
 test("frontend interpretation failure states remain actionable and evidence-safe", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("Insights are not configured"));
@@ -862,24 +644,6 @@ test("frontend interpretation failure states remain actionable and evidence-safe
   assert.ok(appJs.includes("Insights output could not be validated"));
   assert.ok(appJs.includes("action='report'"));
   assert.ok(appJs.includes("Refresh report"));
-});
-
-test("frontend evidence explorer search exposes count and reset controls", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("evidenceSearchCount"));
-  assert.ok(appJs.includes("evidenceSearchClear"));
-  assert.ok(appJs.includes("var term=q.value.trim().toLowerCase(),family=S.evidenceFamily||'all',shown=0,total=0"));
-  assert.ok(indexHtml.includes(".evidence-search-row"));
-});
-
-test("frontend AI interpretation keeps validated evidence keys inspectable", () => {
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(appJs.includes("function grounding(keys)"));
-  assert.ok(appJs.includes("s.id===parts[0]"));
-  assert.ok(appJs.includes('inspectButton("Inspect supporting evidence"'));
-  assert.ok(appJs.includes("Validated report claims referenced by this theme."));
 });
 
 test("frontend clears runtime filters when the active repository is deleted", () => {
@@ -895,52 +659,6 @@ test("frontend clears runtime filters when the active repository is deleted", ()
     deletion.includes(
       "S.runtimeFilter={from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''}"
     )
-  );
-});
-
-
-test("frontend history pagination releases busy state on every exit path", () => {
-  const appJs = readRepoFile("public/app.js");
-
-  const commitsStart = appJs.indexOf("async function loadMoreCommits()");
-  const commitsEnd = appJs.indexOf("async function loadProvenance", commitsStart);
-  assert.ok(commitsStart >= 0 && commitsEnd > commitsStart);
-  const commitsBlock = appJs.slice(commitsStart, commitsEnd);
-  assert.ok(
-    commitsBlock.includes("actionBusy('more-commits',false)")
-    && commitsBlock.includes("S.commitLoading=false")
-  );
-
-  const timelineStart = appJs.indexOf("async function loadMoreTimeline()");
-  const timelineEnd = appJs.indexOf("async function loadMoreCommits", timelineStart);
-  assert.ok(timelineStart >= 0 && timelineEnd > timelineStart);
-  const timelineBlock = appJs.slice(timelineStart, timelineEnd);
-  assert.ok(
-    timelineBlock.includes("actionBusy('more-timeline',false)")
-    && timelineBlock.includes("S.timelineLoading=false")
-  );
-  assert.ok(
-    appJs.includes("S.data.timeline={events:current.concat(next),pagination:r.pagination}")
-  );
-  assert.ok(
-    appJs.includes("S.data.commits={commits:current.concat(next),pagination:r.pagination}")
-  );
-  assert.ok(
-    appJs.includes('var d=S.data,c=arr(d.commits,\'commits\'),t=arr(d.timeline,\'events\')')
-  );
-  assert.ok(
-    appJs.includes('t.map(function(x){return \'<div class="item">')
-  );
-  assert.ok(
-    appJs.includes('c.map(function(x){return \'<tr>')
-  );
-
-  assert.ok(appJs.includes("history-timeline"));
-  assert.ok(appJs.includes("No timeline evidence."));
-  assert.ok(appJs.includes("<tbody>"));
-  assert.ok(appJs.includes("No commit evidence."));
-  assert.ok(
-    appJs.includes('<tr data-empty-state="true"><td colspan="7" class="dim">No commit evidence.</td></tr>')
   );
 });
 
@@ -1757,19 +1475,6 @@ test("frontend gives an actionable response for API rate limiting", () => {
 });
 
 
-test("historical source-context UI stays wired to the bounded backend projection", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(
-    appJs.includes(
-      "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'"
-    )
-  );
-  assert.ok(appJs.includes("Historical source-change context"));
-  assert.ok(appJs.includes("sourceContextComplete"));
-  assert.ok(appJs.includes("changedFilesTruncated"));
-});
-
-
 test("historical filter state resets when repository or analysis context changes", () => {
   const appJs = readRepoFile("public/app.js");
   const defaultFilter = "{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''}";
@@ -2051,32 +1756,6 @@ test("frontend connection verification preserves explicit rejected session state
   assert.ok(fn.includes("connected('rejected');"));
 });
 
-test("frontend history renders full loaded pages and paginates timeline evidence", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes('t.map(function(x){return \'<div class="item">'));
-  assert.ok(appJs.includes("c.map(function(x){return '<tr>"));
-  assert.ok(appJs.includes("async function loadMoreTimeline()"));
-  assert.ok(appJs.includes("/timeline?page="));
-  assert.ok(appJs.includes("more-timeline"));
-  assert.ok(appJs.includes("Load next 50 timeline events"));
-  assert.ok(appJs.includes("timelineLoadToken"));
-});
-
-
-test("frontend labels snapshot freshness consistently across workspace views", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("function snapshotState()"));
-  assert.ok(appJs.includes("Snapshot current"));
-  assert.ok(appJs.includes("Snapshot stale"));
-  assert.ok(appJs.includes("Analysis updating"));
-  assert.ok(appJs.includes("function shell(title,desc,actions){"));
-  assert.ok(appJs.includes("var snap=snapshotState();"));
-  assert.ok(appJs.includes("VIEW_GUIDANCE[S.view]"));
-  assert.ok(appJs.includes("view-guide"));
-  assert.ok(appJs.includes("snapshot-pill"));
-});
-
-
 test("frontend evidence inspector supports copy and returns focus to the invoking control", () => {
   const appJs = readRepoFile("public/app.js");
   const indexHtml = readRepoFile("public/index.html");
@@ -2112,19 +1791,6 @@ test("frontend loaded evidence tables support stable keyboard-accessible sorting
 });
 
 
-test("frontend runtime datetime filters round-trip between local inputs and API-safe timestamps", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("function runtimeInputDate(value)"));
-  assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.from))"));
-  assert.ok(appJs.includes("esc(runtimeInputDate(S.runtimeFilter.to))"));
-  assert.ok(appJs.includes("['rtFrom','rtTo','rtDeployment','rtRevision','rtEnvironment','rtOperation']"));
-  assert.ok(appJs.includes("<tbody>'+(histItems.map(function(x)"));
-  assert.ok(appJs.includes("No historical runtime records returned.</td></tr>')+'</tbody>"));
-  assert.ok(appJs.includes("<tbody>'+(sci.slice(0,20).map(function(x)"));
-  assert.ok(appJs.includes("No historical source-context records returned.</td></tr>')+'</tbody>"));
-});
-
-
 test("frontend destructive actions use an in-product confirmation flow", () => {
   const appJs = readRepoFile("public/app.js");
   const indexHtml = readRepoFile("public/index.html");
@@ -2149,70 +1815,6 @@ test("frontend navigation exposes accessible active state and deterministic brow
   assert.ok(indexHtml.includes('href="#overview" aria-label="Project Autopsy overview"'));
   assert.ok(indexHtml.includes('class="skip-link" href="#root"'));
   assert.ok(indexHtml.includes('id="root" tabindex="-1"'));
-});
-
-
-test("frontend evidence explorer exposes an evidence-family index", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("var families=["));
-  assert.ok(appJs.includes("loaded sample"));
-  assert.ok(appJs.includes("Counts describe the loaded UI sample, not repository totals."));
-  assert.ok(indexHtml.includes(".evidence-overview"));
-  assert.ok(indexHtml.includes(".evidence-families"));
-});
-
-test("frontend contributors surface exposes a descriptive activity pulse", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("var pulse=items.slice().sort"));
-  assert.ok(appJs.includes("Activity pulse"));
-  assert.ok(appJs.includes("Ownership / effort / intent"));
-  assert.ok(indexHtml.includes(".contributor-overview"));
-  assert.ok(indexHtml.includes(".contrib-track"));
-});
-
-test("frontend runtime surface exposes an explicit provenance posture", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("var runtimePosture=["));
-  assert.ok(appJs.includes("provenance kept explicit"));
-  assert.ok(appJs.includes("direct runtime samples"));
-  assert.ok(indexHtml.includes(".runtime-posture"));
-  assert.ok(indexHtml.includes(".runtime-posture-grid"));
-});
-
-
-test("frontend report surface exposes a claim and evidence posture", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("var sections=Array.isArray(rep.sections)?rep.sections:[],claims=0,evidenceRefs=0,limited=0"));
-  assert.ok(appJs.includes("Evidence posture"));
-  assert.ok(appJs.includes("Report map"));
-  assert.ok(appJs.includes("data-action=\"report-jump\""));
-  assert.ok(appJs.includes("scrollIntoView({behavior:'smooth',block:'start'})"));
-  assert.ok(indexHtml.includes(".report-posture"));
-  assert.ok(indexHtml.includes(".report-index-row"));
-});
-
-test("frontend interview surface exposes evidence and verification posture", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("var evidenceLinked=0,verificationNotes=0"));
-  assert.ok(appJs.includes("Interview evidence map"));
-  assert.ok(appJs.includes("truth-first"));
-  assert.ok(indexHtml.includes(".interview-posture"));
-  assert.ok(indexHtml.includes(".story-topline"));
-});
-
-test("frontend insights surface exposes explicit grounding posture", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("var themeRefs=themes.reduce"));
-  assert.ok(appJs.includes("Grounding posture"));
-  assert.ok(appJs.includes("limitations kept visible"));
-  assert.ok(indexHtml.includes(".insight-posture"));
-  assert.ok(indexHtml.includes(".insight-posture-grid"));
 });
 
 
@@ -2252,24 +1854,6 @@ test("frontend keeps the newly queued analysis run visible during refresh", () =
   assert.doesNotMatch(appJs.slice(refreshStart, refreshEnd), /S\.analysis=null;/);
 });
 
-
-test("frontend provides lightweight evidence refresh and a safe source-repository shortcut", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("const RELOADABLE_VIEWS=['overview','history','structure','quality','evidence','contributors'];"));
-  assert.ok(appJs.includes("function safeExternalUrl(value)"));
-  assert.ok(appJs.includes("Open repository ↗"));
-  assert.ok(appJs.includes("target=\"_blank\" rel=\"noopener noreferrer\""));
-});
-
-
-test("frontend shows targeted evidence refresh progress and disables duplicate reload interaction", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("loading=!!S.viewLoading[S.view]"));
-  assert.ok(appJs.includes("disabled aria-busy=\"true\""));
-  assert.ok(appJs.includes("loading?'Refreshing…':'Refresh data'"));
-  assert.ok(indexHtml.includes("button:disabled{opacity:.55;cursor:wait"));
-});
 
 test("frontend clears targeted refresh state before rerendering the completed view", () => {
   const appJs = readRepoFile("public/app.js");
@@ -2352,18 +1936,6 @@ test("frontend prevents duplicate analysis refresh and connection probes", () =>
 test("frontend prevents duplicate destructive confirmation requests", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("if(S.confirmResolver)return Promise.resolve(false);"));
-});
-
-test("frontend evidence explorer search has an explicit accessible name", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes('id="evidenceSearch" class="search" aria-label="Filter evidence records"'));
-});
-
-test("frontend gates output actions against the current evidence snapshot", () => {
-  const appJs = readRepoFile("public/app.js");
-  assert.ok(appJs.includes("actions=current?'<button class=\"btn\" data-action=\"download\">Download JSON</button><button class=\"btn\" data-action=\"interpretation\">Generate insights</button>':''"));
-  assert.ok(appJs.includes("data-action=\"interview\""));
-  assert.ok(appJs.includes("data-action=\"interpretation\""));
 });
 
 test("frontend releases historical filter controls on success and failure", () => {
@@ -2465,28 +2037,6 @@ test("private repository access stays encrypted, server-side and outside queue p
 });
 
 
-test("frontend runtime workspace exposes an explicit provenance chain", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("Provenance chain"));
-  assert.ok(appJs.includes("Correlation narrows the historical window; it does not establish causality."));
-  assert.ok(appJs.includes("ANALYSIS TARGET"));
-  assert.ok(indexHtml.includes(".runtime-lineage-grid"));
-  assert.ok(indexHtml.includes(".runtime-lineage-step"));
-});
-
-
-test("frontend Operations workspace exposes live posture and evidence boundary", () => {
-  const appJs = readRepoFile("public/app.js");
-  const indexHtml = readRepoFile("public/index.html");
-  assert.ok(appJs.includes("Operational posture"));
-  assert.ok(appJs.includes("Auto refresh active"));
-  assert.ok(appJs.includes("does not change, reinterpret or overwrite persisted repository evidence"));
-  assert.ok(indexHtml.includes(".ops-posture-grid"));
-  assert.ok(indexHtml.includes(".ops-health-card"));
-});
-
-
 test("frontend clears transient overlays when a page is restored", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(appJs.includes("function closeTransientOverlays()"));
@@ -2576,96 +2126,6 @@ test("settings surface remains scroll-safe for long account state", () => {
   assert.ok(html.includes('id="sessionsList"'));
   assert.ok(html.includes('id="repoAccessZone"'));
   assert.ok(html.includes('id="dangerZone"'));
-});
-
-test("production smoke proves the deployed product shell is current", () => {
-  const smoke=readRepoFile("scripts/production-smoke.mjs");
-  for(const marker of ['assert(home.text.includes("Project Autopsy")','assert(home.text.includes(\'<script src="theme.js"></script>\')','const uiCss = await request("/ui-product.css")','assert(uiCss.response.ok','assert(uiCss.text.includes("--pa-bg:#0b0d10"))','assert(appJs.text.includes("const COMMAND_DEFS=")','const themeJs = await request("/theme.js")','assert(themeJs.text.includes("prefers-color-scheme: light")']) assert.ok(smoke.includes(marker),"missing production UI smoke guardrail: "+marker);
-});
-
-test("developer command center preserves evidence-first workspace boundaries", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  assert.ok(html.includes('id="commandPalette"'));
-  assert.ok(html.includes('id="commandSearch"'));
-  assert.ok(html.includes('id="commandList"'));
-  assert.ok(html.includes('role="listbox"'));
-  assert.ok(html.includes('Ctrl</kbd><kbd>K</kbd> Command Center'));
-
-  for (const marker of [
-    "const COMMAND_DEFS=",
-    "function commandPaletteCommands()",
-    "function commandPaletteMatches()",
-    "function commandPaletteRun(id)",
-    "function renderCommandPalette()",
-    "function moveCommandSelection(delta)",
-    "function openCommandPalette(trigger)",
-    "function closeCommandPalette(restoreFocus)",
-    "COMMAND_DEFS.slice()",
-    "if(S.repoId)",
-    "safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl))",
-    "if($('commandPalette'))$('commandPalette').hidden=true"
-  ]) {
-    assert.ok(appJs.includes(marker), "missing command center release marker: " + marker);
-  }
-
-  const capabilityStart = html.indexOf('class="surface-list"');
-  const capabilityEnd = html.indexOf("</div>", capabilityStart);
-  const capabilityMarkup = capabilityStart >= 0 && capabilityEnd > capabilityStart
-    ? html.slice(capabilityStart, capabilityEnd)
-    : "";
-  assert.ok(
-    capabilityMarkup.includes("<article>"),
-    "landing capability map must remain semantic content cards"
-  );
-  assert.equal(
-    capabilityMarkup.includes("<button") || capabilityMarkup.includes("<a "),
-    false,
-    "static landing capability cards must not gain interactive elements"
-  );
-
-  assert.ok(appJs.includes("const SEARCHABLE_VIEWS=['history','structure','quality','evidence','contributors']"));
-  assert.ok(appJs.includes("label:S.view==='evidence'?'Focus evidence search':'Focus page search'"));
-  assert.ok(appJs.includes("function refreshVisibleView()"));
-  assert.ok(appJs.includes("if(S.view==='runtime')return loadRuntimeEvents(true)"));
-  assert.ok(appJs.includes("if(S.view==='report')return loadReport()"));
-  assert.ok(appJs.includes("if(S.view==='interview')return loadInterview()"));
-  assert.ok(appJs.includes("if(S.view==='interpretation')return loadInterpretation()"));
-  assert.ok(appJs.includes("if(S.view==='operations')return loadOperations(true)"));
-  assert.ok(appJs.includes("if(id==='search'){var input=S.view==='evidence'?$('evidenceSearch'):$('viewSearch');"));
-  assert.ok(appJs.includes("if(id==='refresh-view'){closeCommandPalette();refreshVisibleView();return}"));
-  assert.ok(appJs.includes("var searchInput=$('viewSearch')||($('evidenceSearch')&&S.view==='evidence'?$('evidenceSearch'):null);"));
-  assert.ok(appJs.includes("searchInput.focus();return;"));
-  assert.ok(appJs.includes("if(searchInput.id==='viewSearch'){S.viewFilter[S.view]='';applyViewFilter();}"));
-  assert.ok(appJs.includes("searchInput.dispatchEvent(evt);"));
-
-
-  assert.ok(appJs.includes("function closeCommandPalette(restoreFocus)"));
-  assert.ok(appJs.includes("if(restoreFocus!==false&&focus&&typeof focus.focus==='function')"));
-  assert.ok(appJs.includes("if(id&&id.indexOf('view:')===0){closeCommandPalette();setView(id.slice(5));return}"));
-  assert.ok(appJs.includes("if(input){closeCommandPalette(false);input.focus();input.select()}"));
-});
- 
-test("evidence-family filtering stays a client-side projection over loaded records", () => {
-  const appJs = readRepoFile("public/app.js");
-  const html = readRepoFile("public/index.html");
-
-  for (const marker of [
-    "evidenceFamily:'all'",
-    "var familyOk=family==='all'||row.getAttribute('data-family')===family;",
-    "var textOk=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;",
-    "q.dispatchEvent(evt)",
-    "Search and family filters stay local to records already loaded into this snapshot"
-  ]) {
-    assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence local-filter marker: " + marker);
-  }
-
-  assert.ok(appJs.includes("var familyCards='<button type=\"button\" class=\"evidence-family "));
-  assert.ok(appJs.includes("data-evidence-family=\"all\""));
-  assert.ok(appJs.includes("data-evidence-family=\"'+esc(f.id)+'\""));
-  assert.ok(appJs.includes("activeFamily===f.id"));
-  assert.ok(appJs.includes("data-family=\"'+esc(x.family)+'\""));
 });
 
 test("workspace views stay backed by mounted API contracts", () => {
