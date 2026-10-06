@@ -130,6 +130,30 @@ test("overview makes current snapshot evidence directly inspectable", () => {
   assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
+test("history footprint keeps summarized commits directly inspectable", () => {
+  const appJs = readRepoFile("public/app.js");
+  const css = readRepoFile("public/ui-product.css");
+  const start = appJs.indexOf("function historyView()");
+  const end = appJs.indexOf("function structure()", start);
+  assert.ok(start >= 0 && end > start);
+  const history = appJs.slice(start, end);
+
+  for (const marker of [
+    "CHANGE FOOTPRINT",
+    "Recent commits at a glance",
+    "inspectButton('Inspect '+sha(commitSha)",
+    "Persisted Git commit metadata and numstat evidence.",
+    "RAW CHANGE LEDGER",
+    "Persisted commit history"
+  ]) {
+    assert.ok(history.includes(marker), "missing history evidence contract: " + marker);
+  }
+
+  assert.ok(css.includes(".footprint-row{display:grid;grid-template-columns:82px minmax(0,1fr) auto"));
+  assert.ok(css.includes(".footprint-main{min-width:0}"));
+  assert.ok(css.includes(".footprint-row .inspect{align-self:start}"));
+});
+
 test("frontend keeps evidence outputs truthful and current-snapshot bound", () => {
   const appJs = readRepoFile("public/app.js");
 
