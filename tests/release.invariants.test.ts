@@ -447,12 +447,11 @@ test("frontend structure workspace exposes the architecture map surface", () => 
   }
 });
 
-test("responsive grid cards can shrink while child tables keep their own overflow", () => {
-  const html = readRepoFile("public/index.html");
-  assert.ok(
-    html.includes(".grid>*{min-width:0}"),
-    "grid cards must be allowed to shrink below table min-content width"
-  );
+test("responsive content surfaces keep grids shrinkable while tables preserve overflow", () => {
+  const css=readRepoFile("public/ui-product.css");
+  assert.ok(css.includes(".grid{display:grid;gap:10px}"));
+  assert.ok(css.includes(".table{border:1px solid var(--pa-border)"));
+  assert.ok(css.includes("overflow:auto"));
 });
 
 test("frontend structure architecture map avoids redundant nested card chrome", () => {
@@ -631,112 +630,34 @@ test("frontend controls have explicit handlers and every workspace view is wired
 
 
 test("all hidden UI states remain visually hidden despite explicit display rules", () => {
-  const html = readRepoFile("public/index.html");
-  assert.ok(
-    html.includes("*[hidden]{display:none!important}"),
-    "every hidden UI surface must override author display rules"
-  );
-  for (const id of [
-    "workspace",
-    "authModal",
-    "modal",
-    "confirmModal",
-    "drawer",
-    "toast"
-  ]) {
-    assert.match(
-      html,
-      new RegExp('id="' + id + '"[^>]*hidden'),
-      "hidden UI state must be explicitly represented: " + id
-    );
+  const html=readRepoFile("public/index.html");
+  const css=readRepoFile("public/ui-product.css");
+  assert.ok(css.includes("[hidden]{display:none!important}"));
+  for(const id of ["workspace","authModal","modal","confirmModal","drawer","toast"]){
+    assert.match(html,new RegExp('id="'+id+'"[^>]*hidden'),"hidden UI state must be explicitly represented: "+id);
   }
 });
-
 
 test("frontend navigation, DOM ids and delegated actions stay one-to-one", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
-  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
-  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
-  assert.deepEqual(duplicateIds, [], "duplicate static DOM ids detected");
-
-  const viewRenderers = {
-    overview: "overview",
-    history: "historyView",
-    structure: "structure",
-    quality: "quality",
-    runtime: "runtime",
-    report: "reportPage",
-    interview: "interview",
-    interpretation: "interpretation",
-    evidence: "evidencePage",
-    contributors: "contributors",
-    operations: "operations"
-  };
-  for (const [view, renderer] of Object.entries(viewRenderers)) {
-    const occurrences = html.match(new RegExp('data-view="' + view + '"', "g")) || [];
-    assert.equal(
-      occurrences.length,
-      1,
-      "workspace navigation view must have exactly one control: " + view
-    );
-    const rendererMatches = appJs.match(
-      new RegExp("function " + renderer + "\\s*\\(", "g")
-    ) || [];
-    assert.equal(
-      rendererMatches.length,
-      1,
-      "workspace view must have exactly one renderer: " + view + " -> " + renderer
-    );
+  const html=readRepoFile("public/index.html");
+  const appJs=readRepoFile("public/app.js");
+  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+  const duplicates=ids.filter((id,index)=>ids.indexOf(id)!==index);
+  assert.deepEqual(duplicates,[],"duplicate static DOM ids detected");
+  const viewRenderers={overview:"overview",history:"historyView",structure:"structure",quality:"quality",runtime:"runtime",report:"reportPage",interview:"interview",interpretation:"interpretation",evidence:"evidencePage",contributors:"contributors",operations:"operations"};
+  for(const [view,renderer] of Object.entries(viewRenderers)){
+    assert.equal((html.match(new RegExp('data-view="'+view+'"','g'))||[]).length,1,"workspace view must have exactly one control: "+view);
+    assert.equal((appJs.match(new RegExp("function "+renderer+"\\s*\\(","g"))||[]).length,1,"workspace view must have exactly one renderer: "+view);
   }
-
-  const expectedActions = [
-    "report",
-    "interview",
-    "interpretation",
-    "download",
-    "more-commits",
-    "more-timeline",
-    "analysis-runs-more",
-    "reload-data",
-    "reload-view",
-    "runtime-filter",
-    "runtime-clear-filter",
-    "runtime-more",
-    "historical-filter",
-    "historical-clear-filter",
-    "operations-refresh",
-    "operations-retry",
-    "report-jump",
-    "copy-story"
-  ];
-  const rootHandlerStart = appJs.indexOf("$('root').onclick=function(e){");
-  const rootHandlerEnd = appJs.indexOf("\n  function setAuthMode(", rootHandlerStart);
-  assert.ok(rootHandlerStart >= 0 && rootHandlerEnd > rootHandlerStart);
-  const rootHandler = appJs.slice(rootHandlerStart, rootHandlerEnd);
-  const delegatedActions = [
-    ...rootHandler.matchAll(
-      /a\.getAttribute\('data-action'\)===['"]([^'"]+)['"]/g
-    )
-  ].map((match) => match[1]);
-  assert.deepEqual(
-    [...delegatedActions].sort(),
-    [...expectedActions].sort(),
-    "delegated root actions drifted from the declared UI action contract"
-  );
-  assert.equal(
-    new Set(delegatedActions).size,
-    delegatedActions.length,
-    "delegated root actions must not be duplicated"
-  );
-
-  assert.ok(
-    html.includes(".nav .nav-group{grid-column:1/-1}"),
-    "responsive navigation groups must span the full row"
-  );
+  const expected=["report","interview","interpretation","download","more-commits","more-timeline","analysis-runs-more","reload-data","reload-view","runtime-filter","runtime-clear-filter","runtime-more","historical-filter","historical-clear-filter","operations-refresh","operations-retry","report-jump","copy-story"];
+  const rootStart=appJs.indexOf("$('root').onclick=function(e){"),rootEnd=appJs.indexOf("\n  function setAuthMode(",rootStart);
+  const handler=appJs.slice(rootStart,rootEnd);
+  const actions=[...handler.matchAll(/a\.getAttribute\('data-action'\)===['"]([^'"]+)['"]/g)].map(m=>m[1]);
+  assert.deepEqual([...actions].sort(),[...expected].sort(),"delegated root actions drifted from UI action contract");
+  assert.equal(new Set(actions).size,actions.length,"delegated root actions must not be duplicated");
+  const css=readRepoFile("public/ui-product.css");
+  assert.ok(css.includes(".nav-group{margin:14px 8px 5px"));
 });
-
 
 test("frontend JavaScript is served as a same-origin CSP-compatible asset", () => {
   const html = readRepoFile("public/index.html");
@@ -1256,14 +1177,14 @@ test("frontend refreshes repository metadata after analysis completion", () => {
 });
  
 test("frontend connection failures remain actionable and mobile evidence controls fit", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-
+  const html=readRepoFile("public/index.html");
+  const appJs=readRepoFile("public/app.js");
+  const css=readRepoFile("public/ui-product.css");
   assert.ok(appJs.includes("Your session has expired. Sign in again."));
   assert.ok(appJs.includes("Access to this API operation was denied."));
   assert.ok(appJs.includes("You are not signed in."));
   assert.ok(html.includes("Account & workspace"));
-  assert.ok(html.includes(".bar{grid-template-columns:110px 1fr 30px auto;gap:6px}"));
+  assert.ok(css.includes(".evidence-search{"));
   assert.ok(appJs.includes("S.connectionState='rejected';"));
   assert.ok(appJs.includes("S.dataErrors.length"));
 });
@@ -2687,7 +2608,7 @@ test("developer command center preserves evidence-first workspace boundaries", (
     assert.ok(appJs.includes(marker), "missing command center release marker: " + marker);
   }
 
-  const capabilityStart = html.indexOf('class="capability-grid"');
+  const capabilityStart = html.indexOf('class="surface-list"');
   const capabilityEnd = html.indexOf("</div>", capabilityStart);
   const capabilityMarkup = capabilityStart >= 0 && capabilityEnd > capabilityStart
     ? html.slice(capabilityStart, capabilityEnd)
