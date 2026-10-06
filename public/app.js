@@ -766,26 +766,40 @@ function shell(title,desc,actions){
       '</div></section>';
   }
   function historyView(){
-    var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events'),commitPagination=d.commits&&d.commits.pagination||{},timelinePagination=d.timeline&&d.timeline.pagination||{};
+    var d=S.data||{},c=arr(d.commits,'commits'),t=arr(d.timeline,'events');
+    var commitPagination=d.commits&&d.commits.pagination||{},timelinePagination=d.timeline&&d.timeline.pagination||{};
     var actions=[];
     if(commitPagination.totalPages&&commitPagination.page<commitPagination.totalPages)actions.push('<button class="btn" data-action="more-commits">'+(S.commitLoading?'Loading…':'Load next 50 commits')+'</button>');
     if(timelinePagination.totalPages&&timelinePagination.page<timelinePagination.totalPages)actions.push('<button class="btn" data-action="more-timeline">'+(S.timelineLoading?'Loading…':'Load next 50 timeline events')+'</button>');
     var counts={};
     t.forEach(function(x){var key=x.eventType||'change';counts[key]=(counts[key]||0)+1});
-    var signalTypes=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b)}).slice(0,5),signalMax=Math.max(1,...signalTypes.map(function(k){return counts[k]}));
-    return shell('History','Chronological Git evidence with descriptive event classification.',actions.join(''))+
-      '<div class="history-signalbar card">'+
-        '<div class="history-stat"><span>LOADED COMMITS</span><b>'+n(c.length)+'</b><small>'+(commitPagination.total?esc(n(commitPagination.total))+' persisted total':'current page')+'</small></div>'+
-        '<div class="history-stat"><span>TIMELINE EVENTS</span><b>'+n(t.length)+'</b><small>'+(timelinePagination.total?esc(n(timelinePagination.total))+' persisted total':'current page')+'</small></div>'+
-        '<div class="history-stat"><span>LATEST OBSERVED</span><b>'+esc(c[0]&&date(c[0].committed_at)||'—')+'</b><small>Newest commit in this page</small></div>'+
-        '<div class="history-stat"><span>OLDEST LOADED</span><b>'+esc(c.length&&date(c[c.length-1].committed_at)||'—')+'</b><small>Oldest commit in this page</small></div>'+
-      '</div>'+
-      '<div class="history-overview section">'+
-        '<div class="card"><div class="overview-card-head"><div><div class="kicker">TIMELINE SIGNALS</div><h3>What the commit subjects are saying</h3><div class="sub">Keyword classifications are descriptive signals, not proof of intent.</div></div><span class="tag">'+n(signalTypes.length)+' signal types</span></div><div class="signal-bars section">'+signalTypes.map(function(k){return '<div class="signal-bar"><div class="signal-label"><b>'+esc(k)+'</b><span>'+n(counts[k])+'</span></div><div class="track"><div class="fill" style="width:'+(counts[k]/signalMax*100)+'%"></div></div></div>'}).join('')+(signalTypes.length?'':'<div class="empty">No timeline signal evidence.</div>')+'</div></div>'+
-        '<div class="card"><div class="overview-card-head"><div><div class="kicker">CHANGE LEDGER</div><h3>Recent commit footprint</h3><div class="sub">A compact view before opening the full ledger.</div></div></div><div class="commit-footprint">'+c.slice(0,6).map(function(x){return '<div class="footprint-row"><span class="mono">'+esc(sha(x.sha))+'</span><strong>'+esc(x.subject||'—')+'</strong><small>'+n(x.files_changed)+' files · +'+n(x.additions)+' / −'+n(x.deletions)+'</small></div>'}).join('')+(c.length?'':'<div class="empty">No commit evidence.</div>')+'</div></div>'+
-      '</div>'+
-      '<div class="grid g2 section"><div class="card"><div class="overview-card-head"><div><div class="kicker">CHRONOLOGY</div><h3>Timeline</h3><div class="sub">Latest persisted event projections, with direct evidence inspection.</div></div></div><div class="timeline history-timeline">'+(t.map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+'</p><div style="margin-top:7px">'+inspectButton('Timeline '+sha(x.sha),'Commit-subject classification evidence from the timeline projection.',x)+'</div></div>'}).join('')||'<div class="empty">No timeline evidence.</div>')+'</div></div>'+
-      '<div class="card"><div class="overview-card-head"><div><div class="kicker">FULL LEDGER</div><h3>Commit history</h3><div class="sub">Persisted metadata and Git numstat evidence.</div></div><span class="tag">'+(commitPagination.totalPages?('Page '+n(commitPagination.page)+' / '+n(commitPagination.totalPages)):'Current page')+'</span></div><div class="table section"><table><thead><tr><th>Commit</th><th>Subject</th><th>Files</th><th>+</th><th>−</th><th>When</th><th></th></tr></thead><tbody>'+(c.map(function(x){return '<tr><td class="mono">'+esc(sha(x.sha))+'</td><td>'+esc(x.subject)+'</td><td>'+n(x.files_changed)+'</td><td>'+n(x.additions)+'</td><td>'+n(x.deletions)+'</td><td>'+esc(date(x.committed_at))+'</td><td>'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</td></tr>'}).join('')||'<tr data-empty-state="true"><td colspan="7" class="dim">No commit evidence.</td></tr>')+'</tbody></table></div></div></div>';
+    var signalTypes=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||a.localeCompare(b)}).slice(0,7);
+    var signalMax=Math.max(1,...signalTypes.map(function(k){return counts[k]}));
+    var newest=c[0],oldest=c[c.length-1];
+    function commitFootprint(x){
+      return '<div class="footprint-row"><span class="mono">'+esc(sha(x.sha))+'</span><strong>'+esc(x.subject||'Repository change')+'</strong><small>'+n(x.files_changed??x.filesChanged??0)+' files · +'+n(x.additions??0)+' / −'+n(x.deletions??0)+'</small></div>';
+    }
+    function timelineItem(x){
+      return '<div class="item"><i></i><strong>'+esc(x.subject||'Timeline event')+'</strong><p><span class="tag">'+esc(x.eventType||'change')+'</span> · <span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at||x.committedAt))+'</p>'+inspectButton('Inspect timeline '+sha(x.sha),'Descriptive timeline classification attached to persisted commit evidence.',x)+'</div>';
+    }
+    return shell('History','Trace the repository chronologically. This page separates the raw commit ledger from descriptive timeline signals so neither is mistaken for developer intent.',actions.join(''))+
+      '<section class="history-signalbar">'+
+        '<div class="history-stat"><span>LOADED COMMITS</span><b>'+n(c.length)+'</b><small>'+(commitPagination.total!=null?n(commitPagination.total)+' persisted':'current page')+'</small></div>'+
+        '<div class="history-stat"><span>LOADED EVENTS</span><b>'+n(t.length)+'</b><small>'+(timelinePagination.total!=null?n(timelinePagination.total)+' persisted':'current page')+'</small></div>'+
+        '<div class="history-stat"><span>NEWEST COMMIT</span><b>'+esc(newest?date(newest.committed_at||newest.committedAt):'—')+'</b><small>Newest loaded repository event</small></div>'+
+        '<div class="history-stat"><span>OLDEST LOADED</span><b>'+esc(oldest?date(oldest.committed_at||oldest.committedAt):'—')+'</b><small>Oldest commit currently in the ledger</small></div>'+
+      '</section>'+
+      '<section class="history-overview section">'+
+        '<div class="card"><div class="overview-card-head"><div><div class="kicker">TIMELINE SIGNALS</div><h3>How the change history is being classified</h3><div class="sub">These labels come from persisted commit-subject classification. They are useful navigation signals, not proof of intent.</div></div><span class="tag">'+n(signalTypes.length)+' visible classes</span></div>'+
+          '<div class="signal-bars section">'+(signalTypes.map(function(k){return '<div class="signal-bar"><div class="signal-label"><span>'+esc(k)+'</span><span>'+n(counts[k])+'</span></div><div class="track"><div class="fill" style="width:'+((counts[k]/signalMax)*100).toFixed(1)+'%"></div></div></div>'}).join('')||'<div class="empty"><strong>No timeline classifications loaded.</strong> The raw commit ledger can still be inspected below.</div>')+'</div>'+
+          '<div class="callout section">Interpretation boundary: a subject can be classified as a refactor, bug fix or similar signal, but that classification does not establish why the developer made the change.</div>'+
+        '</div>'+
+        '<div class="card"><div class="overview-card-head"><div><div class="kicker">CHANGE FOOTPRINT</div><h3>Recent commits at a glance</h3><div class="sub">Files and churn make the chronological ledger easier to scan before opening individual records.</div></div></div><div class="commit-footprint">'+(c.slice(0,8).map(commitFootprint).join('')||'<div class="empty"><strong>No commit evidence.</strong> Refresh History to load the current ledger.</div>')+'</div></div>'+
+      '</section>'+
+      '<section class="grid g2 section">'+
+        '<div class="card"><div class="overview-card-head"><div><div class="kicker">CHRONOLOGY</div><h3>Timeline projection</h3><div class="sub">One row per loaded classified event. Use Inspect to open the structured record.</div></div><span class="tag">'+n(t.length)+' loaded</span></div><div class="timeline history-timeline">'+(t.map(timelineItem).join('')||'<div class="empty"><strong>No timeline evidence loaded.</strong> Use Refresh data to retry the source.</div>')+'</div></div>'+
+        '<div class="card"><div class="overview-card-head"><div><div class="kicker">RAW CHANGE LEDGER</div><h3>Persisted commit history</h3><div class="sub">Git commit metadata and numstat evidence. This is the source ledger for the page.</div></div><span class="tag">'+(commitPagination.totalPages?'Page '+n(commitPagination.page)+' / '+n(commitPagination.totalPages):'Current page')+'</span></div><div class="table section"><table><thead><tr><th>Commit</th><th>Subject</th><th>Files</th><th>+</th><th>−</th><th>When</th><th></th></tr></thead><tbody>'+(c.map(function(x){return '<tr><td class="mono">'+esc(sha(x.sha))+'</td><td>'+esc(x.subject||'—')+'</td><td>'+n(x.files_changed??x.filesChanged??0)+'</td><td>'+n(x.additions??0)+'</td><td>'+n(x.deletions??0)+'</td><td>'+esc(date(x.committed_at||x.committedAt))+'</td><td>'+inspectButton('Inspect '+sha(x.sha),'Persisted commit metadata and Git numstat evidence.',x)+'</td></tr>'}).join('')||'<tr data-empty-state="true"><td colspan="7" class="dim">No commit evidence.</td></tr>')+'</tbody></table></div></div>'+
+      '</section>';
   }
   function structure(){
     var d=S.data,ar=arr(d.architecture,'events'),de=arr(d.dependencies,'changes'),cx=arr(d.complexity,'events'),co=arr(d.coupling,'pairs');
