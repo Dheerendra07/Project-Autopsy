@@ -109,7 +109,7 @@ test("frontend keeps evidence outputs truthful and current-snapshot bound", () =
     "rep.analysis.runId===S.runId",
     "sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha)",
     "i.result.reportFingerprint===rep.fingerprint",
-    "Correlation narrows the historical window; it does not establish causality.",
+    "runtime telemetry and deployment records to explicit revisions without inventing causality.",
     "This is interpretation, not a new evidence source.",
     "These are scaffolds for preparation, not proof of personal ownership."
   ]) {
