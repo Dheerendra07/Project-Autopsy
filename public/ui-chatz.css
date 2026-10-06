@@ -108,3 +108,19 @@ html[data-theme="light"] .pa-table-row strong{color:var(--ch-text)}
 #workspace.workspace[hidden]{display:none!important}
 .pa-nav-actions #settings{width:auto;min-width:74px;padding:0 12px}
 body:has(#workspace:not([hidden])) .pa-nav-links{display:none!important}
+
+/* Navigation compatibility calibration */
+.top{
+  position:fixed!important;left:0;right:0;top:0;z-index:80;
+  height:auto!important;padding:14px 16px!important;
+  border:0!important;background:transparent!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+}
+.top .pa-nav{width:100%}
+.pa-account-btn{
+  min-width:74px;height:38px;padding:0 13px;
+  border:1px solid var(--ch-border);border-radius:999px;
+  background:var(--ch-card-2);color:var(--ch-text);
+  font-size:10px;font-weight:650;white-space:nowrap;cursor:pointer;
+}
+.pa-account-btn:hover{border-color:var(--ch-border-strong);background:var(--ch-card-3)}
