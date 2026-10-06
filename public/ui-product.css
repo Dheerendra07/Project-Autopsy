@@ -272,11 +272,13 @@ main{margin:0;max-width:none}
 .signal-label{display:flex;justify-content:space-between;gap:10px;color:var(--pa-text-2);font:700 8px var(--pa-mono)}
 .signal-label span{color:var(--pa-text-4)}
 .commit-footprint{display:grid;margin-top:11px;border-top:1px solid var(--pa-border)}
-.footprint-row{display:grid;grid-template-columns:82px minmax(0,1fr);gap:3px 9px;padding:8px 0;border-bottom:1px solid var(--pa-border)}
+.footprint-row{display:grid;grid-template-columns:82px minmax(0,1fr) auto;gap:3px 9px;padding:8px 0;border-bottom:1px solid var(--pa-border);align-items:start}
 .footprint-row:last-child{border-bottom:0}
 .footprint-row .mono{font:700 7px var(--pa-mono);color:var(--pa-accent)}
-.footprint-row strong{font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.footprint-row small{grid-column:2;color:var(--pa-text-4);font-size:7px}
+.footprint-main{min-width:0}
+.footprint-row strong{display:block;font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.footprint-row small{display:block;color:var(--pa-text-4);font-size:7px}
+.footprint-row .inspect{align-self:start}
 .history-timeline{margin-top:11px}
 .history-timeline .item{padding-bottom:18px}
 .history-timeline .item .tag{margin-right:3px}
