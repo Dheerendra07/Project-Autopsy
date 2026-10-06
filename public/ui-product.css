@@ -347,6 +347,11 @@ main{margin:0;max-width:none}
 .runtime-lineage-step{padding:12px;border-right:1px solid var(--pa-border);border-top:1px solid var(--pa-border)}.runtime-lineage-step .runtime-lineage-kicker{display:block;color:var(--pa-text-4);font:700 7px var(--pa-mono);letter-spacing:.1em}.runtime-lineage-step strong{display:block;margin-top:5px;font-size:9px}.runtime-lineage-step b{display:block;margin-top:7px;font-size:18px;letter-spacing:-.03em}.runtime-lineage-step small{display:block;margin-top:2px;color:var(--pa-text-4);font-size:7px;line-height:1.4}
 .runtime-boundary{margin-top:12px;padding-top:10px;border-top:1px solid var(--pa-border);color:var(--pa-text-3);font-size:8px;line-height:1.55}
 .runtime-filters{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--pa-border)}
+.historical-filter-bar{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--pa-border)}
+.historical-filter-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.historical-advanced{border:1px solid var(--pa-border);border-radius:6px;padding:8px 9px}
+.historical-advanced summary{cursor:pointer;color:var(--pa-text-3);font-size:9px}
+.historical-advanced .grid{margin-top:10px}
 .runtime-filter-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
 .runtime-advanced{border:1px solid var(--pa-border);border-radius:6px;padding:8px 9px}.runtime-advanced summary{cursor:pointer;color:var(--pa-text-3);font-size:9px}
 .runtime-advanced .grid{margin-top:10px}
