@@ -712,11 +712,15 @@ function shell(title,desc,actions){
     function stat(label,value,detail){return '<div class="overview-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>'}
     function commitRow(x){
       var subject=x.subject||x.message||'Repository change',author=x.author_name||x.authorName||x.author||'Unknown author';
-      return '<div class="commit-row"><div class="commit-sha">'+esc(sha(x.sha))+'</div><div><strong>'+esc(subject)+'</strong><small>'+esc(author)+'</small></div><div class="commit-time">'+esc(date(x.committed_at||x.committedAt||x.timestamp))+'</div></div>';
+      var commitSha=x.sha||x.commit_sha||x.commitSha||'';
+      var inspect=inspectButton('Commit '+sha(commitSha),'Persisted Git commit from the current analysis snapshot.',x);
+      return '<div class="commit-row"><div class="commit-sha">'+esc(sha(commitSha))+'</div><div><strong>'+esc(subject)+'</strong><small>'+esc(author)+'</small></div><div class="commit-time">'+esc(date(x.committed_at||x.committedAt||x.timestamp))+'</div>'+inspect+'</div>';
     }
     function hotspotRow(x){
       var touched=x.commits_touched??x.commitsTouched??x.commits??x.count??null;
-      return '<div class="signal-row"><span class="signal-dot"></span><div><strong>'+esc(x.path||x.file||'Hotspot')+'</strong><small>'+esc(touched==null?'Historical file-activity signal':'Touched in '+n(touched)+' loaded commits')+'</small></div><span class="signal-value">'+(touched==null?'—':n(touched))+'</span></div>';
+      var path=x.path||x.file||'Hotspot';
+      var inspect=inspectButton('Hotspot '+path,'Persisted file-activity signal from the current analysis snapshot.',x);
+      return '<div class="signal-row"><span class="signal-dot"></span><div><strong>'+esc(path)+'</strong><small>'+esc(touched==null?'Historical file-activity signal':'Touched in '+n(touched)+' loaded commits')+'</small></div><span class="signal-value">'+(touched==null?'—':n(touched))+'</span>'+inspect+'</div>';
     }
     var readiness=
       readinessRow('01','Analysis snapshot',current?'Current repository head is aligned with the completed analysis.':'The stored analysis is not aligned with the current repository head.',current,!current&&analysisStatus==='completed')+
@@ -745,8 +749,13 @@ function shell(title,desc,actions){
       '<section class="overview-stat-strip">'+
         stat('COMMITS',n(totalCommits??commits.length),totalCommits!=null?'persisted total':'loaded sample')+
         stat('HOTSPOTS',n(totalHotspots??hotspots.length),totalHotspots!=null?'persisted total':'loaded sample')+
-        stat('CONTRIBUTORS',n(totalContributors??contributors.length),totalContributors!=null?'persisted total':'loaded sample')+
+        stat('CONTRIBUTORS',n(totalContributors??contributors.length),totalContributors!=null?'persisted total':'current page')+
         stat('ANALYSIS RUNS',n(runs.length),runs.length?'loaded runs':'current run context')+
+      '</section>'+
+      '<section class="grid g3 section">'+
+        '<article class="card"><div class="panel-head"><div><div class="kicker">SNAPSHOT CONTROL</div><h3>Is this the revision to trust?</h3></div><span class="tag">'+esc(snapshot.label)+'</span></div><div class="sub">'+esc(current?'Repository head and completed analysis target are the same revision.':'Repository head and completed analysis target are not aligned; downstream outputs must be treated as snapshot-stale.')+'</div><div class="identity-row" style="margin-top:10px"><span>Head</span><strong class="mono">'+esc(sha(head)||'unavailable')+'</strong></div><div class="identity-row"><span>Target</span><strong class="mono">'+esc(sha(target)||'unavailable')+'</strong></div></article>'+
+        '<article class="card"><div class="panel-head"><div><div class="kicker">LATEST ANALYSIS</div><h3>Run context</h3></div><span class="pill '+esc(cls(analysisStatus))+'">'+esc(analysisStatus)+'</span></div><div class="identity-row"><span>Run</span><strong class="mono">'+esc(a.id||S.runId||'unavailable')+'</strong></div><div class="identity-row"><span>Mode</span><strong>'+esc(analysisMode)+'</strong></div><div class="identity-row"><span>Started</span><strong>'+esc(date(a.startedAt||a.started_at||a.createdAt||a.created_at))+'</strong></div><div class="identity-row"><span>Finished</span><strong>'+esc(date(a.completedAt||a.completed_at||a.finishedAt||a.finished_at))+'</strong></div></article>'+
+        '<article class="card"><div class="panel-head"><div><div class="kicker">INSPECTION QUEUE</div><h3>What to inspect next</h3></div></div><div class="sub">'+esc(current?'Start with the latest Git changes, then follow the strongest persisted signals into Structure or Quality.':'Start by refreshing or completing analysis; downstream evidence is intentionally bounded by the current snapshot.')+'</div><div class="next-actions" style="margin-top:10px"><a class="next-action" href="#history"><span>02</span><strong>History</strong><small>Trace chronology</small></a><a class="next-action" href="#evidence"><span>09</span><strong>Evidence</strong><small>Inspect records</small></a></div></article>'+
       '</section>'+
       '<section class="overview-grid section">'+
         '<div class="card"><div class="panel-head"><div><div class="kicker">SIGNALS TO INVESTIGATE</div><h3>Where the snapshot deserves attention</h3></div><small>Signals are not conclusions.</small></div><div class="signal-list">'+
