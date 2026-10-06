@@ -102,3 +102,9 @@ html[data-theme="light"] .pa-table-row strong{color:var(--ch-text)}
 .pa-workflow-strip i{align-self:center;color:var(--ch-dim);font:700 10px var(--mono);font-style:normal}
 .pa-subline{font:700 9px var(--mono)!important;color:var(--ch-primary)!important;letter-spacing:.08em}
 @media(max-width:680px){.getting-started{grid-template-columns:1fr}.pa-workflow-strip>div{flex-basis:138px}.pa-workflow-strip i{display:none}}
+
+/* Override the previous workspace grid so the rebuilt shell owns the live layout. */
+#workspace.workspace{display:block!important;grid-template-columns:none!important;background:var(--ch-bg)!important;min-height:100vh!important}
+#workspace.workspace[hidden]{display:none!important}
+.pa-nav-actions #settings{width:auto;min-width:74px;padding:0 12px}
+body:has(#workspace:not([hidden])) .pa-nav-links{display:none!important}
