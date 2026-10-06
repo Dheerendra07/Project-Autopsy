@@ -293,3 +293,18 @@ main{margin:0;max-width:none}
   .footprint-row{grid-template-columns:1fr}
   .footprint-row small{grid-column:1}
 }
+
+/* Structure surface */
+.structure-model{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);gap:10px;margin-top:16px}
+.structure-summary-panel{min-width:0}.structure-pulse{display:grid;gap:10px}
+.structure-stat-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--pa-border);border-bottom:1px solid var(--pa-border);margin-top:10px}
+.structure-stat{padding:12px 13px;border-right:1px solid var(--pa-border)}.structure-stat:last-child{border-right:0}
+.structure-stat span{display:block;color:var(--pa-text-4);font:700 7px var(--pa-mono);letter-spacing:.1em}.structure-stat strong{display:block;margin-top:6px;font-size:18px;letter-spacing:-.035em}.structure-stat small{display:block;margin-top:2px;color:var(--pa-text-4);font-size:7px}
+.structure-map-wrap{margin-top:10px}
+.structure-side-block{border-top:1px solid var(--pa-border);padding:10px 0}.structure-side-block:first-child{border-top:0;padding-top:0}
+.structure-side-block h3{margin-top:4px!important;font-size:11px!important}.structure-side-block p{margin:4px 0 0;color:var(--pa-text-3);font-size:8px;line-height:1.5}
+.dep-pulse{display:grid;gap:9px;margin-top:12px}.dep-pulse-row{display:grid;gap:5px}.dep-pulse-row>div:first-child{display:flex;justify-content:space-between;gap:8px;font:700 8px var(--pa-mono)}.dep-pulse-row>div:first-child span{color:var(--pa-text-4)}
+.structure-footnote{display:grid;grid-template-columns:auto 1fr;gap:5px 9px;margin-top:13px;padding-top:10px;border-top:1px solid var(--pa-border)}.structure-footnote span{color:var(--pa-text-4);font:700 7px var(--pa-mono);text-transform:uppercase}.structure-footnote b{font-size:10px}.structure-footnote small{grid-column:2;color:var(--pa-text-4);font-size:7px}
+@media(max-width:1000px){.structure-model{grid-template-columns:1fr}}
+@media(max-width:760px){.structure-stat-strip{grid-template-columns:1fr 1fr}.structure-stat{border-bottom:1px solid var(--pa-border)}.structure-stat:nth-child(2n){border-right:0}}
+@media(max-width:520px){.structure-stat-strip{grid-template-columns:1fr}.structure-stat{border-right:0}}
