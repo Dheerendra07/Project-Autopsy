@@ -90,3 +90,15 @@ html[data-theme="light"] .pa-table-row strong{color:var(--ch-text)}
   .pa-workspace-live{padding:76px 15px 36px}.pa-live-topbar{align-items:flex-start;flex-direction:column}.pa-live-actions{width:100%;overflow:auto}.pa-live-actions .btn{flex:0 0 auto}.pa-live-tabs{top:66px;border-radius:9px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+.getting-started{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.getting-started .pa-card{height:100%}
+.pa-workflow-section{padding-top:72px}
+.pa-workflow-strip{display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.pa-workflow-strip>div{flex:1 0 150px;padding:13px 12px;border:1px solid var(--ch-border);border-radius:10px;background:var(--ch-card);min-width:0}
+.pa-workflow-strip span{display:block;color:#67a8ee;font:700 8px var(--mono)}
+.pa-workflow-strip b{display:block;margin-top:7px;font-size:10px}
+.pa-workflow-strip small{display:block;margin-top:3px;color:var(--ch-dim);font-size:8px}
+.pa-workflow-strip i{align-self:center;color:var(--ch-dim);font:700 10px var(--mono);font-style:normal}
+.pa-subline{font:700 9px var(--mono)!important;color:var(--ch-primary)!important;letter-spacing:.08em}
+@media(max-width:680px){.getting-started{grid-template-columns:1fr}.pa-workflow-strip>div{flex-basis:138px}.pa-workflow-strip i{display:none}}
