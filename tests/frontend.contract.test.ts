@@ -101,6 +101,31 @@ test("frontend rebuild exposes the complete authenticated product contract", () 
   assert.ok(css.includes("--pa-bg:#0b0d10"));
 });
 
+test("overview makes current snapshot evidence directly inspectable", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function overview()");
+  const end = appJs.indexOf("function historyView()", start);
+  assert.ok(start >= 0 && end > start);
+  const overview = appJs.slice(start, end);
+
+  for (const marker of [
+    "SNAPSHOT CONTROL",
+    "LATEST ANALYSIS",
+    "INSPECTION QUEUE",
+    "Is this the revision to trust?",
+    "inspectButton('Commit ",
+    "inspectButton('Hotspot ",
+    "Persisted Git commit from the current analysis snapshot.",
+    "Persisted file-activity signal from the current analysis snapshot.",
+    "Repository head and completed analysis target are the same revision."
+  ]) {
+    assert.ok(overview.includes(marker), "missing overview inspection contract: " + marker);
+  }
+
+  assert.ok(overview.includes("a.startedAt||a.started_at||a.createdAt||a.created_at"));
+  assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
+});
+
 test("frontend keeps evidence outputs truthful and current-snapshot bound", () => {
   const appJs = readRepoFile("public/app.js");
 
