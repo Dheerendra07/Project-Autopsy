@@ -134,7 +134,9 @@ const appJs = await request("/app.js");
 assert(appJs.response.ok, `Frontend asset returned HTTP ${appJs.response.status}.`);
 assert(appJs.text.includes("function storageGet(key)"), "Frontend asset is not the expected Autopsy client.");
 assert(appJs.text.includes("const COMMAND_DEFS="), "Production frontend is missing the developer command center.");
-const uiCss = await request("/ui-product.css");\nassert(uiCss.response.ok, `Product UI stylesheet returned HTTP ${uiCss.response.status}.`);\nassert(uiCss.text.includes("--pa-bg:#0b0d10"), "Production page is not serving the rebuilt product stylesheet.");
+const uiCss = await request("/ui-product.css");
+assert(uiCss.response.ok, `Product UI stylesheet returned HTTP ${uiCss.response.status}.`);
+assert(uiCss.text.includes("--pa-bg:#0b0d10"), "Production page is not serving the rebuilt product stylesheet.");
 assert(home.text.includes('<script src="theme.js"></script>'), "Production page is missing the CSP-safe theme bootstrap asset.");
 
 const themeJs = await request("/theme.js");
