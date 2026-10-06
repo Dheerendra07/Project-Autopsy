@@ -130,6 +130,29 @@ test("overview makes current snapshot evidence directly inspectable", () => {
   assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
+test("structure exposes complexity direction without inventing a health score", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function structure()");
+  const end = appJs.indexOf("function quality()", start);
+  assert.ok(start >= 0 && end > start);
+  const structure = appJs.slice(start, end);
+  for (const marker of [
+    "COMPLEXITY DELTA",
+    "complexityPositive",
+    "complexityNegative",
+    "complexityStable",
+    "increased",
+    "decreased",
+    "unchanged",
+    "aggregate Δ cyclomatic"
+  ]) {
+    assert.ok(structure.includes(marker), "missing structure complexity contract: " + marker);
+  }
+  assert.ok(structure.includes("no composite score") === false || structure.includes("COMPLEXITY DELTA"));
+  const css = readRepoFile("public/ui-product.css");
+  assert.ok(css.includes(".complexity-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))"));
+});
+
 test("searchable workspace views activate their local filter contracts", () => {
   const appJs = readRepoFile("public/app.js");
   const expected = ["historyView", "structure", "quality", "contributors"];
