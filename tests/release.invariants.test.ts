@@ -2559,7 +2559,9 @@ test("landing repository form keeps controls contained and action hierarchy expl
   assert.ok(css.includes(".import>.btn.primary{grid-column:2"));
   assert.ok(css.includes("@media(max-width:760px)"));
   assert.ok(css.includes("@media(max-width:520px)"));
-});ount surfaces explicit", () => {
+});
+
+test("workspace product shell keeps navigation surfaces explicit", () => {
   const html=readRepoFile("public/index.html");
   const css=readRepoFile("public/ui-product.css");
   const appJs=readRepoFile("public/app.js");
