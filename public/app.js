@@ -1017,7 +1017,37 @@ function shell(title,desc,actions){
       '<div class="evidence-overview card"><div class="arch-title"><div><h3>Evidence index</h3><div class="sub">Filter the loaded evidence by family before opening the exact record.</div></div><span id="evidenceScopeCount" class="tag">'+n(items.length)+' inspectable records</span></div><div class="evidence-families">'+familyCards+'</div><div class="evidence-boundary"><span>BOUNDARY</span><strong>Counts describe the loaded UI sample, not repository totals.</strong><small>Open a dedicated view for full pagination, API-level totals and filters.</small></div></div>'+
       '<div class="card"><div class="evidence-search-row"><input id="evidenceSearch" class="search" aria-label="Filter evidence records" placeholder="Filter commits, paths, runtime, deployments, tests, migrations…" autocomplete="off" spellcheck="false"><span id="evidenceSearchCount" class="tag" aria-live="polite"></span><button id="evidenceSearchClear" class="btn" type="button">Clear</button></div><div class="sub" style="margin-top:8px">Search and family filters stay local to records already loaded into this snapshot; they never trigger extra API traffic.</div><div id="evidenceList" class="evidence-list">'+rows+'</div><div id="evidenceEmpty" class="empty evidence-empty" hidden>No evidence matches the current filter.</div></div>';
   }
-    function interview(){var stories=S.data.interview,a=S.analysis||{},current=!!(stories&&currentAnalysisSnapshot()&&stories.analysisRunId===S.runId&&a.status==='completed'),ready=currentAnalysisSnapshot()&&a.status==='completed';return shell('Interview stories','Evidence anchors for preparing truthful project explanations',ready?'<button class="btn" data-action="interview"'+(S.interviewLoading?' disabled aria-busy="true"':'')+'>'+(S.interviewLoading?'Loading…':(current?'Refresh stories':'Load stories'))+'</button>':'')+'<div id="stories" class="section">'+(current?storiesHtml(stories):'<div class="empty"><strong>Interview preparation requires current evidence</strong>Refresh analysis and regenerate the story scaffolds before using an older snapshot.</div>')+'</div>'}
+    function interview(){
+    var stories=S.data.interview,a=S.analysis||{};
+    var q=stories&&stories.result&&stories.result.stories||stories&&stories.stories||stories&&stories.result||[];
+    if(!Array.isArray(q))q=Object.keys(q||{}).map(function(k){return Object.assign({title:k},q[k]||{})});
+    var current=!!(stories&&currentAnalysisSnapshot()&&stories.analysisRunId===S.runId&&a.status==='completed');
+    var ready=!!(currentAnalysisSnapshot()&&a.status==='completed');
+    var actions=ready?'<button class="btn primary" data-action="interview"'+(S.interviewLoading?' disabled aria-busy="true"':'')+'>'+(S.interviewLoading?'Loading…':(current?'Refresh stories':'Load stories'))+'</button>':'';
+    var linked=q.filter(function(s){return Array.isArray(s.evidence)&&s.evidence.length}).length;
+    var verified=q.filter(function(s){return s.verification&&(s.verification.ownership||s.verification.runtimeImpact)}).length;
+    var storyMarkup=q.map(function(s){
+      var draft=s.draftAnswer||{},v=s.verification||{},ev=Array.isArray(s.evidence)?s.evidence:[];
+      return '<article class="interview-story">'+
+        '<div class="story-topline"><span class="tag">EVIDENCE-BACKED SCAFFOLD</span><span class="story-evidence-count">'+n(ev.length)+' refs</span></div>'+
+        '<h3>'+esc(s.headline||s.title||s.name||'Interview story')+'</h3>'+
+        '<div class="interview-question">'+esc(s.interviewQuestion||'Interview question unavailable.')+'</div>'+
+        '<div class="interview-block"><label>Context</label><p>'+esc(s.context||'—')+'</p></div>'+
+        '<div class="interview-block"><label>Situation</label><p>'+esc(draft.situation||s.situation||'—')+'</p></div>'+
+        '<div class="interview-block"><label>Approach / evidence</label><p>'+esc(draft.approach||s.action||s.actions||'—')+'</p></div>'+
+        '<div class="interview-block"><label>Evidence-backed result</label><p>'+esc(draft.evidenceBackedResult||s.result||s.outcome||'—')+'</p></div>'+
+        '<div class="interview-verification"><strong>Verification</strong><br>'+esc(v.ownership||'Ownership verification required.')+' '+esc(v.runtimeImpact||'Runtime impact verification required.')+'</div>'+
+        '<div class="interview-meta"><button class="btn" type="button" data-action="copy-story" data-story-id="'+esc(s.id||'')+'">Copy draft</button>'+(ev.length?inspectButton('Inspect story evidence','Evidence references selected for this interview scaffold.',ev):'<span class="dim">No direct evidence references.</span>')+'</div>'+
+      '</article>';
+    }).join('');
+    return shell('Interview','Turn project evidence into truthful engineering stories. These are scaffolds for preparation, not proof of personal ownership.')+
+      '<section class="interview-topology"><div class="interview-stat"><span>STORIES</span><strong>'+n(q.length)+'</strong><small>returned scaffolds</small></div><div class="interview-stat"><span>EVIDENCE-LINKED</span><strong>'+n(linked)+'</strong><small>stories with direct references</small></div><div class="interview-stat"><span>VERIFICATION</span><strong>'+n(verified)+'</strong><small>stories with verification notes</small></div></section>'+
+      '<section class="interview-readme">'+
+        '<div class="card"><div class="kicker">HOW TO USE THIS SURFACE</div><h3 style="margin-top:5px">Prepare from evidence, then verify ownership yourself.</h3><div class="interview-rule"><div><b>01</b><span>Read the generated scaffold as a starting structure, not a finished personal answer.</span></div><div><b>02</b><span>Open the cited evidence before describing what you personally changed.</span></div><div><b>03</b><span>Keep runtime impact separate from source-level history unless runtime evidence supports it.</span></div><div><b>04</b><span>Do not turn missing evidence into an invented result or business outcome.</span></div></div></div>'+
+        '<div class="card"><div class="kicker">SOURCE BOUNDARY</div><h3 style="margin-top:5px">Current analysis snapshot</h3><div class="sub">Story generation is valid only for the completed analysis snapshot shown here.</div><div class="quality-mini-list"><span><b>Run</b><b class="mono">'+esc(S.runId||'—')+'</b></span><span><b>Target</b><b class="mono">'+esc(sha(a.targetHeadSha))+'</b></span><span><b>Status</b><b>'+esc(a.status||'unknown')+'</b></span></div></div>'+
+      '</section>'+
+      (current?'<section class="grid g2 section">'+storyMarkup+'</section>':'<section class="empty section"><strong>Current interview stories are not loaded.</strong><span>Generate the stories from the current completed analysis snapshot. Older story output is intentionally not reused.</span></section>');
+  }
   function storiesHtml(x){
     var q=x&&x.result&&x.result.stories||x&&x.stories||x&&x.result||[];
     if(!Array.isArray(q))q=Object.keys(q||{}).map(function(k){return Object.assign({title:k},q[k]||{})});
