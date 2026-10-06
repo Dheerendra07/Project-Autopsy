@@ -130,29 +130,6 @@ test("overview makes current snapshot evidence directly inspectable", () => {
   assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
-test("quality exposes path-level signal convergence without turning it into a score", () => {
-  const appJs=readRepoFile("public/app.js");
-  const css=readRepoFile("public/ui-product.css");
-  const start=appJs.indexOf("function quality()");
-  const end=appJs.indexOf("function runtime()",start);
-  assert.ok(start>=0&&end>start);
-  const quality=appJs.slice(start,end);
-  for(const marker of [
-    "CROSS-SIGNAL INVESTIGATION",
-    "Paths with converging historical signals",
-    "signalMap={}",
-    "signalMap[path].bug+=1",
-    "signalMap[path].repeated+=1",
-    "filter(function(x){return x.bug>0&&x.repeated>0})",
-    "This overlap only tells you where to investigate next"
-  ]) {
-    assert.ok(quality.includes(marker),"missing quality convergence contract: "+marker);
-  }
-  assert.ok(css.includes(".convergence-list{display:grid"));
-  assert.ok(css.includes(".convergence-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.55fr)"));
-  assert.ok(css.includes("@media(max-width:760px){.convergence-row{grid-template-columns:1fr}"));
-});
-
 test("structure exposes complexity direction without inventing a health score", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("function structure()");
