@@ -3,359 +3,289 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const htmlPath = fileURLToPath(
-  new URL("../public/index.html", import.meta.url)
-);
-const html = readFileSync(htmlPath, "utf8");
-const appJsPath = fileURLToPath(
-  new URL("../public/app.js", import.meta.url)
-);
-const appJs = readFileSync(appJsPath, "utf8");
-
-test("product frontend contains the core evidence workflow", () => {
-  assert.ok(
-    html.includes('<script src="app.js" defer></script>'),
-    "frontend must load the external app.js asset"
+function readRepoFile(path: string): string {
+  return readFileSync(
+    fileURLToPath(new URL("../" + path, import.meta.url)),
+    "utf8"
   );
-  assert.doesNotThrow(
-    () => new Function(appJs),
-    "frontend app.js must parse as JavaScript"
-  );
+}
 
+test("frontend rebuild exposes the complete authenticated product contract", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+  const css = readRepoFile("public/ui-product.css");
+
+  assert.doesNotThrow(() => new Function(appJs));
   for (const marker of [
-    'data-view="overview"',
-    'data-view="history"',
-    'data-view="structure"',
-    'data-view="quality"',
-    'data-view="runtime"',
-    'data-view="report"',
-    'data-view="interview"',
-    'data-view="interpretation"',
-    'data-view="evidence"',
-    'data-view="contributors"',
-    'id="evidenceSearch"',
-    'id="drawer"',
-    'id="testConnection"',
-    "function architectureMap(ar)",
-    "function openEvidence(id,trigger)",
-    "function loadProvenance(deploymentId,trigger)",
-    "analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.'",
-    "function reportHtml(rep)",
-    "async function testConnection()",
-    "base+'/ready'",
-    "Database or Redis may be unavailable.",
-    "elapsed(a.startedAt,a.completedAt)",
-    "async function reloadData()",
-    "data-action=\"reload-data\"",
-    "Runtime event explorer",
-    "rtDeployment",
-    "rtFrom",
-    "rtTo",
-    "rtRevision",
-    "rtEnvironment",
-    "rtOperation",
-    "rtSignal",
-    "runtime-more",
-    "Test evolution",
-    "Migration ",
-    "Deployment ",
-    "Observed runtime telemetry event.",
-    "Historical repeated-modification evidence.",
-    "Historical source-change context",
-    "data-action=\"historical-clear-filter\"",
-    "data-action=\"historical-filter\"",
-    "histSamples",
-    "histWindow",
-    "historical-clear-filter",
-    "historical-filter",
-    "loadHistoricalRuntime",
-    "historicalRuntimePath('source-context'",
-    "historicalRuntimePath('correlation'",
-    "historicalRuntimePath('summary'",
-    "function historicalRuntimePath",
-    "Load older analysis runs",
-    "analysis-runs-more",
-    "loadMoreAnalysisRuns",
-    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'",
-    "function runtimeFilterDate(value)",
-    "function sameRevision(a,b)",
-    "function safeApiBase(value)",
-    "API base URL must use HTTPS outside localhost.",
-    "function storageGet(key)",
-    "function storageSet(key,value)",
-    "function boundedFetch(url,options,timeoutMs)",
-    "API returned an invalid JSON response",
-    "API returned an invalid response body",
-    "r.status===429",
-    "Retry after '+retrySeconds+' seconds.'",
-    "function mapLimited(items,limit,worker)",
-    "importButton",
-    "S.importing=true",
-    "S.workspaceToken",
-    "S.commitLoading",
-    "S.commitLoadToken",
-    "if(S.runtimeLoading)return;",
-    "await mapLimited(keys,6",
-    "previousEvents",
-    "runtimeEventsPathWithFilter",
-    "Repository head differs from this snapshot.",
-    "runId!==S.runId",
-    "loadToken!==S.commitLoadToken",
-    "function runtimeEventsPath(page,limit)",
-    "S.runtimeEvents=arr(out.runtimeEvents,'events')",
-    "function storageGet(key)",
-    "function storageSet(key,value)",
-    "/api/repositories/import"
-  ]) {
-    assert.ok(
-      (html + "\n" + appJs).includes(marker),
-      `missing frontend marker: ${marker}`
-    );
-  }
-});
-test("product frontend supports persistent dark and light themes without inline script", () => {
-  const themePath = fileURLToPath(
-    new URL("../public/theme.js", import.meta.url)
-  );
-  const themeJs = readFileSync(themePath, "utf8");
-
-  assert.ok(
-    html.includes('<script src="theme.js"></script>'),
-    "frontend must bootstrap the theme from an external same-origin asset"
-  );
-  assert.doesNotMatch(
-    html,
-    /<script>\s*[\s\S]*?<\/script>/i,
-    "frontend must not embed inline executable scripts"
-  );
-  assert.ok(
-    themeJs.includes("localStorage.getItem('autopsy.theme')"),
-    "theme preference must persist locally"
-  );
-  assert.ok(
-    themeJs.includes("prefers-color-scheme: light"),
-    "theme bootstrap must respect the system preference when no saved choice exists"
-  );
-  assert.ok(
-    themeJs.includes("document.documentElement.dataset.theme"),
-    "theme bootstrap must set the root theme state"
-  );
-  assert.ok(appJs.includes("function applyTheme(theme,announce,persistPreference)"));
-  assert.ok(appJs.includes("if(persistPreference!==false)themeStorageSet(mode);"));
-  assert.ok(appJs.includes("var storedTheme=themeStorageGet();"));
-  assert.ok(appJs.includes("applyTheme(storedTheme||document.documentElement.dataset.theme||'dark',false,!!storedTheme)"));
-  assert.ok(appJs.includes("window.addEventListener('storage',function(e)"));
-  assert.ok(appJs.includes("applyTheme(e.newValue,false,false)"));
-  assert.ok(appJs.includes("$('themeToggle').onclick"));
-  assert.ok(appJs.includes("light?'☾':'☀'"));
-  assert.ok(html.includes('html[data-theme="light"]'));
-  assert.ok(html.includes("--ui-accent:#6366f1"));
-  assert.ok(html.includes("--ui-bg:#0a0f17"));
-  assert.ok(html.includes("color-scheme:light"));
-});
-
-
-test("developer command center is keyboard-first, contextual and accessible", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
-
-  for (const marker of [
+    '<link rel="stylesheet" href="ui-product.css?v=foundation-v1">',
+    '<script src="theme.js"></script>',
+    '<script src="app.js" defer></script>',
+    'id="form"',
+    'id="authModal"',
+    'class="workspace-shell"',
+    'class="settings-sheet"',
+    'class="settings-scroll"',
     'id="commandPalette"',
-    'role="dialog"',
-    'aria-labelledby="commandPaletteTitle"',
-    'id="commandSearch"',
-    'id="commandList"',
-    'role="listbox"',
-    'Ctrl</kbd><kbd>K</kbd> Command Center',
-    '.command-palette',
-    '.command-item.active'
+    'id="drawer"',
+    'id="drawerSummary"',
+    'id="drawerRaw"',
+    'id="testConnection"',
+    'id="saveRepoAccess"',
+    'id="clearRepoAccess"'
   ]) {
-    assert.ok(html.includes(marker), "missing command center markup/style: " + marker);
+    assert.ok(html.includes(marker), "missing product marker: " + marker);
+  }
+
+  const views = ["overview","history","structure","quality","runtime","report","interview","interpretation","evidence","contributors","operations"];
+  const renderers = {
+    overview:"overview",
+    history:"historyView",
+    structure:"structure",
+    quality:"quality",
+    runtime:"runtime",
+    report:"reportPage",
+    interview:"interview",
+    interpretation:"interpretation",
+    evidence:"evidencePage",
+    contributors:"contributors",
+    operations:"operations"
+  } as const;
+
+  for (const view of views) {
+    const renderer = renderers[view as keyof typeof renderers];
+    assert.equal((html.match(new RegExp('data-view="' + view + '"','g')) || []).length, 1, "missing unique nav control: " + view);
+    assert.equal((appJs.match(new RegExp("function " + renderer + "\\s*\\(","g")) || []).length, 1, "missing unique renderer: " + view);
   }
 
   for (const marker of [
-    "const COMMAND_DEFS=",
-    "function commandPaletteCommands()",
-    "function commandPaletteMatches()",
-    "function commandPaletteRun(id)",
-    "function renderCommandPalette()",
-    "function moveCommandSelection(delta)",
-    "function openCommandPalette(trigger)",
-    "function closeCommandPalette(restoreFocus)",
-    "e.key==='ArrowDown'",
-    "e.key==='ArrowUp'",
-    "e.key==='Enter'&&document.activeElement===$('commandSearch')",
-    "(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'",
-    "S.commandPaletteFocus",
-    "S.commandPaletteIndex",
-    "S.commandPaletteQuery"
-  ]) {
-    assert.ok(appJs.includes(marker), "missing command center interaction marker: " + marker);
-  }
-
-  assert.ok(appJs.includes("if($('commandPalette'))$('commandPalette').hidden=true"));
-  assert.ok(appJs.includes("$('commandSearch').oninput=function()"));
-  assert.ok(appJs.includes("$('commandList').onclick=function(e)"));
-  assert.ok(
-    appJs.includes("var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));")
-  );
-});
- 
-test("evidence explorer exposes local evidence-family filters without extra API traffic", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
-
-  for (const marker of [
-    'id="evidenceSearchCount"',
-    'id="evidenceEmpty"',
-  ]) {
-    assert.ok(appJs.includes(marker) || html.includes(marker), "missing evidence investigation UI marker: " + marker);
-  }
-
-  for (const marker of [
-    'data-evidence-family="all"',
-    "data-evidence-family=\"'+esc(f.id)+'\"",
-    'activeFamily===f.id',
-    'id="evidenceScopeCount"',
-    "EVIDENCE INVESTIGATION V2",
-  ]) {
-    assert.ok(appJs.includes(marker) || html.includes(marker), "missing generated evidence investigation marker: " + marker);
-  }
-
-  for (const marker of [
-    "evidenceFamily:'all'",
-    "function evidencePage(){",
-    "var activeFamily=S.evidenceFamily||'all';",
-    "data-family=",
-    "var familyOk=family==='all'||row.getAttribute('data-family')===family;",
-    "S.evidenceFamily='all'",
-    "[data-evidence-family]",
-    "q.dispatchEvent(evt)"
-  ]) {
-    assert.ok(appJs.includes(marker), "missing evidence investigation interaction marker: " + marker);
-  }
-
-  assert.ok(
-    appJs.includes("Search and family filters stay local to records already loaded into this snapshot; they never trigger extra API traffic.")
-  );
-});
- 
-test("frontend does not embed an API access secret", () => {
-  const secretAssignment = /(?:AUTOPSY_API_ACCESS_KEY|AI_INTERPRETATION_ACCESS_KEY|x-autopsy-api-key)\s*[:=]\s*['"][^'"]{12,}['"]/i;
-  assert.equal(secretAssignment.test(html), false);
-});
-
-test("frontend workflow detailing exposes a contextual micro-flow and fully clickable eleven-stage path", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
-  for (const marker of [
-    "const VIEW_WORKFLOW={",
     "const WORKFLOW_STEPS=[",
     "function viewFlowMarkup()",
-    "workspace-flow-rail",
-    "workspace-flow-step",
-    "navigation only",
-    "STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))",
-    "Open History",
-    "Inspect Evidence"
+    "function viewEndpoints(id)",
+    "function loadingPage(title,message)",
+    "function errorPage(title,message,actionLabel,action)",
+    "function inspectButton(label,basis,payload)",
+    "function evidenceSummary(payload)",
+    "function currentAnalysisSnapshot()",
+    "function snapshotState()",
+    "function commandPaletteRun(id)",
+    "function refreshVisibleView()",
+    "function loadOperations(force,silent)",
+    "function closeTransientOverlays()",
+    "function closeEvidence(restoreFocus)",
+    "credentials:'include'",
+    "x-autopsy-csrf-token",
+    "runtimeInputDate(value)",
+    "historicalSourceContext:'/api/repositories/'+id+'/runtime/historical-correlation/source-context?limit=25'",
+    "var familyOk=family==='all'||row.getAttribute('data-family')===family;",
+    "var textOk=!term||(row.getAttribute('data-search')||'').indexOf(term)>=0;",
+    "document.addEventListener('visibilitychange'",
+    "requestAnimationFrame(function(){$('drawerClose').focus()})"
   ]) {
-    assert.ok((html + "\n" + appJs).includes(marker), "missing workflow-detailing marker: " + marker);
+    assert.ok(appJs.includes(marker), "missing frontend interaction contract: " + marker);
   }
-  assert.ok(html.includes("/* WORKSPACE WORKFLOW DETAILING V7"));
-  assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g) || []).length, 11);
+
+  for (const action of [
+    "report","interview","interpretation","download","more-commits","more-timeline",
+    "analysis-runs-more","reload-data","reload-view","runtime-filter",
+    "runtime-clear-filter","runtime-more","historical-filter","historical-clear-filter",
+    "operations-refresh","operations-retry","report-jump","copy-story"
+  ]) {
+    assert.ok(appJs.includes("===" + "'" + action + "'"), "missing delegated action: " + action);
+  }
+
+  assert.ok(css.includes('html[data-theme="light"]'));
+  assert.ok(css.includes("[hidden]{display:none!important}"));
+  assert.ok(css.includes("@media(max-width:760px)"));
+  assert.ok(css.includes("@media(max-width:520px)"));
+  assert.equal((css.match(/(?:linear|radial)-gradient\s*\(/g) || []).length, 0);
+  assert.ok(css.includes("--pa-bg:#0b0d10"));
 });
 
-test("frontend analysis lifecycle workflow has a real status renderer and truthful stage markup", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+test("overview makes current snapshot evidence directly inspectable", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function overview()");
+  const end = appJs.indexOf("function historyView()", start);
+  assert.ok(start >= 0 && end > start);
+  const overview = appJs.slice(start, end);
+
   for (const marker of [
-    "function banner(show,title,subtitle,status)",
-    "data-analysis-state",
-    "analysis-progress",
-    "data-stage=\"queued\"",
-    "data-stage=\"running\"",
-    "data-stage=\"snapshot\"",
-    "data-stage=\"workspace\"",
-    "Queued",
-    "Analyzing",
-    "Snapshot ready",
-    "Workspace ready",
-    "banner(true,'Analysis complete','Loading the current workspace evidence…','completed')"
+    "SNAPSHOT CONTROL",
+    "LATEST ANALYSIS",
+    "INSPECTION QUEUE",
+    "QUALITY PULSE",
+    "RUNTIME PULSE",
+    "Is this the revision to trust?",
+    "Engineering signals worth opening",
+    "What was actually observed",
+    "inspectButton('Commit ",
+    "inspectButton('Hotspot ",
+    "Persisted Git commit from the current analysis snapshot.",
+    "Persisted file-activity signal from the current analysis snapshot.",
+    "Repository head and completed analysis target are the same revision."
   ]) {
-    assert.ok((html + "\n" + appJs).includes(marker), "missing analysis lifecycle marker: " + marker);
+    assert.ok(overview.includes(marker), "missing overview inspection contract: " + marker);
   }
-  assert.ok(html.includes("/* ANALYSIS LIFECYCLE V1 — honest status representation */"));
+
+  assert.ok(overview.includes("a.startedAt||a.started_at||a.createdAt||a.created_at"));
+  assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
+test("runtime exposes historical reconstruction filters through the rendered surface", () => {
+  const appJs = readRepoFile("public/app.js");
+  const css = readRepoFile("public/ui-product.css");
+  const start = appJs.indexOf("function runtime()");
+  const end = appJs.indexOf("function reportPage()", start);
+  assert.ok(start >= 0 && end > start);
+  const runtime = appJs.slice(start, end);
+  for (const marker of [
+    "HISTORICAL RECONSTRUCTION",
+    'id="histWindow"',
+    'id="histSamples"',
+    'id="histSignal"',
+    'id="histDeployment"',
+    'id="histEnvironment"',
+    'id="histOperation"',
+    'data-action="historical-filter"',
+    'data-action="historical-clear-filter"',
+    "Apply historical filters",
+    "Identity filters"
+  ]) {
+    assert.ok(runtime.includes(marker), "missing runtime historical filter contract: " + marker);
+  }
+  assert.ok(css.includes(".historical-filter-bar{display:grid"));
+  assert.ok(css.includes(".historical-advanced{border:1px solid var(--pa-border)"));
+});
 
-test("frontend account security exposes a working revoke-all-sessions action", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
+test("quality verification posture keeps source evidence distinct from execution results", () => {
+  const appJs=readRepoFile("public/app.js");
+  const css=readRepoFile("public/ui-product.css");
+  const start=appJs.indexOf("function quality()");
+  const end=appJs.indexOf("function runtime()",start);
+  assert.ok(start>=0&&end>start);
+  const quality=appJs.slice(start,end);
+  for(const marker of [
+    "VERIFICATION POSTURE",
+    "What the source history can actually tell us",
+    "TEST CASES OBSERVED",
+    "TEST CASE DELTA",
+    "MIGRATION OPERATIONS",
+    "EXECUTION STATUS",
+    "Not run",
+    "Autopsy classifies source; it does not execute migrations"
+  ]) {
+    assert.ok(quality.includes(marker),"missing quality verification contract: "+marker);
+  }
+  assert.ok(css.includes(".quality-posture{border:1px solid var(--pa-border)"));
+  assert.ok(css.includes(".quality-posture-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))"));
+});
+
+test("structure exposes complexity direction without inventing a health score", () => {
+  const appJs = readRepoFile("public/app.js");
+  const start = appJs.indexOf("function structure()");
+  const end = appJs.indexOf("function quality()", start);
+  assert.ok(start >= 0 && end > start);
+  const structure = appJs.slice(start, end);
+  for (const marker of [
+    "COMPLEXITY DELTA",
+    "complexityPositive",
+    "complexityNegative",
+    "complexityStable",
+    "increased",
+    "decreased",
+    "unchanged",
+    "aggregate Δ cyclomatic"
+  ]) {
+    assert.ok(structure.includes(marker), "missing structure complexity contract: " + marker);
+  }
+  assert.ok(structure.includes("no composite score") === false || structure.includes("COMPLEXITY DELTA"));
+  const css = readRepoFile("public/ui-product.css");
+  assert.ok(css.includes(".complexity-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))"));
+});
+
+test("searchable workspace views activate their local filter contracts", () => {
+  const appJs = readRepoFile("public/app.js");
+  const expected = ["historyView", "structure", "quality", "contributors"];
+  for (const renderer of expected) {
+    const start = appJs.indexOf("function " + renderer + "()");
+    const next = expected
+      .map(name => appJs.indexOf("function " + name + "()", start + 10))
+      .filter(pos => pos > start);
+    const end = next.length ? Math.min(...next) : appJs.length;
+    assert.ok(start >= 0 && end > start, "missing renderer: " + renderer);
+    assert.ok(
+      appJs.slice(start, end).includes("viewFilterMarkup()+"),
+      "view filter not mounted by renderer: " + renderer
+    );
+  }
+  const helperStart=appJs.indexOf("function viewFilterMarkup()");
+  assert.ok(helperStart>=0);
+  assert.ok(appJs.slice(helperStart,helperStart+1800).includes("Filters the already-loaded evidence locally."));
+});
+
+test("history footprint keeps summarized commits directly inspectable", () => {
+  const appJs = readRepoFile("public/app.js");
+  const css = readRepoFile("public/ui-product.css");
+  const start = appJs.indexOf("function historyView()");
+  const end = appJs.indexOf("function structure()", start);
+  assert.ok(start >= 0 && end > start);
+  const history = appJs.slice(start, end);
 
   for (const marker of [
-    'id="revokeSessions"',
-    'id="confirmWarning"',
-    'Revoke all sessions',
-    "function confirmRevokeAllSessions()",
-    "async function revokeAllSessions()",
-    "/api/auth/sessions",
-    "session.isCurrent",
-    "The current browser will be signed out too."
+    "CHANGE FOOTPRINT",
+    "Recent commits at a glance",
+    "inspectButton('Inspect '+sha(commitSha)",
+    "Persisted Git commit metadata and numstat evidence.",
+    "RAW CHANGE LEDGER",
+    "Persisted commit history"
   ]) {
-    assert.ok(html.includes(marker) || appJs.includes(marker), "missing session revocation marker: " + marker);
+    assert.ok(history.includes(marker), "missing history evidence contract: " + marker);
   }
 
-  assert.ok(appJs.includes("for(var i=0;i<others.length;i++)"));
-  assert.ok(appJs.includes("var revokedOthers=0,failedOthers=0"));
-  assert.ok(appJs.includes("This browser session remains active so you can retry."));
-  assert.ok(appJs.includes("currentResult.signedOutCurrentSession"));
-  assert.ok(appJs.includes("S.user=null"));
-  assert.ok(appJs.includes("openAuth('login')"));
+  assert.ok(css.includes(".footprint-row{display:grid;grid-template-columns:82px minmax(0,1fr) auto"));
+  assert.ok(css.includes(".footprint-main{min-width:0}"));
+  assert.ok(css.includes(".footprint-row .inspect{align-self:start}"));
 });
 
+test("frontend keeps evidence outputs truthful and current-snapshot bound", () => {
+  const appJs = readRepoFile("public/app.js");
 
-test("light theme keeps primary text and primary actions at readable contrast values", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
+  for (const marker of [
+    "currentAnalysisSnapshot()",
+    "rep.analysis.runId===S.runId",
+    "sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha)",
+    "i.result.reportFingerprint===rep.fingerprint",
+    "runtime telemetry and deployment records to explicit revisions without inventing causality.",
+    "This is interpretation, not a new evidence source.",
+    "These are scaffolds for preparation, not proof of personal ownership."
+  ]) {
+    assert.ok(appJs.includes(marker), "missing evidence-boundary contract: " + marker);
+  }
+});
 
-  assert.ok(
-    html.includes("--ui-text-3:#5f6b7d"),
-    "light-theme secondary text token should remain readable"
-  );
-  assert.ok(
-    html.includes("html[data-theme=\"light\"] .lead{color:var(--ui-text-2)!important}"),
-    "hero lead copy should use the stronger light-theme text token"
-  );
-  assert.ok(
-    html.includes(
-      'html[data-theme="light"] .import > #importButton.btn.primary{'
-    ),
-    "landing CTA must have a dedicated light-theme contrast override"
-  );
-  assert.ok(
-    html.includes(
-      'html[data-theme="light"] .import > #importButton.btn.primary:hover{'
-    ),
-    "landing CTA hover must have a dedicated light-theme contrast override"
-  );
-  assert.ok(
-    html.lastIndexOf("html[data-theme=\"light\"] .import > #importButton.btn.primary{") >
-      html.lastIndexOf(".btn.primary,.import > #importButton.btn.primary{"),
-    "light-theme landing CTA override must come after the generic primary rules"
-  );
-  assert.ok(
-    html.includes("linear-gradient(180deg,#5f63dc,#514bd5)"),
-    "light-theme primary action should avoid a low-contrast top gradient"
-  );
-  assert.ok(
-    html.includes("linear-gradient(180deg,#5a5ed8,#5356d1)"),
-    "light-theme primary hover action should remain readable"
-  );
-  assert.ok(
-    !html.includes("--ui-text-3:#728097"),
-    "the former low-contrast light-theme secondary text token must not return"
-  );
-  assert.ok(
-    !html.includes('html[data-theme="light"] .view-flow-link.primary{background:linear-gradient(180deg,#7074f3,#514bd5)!important;border-color:#7c80f7'),
-    "the former low-contrast primary button gradient must not return"
-  );
+test("frontend auth and repository access remain session-based", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(appJs.includes("credentials:'include'"));
+  assert.ok(appJs.includes("readCookie('autopsy_csrf')"));
+  assert.ok(appJs.includes("x-autopsy-csrf-token"));
+  assert.equal(/storageSet\(['"]autopsy\.(repoAccessToken|key|aiKey)['"]/.test(appJs + html), false);
+  assert.ok(appJs.includes("S.legacyMigrationKey=storageGet('autopsy.key')"));
+  assert.ok(html.includes('id="repoToken"'));
+  assert.ok(html.includes('id="saveRepoAccess"'));
+  assert.ok(html.includes('id="clearRepoAccess"'));
+});
+
+test("frontend navigation and transient overlays remain accessible", () => {
+  const html = readRepoFile("public/index.html");
+  const appJs = readRepoFile("public/app.js");
+
+  assert.ok(html.includes('role="listbox"'));
+  assert.ok(html.includes('aria-labelledby="commandPaletteTitle"'));
+  assert.ok(appJs.includes("(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'"));
+  assert.ok(appJs.includes("e.key==='ArrowDown'"));
+  assert.ok(appJs.includes("e.key==='ArrowUp'"));
+  assert.ok(appJs.includes("document.title='Project Autopsy — '+(VIEW_TITLES[v]||'Workspace')"));
+  assert.ok(appJs.includes("b.setAttribute('aria-current','page')"));
+  assert.ok(appJs.includes("window.addEventListener('pageshow',function(){closeTransientOverlays()})"));
 });

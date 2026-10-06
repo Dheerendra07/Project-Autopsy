@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import test from "node:test";
 
 function readRepoFile(path: string): string {
   return readFileSync(
@@ -10,25 +10,26 @@ function readRepoFile(path: string): string {
   );
 }
 
-test("landing workspace preview keeps all eleven workflow stages visible", () => {
+test("landing exposes the complete eleven-surface product map", () => {
   const html = readRepoFile("public/index.html");
   const appJs = readRepoFile("public/app.js");
 
-  const previewStart = html.indexOf('<div class="preview-nav">');
-  const previewEnd = html.indexOf('<div class="preview-main">', previewStart);
-  assert.ok(previewStart >= 0, "landing workspace preview nav is missing");
-  assert.ok(previewEnd > previewStart, "landing workspace preview main boundary is missing");
+  const start = html.indexOf('class="surface-list"');
+  const end = html.indexOf('</section>', start);
+  assert.ok(start >= 0, "landing capability surface list is missing");
+  assert.ok(end > start, "landing capability surface boundary is missing");
 
-  const preview = html.slice(previewStart, previewEnd);
+  const surface = html.slice(start, end);
+  assert.equal((surface.match(/class="surface"/g) || []).length, 11);
 
-  assert.ok(preview.includes('<span>01</span><strong>Overview</strong>'));
-  assert.ok(preview.includes('<span>02</span><strong>History</strong>'));
-  assert.ok(preview.includes('<span>03</span><strong>Structure</strong>'));
-  assert.ok(preview.includes('<span>04</span><strong>Quality</strong>'));
-  assert.ok(preview.includes('<span>05</span><strong>Runtime</strong>'));
-  assert.ok(preview.includes('<span>06</span><strong>Report</strong>'));
-  assert.ok(preview.includes('<span>07</span><strong>Interview</strong>'));
-  assert.ok(preview.includes('<span>08</span><strong>Insights</strong>'));
+  for (const view of [
+    "Overview","History","Structure","Quality","Runtime","Report",
+    "Interview","Insights","Evidence","Contributors","Operations"
+  ]) {
+    assert.ok(surface.includes(">" + view + "<"), "missing landing surface: " + view);
+  }
 
+  assert.equal((surface.match(/<button|<a /g) || []).length, 0);
+  assert.ok(appJs.includes("const WORKFLOW_STEPS=["));
   assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g) || []).length, 11);
 });
