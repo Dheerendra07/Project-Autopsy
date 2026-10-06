@@ -130,6 +130,26 @@ test("overview makes current snapshot evidence directly inspectable", () => {
   assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
+test("searchable workspace views activate their local filter contracts", () => {
+  const appJs = readRepoFile("public/app.js");
+  const expected = ["historyView", "structure", "quality", "contributors"];
+  for (const renderer of expected) {
+    const start = appJs.indexOf("function " + renderer + "()");
+    const next = expected
+      .map(name => appJs.indexOf("function " + name + "()", start + 10))
+      .filter(pos => pos > start);
+    const end = next.length ? Math.min(...next) : appJs.length;
+    assert.ok(start >= 0 && end > start, "missing renderer: " + renderer);
+    assert.ok(
+      appJs.slice(start, end).includes("viewFilterMarkup()+"),
+      "view filter not mounted by renderer: " + renderer
+    );
+  }
+  const helperStart=appJs.indexOf("function viewFilterMarkup()");
+  assert.ok(helperStart>=0);
+  assert.ok(appJs.slice(helperStart,helperStart+1800).includes("Filters the already-loaded evidence locally."));
+});
+
 test("history footprint keeps summarized commits directly inspectable", () => {
   const appJs = readRepoFile("public/app.js");
   const css = readRepoFile("public/ui-product.css");
