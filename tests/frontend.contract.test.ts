@@ -130,6 +130,29 @@ test("overview makes current snapshot evidence directly inspectable", () => {
   assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
+test("quality verification posture keeps source evidence distinct from execution results", () => {
+  const appJs=readRepoFile("public/app.js");
+  const css=readRepoFile("public/ui-product.css");
+  const start=appJs.indexOf("function quality()");
+  const end=appJs.indexOf("function runtime()",start);
+  assert.ok(start>=0&&end>start);
+  const quality=appJs.slice(start,end);
+  for(const marker of [
+    "VERIFICATION POSTURE",
+    "What the source history can actually tell us",
+    "TEST CASES OBSERVED",
+    "TEST CASE DELTA",
+    "MIGRATION OPERATIONS",
+    "EXECUTION STATUS",
+    "Not run",
+    "Autopsy classifies source; it does not execute migrations"
+  ]) {
+    assert.ok(quality.includes(marker),"missing quality verification contract: "+marker);
+  }
+  assert.ok(css.includes(".quality-posture{border:1px solid var(--pa-border)"));
+  assert.ok(css.includes(".quality-posture-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))"));
+});
+
 test("structure exposes complexity direction without inventing a health score", () => {
   const appJs = readRepoFile("public/app.js");
   const start = appJs.indexOf("function structure()");
