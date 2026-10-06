@@ -1232,9 +1232,9 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 
 <a class="skip-link" href="#root">Skip to workspace</a>
 <main class="pa-app">
-  <header class="pa-nav-wrap">
+  <header class="top">
       <nav class="pa-nav" aria-label="Primary">
-        <a id="brandLink" class="pa-brand" href="#top" aria-label="Project Autopsy home">
+        <a id="brandLink" class="pa-brand" href="#overview" aria-label="Project Autopsy overview">
           <span class="pa-brand-mark" aria-hidden="true">✣</span>
           <span>
             <strong>Project <b>Autopsy</b></strong>
@@ -1250,7 +1250,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
         </div>
         <div class="pa-nav-actions">
           <button id="themeToggle" class="pa-icon-btn" type="button" aria-label="Switch theme" title="Theme">◐</button>
-          <button id="settings" class="pa-icon-btn" type="button" aria-label="Account settings" title="Account">⌘</button>
+          <button id="settings" class="pa-account-btn" type="button" aria-label="Sign in to your private workspace" title="Sign in to your private workspace">Sign in</button>
         </div>
       </nav>
     </header>
@@ -1487,7 +1487,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       <div class="pa-live-topbar">
         <div class="pa-live-repo">
           <span class="pa-brand-mark">✣</span>
-          <div><strong id="repoName">—</strong><small><span id="repoBranch">—</span> · <span id="repoStatus">—</span></small></div>
+          <div><strong id="repoName">—</strong><small><span id="repoBranch">—</span> · <span id="repoStatus">—</span></small><span class="repo-hint" hidden>Evidence is scoped to the selected analysis run.</span></div>
         </div>
         <div class="pa-live-actions">
           <button id="refresh" class="btn" type="button">Refresh</button>
