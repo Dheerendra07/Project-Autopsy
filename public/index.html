@@ -1310,7 +1310,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
             <div class="pa-hash">sha256:<span>9a3f…e1f2</span></div>
           </div>
         </div>
-        <div class="pa-proof-grid">
+        <div class="landing-proof">
           <div><b>PostgreSQL + Redis</b><span>bounded checks</span></div>
           <div><b>Credentials at rest</b><span>encrypted, never returned</span></div>
           <div><b>120 req/min</b><span>12 for expensive ops</span></div>
@@ -1407,30 +1407,41 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
             <button type="button" class="active">Re-analyze</button>
           </div>
         </div>
-        <div class="pa-metric-grid">
-          <div><span>COMMITS</span><b>1,840</b><small>stored Git history</small></div>
-          <div><span>HOTSPOTS</span><b>10</b><small>change centers</small></div>
-          <div><span>COMPLEXITY</span><b>5</b><small>tracked deltas</small></div>
-          <div><span>DEPLOYMENTS</span><b>12</b><small>revision-linked</small></div>
-        </div>
-        <nav class="pa-workspace-tabs" aria-label="Workspace preview">
-          <button type="button" class="active">Commits <span>1,840</span></button>
-          <button type="button">Hotspots <span>10</span></button>
-          <button type="button">Complexity <span>5</span></button>
-          <button type="button">Coupling <span>6</span></button>
-          <button type="button">Architecture <span>4</span></button>
-          <button type="button">Dependencies <span>5</span></button>
-          <button type="button">Deployments</button>
-          <button type="button">Runtime</button>
-          <button type="button">Contributors <span>5</span></button>
-          <button type="button">Timeline <span>10</span></button>
-        </nav>
-        <div class="pa-table-preview">
-          <div class="pa-table-head"><span>STORED COMMIT EVIDENCE</span><code>GET /api/repositories/:id/commits</code></div>
-          <div class="pa-table-row pa-table-row-head"><span>SHA</span><span>TYPE</span><span>SUBJECT</span><span>AUTHOR</span><span>+ / −</span><span>WHEN</span></div>
-          <div class="pa-table-row"><b>f4a9c7b2</b><span>feat</span><strong>Idempotent invoice finalization with Redis guard</strong><span>Priya Anand</span><span>+312 / −88</span><span>Sep 29</span></div>
-          <div class="pa-table-row"><b>e7c1d3a9</b><span>fix</span><strong>Webhook retries with bounded backoff</strong><span>Marcus Bélanger</span><span>+64 / −12</span><span>Sep 26</span></div>
-          <div class="pa-table-row"><b>d3b8f2c1</b><span>refactor</span><strong>Collapse invoicing service boundary</strong><span>Sofia Marenco</span><span>+410 / −528</span><span>Sep 24</span></div>
+        <div class="preview-grid">
+          <div class="preview-nav">
+            <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
+            <div class="preview-nav-group">UNDERSTAND</div>
+            <div class="preview-nav-item active"><span>01</span><strong>Overview</strong></div>
+            <div class="preview-nav-item"><span>02</span><strong>History</strong></div>
+            <div class="preview-nav-item"><span>03</span><strong>Structure</strong></div>
+            <div class="preview-nav-group">VALIDATE</div>
+            <div class="preview-nav-item"><span>04</span><strong>Quality</strong></div>
+            <div class="preview-nav-item"><span>05</span><strong>Runtime</strong></div>
+            <div class="preview-nav-group">OUTPUTS</div>
+            <div class="preview-nav-item"><span>06</span><strong>Report</strong></div>
+            <div class="preview-nav-item"><span>07</span><strong>Interview</strong></div>
+            <div class="preview-nav-item"><span>08</span><strong>Insights</strong></div>
+            <div class="preview-nav-group">EXPLORE</div>
+            <div class="preview-nav-item"><span>09</span><strong>Evidence</strong></div>
+            <div class="preview-nav-item"><span>10</span><strong>Contributors</strong></div>
+            <div class="preview-nav-group">OPERATE</div>
+            <div class="preview-nav-item"><span>11</span><strong>Operations</strong></div>
+          </div>
+          <div class="preview-main">
+            <div class="pa-metric-grid">
+              <div><span>COMMITS</span><b>1,840</b><small>stored Git history</small></div>
+              <div><span>HOTSPOTS</span><b>10</b><small>change centers</small></div>
+              <div><span>COMPLEXITY</span><b>5</b><small>tracked deltas</small></div>
+              <div><span>DEPLOYMENTS</span><b>12</b><small>revision-linked</small></div>
+            </div>
+            <div class="pa-table-preview">
+              <div class="pa-table-head"><span>STORED COMMIT EVIDENCE</span><code>GET /api/repositories/:id/commits</code></div>
+              <div class="pa-table-row pa-table-row-head"><span>SHA</span><span>TYPE</span><span>SUBJECT</span><span>AUTHOR</span><span>+ / −</span><span>WHEN</span></div>
+              <div class="pa-table-row"><b>f4a9c7b2</b><span>feat</span><strong>Idempotent invoice finalization with Redis guard</strong><span>Priya Anand</span><span>+312 / −88</span><span>Sep 29</span></div>
+              <div class="pa-table-row"><b>e7c1d3a9</b><span>fix</span><strong>Webhook retries with bounded backoff</strong><span>Marcus Bélanger</span><span>+64 / −12</span><span>Sep 26</span></div>
+              <div class="pa-table-row"><b>d3b8f2c1</b><span>refactor</span><strong>Collapse invoicing service boundary</strong><span>Sofia Marenco</span><span>+410 / −528</span><span>Sep 24</span></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
