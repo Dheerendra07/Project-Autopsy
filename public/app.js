@@ -818,9 +818,12 @@ function shell(title,desc,actions){
   }
   function structure(){
     var d=S.data||{},ar=arr(d.architecture,'events'),de=arr(d.dependencies,'changes'),cx=arr(d.complexity,'events'),co=arr(d.coupling,'pairs');
-    var dependencyKinds={},complexityDelta=0;
+    var dependencyKinds={},complexityDelta=0,complexityPositive=0,complexityNegative=0,complexityStable=0;
     de.forEach(function(x){var key=x.change_type||'change';dependencyKinds[key]=(dependencyKinds[key]||0)+1});
-    cx.forEach(function(x){complexityDelta+=Number(x.delta&&x.delta.cyclomaticComplexity||0)});
+    cx.forEach(function(x){
+      var delta=Number(x.delta&&x.delta.cyclomaticComplexity||0);
+      if(Number.isFinite(delta)){complexityDelta+=delta;if(delta>0)complexityPositive++;else if(delta<0)complexityNegative++;else complexityStable++}
+    });
     var depTypes=Object.keys(dependencyKinds).sort(function(a,b){return dependencyKinds[b]-dependencyKinds[a]||a.localeCompare(b)}).slice(0,7);
     var depMax=Math.max(1,...depTypes.map(function(k){return dependencyKinds[k]}));
     var maxComplexity=cx.reduce(function(m,x){return Math.max(m,Math.abs(Number(x.delta&&x.delta.cyclomaticComplexity||0)));},0);
@@ -844,7 +847,7 @@ function shell(title,desc,actions){
         '</div>'+
         '<aside class="card structure-pulse">'+
           '<div class="structure-side-block"><div class="kicker">DEPENDENCY CHANGE</div><h3>Package movement</h3><p>Observed package.json changes grouped by change type.</p><div class="dep-pulse">'+(depTypes.map(function(k){return '<div class="dep-pulse-row"><div><b>'+esc(k)+'</b><span>'+n(dependencyKinds[k])+'</span></div><div class="track"><div class="fill" style="width:'+(dependencyKinds[k]/depMax*100).toFixed(1)+'%"></div></div></div>'}).join('')||'<div class="empty"><strong>No dependency events.</strong>No package changes were loaded for this snapshot.</div>')+'</div></div>'+
-          '<div class="structure-side-block"><div class="kicker">COMPLEXITY DELTA</div><h3>Observed cyclomatic movement</h3><p>The aggregate below is a sum across loaded file-level deltas. Inspect individual records before interpreting it.</p><div class="metric">'+esc(n(complexityDelta))+'</div><div class="metric-label">aggregate Δ cyclomatic</div></div>'+
+          '<div class="structure-side-block"><div class="kicker">COMPLEXITY DELTA</div><h3>Observed cyclomatic movement</h3><p>The aggregate below is a sum across loaded file-level deltas. Inspect individual records before interpreting it.</p><div class="metric">'+esc(n(complexityDelta))+'</div><div class="metric-label">aggregate Δ cyclomatic</div><div class="complexity-breakdown"><span><b>'+n(complexityPositive)+'</b> increased</span><span><b>'+n(complexityNegative)+'</b> decreased</span><span><b>'+n(complexityStable)+'</b> unchanged</span></div></div>'+
           '<div class="structure-side-block"><div class="kicker">READING RULE</div><h3>Evidence boundary</h3><p>Co-change indicates files moved together in commits. It does not prove architectural dependency or causation.</p></div>'+
         '</aside>'+
       '</section>'+
