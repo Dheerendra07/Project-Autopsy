@@ -256,3 +256,40 @@ main{margin:0;max-width:none}
 @media(max-width:1000px){.landing-grid{grid-template-columns:1fr}.landing-title{max-width:760px}.import-card{max-width:760px}.overview-hero,.overview-grid{grid-template-columns:1fr}.landing-evidence,.surface-list{grid-template-columns:1fr 1fr}.workspace-shell{grid-template-columns:200px minmax(0,1fr)}}
 @media(max-width:760px){.top{padding:0 12px}.brand-copy small{display:none}.top-action{padding:0 8px}.workspace-shell{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--pa-border);padding:10px}.nav{grid-template-columns:repeat(3,minmax(0,1fr))}.nav-group{grid-column:1/-1;margin:9px 4px 3px}.sidefoot{grid-template-columns:1fr 1fr;margin-top:10px}.content{padding:18px 14px 45px}.landing-frame{padding:46px 16px 60px}.landing-title{font-size:clamp(42px,12vw,62px)}.landing-lead{font-size:15px}.import{grid-template-columns:1fr}.import>.btn.primary{grid-column:1}.landing-evidence,.surface-list{grid-template-columns:1fr}.landing-footer{flex-direction:column}.page-header{flex-direction:column}.actions{justify-content:flex-start}.view-filter{grid-template-columns:1fr}.overview-stat-strip{grid-template-columns:1fr 1fr}.overview-stat{border-bottom:1px solid var(--pa-border)}.overview-stat:nth-child(2n){border-right:0}.overview-identity .identity-row{grid-template-columns:86px 1fr}.next-actions{grid-template-columns:1fr}.evidence-families{grid-template-columns:1fr 1fr}.commit-row{grid-template-columns:1fr}.commit-row .commit-time{white-space:normal}.pa-auth-layout{grid-template-columns:1fr}.pa-auth-form{padding-left:0;border-left:0;border-top:1px solid var(--pa-border);padding-top:16px}}
 @media(max-width:520px){.nav{grid-template-columns:1fr 1fr}.analysis-progress{width:100%;margin-left:0}.banner{flex-wrap:wrap}.banner-copy{flex:1}.view-flow-actions{grid-column:1}.evidence-search-row{grid-template-columns:minmax(0,1fr) auto}.evidence-search-row #evidenceSearchCount{grid-column:1}.top-account{min-width:0}.top-action.primary{padding-inline:9px}}
+
+/* History surface */
+.history-signalbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--pa-border);border-bottom:1px solid var(--pa-border);margin-top:16px}
+.history-stat{padding:13px 14px;border-right:1px solid var(--pa-border);min-width:0}
+.history-stat:last-child{border-right:0}
+.history-stat span{display:block;color:var(--pa-text-4);font:700 7px var(--pa-mono);letter-spacing:.1em}
+.history-stat b{display:block;margin-top:6px;font-size:16px;letter-spacing:-.025em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-stat small{display:block;margin-top:3px;color:var(--pa-text-4);font-size:8px;line-height:1.4}
+.history-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,1fr);gap:10px}
+.overview-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.overview-card-head h3{margin-top:5px!important;font-size:13px!important}
+.signal-bars{display:grid;gap:12px}
+.signal-bar{display:grid;gap:5px}
+.signal-label{display:flex;justify-content:space-between;gap:10px;color:var(--pa-text-2);font:700 8px var(--pa-mono)}
+.signal-label span{color:var(--pa-text-4)}
+.commit-footprint{display:grid;margin-top:11px;border-top:1px solid var(--pa-border)}
+.footprint-row{display:grid;grid-template-columns:82px minmax(0,1fr);gap:3px 9px;padding:8px 0;border-bottom:1px solid var(--pa-border)}
+.footprint-row:last-child{border-bottom:0}
+.footprint-row .mono{font:700 7px var(--pa-mono);color:var(--pa-accent)}
+.footprint-row strong{font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.footprint-row small{grid-column:2;color:var(--pa-text-4);font-size:7px}
+.history-timeline{margin-top:11px}
+.history-timeline .item{padding-bottom:18px}
+.history-timeline .item .tag{margin-right:3px}
+.history-timeline .item .inspect{margin-top:2px}
+@media(max-width:1050px){.history-overview{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .history-signalbar{grid-template-columns:1fr 1fr}
+  .history-stat{border-bottom:1px solid var(--pa-border)}
+  .history-stat:nth-child(2n){border-right:0}
+}
+@media(max-width:520px){
+  .history-signalbar{grid-template-columns:1fr}
+  .history-stat{border-right:0}
+  .footprint-row{grid-template-columns:1fr}
+  .footprint-row small{grid-column:1}
+}
