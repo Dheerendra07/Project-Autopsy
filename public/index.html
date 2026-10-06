@@ -1273,7 +1273,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
         <p>Project Autopsy analyzes Git history, code structure, dependencies, schema, runtime telemetry, and deployment evidence to build an <strong>evidence-backed engineering history</strong>. Observed evidence is never confused with interpretation.</p>
 
         <div id="import" class="pa-import-anchor">
-          <div class="pa-import-card">
+          <form id="form" class="pa-import-card">
             <div class="pa-import-row">
               <label class="pa-field pa-field-main">
                 <span>Repository URL</span>
@@ -1283,14 +1283,11 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
                 <span>Branch <em>(optional)</em></span>
                 <input id="branch" placeholder="main">
               </label>
-              <button id="importButton" class="pa-submit" type="submit" form="form"><span>Import repository</span><b>→</b></button>
+              <button id="importButton" class="pa-submit" type="submit"><span>Import repository</span><b>→</b></button>
             </div>
             <div class="pa-import-meta">
               <span>HTTPS only</span><i>·</i><span>allowlisted hosts</span><i>·</i><span>returns <b>202 Accepted</b></span><i>·</i><span>clone runs in worker</span>
             </div>
-          </div>
-          <form id="form" hidden aria-hidden="true">
-            <input aria-hidden="true" tabindex="-1">
           </form>
         </div>
         <div class="pa-import-support">
