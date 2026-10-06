@@ -130,6 +130,32 @@ test("overview makes current snapshot evidence directly inspectable", () => {
   assert.ok(overview.includes("a.completedAt||a.completed_at||a.finishedAt||a.finished_at"));
 });
 
+test("runtime exposes historical reconstruction filters through the rendered surface", () => {
+  const appJs = readRepoFile("public/app.js");
+  const css = readRepoFile("public/ui-product.css");
+  const start = appJs.indexOf("function runtime()");
+  const end = appJs.indexOf("function reportPage()", start);
+  assert.ok(start >= 0 && end > start);
+  const runtime = appJs.slice(start, end);
+  for (const marker of [
+    "HISTORICAL RECONSTRUCTION",
+    'id="histWindow"',
+    'id="histSamples"',
+    'id="histSignal"',
+    'id="histDeployment"',
+    'id="histEnvironment"',
+    'id="histOperation"',
+    'data-action="historical-filter"',
+    'data-action="historical-clear-filter"',
+    "Apply historical filters",
+    "Identity filters"
+  ]) {
+    assert.ok(runtime.includes(marker), "missing runtime historical filter contract: " + marker);
+  }
+  assert.ok(css.includes(".historical-filter-bar{display:grid"));
+  assert.ok(css.includes(".historical-advanced{border:1px solid var(--pa-border)"));
+});
+
 test("quality verification posture keeps source evidence distinct from execution results", () => {
   const appJs=readRepoFile("public/app.js");
   const css=readRepoFile("public/ui-product.css");
