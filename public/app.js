@@ -600,32 +600,15 @@
   };
 
 function shell(title,desc,actions){
-    var toolbar=viewFilterMarkup();
     var snap=snapshotState();
     var loading=!!S.viewLoading[S.view];
-    var reload=RELOADABLE_VIEWS.indexOf(S.view)>=0
-      ? '<button class="btn" data-action="reload-view"'+(loading?' disabled aria-busy="true"':'')+'>'+(loading?'Refreshing…':'Refresh data')+'</button>'
-      : '';
+    var reload=RELOADABLE_VIEWS.indexOf(S.view)>=0?'<button class="btn" data-action="reload-view"'+(loading?' disabled aria-busy="true"':'')+'>'+(loading?'Refreshing…':'Refresh data')+'</button>':'';
     var source=safeExternalUrl(S.repo&&(S.repo.source_url||S.repo.sourceUrl));
-    var sourceAction=source?'<a class="btn link" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Open repository ↗</a>':'';
-    var guide=VIEW_GUIDANCE[S.view]||{answer:'Review the current evidence snapshot and use Inspect whenever you need the underlying record.',next:'Choose an action from the page header or open another workspace section.'};
-    var guideSteps=VIEW_WORKFLOW[S.view]||['Read the snapshot','Inspect supporting evidence','Take the next useful action'];
-    return '<div class="head">'+
-      '<div class="head-copy">'+
-        '<div class="kicker">WORKSPACE / '+esc(VIEW_TITLES[S.view]||title).toUpperCase()+'</div>'+
-        '<div class="head-title"><h2>'+esc(title)+'</h2><span class="snapshot-pill '+esc(snap.tone)+'">'+esc(snap.label)+'</span></div>'+
-        '<p>'+esc(desc)+'</p>'+
-      '</div>'+
-      '<div class="actions">'+(actions||'')+reload+sourceAction+'</div>'+
-      '</div>'+
-      '<div class="view-guide card">'+
-        '<div class="view-guide-icon">'+esc(S.view==='overview'?'01':S.view==='history'?'02':S.view==='structure'?'03':S.view==='quality'?'04':S.view==='runtime'?'05':S.view==='report'?'06':S.view==='interview'?'07':S.view==='interpretation'?'08':S.view==='evidence'?'09':S.view==='contributors'?'10':'11')+'</div>'+
-        '<div class="view-guide-copy"><span class="kicker">WHAT TO DO HERE</span><strong>'+esc(guide.answer)+'</strong><small>'+esc(guide.next)+'</small></div>'+
-        '<div class="view-guide-flow">'+guideSteps.map(function(step,i){return '<span>'+esc(step)+'</span>'+(i<guideSteps.length-1?'<i aria-hidden="true">→</i>':'')}).join('')+'</div>'+
-      '</div>'+
+    var sourceAction=source?'<a class="btn link" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Source repository ↗</a>':'';
+    var stepIndex=WORKFLOW_STEPS.findIndex(function(step){return step.id===S.view});
+    return '<div class="page-header"><div class="page-header-copy"><div class="kicker">WORKSPACE / '+esc((VIEW_TITLES[S.view]||title).toUpperCase())+'</div><div class="page-header-title"><h2>'+esc(title)+'</h2><span class="snapshot-pill '+esc(snap.tone)+'">'+esc(snap.label)+'</span></div><p>'+esc(desc)+'</p></div><div class="actions">'+(actions||'')+reload+sourceAction+'</div></div>'+
       viewFlowMarkup()+
-      toolbar+
-      viewSourceStatusMarkup()
+      (stepIndex<0||!S.repoId?'':viewSourceStatusMarkup());
   }
   const WORKFLOW_STEPS=[
     {number:'01',id:'overview',label:'Overview',detail:'Start from the current analysis snapshot and run boundary.'},
@@ -655,29 +638,20 @@ function shell(title,desc,actions){
     operations:{previous:"contributors",next:"overview",nextLabel:"Return to Overview",nextWhy:"Start another inspection pass from the current snapshot."}
   };
   function viewFlowMarkup(){
-    var flow=VIEW_FLOW[S.view];
-    if(!flow)return "";
-    var currentIndex=WORKFLOW_STEPS.findIndex(function(step){return step.id===S.view});
-    var current=VIEW_TITLES[S.view]||S.view;
-    var previous=flow.previous?'<a class="view-flow-link secondary" href="#'+esc(flow.previous)+'"><span>‹</span> Back</a>':'';
-    var next=flow.next
-      ? '<a class="view-flow-link primary" href="#'+esc(flow.next)+'"><span>'+esc(flow.nextLabel)+'</span><span aria-hidden="true">→</span></a>'
-      : '';
-    var rail=WORKFLOW_STEPS.map(function(step,index){
-      var state=index===currentIndex?' current':index<currentIndex?' past':'';
-      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'"'+(index===currentIndex?' aria-current="step"':'')+' title="'+esc(step.detail)+'">'+
-        '<span class="workspace-flow-index">'+esc(step.number)+'</span><span class="workspace-flow-label">'+esc(step.label)+'</span></a>';
+    var steps=Array.isArray(WORKFLOW_STEPS)?WORKFLOW_STEPS:[];
+    var idx=steps.findIndex(function(step){return step.id===S.view});
+    if(idx<0)idx=0;
+    var previous=idx>0?steps[idx-1]:null,next=idx<steps.length-1?steps[idx+1]:null;
+    var rail=steps.map(function(step,i){
+      var state=i===idx?' current':i<idx?' past':'';
+      return '<a class="workspace-flow-step'+state+'" href="#'+esc(step.id)+'"'+(i===idx?' aria-current="step"':'')+'><span class="workspace-flow-index">'+esc(step.number)+'</span><span class="workspace-flow-label">'+esc(step.label)+'</span></a>';
     }).join('<span class="workspace-flow-connector" aria-hidden="true">→</span>');
-    return '<div class="view-flow card" aria-label="Workspace workflow navigation">'+
-      '<div class="view-flow-head">'+
-        '<div class="view-flow-copy"><span class="kicker">WORKSPACE PATH</span><strong>'+esc(current)+'</strong><small>'+esc(flow.nextWhy)+'</small></div>'+
-        '<div class="view-flow-meta"><span>STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))+'</span><span>navigation only</span></div>'+
-      '</div>'+
-      '<div class="workspace-flow-rail" role="list" aria-label="Project Autopsy workflow stages">'+rail+'</div>'+
-      '<div class="view-flow-actions">'+previous+next+'</div>'+
-      '</div>';
+    return '<section class="view-flow" aria-label="Workspace navigation">'+
+      '<div class="view-flow-head"><div class="view-flow-copy"><span class="kicker">WORKSPACE NAVIGATION</span><strong>'+esc(VIEW_TITLES[S.view]||S.view)+'</strong><small>Move through the same repository snapshot. Navigation does not create a new analysis.</small></div><div class="view-flow-meta"><span>STEP '+(idx+1)+' / '+steps.length+'</span><span>'+esc(S.view)+'</span></div></div>'+
+      '<div class="workspace-flow-rail">'+rail+'</div>'+
+      '<div class="view-flow-actions">'+(previous?'<a class="btn link view-flow-link" href="#'+esc(previous.id)+'">← '+esc(previous.label)+'</a>':'')+(next?'<a class="btn primary view-flow-link" href="#'+esc(next.id)+'">'+esc(next.label)+' →</a>':'')+'</div>'+
+    '</section>';
   }
-
   const VIEW_GUIDANCE={
     overview:{answer:'Start here. Read the current snapshot, run boundary and recent changes before opening derived outputs.',next:'Next: open History for chronology, Structure for codebase shape, or Report when you need a shareable output.'},
     history:{answer:'Trace what changed and when. Open Inspect on a commit or timeline event to see the exact persisted record.',next:'Next: use Structure to understand what those changes did to the codebase shape.'},
@@ -717,76 +691,79 @@ function shell(title,desc,actions){
     root.insertBefore(node,root.firstChild);
   }
   function overviewLoadingPage(){
-    return shell('Engineering overview','Loading the evidence needed for this repository snapshot.','')+
-      '<div class="overview-skeleton" data-view-skeleton="overview" aria-busy="true" aria-label="Loading engineering overview">'+
-        '<div class="overview-skeleton-context card"><div class="skeleton-block skeleton-kicker"></div><div class="skeleton-block skeleton-title"></div><div class="skeleton-block skeleton-meta"></div><div class="overview-skeleton-journey">'+[1,2,3,4].map(function(){return '<div class="skeleton-card"><span class="skeleton-block skeleton-icon"></span><span class="skeleton-block skeleton-line wide"></span><span class="skeleton-block skeleton-line"></span></div>'}).join('')+'</div></div>'+
-        '<div class="grid g4 overview-metrics overview-skeleton-metrics">'+[1,2,3,4].map(function(){return '<div class="card skeleton-metric"><span class="skeleton-block skeleton-line short"></span><span class="skeleton-block skeleton-value"></span><span class="skeleton-block skeleton-line"></span></div>'}).join('')+'</div>'+
-        '<div class="overview-insight-grid section"><div class="card skeleton-panel"><div class="skeleton-heading"><span class="skeleton-block skeleton-line medium"></span><span class="skeleton-block skeleton-line"></span></div>'+[1,2,3].map(function(){return '<div class="skeleton-row"><span class="skeleton-block skeleton-icon"></span><div><span class="skeleton-block skeleton-line wide"></span><span class="skeleton-block skeleton-line"></span></div><span class="skeleton-block skeleton-pill"></span></div>'}).join('')+'</div><div class="card skeleton-panel"><div class="skeleton-heading"><span class="skeleton-block skeleton-line medium"></span><span class="skeleton-block skeleton-line"></span></div>'+[1,2,3,4,5].map(function(){return '<div class="skeleton-field"><span class="skeleton-block skeleton-line short"></span><span class="skeleton-block skeleton-line wide"></span></div>'}).join('')+'</div></div>'+
-        '<div class="card section skeleton-table"><div class="skeleton-heading"><span class="skeleton-block skeleton-line medium"></span><span class="skeleton-block skeleton-line"></span></div>'+[1,2,3,4,5].map(function(){return '<div class="skeleton-table-row"><span class="skeleton-block skeleton-pill"></span><span class="skeleton-block skeleton-line medium"></span><span class="skeleton-block skeleton-line wide"></span><span class="skeleton-block skeleton-line"></span><span class="skeleton-block skeleton-pill"></span></div>'}).join('')+'</div>'+
-        '<div class="grid g2 section"><div class="card skeleton-panel">'+[1,2,3,4,5].map(function(){return '<div class="skeleton-history-row"><span class="skeleton-block skeleton-dot"></span><div><span class="skeleton-block skeleton-line wide"></span><span class="skeleton-block skeleton-line"></span></div></div>'}).join('')+'</div><div class="card skeleton-panel">'+[1,2,3,4,5].map(function(){return '<div class="skeleton-bar-row"><span class="skeleton-block skeleton-line short"></span><span class="skeleton-block skeleton-bar"></span><span class="skeleton-block skeleton-count"></span><span class="skeleton-block skeleton-pill"></span></div>'}).join('')+'</div></div>'+
-      '</div>';
+    return shell('Overview','Loading the current repository snapshot and its evidence index.')+
+      '<div class="loading-state" aria-busy="true"><div class="loading-orb" aria-hidden="true"></div><div><strong>Preparing the command center</strong><p>Loading persisted repository evidence for this analysis run. No new analysis is started.</p></div></div>'+
+      '<div class="grid g4"><div class="card"><div class="metric">—</div><div class="metric-label">Commits</div></div><div class="card"><div class="metric">—</div><div class="metric-label">Hotspots</div></div><div class="card"><div class="metric">—</div><div class="metric-label">Contributors</div></div><div class="card"><div class="metric">—</div><div class="metric-label">Snapshot</div></div></div>';
   }
   function errorPage(title,message,actionLabel,action){
     return shell(title,'The workspace could not complete this action. The existing evidence snapshot is unchanged.','')+'<div class="card error-state"><div class="error-mark">!</div><div><strong>'+esc(message)+'</strong><p>Retry the operation without starting a new repository analysis.</p><button class="btn primary" data-action="'+esc(action)+'">'+esc(actionLabel||'Try again')+'</button></div></div>';
   }
   function overview(){
-    var r=S.repo||{},a=S.analysis||{},d=S.data,c=arr(d.commits,'commits'),h=arr(d.hotspots,'hotspots');
-    var max=1;
-    h.slice(0,8).forEach(function(x){max=Math.max(max,Number(x.commits_touched||0))});
-    var repoName=r.name||'Repository',branchName=r.tracked_branch||r.trackedBranch||r.default_branch||r.defaultBranch||'branch unavailable';
-    var head=r.head_sha||r.headSha||'',target=a.targetHeadSha||'';
+    var r=S.repo||{},a=S.analysis||{},d=S.data||{};
+    var commits=arr(d.commits,'commits'),hotspots=arr(d.hotspots,'hotspots'),contributors=arr(d.contributors,'contributors'),runs=arr(d.analysisRuns,'runs');
     var snapshot=snapshotState(),current=currentAnalysisSnapshot();
-    var mode=a.mode||'full',status=a.status||'unknown';
-    var journey=[
-      ['01','Imported','Repository metadata persisted'],
-      ['02','Analyzed',status==='completed'?'Evidence snapshot completed':'Analysis '+status],
-      ['03','Mapped',n(c.length)+' commits in this page'],
-      ['04','Inspectable',current?'Current snapshot ready':'Refresh to inspect latest head']
-    ];
-    return shell('Engineering overview','A compact, evidence-backed command center for the current repository snapshot.','<button class="btn" data-action="report">Generate report</button>')+
-      '<div class="overview-context card">'+
-        '<div class="overview-context-main">'+
-          '<div class="kicker">CURRENT SNAPSHOT</div>'+
-          '<div class="overview-context-title"><h3>'+esc(repoName)+'</h3><span class="snapshot-pill '+esc(snapshot.tone)+'">'+esc(snapshot.label)+'</span></div>'+
-          '<div class="overview-context-source"><span class="mono">'+esc(branchName)+'</span><span>·</span><span class="mono">'+esc(head?sha(head):'head unavailable')+'</span><span>·</span><span>'+esc(mode)+' analysis</span></div>'+
+    var repoName=r.name||'Repository',branchName=r.tracked_branch||r.trackedBranch||r.default_branch||r.defaultBranch||'branch unavailable';
+    var head=r.head_sha||r.headSha||'',target=a.targetHeadSha||'',analysisStatus=a.status||'unknown',analysisMode=a.mode||'full';
+    var totalCommits=d.commits&&d.commits.pagination&&d.commits.pagination.total,totalHotspots=d.hotspots&&d.hotspots.pagination&&d.hotspots.pagination.total,totalContributors=d.contributors&&d.contributors.pagination&&d.contributors.pagination.total;
+    function readinessRow(index,label,detail,ok,warning){
+      var state=ok?'<span class="readiness-state good">available</span>':warning?'<span class="readiness-state warn">attention</span>':'<span class="readiness-state">not loaded</span>';
+      return '<div class="readiness-row"><span class="readiness-index">'+index+'</span><div><strong>'+esc(label)+'</strong><small>'+esc(detail)+'</small></div>'+state+'</div>';
+    }
+    function stat(label,value,detail){return '<div class="overview-stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong><small>'+esc(detail)+'</small></div>'}
+    function commitRow(x){
+      var subject=x.subject||x.message||'Repository change',author=x.author_name||x.authorName||x.author||'Unknown author';
+      return '<div class="commit-row"><div class="commit-sha">'+esc(sha(x.sha))+'</div><div><strong>'+esc(subject)+'</strong><small>'+esc(author)+'</small></div><div class="commit-time">'+esc(date(x.committed_at||x.committedAt||x.timestamp))+'</div></div>';
+    }
+    function hotspotRow(x){
+      var touched=x.commits_touched??x.commitsTouched??x.commits??x.count??null;
+      return '<div class="signal-row"><span class="signal-dot"></span><div><strong>'+esc(x.path||x.file||'Hotspot')+'</strong><small>'+esc(touched==null?'Historical file-activity signal':'Touched in '+n(touched)+' loaded commits')+'</small></div><span class="signal-value">'+(touched==null?'—':n(touched))+'</span></div>';
+    }
+    var readiness=
+      readinessRow('01','Analysis snapshot',current?'Current repository head is aligned with the completed analysis.':'The stored analysis is not aligned with the current repository head.',current,!current&&analysisStatus==='completed')+
+      readinessRow('02','Git history',commits.length?'Commit evidence is loaded for this snapshot.':'No commit rows are loaded.',commits.length,false)+
+      readinessRow('03','Structure',d.architecture!=null?'Structure evidence is loaded.':'Open Structure to load architecture evidence.',d.architecture!=null,false)+
+      readinessRow('04','Quality',d.bugs!=null||d.tests!=null?'Quality evidence is loaded.':'Open Quality to load quality evidence.',d.bugs!=null||d.tests!=null,false)+
+      readinessRow('05','Runtime',d.runtime!=null||d.runtimeEvents!=null?'Runtime evidence is available.':'Runtime evidence has not been loaded yet.',d.runtime!=null||d.runtimeEvents!=null,false);
+
+    var sourceUrl=safeExternalUrl(r.source_url||r.sourceUrl);
+    return shell('Overview','Start from the current snapshot, understand its boundary, then choose the evidence surface that answers the next engineering question.',
+      '<button class="btn primary" data-action="report">Build report</button><button class="btn" data-action="refresh">Refresh analysis</button>')+
+      '<section class="overview-hero">'+
+        '<div class="overview-command"><div class="kicker">CURRENT ENGINEERING CONTEXT</div><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:6px"><h3 style="margin:0;font-size:20px">'+esc(repoName)+'</h3><span class="tag">'+esc(analysisMode)+' analysis</span></div>'+
+        '<p>'+esc(current?'This workspace is aligned to the repository head and can be used as the current evidence snapshot.':'The repository has moved or the analysis is not complete. Treat downstream outputs as snapshot-bound until the current revision is analyzed.')+'</p>'+
+        '<div class="overview-identity">'+
+          '<div class="identity-row"><span>Branch</span><strong class="mono">'+esc(branchName)+'</strong></div>'+
+          '<div class="identity-row"><span>Repository head</span><strong class="mono">'+esc(head||'unavailable')+'</strong></div>'+
+          '<div class="identity-row"><span>Analysis target</span><strong class="mono">'+esc(target||'unavailable')+'</strong></div>'+
+          '<div class="identity-row"><span>Revision relation</span><strong>'+esc(current?'same revision':'different revision')+'</strong></div>'+
+          '<div class="identity-row"><span>Analysis state</span><strong>'+esc(analysisStatus)+'</strong></div>'+
+          '<div class="identity-row"><span>Analysis run</span><strong class="mono">'+esc(a.id||S.runId||'unavailable')+'</strong></div>'+
+        '</div>'+(sourceUrl?'<div style="margin-top:12px"><a class="btn link" href="'+esc(sourceUrl)+'" target="_blank" rel="noopener noreferrer">Open source repository ↗</a></div>':'')+
         '</div>'+
-        '<div class="overview-journey">'+journey.map(function(x,i){return '<div class="journey-step '+(i===0||i===1&&status==='completed'||i===2&&c.length||i===3&&current?'done':'')+'"><span>'+x[0]+'</span><div><b>'+x[1]+'</b><small>'+x[2]+'</small></div></div>'}).join('')+'</div>'+
-      '</div>'+
-      '<div class="grid g4 overview-metrics">'+
-        metric('Persisted commits',n(d.commits&&d.commits.pagination&&d.commits.pagination.total||c.length),'stored Git history')+
-        metric('Change hotspots',n(h.length),'historical activity signals')+
-        metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+
-        metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+
-      '</div>'+
-      (S.dataErrors.length
-        ? '<div class="callout section"><strong>Partial evidence load</strong><br>'+n(S.dataErrors.length)+' endpoint'+(S.dataErrors.length===1?'':'s')+' could not be loaded. Existing persisted data remains visible; retry the evidence load without starting a new analysis.</div><div style="margin-top:10px"><button class="btn" data-action="reload-data">Retry evidence load</button></div>'
-        : '')+
-      '<div class="overview-insight-grid section">'+
-        '<div class="card overview-evidence-card">'+
-          '<div class="overview-card-head"><div><div class="kicker">EVIDENCE POSTURE</div><h3>What this snapshot can support</h3><div class="sub">The workspace keeps observations, derived signals and interpretation separate.</div></div><span class="tag">'+(current?'CURRENT':'REVIEW')+'</span></div>'+
-          '<div class="posture-list">'+
-            '<div class="posture-row"><span class="posture-icon">01</span><div><b>Observed</b><small>Commit, source-structure and repository metadata persisted from the analyzed target.</small></div><span class="posture-state good">SUPPORTED</span></div>'+
-            '<div class="posture-row"><span class="posture-icon">02</span><div><b>Derived</b><small>Hotspots, coupling and heuristic classifications remain labelled as signals.</small></div><span class="posture-state">DERIVED</span></div>'+
-            '<div class="posture-row"><span class="posture-icon">03</span><div><b>Interpretation</b><small>Reports and insights must point back to evidence instead of replacing it.</small></div><span class="posture-state">SCOPED</span></div>'+
-          '</div>'+
-        '</div>'+
-        '<div class="card overview-target-card">'+
-          '<div class="overview-card-head"><div><div class="kicker">ANALYSIS TARGET</div><h3>Exact run boundary</h3><div class="sub">Useful context when a repository moves while evidence is being reviewed.</div></div></div>'+
-          '<div class="target-stack">'+
-            '<div><span>RUN</span><b class="mono">'+esc(sha(a.id))+'</b></div>'+
-            '<div><span>TARGET</span><b class="mono">'+esc(sha(target))+'</b></div>'+
-            '<div><span>STARTED</span><b>'+esc(date(a.startedAt))+'</b></div>'+
-            '<div><span>COMPLETED</span><b>'+esc(date(a.completedAt))+'</b></div>'+
-            '<div><span>DURATION</span><b>'+esc(elapsed(a.startedAt,a.completedAt))+'</b></div>'+
-          '</div>'+
-          (!current&&status==='completed'
-            ? '<div class="overview-warning"><span>!</span><div><b>Repository head differs from this snapshot.</b><small>Refresh analysis before using derived outputs as current.</small></div></div>'
-            : '')+
-        '</div>'+
-      '</div>'+
-      '<div class="card section"><div class="overview-card-head"><div><div class="kicker">ANALYSIS HISTORY</div><h3>Run ledger</h3><div class="sub">Persisted lifecycle records; failure details remain sanitized.</div></div><span class="tag">'+n(arr(d.analysisRuns,'runs').length)+' shown</span></div><div class="table section"><table><thead><tr><th>Status</th><th>Mode</th><th>Target</th><th>Started</th><th>Completed</th><th></th></tr></thead><tbody>'+(arr(d.analysisRuns,'runs').slice(0,20).map(function(x){return '<tr><td><span class="pill '+cls(x.status)+'">'+esc(x.status||'unknown')+'</span></td><td>'+esc(x.mode||'—')+'</td><td class="mono">'+esc(sha(x.targetHeadSha))+'</td><td>'+esc(date(x.startedAt))+'</td><td>'+esc(date(x.completedAt))+'</td><td>'+((x.errorMessage)?inspectButton("Analysis run "+sha(x.id),"Sanitized analysis failure diagnostics.",x):inspectButton("Analysis run "+sha(x.id),"Persisted analysis lifecycle record.",x))+'</td></tr>'}).join('')||'<tr><td colspan="6" class="dim">No analysis runs persisted.</td></tr>')+'</tbody></table></div>'+(d.analysisRuns&&d.analysisRuns.pagination&&d.analysisRuns.pagination.page<d.analysisRuns.pagination.totalPages?'<div style="margin-top:12px"><button class="btn" data-action="analysis-runs-more">'+(S.analysisRunsLoading?'Loading…':'Load older analysis runs')+'</button></div>':'')+'</div>'+
-      '<div class="grid g2 section"><div class="card"><div class="overview-card-head"><div><div class="kicker">RECENT HISTORY</div><h3>Latest persisted changes</h3><div class="sub">Newest commits first; inspect the source evidence behind each item.</div></div></div><div class="timeline">'+(c.slice(0,7).map(function(x){return '<div class="item"><i></i><strong>'+esc(x.subject)+'</strong><p><span class="mono">'+esc(sha(x.sha))+'</span> · '+esc(date(x.committed_at))+' · '+n(x.files_changed)+' files</p><div style="margin-top:7px">'+inspectButton('Commit '+sha(x.sha),'Persisted commit metadata and numstat evidence.',x)+'</div></div>'}).join('')||'<div class="empty">No commit evidence.</div>')+'</div></div>'+
-      '<div class="card"><div class="overview-card-head"><div><div class="kicker">ACTIVITY SIGNAL</div><h3>Most touched files</h3><div class="sub">Historical activity signal — not a quality ranking.</div></div></div><div class="bars" style="margin-top:15px">'+(h.slice(0,8).map(function(x){return '<div class="bar"><span title="'+esc(x.path)+'">'+esc(x.path)+'</span><div class="track"><div class="fill" style="width:'+(Number(x.commits_touched||0)/max*100)+'%"></div></div><b>'+n(x.commits_touched)+'</b>'+inspectButton('Hotspot '+(x.path||'file'),'Historical file-activity signal from persisted commit evidence.',x)+'</div>'}).join('')||'<div class="empty">No hotspot evidence.</div>')+'</div></div></div>';
+        '<aside class="overview-side"><div class="side-heading"><div><h3>Workspace readiness</h3><small>Loaded evidence surfaces</small></div><span class="tag">'+esc(snapshot.label)+'</span></div><div class="readiness-list">'+readiness+'</div></aside>'+
+      '</section>'+
+      '<section class="overview-stat-strip">'+
+        stat('COMMITS',n(totalCommits??commits.length),totalCommits!=null?'persisted total':'loaded sample')+
+        stat('HOTSPOTS',n(totalHotspots??hotspots.length),totalHotspots!=null?'persisted total':'loaded sample')+
+        stat('CONTRIBUTORS',n(totalContributors??contributors.length),totalContributors!=null?'persisted total':'loaded sample')+
+        stat('ANALYSIS RUNS',n(runs.length),runs.length?'loaded runs':'current run context')+
+      '</section>'+
+      '<section class="overview-grid section">'+
+        '<div class="card"><div class="panel-head"><div><div class="kicker">SIGNALS TO INVESTIGATE</div><h3>Where the snapshot deserves attention</h3></div><small>Signals are not conclusions.</small></div><div class="signal-list">'+
+          (hotspots.slice(0,8).map(hotspotRow).join('')||'<div class="empty"><strong>No hotspot rows are loaded.</strong>Open Structure or refresh this view to load more evidence.</div>')+
+        '</div></div>'+
+        '<div class="card"><div class="panel-head"><div><div class="kicker">NEXT INSPECTION</div><h3>Choose the evidence surface</h3></div></div><div class="next-actions">'+
+          '<a class="next-action" href="#history"><span>02</span><strong>Trace history</strong><small>See when important changes occurred.</small></a>'+
+          '<a class="next-action" href="#structure"><span>03</span><strong>Map structure</strong><small>Understand architecture, dependencies and coupling.</small></a>'+
+          '<a class="next-action" href="#quality"><span>04</span><strong>Validate quality</strong><small>Inspect tests, refactors and repeated-change signals.</small></a>'+
+          '<a class="next-action" href="#runtime"><span>05</span><strong>Check runtime</strong><small>Compare observed telemetry with explicit revisions.</small></a>'+
+          '<a class="next-action" href="#evidence"><span>09</span><strong>Inspect evidence</strong><small>Open the underlying persisted records.</small></a>'+
+          '<a class="next-action" href="#operations"><span>11</span><strong>Check operations</strong><small>Separate live service health from repository evidence.</small></a>'+
+        '</div></div>'+
+      '</section>'+
+      '<section class="card section"><div class="panel-head"><div><div class="kicker">RECENT HISTORY</div><h3>Latest repository changes</h3></div><small>'+esc(commits.length?(totalCommits!=null?n(totalCommits)+' persisted commits · showing loaded page':n(commits.length)+' loaded commits'):'No commit evidence loaded')+'</small></div><div class="commit-list">'+
+        (commits.slice(0,8).map(commitRow).join('')||'<div class="empty"><strong>No commit evidence is loaded.</strong> Open History to inspect the repository timeline.</div>')+
+      '</div></section>';
   }
   function historyView(){
     var d=S.data,c=arr(d.commits,'commits'),t=arr(d.timeline,'events'),commitPagination=d.commits&&d.commits.pagination||{},timelinePagination=d.timeline&&d.timeline.pagination||{};
