@@ -2628,68 +2628,23 @@ test("frontend clears in-memory csrf state on auth loss and sign-out", () => {
 
 
 test("landing repository form keeps controls contained and action hierarchy explicit", () => {
-  const html = readRepoFile("public/index.html");
-  assert.ok(
-    html.includes(".import{grid-template-columns:minmax(0,1fr) minmax(150px,180px) max-content;align-items:end}")
-  );
-  assert.ok(
-    html.includes(".import .field input{width:100%;min-width:0;height:44px;min-height:44px;line-height:20px}")
-  );
-  assert.ok(
-    html.includes(".import>.btn.primary{height:44px;min-height:44px;align-self:end")
-  );
-  assert.ok(html.includes(".import>.btn.primary::after"));
-  assert.ok(html.includes("@media(max-width:760px)"));
-  assert.ok(html.includes("@media(max-width:520px)"));
-});
-test("final UI theme uses the consolidated indigo/slate visual system", () => {
-  const html = readRepoFile("public/index.html");
-
-  for (const marker of [
-    ".import > #importButton.btn.primary{",
-    "background:linear-gradient(180deg,#9a9fff 0%,#7479e6 100%);",
-    ".workspace-preview{",
-    "rgba(139,143,247,.1)",
-    ".preview-footline{",
-    ".history-signalbar,",
-    ".recent-repo{border-color:#2b3340;background:#12161e}"
-  ]) {
-    assert.ok(html.includes(marker), "missing final UI theme marker: " + marker);
-  }
-
-  assert.ok(
-    html.lastIndexOf(".btn.primary,") > html.indexOf("/* Visual system consolidation */"),
-    "final CTA styling must be later than the legacy theme layers"
-  );
-});
-
-test("workspace UI system keeps navigation scrollable and page guidance explicit", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-  for (const marker of [
-    'id="repoStatus"',
-    'class="repo-hint"',
-    'title="Current snapshot and what to inspect first"',
-    'class="settings-sheet"',
-    'class="settings-scroll"',
-    'class="landing-proof"',
-    'class="landing-how"',
-    'class="landing-capabilities"',
-    'PRODUCT UI SYSTEM V3',
-    '.nav{display:grid!important;align-content:start;gap:3px!important;min-height:0;overflow-y:auto',
-    '.side{position:sticky!important;top:72px!important;height:calc(100vh - 72px)!important;min-height:0!important;display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;overflow:hidden!important'
-  ]) {
-    assert.ok(html.includes(marker), "missing UI system marker: " + marker);
-  }
-  for (const marker of [
-    "const VIEW_GUIDANCE=",
-    "function syncWorkspaceMeta()",
-    "document.body.dataset.view=v;",
-    "view-guide",
-    "WHAT TO DO HERE"
-  ]) {
-    assert.ok(appJs.includes(marker), "missing guided workspace interaction marker: " + marker);
-  }
+  const html=readRepoFile("public/index.html");
+  const css=readRepoFile("public/ui-product.css");
+  assert.ok(html.includes('id="form"'));
+  assert.ok(html.includes('id="url"'));
+  assert.ok(html.includes('id="importButton"'));
+  assert.ok(html.includes('class="import-card"'));
+  assert.ok(css.includes(".import{display:grid;grid-template-columns:minmax(0,1fr) 150px"));
+  assert.ok(css.includes(".import>.btn.primary{grid-column:2"));
+  assert.ok(css.includes("@media(max-width:760px)"));
+  assert.ok(css.includes("@media(max-width:520px)"));
+});ount surfaces explicit", () => {
+  const html=readRepoFile("public/index.html");
+  const css=readRepoFile("public/ui-product.css");
+  const appJs=readRepoFile("public/app.js");
+  for(const marker of ['id="repoStatus"','class="settings-sheet"','class="settings-scroll"','id="commandPalette"','class="surface-list"','class="workspace-shell"']) assert.ok(html.includes(marker),"missing product shell marker: "+marker);
+  for(const marker of ["const VIEW_GUIDANCE=","function syncWorkspaceMeta()","document.body.dataset.view=v;","function viewFlowMarkup()","WORKSPACE NAVIGATION"]) assert.ok(appJs.includes(marker),"missing workspace interaction marker: "+marker);
+  assert.ok(css.includes(".side{")); assert.ok(css.includes(".nav{"));
 });
 
 test("settings surface remains scroll-safe for long account state", () => {
@@ -2701,17 +2656,8 @@ test("settings surface remains scroll-safe for long account state", () => {
 });
 
 test("production smoke proves the deployed product shell is current", () => {
-  const smoke = readRepoFile("scripts/production-smoke.mjs");
-
-  for (const marker of [
-    'assert(home.text.includes("PRODUCT UI SYSTEM V6")',
-    'assert(home.text.includes(\'<script src="theme.js"></script>\')',
-    'assert(appJs.text.includes("const COMMAND_DEFS=")',
-    'const themeJs = await request("/theme.js")',
-    'assert(themeJs.text.includes("prefers-color-scheme: light")'
-  ]) {
-    assert.ok(smoke.includes(marker), "missing production UI smoke guardrail: " + marker);
-  }
+  const smoke=readRepoFile("scripts/production-smoke.mjs");
+  for(const marker of ['assert(home.text.includes("Project Autopsy")','assert(home.text.includes(\'<script src="theme.js"></script>\')','const uiCss = await request("/ui-product.css")','assert(uiCss.response.ok','assert(uiCss.text.includes("--pa-bg:#0b0d10"))','assert(appJs.text.includes("const COMMAND_DEFS=")','const themeJs = await request("/theme.js")','assert(themeJs.text.includes("prefers-color-scheme: light")']) assert.ok(smoke.includes(marker),"missing production UI smoke guardrail: "+marker);
 });
 
 test("developer command center preserves evidence-first workspace boundaries", () => {
@@ -2883,18 +2829,16 @@ test("workspace views stay backed by mounted API contracts", () => {
   assert.ok(contributors.includes('get("/", async'));
   assert.ok(observability.includes('observabilityRouter.get("/summary"'));
 });
-test("final V6 visual authority is later than legacy theme layers", () => {
-  const html = readRepoFile("public/index.html");
-  const v5 = html.indexOf("PRODUCT UI SYSTEM V5");
-  const v6 = html.indexOf("PRODUCT UI SYSTEM V6 — final visual authority");
-  assert.ok(v5 >= 0, "V5 system marker must remain traceable");
-  assert.ok(v6 > v5, "V6 must be the final visual authority layer");
-  assert.ok(html.includes("--ui-accent:#6366f1"));
-  assert.ok(html.includes("--ui-bg:#0a0f17"));
-  assert.ok(html.includes("color-scheme:dark"));
-  assert.ok(html.includes('html[data-theme="light"]'));
-  assert.ok(html.includes(".btn.primary,.import>.btn.primary"));
-  assert.ok(html.includes(".view-source-status"));
+test("new product visual system is externalized and owns theme authority", () => {
+  const html=readRepoFile("public/index.html");
+  const css=readRepoFile("public/ui-product.css");
+  assert.ok(html.includes('ui-product.css?v=foundation-v1'));
+  assert.ok(css.includes(":root{"));
+  assert.ok(css.includes("--pa-accent:#7c86f8"));
+  assert.ok(css.includes('html[data-theme="light"]'));
+  assert.ok(css.includes("color-scheme:dark"));
+  assert.ok(css.includes(".view-source-status"));
+  assert.doesNotMatch(html,/PRODUCT UI SYSTEM V[0-9]/);
 });
 
 test("theme bootstrap keeps system fallback implicit until the user chooses a theme", () => {
@@ -2909,85 +2853,39 @@ test("theme bootstrap keeps system fallback implicit until the user chooses a th
 });
 
 test("workspace source health rail remains visible for partial data failures", () => {
-  const appJs = readRepoFile("public/app.js");
-  const html = readRepoFile("public/index.html");
-
+  const appJs=readRepoFile("public/app.js");
+  const css=readRepoFile("public/ui-product.css");
   assert.ok(appJs.includes("function viewSourceStatusMarkup()"));
   assert.ok(appJs.includes("S.dataErrors.filter(function(error){return keys.indexOf(error.key)>=0;})"));
   assert.ok(appJs.includes("All '+keys.length+' evidence sources loaded"));
-  assert.ok(appJs.includes("sources loaded"));
-  assert.ok(html.includes(".view-source-status"));
-  assert.ok(html.includes(".view-source-dot"));
-  assert.ok(html.includes("source health rail"));
+  assert.ok(css.includes(".view-source-status"));
+  assert.ok(css.includes(".view-source-dot"));
 });
-
 
 test("workspace flow rail gives every view an explicit next action", () => {
-  const appJs = readRepoFile("public/app.js");
-  const html = readRepoFile("public/index.html");
-
-  for (const marker of [
-    "const VIEW_FLOW={",
-    "function viewFlowMarkup(){",
-    'nextLabel:"Open History"',
-    'nextLabel:"Build Report"',
-    'nextLabel:"Inspect Evidence"',
-    'href="#\'+esc(flow.next)+\'"',
-    "WORKSPACE PATH",
-    "view-flow-link primary",
-    "view-flow-link secondary"
-  ]) {
-    assert.ok(appJs.includes(marker) || html.includes(marker), "missing workspace flow marker: " + marker);
-  }
-
-  assert.ok(html.includes("WORKSPACE FLOW V4"));
-  assert.ok(html.includes(":root{"));
-  assert.ok(html.includes("--gold:var(--ui-accent)"));
+  const appJs=readRepoFile("public/app.js");
+  const css=readRepoFile("public/ui-product.css");
+  for(const marker of ["const WORKFLOW_STEPS=","function viewFlowMarkup()","workspace-flow-rail","workspace-flow-step","WORKSPACE NAVIGATION"]) assert.ok(appJs.includes(marker),"missing workspace navigation marker: "+marker);
+  assert.ok(css.includes(".workspace-flow-rail"));
+  assert.ok(css.includes(".workspace-flow-step.current"));
 });
 
-
-
-test("overview command center keeps primary evidence text readable and product-hierarchy sized", () => {
-  const html = readRepoFile("public/index.html");
-  const appJs = readRepoFile("public/app.js");
-  const overviewStart = appJs.indexOf("function overview()");
-  const overviewEnd = appJs.indexOf("function historyView()", overviewStart);
-  assert.ok(overviewStart >= 0 && overviewEnd > overviewStart);
-  const overview = appJs.slice(overviewStart, overviewEnd);
-  for (const marker of ["overview-context", "overview-journey", "overview-metrics", "overview-insight-grid", "EVIDENCE POSTURE", "ANALYSIS HISTORY", "RECENT HISTORY"]) {
-    assert.ok(overview.includes(marker), "missing overview hierarchy marker: " + marker);
-  }
-  assert.ok(html.includes("OVERVIEW COMMAND CENTER V5"));
-  assert.ok(html.includes(".journey-step b{margin-top:9px!important;color:#e3e8ef!important;font-size:12px!important"));
-  assert.ok(html.includes(".posture-row small{font-size:10px!important"));
-  assert.ok(html.includes(".overview-warning small{font-size:10px!important"));
+test("rebuilt overview keeps snapshot context and evidence hierarchy explicit", () => {
+  const appJs=readRepoFile("public/app.js");
+  const css=readRepoFile("public/ui-product.css");
+  const start=appJs.indexOf("function overview()"),end=appJs.indexOf("function historyView()",start);
+  assert.ok(start>=0&&end>start);
+  const overview=appJs.slice(start,end);
+  for(const marker of ["overview-hero","overview-command","overview-stat-strip","overview-grid","CURRENT ENGINEERING CONTEXT","Workspace readiness","RECENT HISTORY"]) assert.ok(overview.includes(marker),"missing overview marker: "+marker);
+  assert.ok(css.includes(".overview-hero"));
+  assert.ok(css.includes(".overview-stat-strip"));
 });
-
 
 test("overview first-load and refresh states are perceived-performance safe", () => {
-  const appJs = readRepoFile("public/app.js");
-  const html = readRepoFile("public/index.html");
-  for (const marker of [
-    "function overviewLoadingPage()",
-    "data-view-skeleton=\"overview\"",
-    "showViewRefreshState(label[0],label[1])",
-    "var hadExisting=hasViewData(view);",
-    "if(view==='overview')",
-    "root.setAttribute('aria-busy','true')"
-  ]) {
-    assert.ok(appJs.includes(marker), "missing perceived-performance marker: " + marker);
-  }
-  for (const marker of [
-    "/* OVERVIEW LOADING V5",
-    "@keyframes overview-shimmer",
-    ".overview-skeleton-context",
-    ".view-refresh-state",
-    "prefers-reduced-motion"
-  ]) {
-    assert.ok(html.includes(marker), "missing overview loading CSS marker: " + marker);
-  }
+  const appJs=readRepoFile("public/app.js"),css=readRepoFile("public/ui-product.css");
+  for(const marker of ["function overviewLoadingPage()","showViewRefreshState(label[0],label[1])","var hadExisting=hasViewData(view);","if(view==='overview')","root.setAttribute('aria-busy','true')"]) assert.ok(appJs.includes(marker),"missing loading marker: "+marker);
+  for(const marker of ["loading-state","loading-orb","@keyframes pa-spin"]) assert.ok(css.includes(marker),"missing loading CSS marker: "+marker);
 });
-
 
 test("overview loading presentation avoids flicker and surfaces complete load failures", () => {
   const appJs = readRepoFile("public/app.js");
@@ -3003,48 +2901,18 @@ test("overview loading presentation avoids flicker and surfaces complete load fa
   }
 });
 
-test("frontend workflow detailing exposes a contextual micro-flow and fully clickable eleven-stage path", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
-  for (const marker of [
-    "const VIEW_WORKFLOW={",
-    "const WORKFLOW_STEPS=[",
-    "function viewFlowMarkup()",
-    "workspace-flow-rail",
-    "workspace-flow-step",
-    "navigation only",
-    "STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))",
-    "Open History",
-    "Inspect Evidence"
-  ]) {
-    assert.ok((html + "\n" + appJs).includes(marker), "missing workflow-detailing marker: " + marker);
-  }
-  assert.ok(html.includes("/* WORKSPACE WORKFLOW DETAILING V7"));
-  assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g) || []).length, 11);
+test("frontend workflow navigation exposes the complete eleven-stage path", () => {
+  const appJs=readRepoFile("public/app.js"),css=readRepoFile("public/ui-product.css");
+  for(const marker of ["const WORKFLOW_STEPS=","function viewFlowMarkup()","workspace-flow-rail","workspace-flow-step","WORKSPACE NAVIGATION"]) assert.ok(appJs.includes(marker));
+  assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g)||[]).length,11);
+  assert.ok(css.includes(".workspace-flow-step.current"));
 });
 
-test("frontend analysis lifecycle workflow has a real status renderer and truthful stage markup", () => {
-  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8");
-  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8");
-  for (const marker of [
-    "function banner(show,title,subtitle,status)",
-    "data-analysis-state",
-    "analysis-progress",
-    "data-stage=\"queued\"",
-    "data-stage=\"running\"",
-    "data-stage=\"snapshot\"",
-    "data-stage=\"workspace\"",
-    "Queued",
-    "Analyzing",
-    "Snapshot ready",
-    "Workspace ready",
-    "banner(true,'Analysis complete','Loading the current workspace evidence…','completed')"
-  ]) {
-    assert.ok((html + "\n" + appJs).includes(marker), "missing analysis lifecycle marker: " + marker);
-  }
-  assert.ok(html.includes("/* ANALYSIS LIFECYCLE V1 — honest status representation */"));
+test("frontend analysis lifecycle workflow keeps truthful stage markup", () => {
+  const html=readRepoFile("public/index.html"),appJs=readRepoFile("public/app.js");
+  for(const marker of ["function banner(show,title,subtitle,status)","data-analysis-state",'data-stage="queued"','data-stage="running"','data-stage="snapshot"','data-stage="workspace"',"Queued","Analyzing","Snapshot ready","Workspace ready"]) assert.ok((html+"\n"+appJs).includes(marker),"missing lifecycle marker: "+marker);
+  assert.ok(appJs.includes("banner(true,'Analysis complete','Loading the current workspace evidence…','completed')"));
 });
-
 
 test("frontend account security keeps the revoke-all-sessions control wired", () => {
   const html = readRepoFile("public/index.html");
