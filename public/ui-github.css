@@ -556,3 +556,16 @@ button:active,.btn:active,.pa-submit:active{transform:translateY(1px)}
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   .pa-cat-companion{display:none!important}
 }
+.pa-activity-more{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:11px
+}
+.pa-activity-more .btn{
+  min-height:31px!important;padding:6px 10px!important;
+  border-color:#c8d7ca!important;background:#f7fbf7!important;color:#285c36!important;
+  font-size:8px!important
+}
+.pa-activity-more .btn:hover{
+  background:#edf7ef!important;border-color:#9fc8a7!important;color:#1a6a32!important
+}
+.pa-activity-more span{color:var(--gh-subtle);font-size:8px}
+@media(max-width:520px){.pa-activity-more{align-items:flex-start;flex-direction:column}}
