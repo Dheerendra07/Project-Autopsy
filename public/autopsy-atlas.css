@@ -282,10 +282,10 @@ button:disabled{opacity:.56;cursor:wait;transform:none!important}
     radial-gradient(350px 220px at 0% 95%,rgba(42,154,151,.12),transparent 72%),
     #171a27!important;color:#f2f0ec!important;
   box-shadow:0 34px 85px rgba(35,33,58,.21)!important;
-  transform:rotateY(-4deg) rotateX(1.6deg);transform-style:preserve-3d;
+  transform:rotateY(var(--atlas-ry,-4deg)) rotateX(var(--atlas-rx,1.6deg));transform-style:preserve-3d;
   transition:transform .48s cubic-bezier(.2,.75,.2,1),box-shadow .48s ease
 }
-.pa-hero-console:hover .atlas-board{transform:rotateY(0) rotateX(0) translateY(-4px);box-shadow:0 42px 95px rgba(35,33,58,.25)!important}
+.pa-hero-console:hover .atlas-board{transform:rotateY(var(--atlas-ry,0deg)) rotateX(var(--atlas-rx,0deg)) translateY(-4px);box-shadow:0 42px 95px rgba(35,33,58,.25)!important}
 .atlas-board::before{
   content:"";position:absolute;inset:0;pointer-events:none;opacity:.13;
   background-image:linear-gradient(rgba(215,214,255,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(215,214,255,.14) 1px,transparent 1px);
