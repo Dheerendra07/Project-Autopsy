@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta id="themeColor" name="theme-color" content="#070b12">
+<meta id="themeColor" name="theme-color" content="#f6f8f6">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>Project Autopsy — Engineering history, from evidence</title>
 <script src="theme.js"></script>
@@ -1226,6 +1226,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 </style>
 <link rel="stylesheet" href="ui-v2.css?v=b045b5b7">
 <link rel="stylesheet" href="ui-chatz.css?v=chatz-rebuild-v1">
+<link rel="stylesheet" href="ui-github.css?v=20261120">
 
 </head>
 <body>
@@ -1336,7 +1337,32 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       </div>
     </section>
 
-    <section id="evidence" class="pa-section">
+        <section id="activity-preview" class="pa-section pa-activity-preview">
+      <div class="pa-section-intro">
+        <div class="pa-eyebrow">CONTRIBUTION MAP</div>
+        <h2>A year of engineering, at a glance.</h2>
+        <p>GitHub-inspired contribution density turns the commit trail into a calm visual rhythm. After import, the live workspace builds this map from persisted commit evidence.</p>
+      </div>
+      <div class="pa-preview-heatmap-card pa-card">
+        <div class="pa-preview-heatmap-head">
+          <div><strong>Repository activity</strong><small>Weekly contribution-style view · illustrative preview</small></div>
+          <span class="pa-preview-badge">PREVIEW DATA</span>
+        </div>
+        <div class="pa-preview-heatmap-scroll">
+          <div class="pa-preview-calendar">
+            <div class="pa-preview-weekdays"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
+            <div>
+              <div id="activityPreviewMonths" class="pa-preview-months" aria-hidden="true"></div>
+              <div id="activityPreviewGrid" class="pa-preview-grid" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pa-preview-legend"><span>Less</span><span class="pa-preview-cell" data-level="0"></span><span class="pa-preview-cell" data-level="1"></span><span class="pa-preview-cell" data-level="2"></span><span class="pa-preview-cell" data-level="3"></span><span class="pa-preview-cell" data-level="4"></span><span>More</span></div>
+        <p class="pa-preview-caption">Illustrative styling only. Live intensity is calculated from imported repository commits.</p>
+      </div>
+    </section>
+
+<section id="evidence" class="pa-section">
       <div class="pa-section-intro">
         <div class="pa-eyebrow">THE EVIDENCE MODEL</div>
         <h2>Observed evidence is never confused with interpretation.</h2>
@@ -1631,6 +1657,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div><div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden><div class="drawer-panel"><div class="drawer-head"><div><div class="kicker">EVIDENCE INSPECTOR</div><h3 id="drawerTitle">Evidence</h3></div><div class="drawer-actions"><button id="drawerCopy" class="btn">Copy JSON</button><button id="drawerClose" class="btn" aria-label="Close evidence inspector">Close</button></div></div><div id="drawerBasis" class="drawer-basis"></div><div id="drawerSummary" class="evidence-summary"></div><details id="drawerRaw" class="raw-evidence"><summary>View raw evidence record</summary><pre id="drawerJson" class="json"></pre></details></div></div>
 
 <script src="app.js" defer></script>
+<script src="ui-github.js" defer></script>
 <div id="commandPalette" class="modal command-palette" role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle" hidden>
   <div class="command-sheet">
     <div class="command-head">

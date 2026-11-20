@@ -1,5 +1,5 @@
 (function(){
-  var theme='dark';
+  var theme='light';
   try{
     var stored=localStorage.getItem('autopsy.theme');
     if(stored==='light'||stored==='dark') theme=stored;
