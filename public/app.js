@@ -729,6 +729,59 @@ function shell(title,desc,actions){
   function errorPage(title,message,actionLabel,action){
     return shell(title,'The workspace could not complete this action. The existing evidence snapshot is unchanged.','')+'<div class="card error-state"><div class="error-mark">!</div><div><strong>'+esc(message)+'</strong><p>Retry the operation without starting a new repository analysis.</p><button class="btn primary" data-action="'+esc(action)+'">'+esc(actionLabel||'Try again')+'</button></div></div>';
   }
+  function activityHeatmapMarkup(commits,pagination){
+    var today=new Date();today.setHours(0,0,0,0);
+    var currentSunday=new Date(today);currentSunday.setDate(currentSunday.getDate()-currentSunday.getDay());
+    var first=new Date(currentSunday);first.setDate(first.getDate()-52*7);
+    var counts=Object.create(null),loaded=Array.isArray(commits)?commits:[];
+    function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+    loaded.forEach(function(x){
+      var raw=x.committed_at||x.committedAt;
+      if(!raw)return;
+      var d=new Date(raw);
+      if(isNaN(d))return;
+      d.setHours(0,0,0,0);
+      if(d<first||d>today)return;
+      var key=dateKey(d);
+      counts[key]=(counts[key]||0)+1;
+    });
+    var weeks='',months='',activeDays=0,visibleCommits=0;
+    for(var w=0;w<53;w++){
+      var weekStart=new Date(first);weekStart.setDate(first.getDate()+w*7);
+      for(var md=0;md<7;md++){
+        var mdDate=new Date(weekStart);mdDate.setDate(weekStart.getDate()+md);
+        if(mdDate.getDate()===1){
+          months+='<span style="grid-column:'+(w+1)+'">'+esc(mdDate.toLocaleDateString('en',{month:'short'}))+'</span>';
+          break;
+        }
+      }
+      for(var day=0;day<7;day++){
+        var d=new Date(weekStart);d.setDate(weekStart.getDate()+day);
+        if(d>today){weeks+='<span class="pa-activity-empty" aria-hidden="true"></span>';continue}
+        var count=counts[dateKey(d)]||0,age=Math.round((today-d)/86400000);
+        var level=count===0?0:count===1?1:count<=3?2:count<=5?3:4;
+        if(count){activeDays++;visibleCommits+=count}
+        var label=count+' commit'+(count===1?'':'s')+' on '+d.toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+        weeks+='<button type="button" class="pa-activity-cell" data-level="'+level+'" data-activity-cell data-activity-index="'+(w*7+day)+'" data-activity-age="'+age+'" data-activity-count="'+count+'" title="'+esc(label)+'" aria-label="'+esc(label)+'" tabindex="'+(w===0&&day===0?'0':'-1')+'"></button>';
+      }
+    }
+    var total=Number(pagination&&pagination.total||loaded.length);
+    var sampleNote=total>loaded.length
+      ?'Showing latest '+n(loaded.length)+' of '+n(total)+' persisted commits. The heatmap reflects only commits currently loaded in this evidence view.'
+      :'Heatmap includes the persisted commits currently loaded for this repository.';
+    return '<section class="pa-activity-card card section" aria-labelledby="paActivityTitle">'+
+      '<div class="pa-activity-heading"><div><div class="kicker">CONTRIBUTION HISTORY</div><h3 id="paActivityTitle">Engineering activity</h3><p>Contribution-style activity map generated from persisted Git commit dates.</p></div>'+
+      '<div class="pa-activity-controls" role="group" aria-label="Filter activity range">'+
+      '<button type="button" data-activity-range="30" aria-pressed="false">30D</button>'+
+      '<button type="button" data-activity-range="90" aria-pressed="false">90D</button>'+
+      '<button type="button" data-activity-range="365" aria-pressed="true">1Y</button></div></div>'+
+      '<div class="pa-activity-stats"><span><strong class="pa-activity-count">'+n(visibleCommits)+'</strong> commits in range</span><span><strong class="pa-activity-days">'+n(activeDays)+'</strong> active days</span><span><strong>'+n(loaded.length)+'</strong> loaded records</span></div>'+
+      '<div class="pa-activity-scroll"><div class="pa-activity-calendar"><div class="pa-activity-weekdays"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div><div class="pa-activity-main"><div class="pa-activity-months">'+months+'</div><div class="pa-activity-grid" role="grid" aria-label="Commit activity, last 53 weeks">'+weeks+'</div></div></div></div>'+
+      '<div class="pa-activity-legend"><span>Less</span>'+
+      '<span class="pa-activity-cell" data-level="0"></span><span class="pa-activity-cell" data-level="1"></span><span class="pa-activity-cell" data-level="2"></span><span class="pa-activity-cell" data-level="3"></span><span class="pa-activity-cell" data-level="4"></span><span>More</span></div>'+
+      '<p class="pa-activity-note">'+esc(sampleNote)+'</p></section>';
+  }
+
   function overview(){
     var r=S.repo||{},a=S.analysis||{},d=S.data,c=arr(d.commits,'commits'),h=arr(d.hotspots,'hotspots');
     var max=1;
@@ -758,6 +811,7 @@ function shell(title,desc,actions){
         metric('Contributors',n(d.contributors&&d.contributors.totalContributors||0),'exact Git author tuples')+
         metric('Analyzer version',a.analyzerVersion||'—','deterministic analyzer')+
       '</div>'+
+      activityHeatmapMarkup(c,d.commits&&d.commits.pagination)+
       (S.dataErrors.length
         ? '<div class="callout section"><strong>Partial evidence load</strong><br>'+n(S.dataErrors.length)+' endpoint'+(S.dataErrors.length===1?'':'s')+' could not be loaded. Existing persisted data remains visible; retry the evidence load without starting a new analysis.</div><div style="margin-top:10px"><button class="btn" data-action="reload-data">Retry evidence load</button></div>'
         : '')+
