@@ -1089,3 +1089,52 @@ button:disabled{opacity:.56;cursor:wait;transform:none!important}
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   .atlas-board{transform:none!important}
 }
+
+
+/* Narrow-screen containment: keep intrinsically-sized nav and repo labels
+   inside the grid rather than allowing a min-content track to widen the page. */
+#workspace.workspace,
+#workspace.workspace .pa-workspace-live,
+#workspace.workspace .pa-live-topbar,
+#workspace.workspace .banner,
+#workspace.workspace .pa-live-tabs,
+#workspace.workspace .pa-live-content,
+#workspace.workspace #root{
+  min-width:0!important;
+  max-width:100%!important;
+}
+#workspace.workspace .pa-workspace-live{width:100%!important;overflow-x:clip}
+#workspace.workspace .pa-live-topbar{width:100%!important}
+#workspace.workspace .pa-live-tabs{width:100%!important}
+#workspace.workspace .pa-live-content{width:100%!important}
+#workspace.workspace #root{width:100%!important}
+@media(max-width:940px){
+  #workspace.workspace .pa-workspace-live{
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+  }
+  #workspace.workspace .pa-live-topbar,
+  #workspace.workspace .banner,
+  #workspace.workspace .pa-live-tabs,
+  #workspace.workspace .pa-live-content{
+    grid-column:1!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+}
+@media(max-width:700px){
+  #workspace.workspace .pa-live-topbar{
+    flex-wrap:wrap!important;
+    align-items:flex-start!important;
+  }
+  #workspace.workspace .pa-live-repo{flex:1 1 100%;width:100%;min-width:0!important}
+  #workspace.workspace .pa-live-repo>div{min-width:0}
+  #workspace.workspace .pa-live-repo strong{max-width:100%;min-width:0}
+  #workspace.workspace .pa-live-actions{
+    display:flex!important;flex:1 1 100%;width:100%!important;max-width:100%!important;
+    flex-wrap:wrap!important;justify-content:flex-start!important;min-width:0!important
+  }
+  #workspace.workspace .pa-live-tabs{min-width:0!important;max-width:100%!important}
+  #workspace.workspace .pa-live-content{min-width:0!important;max-width:100%!important}
+  #workspace.workspace #root{min-width:0!important;max-width:100%!important}
+}
