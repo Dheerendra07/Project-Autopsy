@@ -100,7 +100,7 @@
     document.documentElement.dataset.theme=mode;
     if(persistPreference!==false)themeStorageSet(mode);
     var meta=$('themeColor');
-    if(meta)meta.setAttribute('content',mode==='light'?'#f4f7fb':'#0a0f17');
+    if(meta)meta.setAttribute('content',mode==='light'?'#f4f1eb':'#0e1018');
     syncThemeButton();
     if(announce)toast((mode==='light'?'Light':'Dark')+' theme enabled.','good');
   }
