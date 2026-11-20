@@ -769,6 +769,8 @@ function shell(title,desc,actions){
     var sampleNote=total>loaded.length
       ?'Showing latest '+n(loaded.length)+' of '+n(total)+' persisted commits. The heatmap reflects only commits currently loaded in this evidence view.'
       :'Heatmap includes the persisted commits currently loaded for this repository.';
+    var canLoadMore=!!(pagination&&pagination.page&&pagination.totalPages&&pagination.page<pagination.totalPages);
+
     return '<section class="pa-activity-card card section" aria-labelledby="paActivityTitle">'+
       '<div class="pa-activity-heading"><div><div class="kicker">CONTRIBUTION HISTORY</div><h3 id="paActivityTitle">Engineering activity</h3><p>Contribution-style activity map generated from persisted Git commit dates.</p></div>'+
       '<div class="pa-activity-controls" role="group" aria-label="Filter activity range">'+
@@ -779,7 +781,9 @@ function shell(title,desc,actions){
       '<div class="pa-activity-scroll"><div class="pa-activity-calendar"><div class="pa-activity-weekdays"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div><div class="pa-activity-main"><div class="pa-activity-months">'+months+'</div><div class="pa-activity-grid" role="grid" aria-label="Commit activity, last 53 weeks">'+weeks+'</div></div></div></div>'+
       '<div class="pa-activity-legend"><span>Less</span>'+
       '<span class="pa-activity-cell" data-level="0"></span><span class="pa-activity-cell" data-level="1"></span><span class="pa-activity-cell" data-level="2"></span><span class="pa-activity-cell" data-level="3"></span><span class="pa-activity-cell" data-level="4"></span><span>More</span></div>'+
-      '<p class="pa-activity-note">'+esc(sampleNote)+'</p></section>';
+      '<p class="pa-activity-note">'+esc(sampleNote)+'</p>'+
+      (canLoadMore?'<div class="pa-activity-more"><button class="btn" type="button" data-action="more-commits">'+(S.commitLoading?'Loading next page…':'Load next 50 commits')+'</button><span>Each page adds real commit dates to this grid.</span></div>':'')+
+      '</section>';
   }
 
   function overview(){
@@ -1405,7 +1409,7 @@ function shell(title,desc,actions){
   }
   async function loadMoreCommits(){
     if(S.commitLoading)return;actionBusy('more-commits',true,'Loading…');
-    var token=S.workspaceToken,id=S.repoId,runId=S.runId,loadToken=++S.commitLoadToken;
+    var token=S.workspaceToken,id=S.repoId,runId=S.runId,returnView=S.view,loadToken=++S.commitLoadToken;
     S.commitLoading=true;
     try{
       var current=arr(S.data.commits,'commits'),page=Number(S.data.commits&&S.data.commits.pagination&&S.data.commits.pagination.page||1)+1;
@@ -1413,7 +1417,7 @@ function shell(title,desc,actions){
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||loadToken!==S.commitLoadToken)return;
       var next=arr(r,'commits');
       S.data.commits={commits:current.concat(next),pagination:r.pagination};
-      setView('history');
+      setView(returnView==='overview'?'overview':'history');
       toast(next.length?'Loaded next commit page':'No more commit evidence','good');
     }catch(e){if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&loadToken===S.commitLoadToken)toast(e.message,'bad')}
     finally{if(loadToken===S.commitLoadToken){S.commitLoading=false;actionBusy('more-commits',false)}}
