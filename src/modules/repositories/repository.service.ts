@@ -337,10 +337,7 @@ export async function cloneRepository(
   const parentPath = path.dirname(repositoryPath);
 
   const cloneArgs = ["--no-tags", "--filter=blob:none"];
-
-  if (branch) {
-    cloneArgs.push("--branch", branch);
-  }
+  let trackedBranch: string | undefined;
 
   try {
     const git = createAnalysisGit(parentPath);
@@ -348,12 +345,23 @@ export async function cloneRepository(
       git,
       safeUrl,
       accessToken,
-      (authenticatedGit) =>
-        authenticatedGit.clone(
+      async (authenticatedGit) => {
+        if (branch) {
+          const remoteHeads = await authenticatedGit.raw([
+            "ls-remote",
+            "--heads",
+            safeUrl.toString()
+          ]);
+          trackedBranch = resolveRemoteBranch(branch, remoteHeads);
+          cloneArgs.push("--branch", trackedBranch);
+        }
+
+        await authenticatedGit.clone(
           safeUrl.toString(),
           repositoryPath,
           cloneArgs
-        )
+        );
+      }
     );
 
     const sizeBytes = await calculateDirectorySize(repositoryPath);
@@ -368,7 +376,7 @@ export async function cloneRepository(
     const metadata = await readRepositoryMetadata(repositoryPath);
     metadata.name = getRepositoryNameFromUrl(safeUrl);
 
-    return metadata;
+    return trackedBranch ? { ...metadata, trackedBranch } : metadata;
   } catch (error) {
     try {
       await removeRepositoryStorage(repositoryId);
@@ -427,6 +435,45 @@ export function assertSafeBranchName(branch: string): void {
   }
 }
 
+export function resolveRemoteBranch(
+  requestedBranch: string,
+  remoteHeads: string
+): string {
+  assertSafeBranchName(requestedBranch);
+
+  const remoteBranches = remoteHeads
+    .split(/\r?\n/)
+    .map((line) => line.trim().split(/\s+/).at(-1) ?? "")
+    .filter((ref) => ref.startsWith("refs/heads/"))
+    .map((ref) => ref.slice("refs/heads/".length));
+
+  if (remoteBranches.includes(requestedBranch)) {
+    return requestedBranch;
+  }
+
+  const caseInsensitiveMatches = remoteBranches.filter(
+    (remoteBranch) =>
+      remoteBranch.toLowerCase() === requestedBranch.toLowerCase()
+  );
+
+  if (caseInsensitiveMatches.length === 1) {
+    return caseInsensitiveMatches[0]!;
+  }
+
+  if (caseInsensitiveMatches.length > 1) {
+    throw new Error(
+      `Repository branch "${requestedBranch}" is ambiguous because multiple remote branches differ only by letter case.`
+    );
+  }
+
+  const availableBranches =
+    remoteBranches.length > 0 ? remoteBranches.join(", ") : "none";
+
+  throw new Error(
+    `Repository branch "${requestedBranch}" was not found. Available branches: ${availableBranches}.`
+  );
+}
+
 function assertValidSha(sha: string): void {
   if (!/^[0-9a-f]{7,64}$/i.test(sha)) {
     throw new Error("Git reference is invalid.");
@@ -445,16 +492,25 @@ export async function refreshRepository(
   const repositoryPath = getRepositoryStoragePath(repositoryId);
   const git = createAnalysisGit(repositoryPath);
 
+  let trackedBranch = branch;
+
   try {
     await withRepositoryAccess(
       git,
       safeUrl,
       accessToken,
       async (authenticatedGit) => {
+        const remoteHeads = await authenticatedGit.raw([
+          "ls-remote",
+          "--heads",
+          safeUrl.toString()
+        ]);
+        trackedBranch = resolveRemoteBranch(branch, remoteHeads);
+
         await authenticatedGit.raw([
           "check-ref-format",
           "--branch",
-          branch
+          trackedBranch
         ]);
 
         await authenticatedGit.raw([
@@ -469,14 +525,14 @@ export async function refreshRepository(
           "origin",
           "--prune",
           "--no-tags",
-          `refs/heads/${branch}:refs/remotes/origin/${branch}`
+          `refs/heads/${trackedBranch}:refs/remotes/origin/${trackedBranch}`
         ]);
 
         await authenticatedGit.raw([
           "checkout",
           "-B",
-          branch,
-          `origin/${branch}`
+          trackedBranch,
+          `origin/${trackedBranch}`
         ]);
       }
     );
@@ -493,7 +549,7 @@ export async function refreshRepository(
     const metadata = await readRepositoryMetadata(repositoryPath);
     metadata.name = getRepositoryNameFromUrl(safeUrl);
 
-    return metadata;
+    return { ...metadata, trackedBranch };
   } catch (error) {
     throw error;
   }
