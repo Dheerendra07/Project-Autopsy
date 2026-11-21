@@ -1095,3 +1095,84 @@ test("API rate-limit configuration is visible through bounded response headers",
   assert.notEqual(response.headers.get("x-ratelimit-remaining"), null);
   assert.notEqual(response.headers.get("x-ratelimit-reset"), null);
 });
+
+
+test("analysis status polling reconciles an expired running record after its BullMQ job is gone", async () => {
+  const { db } = await import("../src/config/database.js");
+  const [
+    { createAnalysisRunForRepository, updateAnalysisRun },
+    { ANALYSIS_DEADLINE_MS }
+  ] = await Promise.all([
+    import("../src/modules/repositories/repository.persistence.js"),
+    import("../src/modules/analysis/analysis-deadline.js")
+  ]);
+  const repositoryId = randomUUID();
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'expired-analysis-status-test', 'main')
+    `,
+    [repositoryId, testUserId]
+  );
+
+  try {
+    const analysisRunId = await createAnalysisRunForRepository(
+      repositoryId,
+      {
+        analyzerVersion: "contract-test",
+        analysisMode: "full",
+        baseHeadSha: null,
+        targetHeadSha: null
+      }
+    );
+    await updateAnalysisRun(analysisRunId, "running");
+    await db.query(
+      "UPDATE analysis_runs SET started_at = $2 WHERE id = $1",
+      [
+        analysisRunId,
+        new Date(Date.now() - ANALYSIS_DEADLINE_MS - 120_000).toISOString()
+      ]
+    );
+
+    const statusUrl = `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`;
+    const responses = await Promise.all([
+      fetch(statusUrl, { headers: authHeaders() }),
+      fetch(statusUrl, { headers: authHeaders() })
+    ]);
+
+    for (const response of responses) {
+      assert.equal(response.status, 200);
+    }
+
+    const bodies = await Promise.all(responses.map((response) =>
+      response.json() as Promise<{
+        success: boolean;
+        analysis: {
+          status: string;
+          completedAt: string | null;
+          errorMessage: string | null;
+        };
+      }>
+    ));
+
+    for (const body of bodies) {
+      assert.equal(body.success, true);
+      assert.equal(body.analysis.status, "failed");
+      assert.ok(body.analysis.completedAt);
+      assert.match(body.analysis.errorMessage ?? "", /execution deadline/i);
+    }
+
+    const secondRead = await fetch(statusUrl, { headers: authHeaders() });
+    assert.equal(secondRead.status, 200);
+    const secondBody = await secondRead.json() as {
+      analysis: { status: string };
+    };
+    assert.equal(secondBody.analysis.status, "failed");
+  } finally {
+    await db.query("DELETE FROM analysis_runs WHERE repository_id = $1", [repositoryId]);
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+  }
+});
