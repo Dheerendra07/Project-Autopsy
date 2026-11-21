@@ -11,6 +11,7 @@ export interface RepositorySource {
 export interface RepositoryMetadata {
   name: string;
   defaultBranch: string;
+  trackedBranch?: string;
   headSha: string;
   commitCount: number;
   isShallow: boolean;
