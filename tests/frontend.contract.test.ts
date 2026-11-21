@@ -14,7 +14,7 @@ const appJs = readFileSync(appJsPath, "utf8");
 
 test("product frontend contains the core evidence workflow", () => {
   assert.ok(
-    html.includes('<script src="app.js" defer></script>'),
+    /\<script src="app\.js(?:\?[^"]*)?" defer\><\/script\>/.test(html),
     "frontend must load the external app.js asset"
   );
   assert.doesNotThrow(
@@ -120,7 +120,7 @@ test("product frontend supports persistent dark and light themes without inline 
   const themeJs = readFileSync(themePath, "utf8");
 
   assert.ok(
-    html.includes('<script src="theme.js"></script>'),
+    /\<script src="theme\.js(?:\?[^"]*)?"\><\/script\>/.test(html),
     "frontend must bootstrap the theme from an external same-origin asset"
   );
   assert.doesNotMatch(
