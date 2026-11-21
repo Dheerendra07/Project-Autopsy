@@ -400,9 +400,33 @@
   }
   async function getRepo(repoId){return (await api('/api/repositories/'+repoId)).repository}
   async function getRun(repoId,runId){return (await api('/api/repositories/'+repoId+'/analysis/'+runId)).analysis}
+  async function loadPartialOverviewData(token,repoId,runId){
+    var paths=[
+      '/api/repositories/'+repoId+'/commits?page=1&limit=50',
+      '/api/repositories/'+repoId+'/hotspots?limit=20',
+      '/api/repositories/'+repoId+'/contributors?limit=25'
+    ];
+    var results=await Promise.all(paths.map(async function(path){
+      try{return{ok:true,value:await api(path)}}catch(error){return{ok:false,error:error}}
+    }));
+    if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
+    if(S.analysis&&S.analysis.status!=='queued'&&S.analysis.status!=='running')return;
+
+    var data=S.dataRunId===runId?(S.data||{}):{};
+    var errors=[];
+    ['commits','hotspots','contributors'].forEach(function(key,index){
+      if(results[index].ok)data[key]=results[index].value;
+      else errors.push({key:key,path:paths[index],message:results[index].error&&results[index].error.message||'Evidence source unavailable.'});
+    });
+    S.data=data;
+    S.dataRunId=runId;
+    S.dataErrors=errors;
+    if(S.view==='overview')setView('overview',{skipLoad:true});
+  }
   function poll(){
     clearInterval(S.timer);var token=S.workspaceToken,repoId=S.repoId,runId=S.runId;
-    banner(true,'Analysis in progress','Walking commits, source structure and evolution signals…','queued');
+    var lastPartialRefreshAt=0,partialRefreshInFlight=false;
+    banner(true,'Analysis in progress','Scanning repository history and source structure…','queued');
     var tick=async function(){
       if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
       try{
@@ -427,7 +451,16 @@
         if(st==='failed'){
           clearInterval(S.timer);S.timer=null;syncAnalysisRefreshControl();banner(true,'Analysis failed',analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.','failed');toast('Analysis failed','bad');return
         }
-        banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)
+        banner(true,st==='running'?'Analysis running':'Analysis queued',
+          st==='running'
+            ? 'Scanning Git history and code changes. Any saved evidence appears below while the snapshot is being built.'
+            : 'Waiting for the analysis worker to pick up this repository…',
+          st);
+        if(st==='running'&&S.view==='overview'&&!partialRefreshInFlight&&Date.now()-lastPartialRefreshAt>=18000){
+          lastPartialRefreshAt=Date.now();
+          partialRefreshInFlight=true;
+          void loadPartialOverviewData(token,repoId,runId).finally(function(){partialRefreshInFlight=false});
+        }
       }catch(e){
         if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
         var message=e&&e.message?String(e.message):'Analysis status could not be checked.';
