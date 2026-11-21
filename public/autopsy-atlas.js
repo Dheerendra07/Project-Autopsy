@@ -4,64 +4,6 @@
   var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var coarsePointer = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
 
-  function buildHeroMatrix() {
-    var matrix = document.getElementById("atlasMatrix");
-    if (!matrix || matrix.childElementCount) return;
-
-    var fragment = document.createDocumentFragment();
-    for (var index = 0; index < 72; index += 1) {
-      var cell = document.createElement("span");
-      var seed = (index * 13 + Math.floor(index / 12) * 7 + (index % 5) * 3) % 19;
-      var level = seed < 4 ? 0 : seed < 8 ? 1 : seed < 12 ? 2 : seed < 16 ? 3 : seed < 18 ? 4 : 5;
-      cell.className = "atlas-matrix-cell";
-      cell.setAttribute("data-level", String(level));
-      fragment.appendChild(cell);
-    }
-    matrix.appendChild(fragment);
-  }
-
-  function buildPreviewCalendar() {
-    var grid = document.getElementById("activityPreviewGrid");
-    var months = document.getElementById("activityPreviewMonths");
-    if (!grid || !months || grid.childElementCount) return;
-
-    var now = new Date();
-    now.setHours(0, 0, 0, 0);
-    var first = new Date(now);
-    first.setDate(first.getDate() - first.getDay() - 52 * 7);
-
-    var cells = document.createDocumentFragment();
-    var labels = document.createDocumentFragment();
-
-    for (var week = 0; week < 53; week += 1) {
-      var weekStart = new Date(first);
-      weekStart.setDate(first.getDate() + week * 7);
-
-      var monthAnchor = new Date(weekStart);
-      if (monthAnchor.getDate() <= 7) {
-        var month = document.createElement("span");
-        month.style.gridColumn = String(week + 1);
-        month.textContent = monthAnchor.toLocaleDateString("en", { month: "short" });
-        labels.appendChild(month);
-      }
-
-      for (var day = 0; day < 7; day += 1) {
-        var date = new Date(weekStart);
-        date.setDate(weekStart.getDate() + day);
-
-        var seed = (week * 19 + day * 31 + (week % 5) * 7) % 17;
-        var level = date > now ? 0 : seed < 5 ? 0 : seed < 9 ? 1 : seed < 13 ? 2 : seed < 16 ? 3 : 4;
-        var cell = document.createElement("span");
-        cell.className = "pa-preview-cell";
-        cell.setAttribute("data-level", String(level));
-        cells.appendChild(cell);
-      }
-    }
-
-    months.appendChild(labels);
-    grid.appendChild(cells);
-  }
-
   function mountAtlasMotion() {
     var board = document.querySelector(".atlas-board");
     var hero = document.querySelector(".pa-hero");
@@ -200,8 +142,6 @@
   }
 
   function init() {
-    buildHeroMatrix();
-    buildPreviewCalendar();
     mountAtlasMotion();
     observeWorkspace();
     keepActiveViewVisible();
