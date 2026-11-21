@@ -146,6 +146,17 @@ test("evidence retention is configured, indexed and shutdown-aware", () => {
 
 
 
+test("production Gemini smoke retries bounded HTML gateway failures only", () => {
+  const script = readRepoFile("scripts/production-smoke.mjs");
+
+  assert.ok(script.includes("async function requestInterpretationWithGatewayRetry("));
+  assert.ok(script.includes("INTERPRETATION_GATEWAY_MAX_ATTEMPTS = 3"));
+  assert.ok(script.includes("PUBLIC_WARMUP_RETRY_STATUSES.has(result.response.status)"));
+  assert.ok(script.includes('contentType.includes("text/html")'));
+  assert.ok(script.includes('await requestPublicWarmup("/ready")'));
+  assert.ok(script.includes("await requestInterpretationWithGatewayRetry("));
+});
+
 test("production smoke covers public surface and protected API boundaries", () => {
   const script = readRepoFile("scripts/production-smoke.mjs");
   const workflow = readRepoFile(".github/workflows/production-smoke.yml");
