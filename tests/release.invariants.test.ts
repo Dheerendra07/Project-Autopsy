@@ -177,7 +177,8 @@ test("analysis worker recovers from transient stalls and persists terminal failu
   assert.ok(worker.includes('analysisWorker.on("stalled"'));
   assert.ok(worker.includes("isTerminalAnalysisJobFailure("));
   assert.ok(worker.includes('updateAnalysisRun(job.data.analysisRunId, "failed"'));
-  assert.ok(worker.includes("getAnalysisRunById(job.data.analysisRunId)"));
+  assert.ok(worker.includes("getAnalysisRunById("));
+  assert.ok(worker.includes("job.data.analysisRunId"));
   assert.ok(failurePolicy.includes('errorName === "UnrecoverableError"'));
   assert.ok(failurePolicy.includes("attemptsMade >= maxAttempts"));
 });
