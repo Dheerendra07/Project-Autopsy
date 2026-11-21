@@ -774,6 +774,103 @@ test("analysis status hides internal failure paths from API consumers", async ()
 });
 
 
+test("analysis history and status reads reconcile expired runs", async () => {
+  const { db } = await import("../src/config/database.js");
+  const { getRepositoryStoragePath } =
+    await import("../src/modules/repositories/repository.service.js");
+  const repositoryId = randomUUID();
+  const historyRunId = randomUUID();
+  const statusRunId = randomUUID();
+  const storagePath = getRepositoryStoragePath(repositoryId);
+
+  await db.query(
+    `
+      INSERT INTO repositories (
+        id, owner_user_id, source_type, source_url, name, tracked_branch, storage_path
+      )
+      VALUES ($1, $2, 'github', 'https://github.com/octocat/Hello-World.git', 'analysis-read-recovery-test', 'main', $3)
+    `,
+    [repositoryId, testUserId, storagePath]
+  );
+
+  const insertExpiredRun = async (analysisRunId: string): Promise<void> => {
+    await db.query(
+      `
+        INSERT INTO analysis_runs (
+          id, repository_id, analyzer_version, analysis_mode, status, started_at
+        )
+        VALUES ($1, $2, 'test', 'full', 'running', '2000-01-01T00:00:00.000Z')
+      `,
+      [analysisRunId, repositoryId]
+    );
+  };
+
+  try {
+    await insertExpiredRun(historyRunId);
+
+    const historyResponse = await fetch(
+      baseUrl + "/api/repositories/" + repositoryId + "/analysis-runs",
+      { headers: authHeaders() }
+    );
+    assert.equal(historyResponse.status, 200);
+    const historyBody = await historyResponse.json() as {
+      runs: Array<{
+        id: string;
+        status: string;
+        completedAt: string | null;
+        errorMessage: string | null;
+      }>;
+    };
+    const recoveredHistoryRun = historyBody.runs.find(
+      (run) => run.id === historyRunId
+    );
+    assert.ok(recoveredHistoryRun);
+    assert.equal(recoveredHistoryRun.status, "failed");
+    assert.ok(recoveredHistoryRun.completedAt);
+    assert.match(
+      recoveredHistoryRun.errorMessage ?? "",
+      /exceeded its configured execution deadline/i
+    );
+
+    await insertExpiredRun(statusRunId);
+
+    const statusResponse = await fetch(
+      baseUrl +
+        "/api/repositories/" +
+        repositoryId +
+        "/analysis/" +
+        statusRunId,
+      { headers: authHeaders() }
+    );
+    assert.equal(statusResponse.status, 200);
+    const statusBody = await statusResponse.json() as {
+      analysis: {
+        status: string;
+        completedAt: string | null;
+        errorMessage: string | null;
+      };
+    };
+    assert.equal(statusBody.analysis.status, "failed");
+    assert.ok(statusBody.analysis.completedAt);
+    assert.match(
+      statusBody.analysis.errorMessage ?? "",
+      /exceeded its configured execution deadline/i
+    );
+
+    const persisted = await db.query<{
+      status: string;
+      completed_at: Date | null;
+    }>(
+      "SELECT status, completed_at FROM analysis_runs WHERE id = $1",
+      [statusRunId]
+    );
+    assert.equal(persisted.rows[0]?.status, "failed");
+    assert.ok(persisted.rows[0]?.completed_at);
+  } finally {
+    await db.query("DELETE FROM repositories WHERE id = $1", [repositoryId]);
+  }
+});
+
 test("repository deletion is blocked while analysis is active", async () => {
   const { db } = await import("../src/config/database.js");
   const repositoryId = randomUUID();
