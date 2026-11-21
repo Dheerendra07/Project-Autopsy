@@ -62,6 +62,8 @@ assert.ok(html.includes('href="https://github.com/Dheerendra07/Project-Autopsy"'
 assert.ok(html.indexOf("autopsy-atlas.css") > html.indexOf("ui-chatz.css"),
   "Atlas stylesheet must remain the final primary landing style");
 assert.ok(html.includes('href="#import"'), "The evidence empty state must lead to the real repository import form");
+assert.match(html, /<div class="pa-hero-console" role="group" aria-label="How repository evidence is organised">/,
+  "The labelled hero evidence panel must expose a semantic group to assistive technology");
 assert.ok(atlasJs.includes("observeWorkspace()"), "Live workspace observation must remain active");
 assert.ok(atlasJs.includes("applyActivityRange"), "Real workspace activity range controls must remain active");
 assert.ok(!atlasJs.includes("buildHeroMatrix") && !atlasJs.includes("buildPreviewCalendar"),
