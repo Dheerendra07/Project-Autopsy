@@ -183,6 +183,19 @@ test("analysis worker recovers from transient stalls and persists terminal failu
   assert.ok(failurePolicy.includes("attemptsMade >= maxAttempts"));
 });
 
+test("re-analysis reconciles a BullMQ failed job before blocking on stale active state", () => {
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const recovery = readRepoFile("src/modules/repositories/active-analysis-recovery.ts");
+  const queueState = readRepoFile("src/modules/analysis/queue-job-state.ts");
+
+  assert.ok(routes.includes("await reconcileFailedActiveAnalysisRun(activeRun)"));
+  assert.ok(recovery.includes("analysisQueue.getJob(jobId)"));
+  assert.ok(recovery.includes("job.failedReason"));
+  assert.ok(recovery.includes('updateAnalysisRun(current.id, "failed"'));
+  assert.ok(recovery.includes('const candidateJobIds = ['));
+  assert.ok(queueState.includes('return state === "failed"'));
+});
+
 test("production smoke covers public surface and protected API boundaries", () => {
   const script = readRepoFile("scripts/production-smoke.mjs");
   const workflow = readRepoFile(".github/workflows/production-smoke.yml");
