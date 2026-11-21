@@ -8,6 +8,7 @@ import {
   isSafeBranchName
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
+import { findMatchingRepositoryImport } from "./repository-import-match.js";
 import { reconcileFailedActiveAnalysisRun } from "./active-analysis-recovery.js";
 import {
   saveRepositoryAccessCredential,
@@ -107,10 +108,132 @@ router.post("/import", async (req, res, next) => {
   try {
     const input = importSchema.parse(req.body);
     const safeUrl = validateRemoteRepositoryUrl(input.url);
-    const repositoryId = randomUUID();
     const encryptedAccessCredential = input.accessToken
       ? encryptRepositoryAccessToken(input.accessToken)
       : null;
+
+    const existingRepository = findMatchingRepositoryImport(
+      await listRepositoriesForUser(req.auth?.userId ?? "", 50),
+      safeUrl.toString(),
+      input.branch
+    );
+
+    if (existingRepository) {
+      let activeRun = await getActiveAnalysisRun(existingRepository.id);
+
+      if (activeRun) {
+        await reconcileFailedActiveAnalysisRun(activeRun);
+        activeRun = await getActiveAnalysisRun(existingRepository.id);
+      }
+
+      const latestRun =
+        activeRun ??
+        (await listAnalysisRuns(existingRepository.id, 1, 1)).runs[0] ??
+        null;
+
+      if (encryptedAccessCredential) {
+        await saveRepositoryAccessCredential(
+          existingRepository.id,
+          encryptedAccessCredential
+        );
+      }
+
+      const accessConfigured = await hasRepositoryAccessCredential(
+        existingRepository.id
+      );
+
+      const reusedRepository = {
+        id: existingRepository.id,
+        source: existingRepository.source_url,
+        name: existingRepository.name,
+        trackedBranch:
+          existingRepository.tracked_branch ??
+          existingRepository.default_branch ??
+          input.branch ??
+          null,
+        accessConfigured
+      };
+
+      if (latestRun && latestRun.status !== "failed") {
+        res.status(latestRun.status === "completed" ? 200 : 202).json({
+          success: true,
+          reused: true,
+          repository: reusedRepository,
+          analysis: {
+            id: latestRun.id,
+            status: latestRun.status,
+            mode: latestRun.analysis_mode,
+            targetHeadSha: latestRun.target_head_sha,
+            analyzerVersion: latestRun.analyzer_version,
+            errorMessage: latestRun.error_message
+          }
+        });
+        return;
+      }
+
+      const retryAnalysisRunId = await createAnalysisRunForRepository(
+        existingRepository.id,
+        {
+          analyzerVersion: ANALYZER_VERSION,
+          analysisMode: "full",
+          baseHeadSha: null,
+          targetHeadSha: null
+        }
+      );
+
+      try {
+        const retryBranch =
+          input.branch ??
+          existingRepository.tracked_branch ??
+          existingRepository.default_branch ??
+          undefined;
+        const jobId = await enqueueRepositoryImport(
+          existingRepository.id,
+          retryAnalysisRunId,
+          safeUrl.toString(),
+          retryBranch
+        );
+
+        res.status(202).json({
+          success: true,
+          reused: true,
+          repository: reusedRepository,
+          analysis: {
+            id: retryAnalysisRunId,
+            status: "queued",
+            mode: "full",
+            jobId
+          }
+        });
+      } catch (error) {
+        const rawMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to queue repository import.";
+        const message =
+          sanitizePublicAnalysisErrorMessage(
+            rawMessage,
+            getRepositoryStoragePath(existingRepository.id)
+          ) ?? "Failed to queue repository import.";
+
+        try {
+          await updateAnalysisRun(retryAnalysisRunId, "failed", {
+            errorMessage: message
+          });
+        } catch (persistenceError) {
+          console.error(
+            \`Failed to record retry import failure for \${retryAnalysisRunId}:\`,
+            persistenceError
+          );
+        }
+
+        throw error;
+      }
+
+      return;
+    }
+
+    const repositoryId = randomUUID();
 
     const repository = await createPendingRepositoryWithAnalysis(
       {
