@@ -506,7 +506,12 @@ export async function updateAnalysisRun(
       throw new Error("Analysis run not found.");
     }
 
-    if (!isValidAnalysisTransition(current.status, status)) {
+    // A concurrent worker/API recovery may already have persisted this status.
+    // Reapplying the same state is safe because timestamps are only initialized once.
+    if (
+      current.status !== status &&
+      !isValidAnalysisTransition(current.status, status)
+    ) {
       throw new Error(
         `Invalid analysis transition: ${current.status} -> ${status}.`
       );
