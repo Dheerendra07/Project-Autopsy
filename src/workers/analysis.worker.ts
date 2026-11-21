@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import { isTerminalAnalysisJobFailure } from "../modules/analysis/worker-failure.js";
 import { redis } from "../config/redis.js";
 import {
   ANALYSIS_QUEUE_NAME,
@@ -77,9 +78,10 @@ import { classifyAnalysisJobRecovery } from "../modules/analysis/job-recovery.js
 import type { AnalysisJobData } from "../modules/analysis/analysis.queue.js";
 import { sanitizePublicAnalysisErrorMessage } from "../modules/analysis/analysis-error.js";
 
-export const ANALYSIS_WORKER_LOCK_DURATION_MS = 120_000;
+export const ANALYSIS_WORKER_LOCK_DURATION_MS = 300_000;
+export const ANALYSIS_WORKER_LOCK_RENEW_TIME_MS = 60_000;
 export const ANALYSIS_WORKER_STALLED_INTERVAL_MS = 30_000;
-export const ANALYSIS_WORKER_MAX_STALLED_COUNT = 1;
+export const ANALYSIS_WORKER_MAX_STALLED_COUNT = 2;
 
 export const analysisWorker = new Worker<AnalysisJobData>(
   ANALYSIS_QUEUE_NAME,
@@ -623,16 +625,70 @@ export const analysisWorker = new Worker<AnalysisJobData>(
     connection: redis,
     concurrency: 1,
     lockDuration: ANALYSIS_WORKER_LOCK_DURATION_MS,
+    lockRenewTime: ANALYSIS_WORKER_LOCK_RENEW_TIME_MS,
     stalledInterval: ANALYSIS_WORKER_STALLED_INTERVAL_MS,
     maxStalledCount: ANALYSIS_WORKER_MAX_STALLED_COUNT
   }
 );
+
+analysisWorker.on("stalled", (jobId, previousState) => {
+  console.warn(
+    `Analysis job ${jobId} stalled from ${previousState}; BullMQ will attempt recovery.`
+  );
+});
 
 analysisWorker.on("failed", (job, error) => {
   console.error(
     `Analysis job ${job?.id ?? "unknown"} failed:`,
     error
   );
+
+  if (
+    !job ||
+    !isTerminalAnalysisJobFailure(
+      error,
+      job.attemptsMade,
+      job.opts.attempts
+    )
+  ) {
+    return;
+  }
+
+  void (async () => {
+    const currentAnalysis = await getAnalysisRunById(
+      job.data.analysisRunId
+    );
+
+    if (
+      !currentAnalysis ||
+      currentAnalysis.repository_id !== job.data.repositoryId ||
+      currentAnalysis.status === "completed" ||
+      currentAnalysis.status === "failed"
+    ) {
+      return;
+    }
+
+    const rawMessage =
+      error instanceof Error ? error.message : "Analysis failed.";
+    const message =
+      sanitizePublicAnalysisErrorMessage(
+        rawMessage,
+        getRepositoryStoragePath(job.data.repositoryId)
+      ) ?? "Analysis failed.";
+
+    await updateAnalysisRun(job.data.analysisRunId, "failed", {
+      errorMessage: message
+    });
+
+    console.error(
+      `Persisted terminal analysis failure for run ${job.data.analysisRunId}: ${message}`
+    );
+  })().catch((persistenceError) => {
+    console.error(
+      `Failed to persist terminal analysis failure for run ${job.data.analysisRunId}:`,
+      persistenceError
+    );
+  });
 });
 
 let shuttingDown = false;

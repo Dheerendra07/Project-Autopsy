@@ -167,6 +167,35 @@ test("production smoke waits for active analysis before deleting its temporary r
   assert.ok(script.includes("maxDeleteAttempts = 3"));
 });
 
+test("analysis worker recovers from transient stalls and persists terminal failures", () => {
+  const worker = readRepoFile("src/workers/analysis.worker.ts");
+  const failurePolicy = readRepoFile("src/modules/analysis/worker-failure.ts");
+
+  assert.ok(worker.includes("ANALYSIS_WORKER_LOCK_DURATION_MS = 300_000"));
+  assert.ok(worker.includes("ANALYSIS_WORKER_LOCK_RENEW_TIME_MS = 60_000"));
+  assert.ok(worker.includes("ANALYSIS_WORKER_MAX_STALLED_COUNT = 2"));
+  assert.ok(worker.includes('analysisWorker.on("stalled"'));
+  assert.ok(worker.includes("isTerminalAnalysisJobFailure("));
+  assert.ok(worker.includes('updateAnalysisRun(job.data.analysisRunId, "failed"'));
+  assert.ok(worker.includes("getAnalysisRunById("));
+  assert.ok(worker.includes("job.data.analysisRunId"));
+  assert.ok(failurePolicy.includes('errorName === "UnrecoverableError"'));
+  assert.ok(failurePolicy.includes("attemptsMade >= maxAttempts"));
+});
+
+test("re-analysis reconciles a BullMQ failed job before blocking on stale active state", () => {
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+  const recovery = readRepoFile("src/modules/repositories/active-analysis-recovery.ts");
+  const queueState = readRepoFile("src/modules/analysis/queue-job-state.ts");
+
+  assert.ok(routes.includes("await reconcileFailedActiveAnalysisRun(activeRun)"));
+  assert.ok(recovery.includes("analysisQueue.getJob(jobId)"));
+  assert.ok(recovery.includes("job.failedReason"));
+  assert.ok(recovery.includes('updateAnalysisRun(current.id, "failed"'));
+  assert.ok(recovery.includes('const candidateJobIds = ['));
+  assert.ok(queueState.includes('return state === "failed"'));
+});
+
 test("production smoke covers public surface and protected API boundaries", () => {
   const script = readRepoFile("scripts/production-smoke.mjs");
   const workflow = readRepoFile(".github/workflows/production-smoke.yml");

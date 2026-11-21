@@ -8,6 +8,7 @@ import {
   isSafeBranchName
 } from "./repository.service.js";
 import { validateRemoteRepositoryUrl } from "./repository-url.js";
+import { reconcileFailedActiveAnalysisRun } from "./active-analysis-recovery.js";
 import {
   saveRepositoryAccessCredential,
   deleteRepositoryAccessCredential,
@@ -200,7 +201,12 @@ router.post("/:repositoryId/analyze", async (req, res, next) => {
       return;
     }
 
-    const activeRun = await getActiveAnalysisRun(repositoryId);
+    let activeRun = await getActiveAnalysisRun(repositoryId);
+
+    if (activeRun) {
+      await reconcileFailedActiveAnalysisRun(activeRun);
+      activeRun = await getActiveAnalysisRun(repositoryId);
+    }
 
     if (activeRun) {
       res.status(409).json({
