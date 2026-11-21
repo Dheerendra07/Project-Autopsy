@@ -1258,7 +1258,7 @@ button:disabled{opacity:.56;cursor:wait;transform:none!important}
 /* GitHub-inspired light palette: neutral surfaces, charcoal type, restrained green. */
 :root{
  color-scheme:light;
- --a-bg:#fff;--a-canvas:#f6f8fa;--a-surface:#fff;--a-surface-2:#f6f8fa;--a-surface-3:#eef2f6;
+ --a-bg:#ffffff;--a-canvas:#f6f8fa;--a-surface:#fff;--a-surface-2:#f6f8fa;--a-surface-3:#eef2f6;
  --a-ink:#1f2328;--a-ink-2:#30363d;--a-muted:#57606a;--a-subtle:#6e7781;
  --a-line:#d0d7de;--a-line-strong:#afb8c1;--a-accent:#1f883d;--a-accent-2:#2da44e;
  --a-accent-deep:#1a7f37;--a-accent-soft:#dafbe1;--a-accent-line:#a9dfb4;
