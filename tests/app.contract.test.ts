@@ -1137,29 +1137,35 @@ test("analysis status polling reconciles an expired running record after its Bul
       ]
     );
 
-    const response = await fetch(
-      `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
-      { headers: authHeaders() }
-    );
+    const statusUrl = `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`;
+    const responses = await Promise.all([
+      fetch(statusUrl, { headers: authHeaders() }),
+      fetch(statusUrl, { headers: authHeaders() })
+    ]);
 
-    assert.equal(response.status, 200);
-    const body = await response.json() as {
-      success: boolean;
-      analysis: {
-        status: string;
-        completedAt: string | null;
-        errorMessage: string | null;
-      };
-    };
-    assert.equal(body.success, true);
-    assert.equal(body.analysis.status, "failed");
-    assert.ok(body.analysis.completedAt);
-    assert.match(body.analysis.errorMessage ?? "", /execution deadline/i);
+    for (const response of responses) {
+      assert.equal(response.status, 200);
+    }
 
-    const secondRead = await fetch(
-      `${baseUrl}/api/repositories/${repositoryId}/analysis/${analysisRunId}`,
-      { headers: authHeaders() }
-    );
+    const bodies = await Promise.all(responses.map((response) =>
+      response.json() as Promise<{
+        success: boolean;
+        analysis: {
+          status: string;
+          completedAt: string | null;
+          errorMessage: string | null;
+        };
+      }>
+    ));
+
+    for (const body of bodies) {
+      assert.equal(body.success, true);
+      assert.equal(body.analysis.status, "failed");
+      assert.ok(body.analysis.completedAt);
+      assert.match(body.analysis.errorMessage ?? "", /execution deadline/i);
+    }
+
+    const secondRead = await fetch(statusUrl, { headers: authHeaders() });
     assert.equal(secondRead.status, 200);
     const secondBody = await secondRead.json() as {
       analysis: { status: string };
