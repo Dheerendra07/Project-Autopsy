@@ -451,7 +451,16 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
     const analysisRunId = z.string().uuid().parse(req.params.analysisRunId);
-    const analysis = await getAnalysisRunById(analysisRunId);
+    let analysis = await getAnalysisRunById(analysisRunId);
+
+    if (
+      analysis &&
+      analysis.repository_id === repositoryId &&
+      (analysis.status === "queued" || analysis.status === "running")
+    ) {
+      await reconcileFailedActiveAnalysisRun(analysis);
+      analysis = await getAnalysisRunById(analysisRunId);
+    }
 
     if (!analysis || analysis.repository_id !== repositoryId) {
       res.status(404).json({
