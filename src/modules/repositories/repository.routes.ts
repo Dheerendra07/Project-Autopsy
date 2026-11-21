@@ -222,7 +222,7 @@ router.post("/import", async (req, res, next) => {
           });
         } catch (persistenceError) {
           console.error(
-            \`Failed to record retry import failure for \${retryAnalysisRunId}:\`,
+            `Failed to record retry import failure for ${retryAnalysisRunId}:`,
             persistenceError
           );
         }
