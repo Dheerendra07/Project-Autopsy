@@ -1296,43 +1296,47 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
         </div>
       </div>
 
-      <div class="pa-hero-console" aria-label="Illustrative evidence atlas preview">
+            <div class="pa-hero-console" aria-label="How repository evidence is organised">
         <div class="atlas-board">
           <div class="atlas-topline">
             <div class="atlas-brandline"><span class="atlas-symbol">◈</span><div><small>PROJECT AUTOPSY / ATLAS</small><strong>Evidence workspace</strong></div></div>
-            <span class="atlas-preview-tag">CONCEPT PREVIEW</span>
+            <span class="atlas-preview-tag">PRODUCT ARCHITECTURE</span>
           </div>
           <div class="atlas-board-intro">
-            <div><span>ENGINEERING SIGNALS / OVERVIEW</span><h3>Map the system.<br>Follow the signal.</h3></div>
-            <p>A visual preview of how separate evidence layers connect.</p>
+            <div><span>OBSERVED SOURCES / FOUR LAYERS</span><h3>One record.<br>Every trace connected.</h3></div>
+            <p>Repository facts, derived signals and optional operations data stay distinguishable.</p>
           </div>
           <div class="atlas-visual">
             <div class="atlas-matrix-panel">
-              <div class="atlas-matrix-heading"><span>CHANGE DENSITY / 53 WEEKS</span><span>ILLUSTRATIVE</span></div>
-              <div id="atlasMatrix" class="atlas-matrix" aria-hidden="true"></div>
+              <div class="atlas-matrix-heading"><span>EVIDENCE SOURCES</span><span>REAL PRODUCT INPUTS</span></div>
+              <div class="atlas-source-grid">
+                <article class="atlas-source-card"><span>01 / GIT</span><strong>Repository history</strong><small>Commit dates, authors and changed paths</small></article>
+                <article class="atlas-source-card"><span>02 / CODE</span><strong>Code &amp; dependencies</strong><small>Structure, package snapshots and complexity</small></article>
+                <article class="atlas-source-card"><span>03 / CHANGE</span><strong>Schema &amp; tests</strong><small>Migration and test evolution records</small></article>
+                <article class="atlas-source-card"><span>04 / OPERATIONS</span><strong>Runtime &amp; releases</strong><small>Observed telemetry and deployment records, when available</small></article>
+              </div>
             </div>
             <div class="atlas-side-metrics">
-              <div class="atlas-mini-stat"><span>EVIDENCE LAYERS</span><strong>04</strong><small>Git · Code · Runtime · Release</small></div>
-              <div class="atlas-mini-stat"><span>WORKSPACE VIEWS</span><strong>11</strong><small>One linked investigation</small></div>
-              <div class="atlas-mini-stat"><span>CLAIM POLICY</span><strong>01</strong><small>Every claim needs a source</small></div>
+              <div class="atlas-mini-stat"><span>WORKSPACE VIEWS</span><strong>11</strong><small>Present in the live navigation</small></div>
+              <div class="atlas-mini-stat"><span>ACTIVITY MAP</span><strong>AFTER IMPORT</strong><small>Generated from persisted Git dates</small></div>
             </div>
           </div>
           <div class="atlas-trace">
-            <div class="atlas-trace-head"><span>FROM CHANGE TO CONTEXT</span><span>TRACEABLE PATH</span></div>
+            <div class="atlas-trace-head"><span>FROM CHANGE TO CONTEXT</span><span>WHEN EVIDENCE EXISTS</span></div>
             <div class="atlas-trace-flow">
-              <div class="atlas-trace-node is-active"><span>01 / SOURCE</span><strong>Commit</strong></div>
-              <div class="atlas-trace-node"><span>02 / DELTA</span><strong>Code diff</strong></div>
-              <div class="atlas-trace-node"><span>03 / SIGNAL</span><strong>Runtime</strong></div>
-              <div class="atlas-trace-node"><span>04 / PROOF</span><strong>Release</strong></div>
+              <div class="atlas-trace-node is-active"><span>01 / SOURCE</span><strong>Git commit</strong></div>
+              <div class="atlas-trace-node"><span>02 / CHANGE</span><strong>Code delta</strong></div>
+              <div class="atlas-trace-node"><span>03 / OPTIONAL</span><strong>Runtime signal</strong></div>
+              <div class="atlas-trace-node"><span>04 / OUTPUT</span><strong>Evidence report</strong></div>
             </div>
           </div>
-          <div class="atlas-board-foot"><span>OBSERVED ≠ INFERRED</span><strong>INSPECT EVERY LAYER ↗</strong></div>
+          <div class="atlas-board-foot"><span>OBSERVED ≠ INFERRED</span><strong>NO SYNTHETIC REPOSITORY DATA</strong></div>
           <div class="atlas-board-glow" aria-hidden="true"></div>
         </div>
         <div class="landing-proof">
-          <div><b>Clear evidence boundary</b><span>Observed facts stay separate</span></div>
-          <div><b>11 focused views</b><span>One linked investigation</span></div>
-          <div><b>Inspectable outputs</b><span>Every claim can be traced</span></div>
+          <div><b>Persisted records</b><span>Loaded from the selected repository</span></div>
+          <div><b>Derived signals</b><span>Calculated from recorded changes</span></div>
+          <div><b>Optional operations</b><span>Shown only when actually observed</span></div>
         </div>
       </div>
     </section>
@@ -1356,28 +1360,22 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       </div>
     </section>
 
-        <section id="activity-preview" class="pa-section pa-activity-preview">
+                <section id="activity-preview" class="pa-section pa-activity-preview" aria-label="Repository contribution history">
       <div class="pa-section-intro">
-        <div class="pa-eyebrow">CHANGE DENSITY / 53-WEEK FIELD</div>
-        <h2>Patterns emerge when the timeline becomes visible.</h2>
-        <p>The intensity field compresses a year of change into one visual index. In a live analysis, every populated cell is derived from persisted commit dates—not a synthetic activity score.</p>
+        <div class="pa-eyebrow">REPOSITORY ACTIVITY / LIVE EVIDENCE</div>
+        <h2>The commit map comes from your actual history.</h2>
+        <p>The workspace contribution map is calculated from persisted Git commit dates for the repository and analysis run you select. The public homepage does not invent activity patterns, counts or contributors.</p>
       </div>
-      <div class="pa-preview-heatmap-card pa-card">
-        <div class="pa-preview-heatmap-head">
-          <div><strong>Signal density</strong><small>Weekly commit footprint · visual concept</small></div>
-          <span class="pa-preview-badge">ILLUSTRATIVE</span>
-        </div>
-        <div class="pa-preview-heatmap-scroll">
-          <div class="pa-preview-calendar">
-            <div class="pa-preview-weekdays"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
-            <div>
-              <div id="activityPreviewMonths" class="pa-preview-months" aria-hidden="true"></div>
-              <div id="activityPreviewGrid" class="pa-preview-grid" aria-hidden="true"></div>
-            </div>
+      <div class="atlas-history-empty">
+        <div class="atlas-history-state">
+          <span class="atlas-history-icon" aria-hidden="true">⌁</span>
+          <div>
+            <span class="atlas-history-kicker">LIVE WORKSPACE FEATURE</span>
+            <strong>No repository is loaded in this public overview.</strong>
+            <p>Connect a repository to populate its 53-week activity map from imported commit records. Empty history stays empty until the source provides evidence.</p>
           </div>
         </div>
-        <div class="pa-preview-legend"><span>Less</span><span class="pa-preview-cell" data-level="0"></span><span class="pa-preview-cell" data-level="1"></span><span class="pa-preview-cell" data-level="2"></span><span class="pa-preview-cell" data-level="3"></span><span class="pa-preview-cell" data-level="4"></span><span>More</span></div>
-        <p class="pa-preview-caption">Illustrative styling only. Live intensity is calculated from imported repository commits.</p>
+        <a class="atlas-history-link" href="#import">Connect a repository <span aria-hidden="true">→</span></a>
       </div>
     </section>
 
@@ -1432,95 +1430,99 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       </div>
     </section>
 
-    <section id="workspace-preview" class="pa-section">
+        <section id="workspace-preview" class="pa-section">
       <div class="pa-section-intro">
         <div class="pa-eyebrow">INSIDE THE WORKSPACE / 02</div>
-        <h2>Move from a signal to its source without losing context.</h2>
-        <p class="pa-subline">Every output has a next step: read → inspect → verify.</p>
-        <p>The real workspace keeps repository facts, derived signals and grounded outputs in one inspectable surface.</p>
+        <h2>Eleven real surfaces. Each one tied to a different question.</h2>
+        <p class="pa-subline">Move from repository records to derived signals, then inspect their source.</p>
+        <p>This is the application's actual navigation model—not a mock repository snapshot. Names, counts and evidence rows appear only after an import.</p>
       </div>
-      <div class="pa-workspace-card">
+      <div class="pa-workspace-card atlas-surface-card">
         <div class="pa-workspace-head">
           <div class="pa-repo">
-            <span class="pa-repo-mark">⌁</span>
-            <div><strong>repository / current snapshot</strong><small>Git + runtime + deployments · evidence boundary</small></div>
+            <span class="pa-repo-mark">PA</span>
+            <div><strong>Project Autopsy / workspace map</strong><small>Actual navigation surfaces · no customer or demo repository data</small></div>
           </div>
-          <div class="pa-repo-actions">
-            <button type="button">Compare runs</button>
-            <button type="button">Run history</button>
-            <button type="button" class="active">Re-analyze</button>
-          </div>
+          <a class="atlas-source-link" href="https://github.com/Dheerendra07/Project-Autopsy" target="_blank" rel="noopener noreferrer">View source on GitHub ↗</a>
         </div>
-        <div class="preview-grid">
-          <div class="preview-nav">
-            <div class="preview-nav-brand"><span class="preview-mark">A</span><span>Autopsy</span></div>
-            <div class="preview-nav-group">UNDERSTAND</div>
-            <div class="preview-nav-item active"><span>01</span><strong>Overview</strong></div>
-            <div class="preview-nav-item"><span>02</span><strong>History</strong></div>
-            <div class="preview-nav-item"><span>03</span><strong>Structure</strong></div>
-            <div class="preview-nav-group">VALIDATE</div>
-            <div class="preview-nav-item"><span>04</span><strong>Quality</strong></div>
-            <div class="preview-nav-item"><span>05</span><strong>Runtime</strong></div>
-            <div class="preview-nav-group">OUTPUTS</div>
-            <div class="preview-nav-item"><span>06</span><strong>Report</strong></div>
-            <div class="preview-nav-item"><span>07</span><strong>Interview</strong></div>
-            <div class="preview-nav-item"><span>08</span><strong>Insights</strong></div>
-            <div class="preview-nav-group">EXPLORE</div>
-            <div class="preview-nav-item"><span>09</span><strong>Evidence</strong></div>
-            <div class="preview-nav-item"><span>10</span><strong>Contributors</strong></div>
-            <div class="preview-nav-group">OPERATE</div>
-            <div class="preview-nav-item"><span>11</span><strong>Operations</strong></div>
-          </div>
-          <div class="preview-main">
-            <div class="pa-metric-grid">
-              <div><span>COMMITS</span><b>1,840</b><small>stored Git history</small></div>
-              <div><span>HOTSPOTS</span><b>10</b><small>change centers</small></div>
-              <div><span>COMPLEXITY</span><b>5</b><small>tracked deltas</small></div>
-              <div><span>DEPLOYMENTS</span><b>12</b><small>revision-linked</small></div>
-            </div>
-            <div class="pa-table-preview">
-              <div class="pa-table-head"><span>STORED COMMIT EVIDENCE</span><code>GET /api/repositories/:id/commits</code></div>
-              <div class="pa-table-row pa-table-row-head"><span>SHA</span><span>TYPE</span><span>SUBJECT</span><span>AUTHOR</span><span>+ / −</span><span>WHEN</span></div>
-              <div class="pa-table-row"><b>f4a9c7b2</b><span>feat</span><strong>Idempotent invoice finalization with Redis guard</strong><span>Priya Anand</span><span>+312 / −88</span><span>Sep 29</span></div>
-              <div class="pa-table-row"><b>e7c1d3a9</b><span>fix</span><strong>Webhook retries with bounded backoff</strong><span>Marcus Bélanger</span><span>+64 / −12</span><span>Sep 26</span></div>
-              <div class="pa-table-row"><b>d3b8f2c1</b><span>refactor</span><strong>Collapse invoicing service boundary</strong><span>Sofia Marenco</span><span>+410 / −528</span><span>Sep 24</span></div>
-            </div>
-          </div>
+        <div class="atlas-surface-grid">
+          <article class="atlas-surface-group">
+            <div class="atlas-surface-heading"><span>01—03</span><b>UNDERSTAND</b></div>
+            <div class="atlas-surface-item"><span>01</span><div><strong>Overview</strong><small>Current analysis snapshot and first inspection signals.</small></div></div>
+            <div class="atlas-surface-item"><span>02</span><div><strong>History</strong><small>Persisted commits, authors and the change timeline.</small></div></div>
+            <div class="atlas-surface-item"><span>03</span><div><strong>Structure</strong><small>Repository architecture, dependencies and complexity.</small></div></div>
+          </article>
+          <article class="atlas-surface-group">
+            <div class="atlas-surface-heading"><span>04—05</span><b>VALIDATE</b></div>
+            <div class="atlas-surface-item"><span>04</span><div><strong>Quality</strong><small>Test evolution, migrations and refactor evidence.</small></div></div>
+            <div class="atlas-surface-item"><span>05</span><div><strong>Runtime</strong><small>Observed telemetry and historical correlation, when supplied.</small></div></div>
+          </article>
+          <article class="atlas-surface-group">
+            <div class="atlas-surface-heading"><span>06—08</span><b>OUTPUTS</b></div>
+            <div class="atlas-surface-item"><span>06</span><div><strong>Report</strong><small>Evidence-backed claims from a completed analysis run.</small></div></div>
+            <div class="atlas-surface-item"><span>07</span><div><strong>Interview</strong><small>Project explanations grounded in the selected evidence.</small></div></div>
+            <div class="atlas-surface-item"><span>08</span><div><strong>Insights</strong><small>Bounded interpretation, not invented project facts.</small></div></div>
+          </article>
+          <article class="atlas-surface-group">
+            <div class="atlas-surface-heading"><span>09—10</span><b>EXPLORE</b></div>
+            <div class="atlas-surface-item"><span>09</span><div><strong>Evidence</strong><small>Inspect the records supporting a finding.</small></div></div>
+            <div class="atlas-surface-item"><span>10</span><div><strong>Contributors</strong><small>Git author metadata; intent and ownership are not guessed.</small></div></div>
+          </article>
+          <article class="atlas-surface-group">
+            <div class="atlas-surface-heading"><span>11</span><b>OPERATE</b></div>
+            <div class="atlas-surface-item"><span>11</span><div><strong>Operations</strong><small>Service state and operations kept apart from code history.</small></div></div>
+            <div class="atlas-surface-empty"><span aria-hidden="true">⌁</span><p>Operational evidence appears only when the connected source provides it.</p></div>
+          </article>
         </div>
+        <div class="atlas-surface-foot"><span>11 / 11 WORKSPACE VIEWS</span><span>LIVE REPOSITORY DATA IS ACCOUNT-SCOPED</span></div>
       </div>
     </section>
 
     <section id="reports" class="pa-section">
       <div class="pa-section-intro">
-        <div class="pa-eyebrow">OUTPUTS / EVIDENCE-BACKED</div>
-        <h2>Conclusions stay close to the records that support them.</h2>
-        <p>A report is generated only from a completed analysis run. Each claim carries evidence references, and the interpretation layer stays bounded to that evidence.</p>
+        <div class="pa-eyebrow">OUTPUTS / EVIDENCE-BOUNDED</div>
+        <h2>A useful explanation starts with a record you can inspect.</h2>
+        <p>Reports are produced from a completed analysis run. The public overview describes the real workflow; repository-specific claims, names and evidence references are loaded only inside an authenticated workspace.</p>
       </div>
       <div class="pa-report-shell">
         <article class="pa-card pa-report">
-          <div class="pa-report-head"><div><span>Evidence-backed report</span><code>rpt_8f3a2c1e9b4d7f0a</code></div><button type="button">Export</button></div>
-          <div class="pa-report-flow"><span>Evidence</span><i>→</i><span>Claims</span><i>→</i><span>Interpretation</span></div>
-          <div class="pa-report-list">
-            <div><span class="pa-claim-id">01</span><div><strong>Invoicing is the primary change center</strong><p>142 commits touch the service boundary; the signal is grounded in persisted commit and hotspot evidence.</p><code>commit:&lt;sha&gt; · hotspot:&lt;path&gt;</code></div></div>
-            <div><span class="pa-claim-id">02</span><div><strong>Complexity reduction is observable</strong><p>Before/after AST evidence can distinguish measurable reduction from a subjective cleanup claim.</p><code>complexity:&lt;commit&gt; · commit:&lt;sha&gt;</code></div></div>
-            <div><span class="pa-claim-id">03</span><div><strong>Deployment provenance stays explicit</strong><p>Revision, artifact, build and release records are reconciled from what was actually observed.</p><code>deployment:&lt;id&gt; · runtime:&lt;id&gt;</code></div></div>
+          <div class="pa-report-head">
+            <div><span>THE REPORT WORKFLOW</span><code>COMPLETED ANALYSIS RUN REQUIRED</code></div>
+            <span class="atlas-report-badge">SOURCE-BOUND</span>
+          </div>
+          <div class="atlas-report-stages">
+            <article class="atlas-report-stage">
+              <span>01 / OBSERVE</span>
+              <strong>Persisted repository evidence</strong>
+              <p>Commits, changed files, architecture, dependencies, migrations and tests are read from the selected analysis snapshot.</p>
+            </article>
+            <article class="atlas-report-stage">
+              <span>02 / VALIDATE</span>
+              <strong>Claims with evidence references</strong>
+              <p>Report findings retain their supporting evidence keys. Unknown references are rejected rather than silently accepted.</p>
+            </article>
+            <article class="atlas-report-stage">
+              <span>03 / INTERPRET</span>
+              <strong>Context with clear limits</strong>
+              <p>Optional AI interpretation stays within supplied evidence and distinguishes correlation from proven causality.</p>
+            </article>
           </div>
         </article>
         <aside class="pa-card pa-report-aside">
-          <div class="pa-card-kicker">GROUNDED OUTPUT</div>
-          <h3>Interpretation posture</h3>
+          <div class="pa-card-kicker">TRUST BOUNDARIES</div>
+          <h3>Useful context. No invented facts.</h3>
           <div class="pa-status-stack">
-            <div><b>Evidence refs</b><span>Required</span></div>
-            <div><b>Unknown refs</b><span>Rejected</span></div>
-            <div><b>Causality</b><span>Bounded</span></div>
-            <div><b>Ownership</b><span>Never inferred</span></div>
+            <div><b>Evidence references</b><span>Required</span></div>
+            <div><b>Unknown references</b><span>Rejected</span></div>
+            <div><b>Developer ownership</b><span>Not inferred</span></div>
+            <div><b>Performance claims</b><span>Runtime data required</span></div>
           </div>
-          <div class="pa-question">Use the report as an inspection surface, not an answer generator.</div>
+          <div class="pa-question">Read the claim. Open its source. Decide what the repository record supports.</div>
         </aside>
       </div>
     </section>
 
-    <section id="security" class="pa-section pa-security">
+<section id="security" class="pa-section pa-security">
       <div class="pa-section-intro">
         <div class="pa-eyebrow">TRUST / CONTROL BOUNDARIES</div>
         <h2>Designed to keep credentials and conclusions in bounds.</h2>
@@ -1534,7 +1536,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       </div>
     </section>
 
-    <footer class="pa-footer"><span>Project Autopsy</span><span>observe → validate → interpret → inspect</span><span>⌘K command center</span></footer>
+    <footer class="pa-footer"><span>Project Autopsy / Atlas</span><span>observe → validate → interpret → inspect</span><a href="https://github.com/Dheerendra07/Project-Autopsy" target="_blank" rel="noopener noreferrer">GitHub · Dheerendra07/Project-Autopsy ↗</a></footer>
   </section>
 
   <section id="workspace" class="workspace" hidden>
