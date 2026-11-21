@@ -195,7 +195,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
 
         const trackedBranch =
-          job.data.branch ?? metadata.defaultBranch;
+          metadata.trackedBranch ?? job.data.branch ?? metadata.defaultBranch;
 
         await updateRepositoryImportMetadata(
           repositoryId,
@@ -286,7 +286,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         await updateRepositoryImportMetadata(
           repository.id,
           metadata,
-          repository.tracked_branch
+          metadata.trackedBranch ?? repository.tracked_branch
         );
 
         deadline.assertNotExpired();
