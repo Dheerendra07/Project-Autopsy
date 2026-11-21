@@ -21,7 +21,8 @@ import {
   getRepositoryStoragePath,
   assertManagedRepositoryStoragePath,
   isRepositoryStorageReady,
-  isSafeBranchName
+  isSafeBranchName,
+  resolveRemoteBranch
 } from "../src/modules/repositories/repository.service.js";
 
 test("accepts safe Git branch names", () => {
@@ -70,6 +71,43 @@ test("rejects branch names that can be ambiguous or invalid Git refs", () => {
 async function makeTempDirectory(prefix: string): Promise<string> {
   return mkdtemp(path.join(tmpdir(), "project-autopsy-" + prefix));
 }
+
+test("resolves an explicitly requested remote branch exactly", () => {
+  const remoteHeads = [
+    `${"a".repeat(40)}\trefs/heads/main`,
+    `${"b".repeat(40)}\trefs/heads/develop`
+  ].join("\n");
+
+  assert.equal(resolveRemoteBranch("main", remoteHeads), "main");
+});
+
+test("corrects a branch name that differs from the remote only by letter case", () => {
+  const remoteHeads = `${"a".repeat(40)}\trefs/heads/main`;
+
+  assert.equal(resolveRemoteBranch("Main", remoteHeads), "main");
+  assert.equal(resolveRemoteBranch("MAIN", remoteHeads), "main");
+});
+
+test("rejects missing or ambiguous remote branches with actionable errors", () => {
+  const remoteHeads = [
+    `${"a".repeat(40)}\trefs/heads/main`,
+    `${"b".repeat(40)}\trefs/heads/Main`,
+    `${"c".repeat(40)}\trefs/heads/develop`
+  ].join("\n");
+
+  assert.throws(
+    () => resolveRemoteBranch("missing", remoteHeads),
+    /Available branches: main, Main, develop/
+  );
+  assert.throws(
+    () => resolveRemoteBranch("MAIN", remoteHeads),
+    /ambiguous/
+  );
+  assert.throws(
+    () => resolveRemoteBranch("main", ""),
+    /Available branches: none/
+  );
+});
 
 test("counts regular files and nested directories without following symlinks", async (t) => {
   const root = await makeTempDirectory("size-");
