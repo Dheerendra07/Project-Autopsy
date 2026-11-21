@@ -80,3 +80,15 @@ for (const selector of [
 }
 
 console.log("Atlas homepage QA passed: no synthetic repository records, all 11 real views, preserved import/auth wiring, truthful contribution history, responsive evidence UI and live workspace heatmap.");
+
+
+// Visual theme and cat companion regression checks.
+assert.ok(atlasCss.includes("--a-accent:#1f883d"), "GitHub-green accent is required");
+assert.ok(atlasCss.includes("--a-bg:#ffffff"), "Light canvas must remain white");
+assert.ok(atlasCss.includes("html[data-theme=\"dark\"]"), "Dark theme support must remain");
+assert.ok(atlasCss.includes(".pa-cat-companion"), "Cat companion styles must exist");
+assert.ok(atlasCss.includes("@media(prefers-reduced-motion:reduce)"), "Reduced-motion handling is required");
+assert.ok(atlasJs.includes("function mountCatCompanion"), "Cat companion interaction is required");
+assert.ok(atlasJs.includes("mountCatCompanion();"), "Cat companion must be initialised");
+assert.ok(atlasJs.includes("(pointer: coarse)"), "Touch devices must not run pointer-follow motion");
+assert.ok(atlasJs.includes("aria-hidden"), "Decorative cat must be hidden from assistive technology");
