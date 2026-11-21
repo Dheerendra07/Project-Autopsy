@@ -665,6 +665,7 @@ export interface UserRepositorySummary {
   name: string;
   source_url: string | null;
   tracked_branch: string | null;
+  default_branch: string | null;
   head_sha: string | null;
   updated_at: string;
 }
@@ -680,6 +681,7 @@ export async function listRepositoriesForUser(
         name,
         source_url,
         tracked_branch,
+        default_branch,
         head_sha,
         updated_at
       FROM repositories
