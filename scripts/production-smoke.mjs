@@ -87,6 +87,53 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+const INTERPRETATION_GATEWAY_MAX_ATTEMPTS = 3;
+const INTERPRETATION_GATEWAY_RETRY_BASE_DELAY_MS = 5_000;
+
+async function requestInterpretationWithGatewayRetry(path, options = {}) {
+  for (
+    let attempt = 1;
+    attempt <= INTERPRETATION_GATEWAY_MAX_ATTEMPTS;
+    attempt += 1
+  ) {
+    const result = await request(path, options);
+    const contentType = (
+      result.response.headers.get("content-type") ?? ""
+    ).toLowerCase();
+    const isHtmlGatewayError =
+      PUBLIC_WARMUP_RETRY_STATUSES.has(result.response.status) &&
+      contentType.includes("text/html") &&
+      result.body === null &&
+      /<!doctype html|<html\b/i.test(result.text);
+
+    if (
+      !isHtmlGatewayError ||
+      attempt === INTERPRETATION_GATEWAY_MAX_ATTEMPTS
+    ) {
+      return result;
+    }
+
+    const delayMs = INTERPRETATION_GATEWAY_RETRY_BASE_DELAY_MS * attempt;
+    console.log(
+      `⚠ Interpretation request received an HTML gateway HTTP ${result.response.status}; checking readiness and retrying in ${delayMs}ms (attempt ${attempt + 1}/${INTERPRETATION_GATEWAY_MAX_ATTEMPTS}).`
+    );
+
+    const ready = await requestPublicWarmup("/ready");
+    assert(
+      ready.response.status === 200 &&
+        ready.body?.success === true &&
+        ready.body?.status === "ready" &&
+        ready.body?.checks?.database === "ready" &&
+        ready.body?.checks?.redis === "ready",
+      "Readiness did not recover after a transient interpretation gateway response."
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error("Interpretation gateway retry window was exhausted.");
+}
+
 async function waitForAnalysis(
   repositoryId,
   analysisRunId,
@@ -287,7 +334,7 @@ try {
       "Production E2E report did not return the expected completed evidence report."
     );
 
-    const interpretation = await request(
+    const interpretation = await requestInterpretationWithGatewayRetry(
       `/api/repositories/${e2eRepositoryId}/interpretation?limit=3`,
       {
         headers: { Cookie: cookieHeader },
