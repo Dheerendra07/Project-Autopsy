@@ -157,6 +157,16 @@ test("production Gemini smoke retries bounded HTML gateway failures only", () =>
   assert.ok(script.includes("await requestInterpretationWithGatewayRetry("));
 });
 
+test("production smoke waits for active analysis before deleting its temporary repository", () => {
+  const script = readRepoFile("scripts/production-smoke.mjs");
+
+  assert.ok(script.includes("async function deleteRepositoryAfterActiveAnalysis("));
+  assert.ok(script.includes('deletion.body?.error?.code === "REPOSITORY_DELETE_BLOCKED"'));
+  assert.ok(script.includes("deletion.body?.error?.analysisRunId"));
+  assert.ok(script.includes("await waitForAnalysis("));
+  assert.ok(script.includes("maxDeleteAttempts = 3"));
+});
+
 test("production smoke covers public surface and protected API boundaries", () => {
   const script = readRepoFile("scripts/production-smoke.mjs");
   const workflow = readRepoFile(".github/workflows/production-smoke.yml");

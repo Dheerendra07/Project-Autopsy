@@ -172,6 +172,62 @@ async function waitForAnalysis(
   );
 }
 
+async function deleteRepositoryAfterActiveAnalysis(
+  repositoryId,
+  cookieHeader,
+  csrfToken
+) {
+  const maxDeleteAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxDeleteAttempts; attempt += 1) {
+    const deletion = await request(
+      `/api/repositories/${repositoryId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: cookieHeader,
+          "x-autopsy-csrf-token": csrfToken
+        }
+      }
+    );
+
+    if (
+      deletion.response.status === 200 ||
+      deletion.response.status === 202
+    ) {
+      assert(
+        deletion.body?.success === true && deletion.body?.deleted === true,
+        "Production E2E cleanup returned the wrong response contract."
+      );
+      return deletion;
+    }
+
+    const activeAnalysisRunId = deletion.body?.error?.analysisRunId;
+    const isActiveAnalysisConflict =
+      deletion.response.status === 409 &&
+      deletion.body?.error?.code === "REPOSITORY_DELETE_BLOCKED" &&
+      typeof activeAnalysisRunId === "string";
+
+    assert(
+      isActiveAnalysisConflict && attempt < maxDeleteAttempts,
+      `Production E2E cleanup returned HTTP ${deletion.response.status}. Body: ${deletion.text.slice(0, 500)}`
+    );
+
+    console.log(
+      `⚠ Temporary repository cleanup is waiting for active analysis ${activeAnalysisRunId} (attempt ${attempt}/${maxDeleteAttempts}).`
+    );
+
+    await waitForAnalysis(
+      repositoryId,
+      activeAnalysisRunId,
+      cookieHeader,
+      120_000
+    );
+  }
+
+  throw new Error("Production E2E cleanup retry window was exhausted.");
+}
+
 const home = await requestPublicWarmup("/");
 assert(home.response.ok, `Home page returned HTTP ${home.response.status}.`);
 assert(home.text.includes("Project Autopsy"), "Home page does not contain the Project Autopsy surface.");
@@ -384,26 +440,10 @@ try {
   } finally {
     if (e2eRepositoryId) {
       try {
-        const deleteResponse = await request(
-          `/api/repositories/${e2eRepositoryId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Cookie: cookieHeader,
-              "x-autopsy-csrf-token": csrfToken
-            }
-          }
-        );
-
-        assert(
-          deleteResponse.response.status === 200 ||
-            deleteResponse.response.status === 202,
-          `Production E2E cleanup returned HTTP ${deleteResponse.response.status}. Body: ${deleteResponse.text.slice(0, 500)}`
-        );
-        assert(
-          deleteResponse.body?.success === true &&
-            deleteResponse.body?.deleted === true,
-          "Production E2E cleanup returned the wrong response contract."
+        await deleteRepositoryAfterActiveAnalysis(
+          e2eRepositoryId,
+          cookieHeader,
+          csrfToken
         );
         e2eCleanupSucceeded = true;
       } catch (error) {
