@@ -407,11 +407,31 @@ router.get("/:repositoryId/analysis-runs", async (req, res, next) => {
       return;
     }
 
-    const result = await listAnalysisRuns(
+    let result = await listAnalysisRuns(
       repositoryId,
       query.page,
       query.limit
     );
+    const activeRun = result.runs.find(
+      (run) => run.status === "queued" || run.status === "running"
+    );
+
+    if (activeRun) {
+      try {
+        await reconcileFailedActiveAnalysisRun(activeRun);
+      } catch (recoveryError) {
+        console.error(
+          `Unable to reconcile analysis history read for run ${activeRun.id}:`,
+          recoveryError
+        );
+      }
+
+      result = await listAnalysisRuns(
+        repositoryId,
+        query.page,
+        query.limit
+      );
+    }
 
     const totalPages =
       result.total === 0
@@ -451,7 +471,7 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
   try {
     const repositoryId = z.string().uuid().parse(req.params.repositoryId);
     const analysisRunId = z.string().uuid().parse(req.params.analysisRunId);
-    const analysis = await getAnalysisRunById(analysisRunId);
+    let analysis = await getAnalysisRunById(analysisRunId);
 
     if (!analysis || analysis.repository_id !== repositoryId) {
       res.status(404).json({
@@ -462,6 +482,32 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
         }
       });
       return;
+    }
+
+    if (analysis.status === "queued" || analysis.status === "running") {
+      try {
+        await reconcileFailedActiveAnalysisRun(analysis);
+      } catch (recoveryError) {
+        console.error(
+          `Unable to reconcile analysis status read for run ${analysisRunId}:`,
+          recoveryError
+        );
+      }
+
+      const refreshedAnalysis = await getAnalysisRunById(analysisRunId);
+
+      if (!refreshedAnalysis || refreshedAnalysis.repository_id !== repositoryId) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: "ANALYSIS_NOT_FOUND",
+            message: "Analysis run not found."
+          }
+        });
+        return;
+      }
+
+      analysis = refreshedAnalysis;
     }
 
     res.json({
