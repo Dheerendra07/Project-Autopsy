@@ -30,8 +30,10 @@ for (const synthetic of [
   assert.ok(!html.includes(synthetic), "Synthetic preview content must not ship: " + synthetic);
 }
 
-assert.equal((html.match(/class="atlas-surface-item"/g) || []).length, 11,
-  "Homepage workspace map must contain the 11 real workspace surfaces");
+assert.equal((html.match(/class="preview-nav-item(?: active)?"/g) || []).length, 11,
+  "Homepage workspace preview must contain the 11 real navigation views");
+assert.ok(html.includes('<div class="preview-nav">') && html.includes('<div class="preview-main">'),
+  "The workspace navigation and detail surfaces must retain their existing structural contract");
 
 for (const surface of [
   "Overview", "History", "Structure", "Quality", "Runtime", "Report",

@@ -1434,7 +1434,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       <div class="pa-section-intro">
         <div class="pa-eyebrow">INSIDE THE WORKSPACE / 02</div>
         <h2>Eleven real surfaces. Each one tied to a different question.</h2>
-        <p class="pa-subline">Move from repository records to derived signals, then inspect their source.</p>
+        <p class="pa-subline">Every output has a next step: read → inspect → verify.</p>
         <p>This is the application's actual navigation model—not a mock repository snapshot. Names, counts and evidence rows appear only after an import.</p>
       </div>
       <div class="pa-workspace-card atlas-surface-card">
@@ -1445,34 +1445,39 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
           </div>
           <a class="atlas-source-link" href="https://github.com/Dheerendra07/Project-Autopsy" target="_blank" rel="noopener noreferrer">View source on GitHub ↗</a>
         </div>
-        <div class="atlas-surface-grid">
-          <article class="atlas-surface-group">
-            <div class="atlas-surface-heading"><span>01—03</span><b>UNDERSTAND</b></div>
-            <div class="atlas-surface-item"><span>01</span><div><strong>Overview</strong><small>Current analysis snapshot and first inspection signals.</small></div></div>
-            <div class="atlas-surface-item"><span>02</span><div><strong>History</strong><small>Persisted commits, authors and the change timeline.</small></div></div>
-            <div class="atlas-surface-item"><span>03</span><div><strong>Structure</strong><small>Repository architecture, dependencies and complexity.</small></div></div>
-          </article>
-          <article class="atlas-surface-group">
-            <div class="atlas-surface-heading"><span>04—05</span><b>VALIDATE</b></div>
-            <div class="atlas-surface-item"><span>04</span><div><strong>Quality</strong><small>Test evolution, migrations and refactor evidence.</small></div></div>
-            <div class="atlas-surface-item"><span>05</span><div><strong>Runtime</strong><small>Observed telemetry and historical correlation, when supplied.</small></div></div>
-          </article>
-          <article class="atlas-surface-group">
-            <div class="atlas-surface-heading"><span>06—08</span><b>OUTPUTS</b></div>
-            <div class="atlas-surface-item"><span>06</span><div><strong>Report</strong><small>Evidence-backed claims from a completed analysis run.</small></div></div>
-            <div class="atlas-surface-item"><span>07</span><div><strong>Interview</strong><small>Project explanations grounded in the selected evidence.</small></div></div>
-            <div class="atlas-surface-item"><span>08</span><div><strong>Insights</strong><small>Bounded interpretation, not invented project facts.</small></div></div>
-          </article>
-          <article class="atlas-surface-group">
-            <div class="atlas-surface-heading"><span>09—10</span><b>EXPLORE</b></div>
-            <div class="atlas-surface-item"><span>09</span><div><strong>Evidence</strong><small>Inspect the records supporting a finding.</small></div></div>
-            <div class="atlas-surface-item"><span>10</span><div><strong>Contributors</strong><small>Git author metadata; intent and ownership are not guessed.</small></div></div>
-          </article>
-          <article class="atlas-surface-group">
-            <div class="atlas-surface-heading"><span>11</span><b>OPERATE</b></div>
-            <div class="atlas-surface-item"><span>11</span><div><strong>Operations</strong><small>Service state and operations kept apart from code history.</small></div></div>
-            <div class="atlas-surface-empty"><span aria-hidden="true">⌁</span><p>Operational evidence appears only when the connected source provides it.</p></div>
-          </article>
+                <div class="preview-grid atlas-workspace-preview">
+          <div class="preview-nav">
+            <div class="preview-nav-brand"><span class="preview-mark">PA</span><span>Workspace</span></div>
+            <div class="preview-nav-group">UNDERSTAND</div>
+            <div class="preview-nav-item active"><span>01</span><strong>Overview</strong></div>
+            <div class="preview-nav-item"><span>02</span><strong>History</strong></div>
+            <div class="preview-nav-item"><span>03</span><strong>Structure</strong></div>
+            <div class="preview-nav-group">VALIDATE</div>
+            <div class="preview-nav-item"><span>04</span><strong>Quality</strong></div>
+            <div class="preview-nav-item"><span>05</span><strong>Runtime</strong></div>
+            <div class="preview-nav-group">OUTPUTS</div>
+            <div class="preview-nav-item"><span>06</span><strong>Report</strong></div>
+            <div class="preview-nav-item"><span>07</span><strong>Interview</strong></div>
+            <div class="preview-nav-item"><span>08</span><strong>Insights</strong></div>
+            <div class="preview-nav-group">EXPLORE</div>
+            <div class="preview-nav-item"><span>09</span><strong>Evidence</strong></div>
+            <div class="preview-nav-item"><span>10</span><strong>Contributors</strong></div>
+            <div class="preview-nav-group">OPERATE</div>
+            <div class="preview-nav-item"><span>11</span><strong>Operations</strong></div>
+          </div>
+          <div class="preview-main">
+            <div class="atlas-snapshot-intro">
+              <div><span>REPOSITORY / CURRENT SNAPSHOT</span><strong>Connect a source to build its engineering record.</strong><p>The workspace is populated from the repository and selected analysis run—not a prefilled demo.</p></div>
+              <span class="atlas-snapshot-state">NO SOURCE SELECTED</span>
+            </div>
+            <div class="atlas-evidence-cards">
+              <article><span>01 / RECORDED</span><strong>Git history</strong><p>Commit metadata, author records, dates and changed paths.</p></article>
+              <article><span>02 / DERIVED</span><strong>Code evolution</strong><p>Structure, dependencies, co-change and complexity signals.</p></article>
+              <article><span>03 / VALIDATED</span><strong>Quality &amp; schema</strong><p>Test evolution and database migration evidence.</p></article>
+              <article><span>04 / OPTIONAL</span><strong>Runtime &amp; releases</strong><p>Observed telemetry and deployment records when available.</p></article>
+            </div>
+            <div class="atlas-preview-note"><span>DATA BOUNDARY</span><p>Repository names, commit rows, contributors and counts are loaded only after you select a real repository. This public preview contains no sample customer data.</p></div>
+          </div>
         </div>
         <div class="atlas-surface-foot"><span>11 / 11 WORKSPACE VIEWS</span><span>LIVE REPOSITORY DATA IS ACCOUNT-SCOPED</span></div>
       </div>
@@ -1504,7 +1509,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
             <article class="atlas-report-stage">
               <span>03 / INTERPRET</span>
               <strong>Context with clear limits</strong>
-              <p>Optional AI interpretation stays within supplied evidence and distinguishes correlation from proven causality.</p>
+              <p>Optional interpretation stays within supplied evidence and distinguishes correlation from proven causality.</p>
             </article>
           </div>
         </article>
