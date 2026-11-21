@@ -104,7 +104,7 @@ async function requestInterpretationWithGatewayRetry(path, options = {}) {
       PUBLIC_WARMUP_RETRY_STATUSES.has(result.response.status) &&
       contentType.includes("text/html") &&
       result.body === null &&
-      /<!doctype html|<html\\b/i.test(result.text);
+      /<!doctype html|<html\b/i.test(result.text);
 
     if (
       !isHtmlGatewayError ||
