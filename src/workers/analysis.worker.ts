@@ -363,9 +363,17 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         );
       }
 
+      const encryptedCredential =
+        await getRepositoryAccessCredential(repository.id);
+      const accessToken = encryptedCredential
+        ? decryptRepositoryAccessToken(encryptedCredential)
+        : undefined;
+
       await prepareRepositoryStorageForAnalysis(
         repository,
-        analysis.target_head_sha
+        analysis.target_head_sha,
+        undefined,
+        accessToken
       );
 
       deadline.assertNotExpired();

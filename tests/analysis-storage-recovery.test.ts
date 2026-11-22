@@ -39,8 +39,9 @@ function dependencies(
     async removeRepositoryStorage(repositoryId) {
       calls.push(`remove:${repositoryId}`);
     },
-    async cloneRepository(repositoryId, url, branch) {
-      calls.push(`clone:${repositoryId}:${url}:${branch}`);
+    async cloneRepository(repositoryId, url, branch, accessToken) {
+      const credentialMarker = accessToken ? ":with-credential" : "";
+      calls.push(`clone:${repositoryId}:${url}:${branch}${credentialMarker}`);
     },
     async checkoutRepositoryAtCommit(path, sha) {
       calls.push(`checkout:${path}:${sha}`);
@@ -75,13 +76,14 @@ test("re-hydrates missing ephemeral storage before checking out the persisted ta
   await prepareRepositoryStorageForAnalysis(
     repositoryFixture(),
     "b".repeat(40),
-    deps
+    deps,
+    "unit-test-access-token"
   );
 
   assert.deepEqual(calls, [
     "ready:/storage/project",
     "remove:00000000-0000-4000-8000-000000000001",
-    "clone:00000000-0000-4000-8000-000000000001:https://github.com/example/project:main",
+    "clone:00000000-0000-4000-8000-000000000001:https://github.com/example/project:main:with-credential",
     `checkout:/storage/project:${"b".repeat(40)}`
   ]);
 });
@@ -95,14 +97,15 @@ test("re-clones once when an existing checkout is present but unusable", async (
   await prepareRepositoryStorageForAnalysis(
     repositoryFixture(),
     "b".repeat(40),
-    deps
+    deps,
+    "unit-test-access-token"
   );
 
   assert.deepEqual(calls, [
     "ready:/storage/project",
     `checkout:/storage/project:${"b".repeat(40)}`,
     "remove:00000000-0000-4000-8000-000000000001",
-    "clone:00000000-0000-4000-8000-000000000001:https://github.com/example/project:main",
+    "clone:00000000-0000-4000-8000-000000000001:https://github.com/example/project:main:with-credential",
     `checkout:/storage/project:${"b".repeat(40)}`
   ]);
 });

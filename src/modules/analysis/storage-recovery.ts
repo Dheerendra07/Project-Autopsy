@@ -6,7 +6,8 @@ export interface AnalysisStorageRecoveryDependencies {
   cloneRepository(
     repositoryId: string,
     remoteUrl: string,
-    branch?: string
+    branch?: string,
+    accessToken?: string
   ): Promise<unknown>;
   checkoutRepositoryAtCommit(
     repositoryPath: string,
@@ -28,7 +29,8 @@ async function loadDefaultDependencies(): Promise<AnalysisStorageRecoveryDepende
 export async function prepareRepositoryStorageForAnalysis(
   repository: StoredRepository,
   targetHeadSha: string,
-  dependencies?: AnalysisStorageRecoveryDependencies
+  dependencies?: AnalysisStorageRecoveryDependencies,
+  accessToken?: string
 ): Promise<void> {
   if (!repository.storage_path) {
     throw new Error(
@@ -51,7 +53,8 @@ export async function prepareRepositoryStorageForAnalysis(
     await deps.cloneRepository(
       repository.id,
       repository.source_url,
-      repository.tracked_branch
+      repository.tracked_branch,
+      accessToken
     );
     rehydrated = true;
   }
@@ -70,7 +73,8 @@ export async function prepareRepositoryStorageForAnalysis(
     await deps.cloneRepository(
       repository.id,
       repository.source_url,
-      repository.tracked_branch
+      repository.tracked_branch,
+      accessToken
     );
     await deps.checkoutRepositoryAtCommit(
       repository.storage_path,
