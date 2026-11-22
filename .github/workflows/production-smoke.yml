@@ -1,7 +1,11 @@
 name: production-smoke
 
 on:
-  push:
+  # Run after main quality CI finishes so the hosted smoke test does not
+  # overlap the Render auto-deploy triggered by the same main-branch push.
+  workflow_run:
+    workflows: ["quality"]
+    types: [completed]
     branches: [main]
   schedule:
     - cron: "17 */6 * * *"
@@ -22,6 +26,7 @@ concurrency:
 
 jobs:
   smoke:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 15
