@@ -351,6 +351,81 @@ test(
         assert.ok(story.draftAnswer.approach);
         assert.ok(story.draftAnswer.evidenceBackedResult);
       }
+
+      // Exercise the backend read models used by all 11 workspace sections.
+      // Empty runtime/deployment evidence is valid for a repository that has
+      // not connected those external sources; the endpoints must still return
+      // successful, well-formed responses. Operations may return 503 only
+      // when its own health snapshot is explicitly degraded.
+      const workspaceReadEndpoints: Array<{
+        label: string;
+        path: string;
+        allowDegraded?: boolean;
+      }> = [
+        { label: "overview repository snapshot", path: `/api/repositories/${repositoryId}` },
+        { label: "overview analysis history", path: `/api/repositories/${repositoryId}/analysis-runs?page=1&limit=20` },
+        { label: "history commits", path: `/api/repositories/${repositoryId}/commits?page=1&limit=50` },
+        { label: "history timeline", path: `/api/repositories/${repositoryId}/timeline?page=1&limit=50` },
+        { label: "overview hotspots", path: `/api/repositories/${repositoryId}/hotspots?limit=20` },
+        { label: "quality repeatedly modified files", path: `/api/repositories/${repositoryId}/repeatedly-modified-files?minTouches=3&limit=20` },
+        { label: "quality bug areas", path: `/api/repositories/${repositoryId}/repeated-bug-areas?limit=20` },
+        { label: "structure change coupling", path: `/api/repositories/${repositoryId}/coupling?minCoChanges=2&limit=50` },
+        { label: "quality refactor signals", path: `/api/repositories/${repositoryId}/refactors?limit=20` },
+        { label: "structure dependencies", path: `/api/repositories/${repositoryId}/dependencies?limit=100` },
+        { label: "structure architecture", path: `/api/repositories/${repositoryId}/architecture?limit=100` },
+        { label: "quality database migrations", path: `/api/repositories/${repositoryId}/database-migrations?limit=100` },
+        { label: "quality test evolution", path: `/api/repositories/${repositoryId}/test-evolution?limit=100` },
+        { label: "quality test summary", path: `/api/repositories/${repositoryId}/test-evolution/summary` },
+        { label: "structure code complexity", path: `/api/repositories/${repositoryId}/complexity?limit=100` },
+        { label: "runtime telemetry summary", path: `/api/repositories/${repositoryId}/runtime/telemetry/summary` },
+        { label: "runtime telemetry events", path: `/api/repositories/${repositoryId}/runtime/telemetry?page=1&limit=40` },
+        { label: "runtime deployment evidence", path: `/api/repositories/${repositoryId}/deployments?limit=50` },
+        { label: "runtime historical summary", path: `/api/repositories/${repositoryId}/runtime/historical-correlation/summary?limit=25` },
+        { label: "runtime historical correlation", path: `/api/repositories/${repositoryId}/runtime/historical-correlation?limit=25` },
+        { label: "runtime historical source context", path: `/api/repositories/${repositoryId}/runtime/historical-correlation/source-context?limit=25` },
+        { label: "contributors activity", path: `/api/repositories/${repositoryId}/contributors?limit=25` },
+        { label: "operations health", path: "/api/observability/summary", allowDegraded: true }
+      ];
+
+      for (let offset = 0; offset < workspaceReadEndpoints.length; offset += 5) {
+        const batch = workspaceReadEndpoints.slice(offset, offset + 5);
+        await Promise.all(batch.map(async (endpoint) => {
+          const response = await fetch(baseUrl + endpoint.path, {
+            headers: {
+              Cookie: cookieHeader
+            }
+          });
+          const body = await response.json() as {
+            success?: boolean;
+            status?: string;
+            error?: {
+              message?: string;
+            };
+          };
+
+          if (endpoint.allowDegraded) {
+            assert.ok(
+              response.status === 200 || response.status === 503,
+              `${endpoint.label} returned ${response.status}: ${JSON.stringify(body)}`
+            );
+            assert.ok(
+              body.status === "healthy" || body.status === "degraded",
+              `${endpoint.label} returned an invalid health payload: ${JSON.stringify(body)}`
+            );
+          } else {
+            assert.equal(
+              response.status,
+              200,
+              `${endpoint.label} returned ${response.status}: ${JSON.stringify(body)}`
+            );
+            assert.equal(
+              body.success,
+              true,
+              `${endpoint.label} returned an unsuccessful payload: ${JSON.stringify(body)}`
+            );
+          }
+        }));
+      }
     } finally {
       await Promise.allSettled([
         stopProcess(server),
