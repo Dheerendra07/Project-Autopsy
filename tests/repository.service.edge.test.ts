@@ -22,8 +22,30 @@ import {
   assertManagedRepositoryStoragePath,
   isRepositoryStorageReady,
   isSafeBranchName,
+  parseGitTreeSize,
   resolveRemoteBranch
 } from "../src/modules/repositories/repository.service.js";
+
+test("parses tracked blob sizes while ignoring trees and submodules", () => {
+  const tree = [
+    "040000 tree aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -\tsrc",
+    "100644 blob bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb 125\tsrc/index.ts",
+    "100755 blob cccccccccccccccccccccccccccccccccccccccc 2048\tbin/run",
+    "160000 commit dddddddddddddddddddddddddddddddddddddddd -\tvendor/submodule"
+  ].join("\n");
+
+  assert.deepEqual(parseGitTreeSize(tree), {
+    fileCount: 2,
+    totalBytes: 2_173
+  });
+});
+
+test("returns zero tracked size for an empty Git tree", () => {
+  assert.deepEqual(parseGitTreeSize(""), {
+    fileCount: 0,
+    totalBytes: 0
+  });
+});
 
 test("accepts safe Git branch names", () => {
   for (const branch of [

@@ -336,7 +336,7 @@ export async function cloneRepository(
   const repositoryPath = await prepareRepositoryStorage(repositoryId);
   const parentPath = path.dirname(repositoryPath);
 
-  const cloneArgs = ["--no-tags", "--filter=blob:none"];
+  const cloneArgs = ["--no-tags", "--filter=blob:none", "--no-checkout"];
   let trackedBranch: string | undefined;
 
   try {
@@ -364,8 +364,25 @@ export async function cloneRepository(
       }
     );
 
-    const sizeBytes = await calculateDirectorySize(repositoryPath);
+    const repositoryGit = createAnalysisGit(repositoryPath);
+    const trackedTree = await repositoryGit.raw([
+      "ls-tree",
+      "-r",
+      "-l",
+      "HEAD"
+    ]);
+    const trackedSize = parseGitTreeSize(trackedTree);
     const maxBytes = env.MAX_REPOSITORY_SIZE_MB * 1024 * 1024;
+
+    if (trackedSize.totalBytes > maxBytes) {
+      throw new Error(
+        `Repository tracked files exceed the configured size limit of ${env.MAX_REPOSITORY_SIZE_MB} MB before checkout.`
+      );
+    }
+
+    await repositoryGit.raw(["checkout", "--force", "--detach", "HEAD"]);
+
+    const sizeBytes = await calculateDirectorySize(repositoryPath);
 
     if (sizeBytes > maxBytes) {
       throw new Error(
@@ -655,6 +672,39 @@ export function getRepositoryNameFromUrl(url: URL): string {
   }
 
   return lastSegment.replace(/\.git$/i, "");
+}
+
+export type GitTreeSize = {
+  fileCount: number;
+  totalBytes: number;
+};
+
+export function parseGitTreeSize(treeOutput: string): GitTreeSize {
+  let fileCount = 0;
+  let totalBytes = 0;
+
+  for (const line of treeOutput.split(/\r?\n/)) {
+    if (!line) continue;
+
+    const match = line.match(/^\d+\s+blob\s+[0-9a-f]{40}\s+(\d+)\t/);
+
+    if (!match) continue;
+
+    const size = Number(match[1]);
+
+    if (!Number.isSafeInteger(size) || size < 0) {
+      throw new Error("Git returned an invalid tracked file size.");
+    }
+
+    fileCount += 1;
+    totalBytes += size;
+
+    if (!Number.isSafeInteger(totalBytes)) {
+      throw new Error("Git returned an invalid total tracked file size.");
+    }
+  }
+
+  return { fileCount, totalBytes };
 }
 
 export async function calculateDirectorySize(
