@@ -380,7 +380,7 @@ export async function cloneRepository(
       );
     }
 
-    await repositoryGit.raw(["checkout", "--force"]);
+    await repositoryGit.raw(["checkout", "--force", "--detach", "HEAD"]);
 
     const sizeBytes = await calculateDirectorySize(repositoryPath);
 
