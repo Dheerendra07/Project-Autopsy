@@ -56,3 +56,18 @@ test("authentication UI contract stays explicit and mode-correct", () => {
     /toast\('Email verified\.'[\s\S]*?restoreSavedWorkspace\(\)/
   );
 });
+
+test("successful sign-in opens the saved or most recent repository workspace", () => {
+  assert.match(
+    app,
+    /var recentRepositories=await loadRecentRepositories\(\);[\s\S]*?await restoreDefaultWorkspace\(recentRepositories\)/
+  );
+  assert.match(
+    app,
+    /async function restoreDefaultWorkspace\(repositories\)\{\s*if\(await restoreSavedWorkspace\(\)\)return true;\s*var recent=Array\.isArray\(repositories\)\?repositories:\[\];\s*if\(recent\[0\]&&recent\[0\]\.id&&await openSavedRepository\(recent\[0\]\.id\)\)return true;\s*landing\(\);/
+  );
+  assert.match(
+    app,
+    /if\(await restoreSavedWorkspace\(\)\)return;\s*if\(recentRepositories\[0\]&&recentRepositories\[0\]\.id&&await openSavedRepository\(recentRepositories\[0\]\.id\)\)return;\s*landing\(\)/
+  );
+});

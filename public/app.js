@@ -2077,7 +2077,7 @@ function shell(title,desc,actions){
       $('formerr').hidden=true;
       closeAuth();
       persist();
-      await loadRecentRepositories();
+      var recentRepositories=await loadRecentRepositories();
       toast(mode==='register'?'Account created and signed in.':'Signed in successfully.','good');
       var shouldResumeImport=S.pendingImport;
       S.pendingImport=false;
@@ -2085,8 +2085,7 @@ function shell(title,desc,actions){
         landing();
         await importRepo();
       }else{
-        var restored=await restoreSavedWorkspace();
-        if(!restored)landing();
+        await restoreDefaultWorkspace(recentRepositories);
       }
     }catch(e){
       $('authError').textContent=e.message||'Authentication failed.';
@@ -2175,16 +2174,14 @@ function shell(title,desc,actions){
       $('formerr').hidden=true;
       closeAuth();
       persist();
-      await loadRecentRepositories();
+      var recentRepositories=await loadRecentRepositories();
       toast('Email verified.','good');
       var shouldResumeImport=S.pendingImport;
       S.pendingImport=false;
       if(shouldResumeImport){
         landing();
         await importRepo();
-      }else if(!await restoreSavedWorkspace()){
-        landing();
-      }
+      }else await restoreDefaultWorkspace(recentRepositories);
     }catch(e){
       status.textContent=e.message||'Email verification failed.';
     }finally{
@@ -2290,25 +2287,27 @@ function shell(title,desc,actions){
     persist();
   }
   async function loadRecentRepositories(){
-    if(!S.user)return;
+    if(!S.user)return [];
     try{
       var r=await api('/api/repositories?limit=20');
       var repos=arr(r,'repositories');
       var zone=$('recentRepositories');
-      if(!zone)return;
+      if(!zone)return repos;
       if(!repos.length){
         zone.hidden=true;
         zone.innerHTML='';
-        return;
+        return repos;
       }
       zone.hidden=false;
       zone.innerHTML='<div class="recent-head"><div><div class="kicker">YOUR REPOSITORIES</div><h3>Recent workspaces</h3></div><span class="tag">'+n(repos.length)+' saved</span></div>'+
         '<div class="recent-list">'+repos.map(function(x){
           return '<button type="button" class="recent-repo" data-repository-id="'+esc(x.id)+'"><strong>'+esc(x.name)+'</strong><span>'+esc(x.trackedBranch||'branch unavailable')+'</span><small>'+esc(x.sourceUrl||'')+'</small></button>';
         }).join('')+'</div>';
+      return repos;
     }catch(e){
       var zone=$('recentRepositories');
       if(zone){zone.hidden=true;zone.innerHTML='';}
+      return [];
     }
   }
   async function openSavedRepository(repositoryId){
@@ -2336,12 +2335,14 @@ function shell(title,desc,actions){
         setView('overview');
         poll();
       }
+      return true;
     }catch(e){
       if(token===S.workspaceToken){
         clearWorkspaceState();
         landing();
         toast(e.message||'Repository could not be opened.','bad');
       }
+      return false;
     }
   }
   async function restoreSavedWorkspace(){
@@ -2369,6 +2370,13 @@ function shell(title,desc,actions){
       }
       return false;
     }
+  }
+  async function restoreDefaultWorkspace(repositories){
+    if(await restoreSavedWorkspace())return true;
+    var recent=Array.isArray(repositories)?repositories:[];
+    if(recent[0]&&recent[0].id&&await openSavedRepository(recent[0].id))return true;
+    landing();
+    return false;
   }
   async function retryConnection(){
     var button=$('connectionRetry');
@@ -2400,8 +2408,9 @@ function shell(title,desc,actions){
       S.user=me.user;
       S.connectionState='verified';
       connected('verified');
-      await loadRecentRepositories();
+      var recentRepositories=await loadRecentRepositories();
       if(await restoreSavedWorkspace())return;
+      if(recentRepositories[0]&&recentRepositories[0].id&&await openSavedRepository(recentRepositories[0].id))return;
       landing();
       return;
     }catch(e){
