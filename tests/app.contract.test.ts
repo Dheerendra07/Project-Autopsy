@@ -157,6 +157,60 @@ test("health responses expose a correlation request id", async () => {
   );
 });
 
+test("email verification starts a session so the browser can continue into the app", async () => {
+  const { createOpaqueToken, hashOpaqueToken } = await import(
+    "../src/modules/auth/auth.crypto.js"
+  );
+  const { createAuthActionToken } = await import(
+    "../src/modules/auth/auth.persistence.js"
+  );
+  const token = createOpaqueToken();
+  const created = await createAuthActionToken(
+    randomUUID(),
+    testUserId,
+    "email_verification",
+    hashOpaqueToken(token),
+    new Date(Date.now() + 60_000)
+  );
+
+  assert.equal(created, true);
+
+  const verifyResponse = await fetch(baseUrl + "/api/auth/verify-email", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token })
+  });
+  assert.equal(verifyResponse.status, 200);
+
+  const verified = await verifyResponse.json() as {
+    success: boolean;
+    csrfToken: string;
+    user: { id: string; email: string };
+  };
+  assert.equal(verified.success, true);
+  assert.equal(verified.user.id, testUserId);
+  assert.equal(verified.user.email, testUserEmail);
+  assert.ok(verified.csrfToken);
+
+  const cookies = verifyResponse.headers.get("set-cookie") ?? "";
+  const sessionCookie = parseCookie(cookies, "autopsy_session");
+  const csrfCookie = parseCookie(cookies, "autopsy_csrf");
+  assert.ok(sessionCookie);
+  assert.equal(csrfCookie, verified.csrfToken);
+
+  const sessionResponse = await fetch(baseUrl + "/api/auth/me", {
+    headers: {
+      cookie: `autopsy_session=${sessionCookie}; autopsy_csrf=${csrfCookie}`
+    }
+  });
+  assert.equal(sessionResponse.status, 200);
+  const session = await sessionResponse.json() as {
+    user: { id: string; email: string };
+  };
+  assert.equal(session.user.id, testUserId);
+  assert.equal(session.user.email, testUserEmail);
+});
+
 test("health endpoint stays public", async () => {
   const response = await fetch(`${baseUrl}/health`);
 

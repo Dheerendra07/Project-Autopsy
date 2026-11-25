@@ -38,4 +38,12 @@ test("authentication UI contract stays explicit and mode-correct", () => {
     app,
     /\$\('authPasswordHint'\).hidden=S.authMode!=='register';/
   );
+  assert.match(
+    app,
+    /S\.user=result\.user;\s*S\.csrfToken=result\.csrfToken;\s*S\.authInterrupt=false;\s*S\.connectionState='verified';/
+  );
+  assert.match(
+    app,
+    /toast\('Email verified\.'[\s\S]*?restoreSavedWorkspace\(\)/
+  );
 });

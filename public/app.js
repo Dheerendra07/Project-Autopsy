@@ -1991,7 +1991,7 @@ function shell(title,desc,actions){
     $('resetForm').hidden=!reset;
     $('verifyPanel').hidden=!verify;
     $('authTitle').textContent=migrating?'Move your existing workspace':forgot?'Reset your password':reset?'Choose a new password':verify?'Verify your email':S.authMode==='register'?'Create your Project Autopsy account':'Sign in to Project Autopsy';
-    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Use your email and a password with at least 12 characters.':forgot?'We will send a one-time password reset link to your account email.':reset?'Choose a new password for your account.':verify?'Use the one-time link from your email to confirm this address.':'Use the account that owns your Autopsy repositories.';
+    $('authSubtitle').textContent=migrating?'Your previous workspace uses a legacy access credential. Convert it to account-based access once; the credential is then removed from this browser.':S.authMode==='register'?'Use your email and a password with at least 12 characters.':forgot?'We will send a one-time password reset link to your account email.':reset?'Choose a new password for your account.':verify?'Verify your email to sign in and continue to your private workspace.':'Use the account that owns your Autopsy repositories.';
     $('authSubmit').textContent=migrating?'Migrate & sign in':S.authMode==='register'?'Create account':'Sign in';
     $('authModeToggle').textContent=migrating?'Use normal sign in instead':S.authMode==='register'?'Already have an account? Sign in':(forgot||reset||verify)?'Back to sign in':'New here? Create an account';
     $('authModeToggle').hidden=!(standard||forgot);
@@ -2060,7 +2060,7 @@ function shell(title,desc,actions){
         S.connectionState='unknown';
         connected('unknown');
         $('authPassword').value='';
-        $('authNotice').textContent=result.message||'Account created. Check your email to verify the account.';
+        $('authNotice').textContent=result.message||'Account created. Check your email to verify your address and continue to your private workspace.';
         $('authNotice').hidden=false;
         $('authModeToggle').hidden=true;
         $('authForgotLink').hidden=true;
@@ -2163,17 +2163,30 @@ function shell(title,desc,actions){
     try{
       var result=await api('/api/auth/verify-email',{method:'POST',body:JSON.stringify({token:S.authToken})});
       S.authToken='';
-      setAuthMode('login');
-      $('authNotice').textContent=result.message||'Email verified. You can now sign in.';
-      $('authNotice').hidden=false;
-      $('authPassword').focus();
+      if(!result||!result.user||!result.csrfToken)throw new Error('Email verified, but a secure session could not be started. Sign in to continue.');
+      S.user=result.user;
+      S.csrfToken=result.csrfToken;
+      S.authInterrupt=false;
+      S.connectionState='verified';
+      connected('verified');
+      closeAuth();
+      persist();
+      await loadRecentRepositories();
       toast('Email verified.','good');
+      var shouldResumeImport=S.pendingImport;
+      S.pendingImport=false;
+      if(shouldResumeImport){
+        landing();
+        await importRepo();
+      }else if(!await restoreSavedWorkspace()){
+        landing();
+      }
     }catch(e){
       status.textContent=e.message||'Email verification failed.';
     }finally{
       button.disabled=false;
       button.removeAttribute('aria-busy');
-      button.textContent='Verify email';
+      button.textContent='Verify & continue';
     }
   }
   async function resetPasswordFromLink(){

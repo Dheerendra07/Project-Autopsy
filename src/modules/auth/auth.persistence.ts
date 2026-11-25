@@ -210,7 +210,7 @@ export async function markEmailVerified(userId: string): Promise<void> {
 
 export async function verifyEmailWithToken(
   tokenHash: string
-): Promise<boolean> {
+): Promise<StoredUser | null> {
   const client = await db.connect();
 
   try {
@@ -233,23 +233,33 @@ export async function verifyEmailWithToken(
 
     if (!token) {
       await client.query("ROLLBACK");
-      return false;
+      return null;
     }
 
-    const userResult = await client.query(
+    const userResult = await client.query<StoredUser>(
       `
         UPDATE users
         SET email_verified_at = COALESCE(email_verified_at, NOW()),
+            last_login_at = NOW(),
             updated_at = NOW()
         WHERE id = $1
           AND disabled_at IS NULL
+        RETURNING
+          id,
+          email,
+          created_at,
+          updated_at,
+          last_login_at,
+          disabled_at,
+          email_verified_at
       `,
       [token.user_id]
     );
 
-    if (!userResult.rowCount) {
+    const user = userResult.rows[0];
+    if (!user) {
       await client.query("ROLLBACK");
-      return false;
+      return null;
     }
 
     await client.query(
@@ -264,7 +274,7 @@ export async function verifyEmailWithToken(
     );
 
     await client.query("COMMIT");
-    return true;
+    return user;
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

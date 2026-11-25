@@ -301,7 +301,7 @@ authRouter.post("/register", async (request, response, next) => {
         success: true,
         user: publicUser(user),
         requiresEmailVerification: true,
-        message: "Account created. Check your email to verify the account before signing in."
+        message: "Account created. Check your email to verify your address and continue to your private workspace."
       });
       return;
     }
@@ -460,9 +460,9 @@ authRouter.post("/verify-email", async (request, response, next) => {
       token: z.string().trim().min(32).max(512)
     }).parse(request.body);
 
-    const verified = await verifyEmailWithToken(hashOpaqueToken(input.token));
+    const user = await verifyEmailWithToken(hashOpaqueToken(input.token));
 
-    if (!verified) {
+    if (!user) {
       response.status(400).json({
         success: false,
         error: {
@@ -473,9 +473,13 @@ authRouter.post("/verify-email", async (request, response, next) => {
       return;
     }
 
+    const csrfToken = await startSession(request, response, user);
+
     response.json({
       success: true,
-      message: "Email verified. You can now sign in."
+      csrfToken,
+      user: publicUser(user),
+      message: "Email verified. Your private workspace is ready."
     });
   } catch (error) {
     next(error);
