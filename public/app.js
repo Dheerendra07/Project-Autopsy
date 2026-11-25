@@ -2159,7 +2159,7 @@ function shell(title,desc,actions){
     }
     button.disabled=true;
     button.setAttribute('aria-busy','true');
-    button.textContent='Verifying…';
+    button.querySelector('span').textContent='Verifying…';
     try{
       var result=await api('/api/auth/verify-email',{method:'POST',body:JSON.stringify({token:S.authToken})});
       S.authToken='';
@@ -2186,7 +2186,7 @@ function shell(title,desc,actions){
     }finally{
       button.disabled=false;
       button.removeAttribute('aria-busy');
-      button.textContent='Verify & continue';
+      button.querySelector('span').textContent='Verify & continue';
     }
   }
   async function resetPasswordFromLink(){

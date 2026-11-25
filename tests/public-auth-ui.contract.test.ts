@@ -44,6 +44,10 @@ test("authentication UI contract stays explicit and mode-correct", () => {
   );
   assert.match(
     app,
+    /button\.querySelector\('span'\)\.textContent='Verify & continue'/
+  );
+  assert.match(
+    app,
     /toast\('Email verified\.'[\s\S]*?restoreSavedWorkspace\(\)/
   );
 });
