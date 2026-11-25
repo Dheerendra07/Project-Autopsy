@@ -1226,7 +1226,7 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 </style>
 <link rel="stylesheet" href="ui-v2.css?v=b045b5b7">
 <link rel="stylesheet" href="ui-chatz.css?v=chatz-rebuild-v1">
-<link rel="stylesheet" href="autopsy-atlas.css?v=atelier-20261125">
+<link rel="stylesheet" href="autopsy-atlas.css?v=auth-workspace-v2-20261125">
 
 </head>
 <body>
@@ -1599,40 +1599,66 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
     </div>
   </section>
 </main>
-<div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden><div>
-  <div style="display:flex;justify-content:space-between;gap:12px"><div><div class="kicker">PRIVATE WORKSPACE</div><h3 id="authTitle">Sign in to Project Autopsy</h3><div id="authSubtitle" class="sub">Use the account that owns your Autopsy repositories.</div></div><button id="authClose" class="btn" aria-label="Close sign in dialog">Close</button></div>
-  <form id="authForm" style="display:grid;gap:12px;margin-top:18px">
-    <label class="field">Email<input id="authEmail" type="email" autocomplete="email" maxlength="320" required></label>
-    <label class="field">Password<input id="authPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" required><small id="authPasswordHint" class="sub" hidden>Use at least 12 characters.</small></label>
-    <div id="authError" class="bad" style="font-size:10px" hidden></div>
-    <div id="authNotice" class="good" style="font-size:10px" hidden></div>
-    <button id="authSubmit" class="btn primary" type="submit" data-action="auth-submit">Sign in</button>
-    <button id="authForgotLink" class="btn link" type="button">Forgot password?</button>
-  </form>
-  <form id="forgotForm" style="display:grid;gap:12px;margin-top:18px" hidden>
-    <label class="field">Account email<input id="forgotEmail" type="email" autocomplete="email" maxlength="320" required></label>
-    <div id="forgotError" class="bad" style="font-size:10px" hidden></div>
-    <div id="forgotNotice" class="good" style="font-size:10px" hidden></div>
-    <button id="forgotSubmit" class="btn primary" type="submit">Send reset link</button>
-  </form>
-  <form id="resetForm" style="display:grid;gap:12px;margin-top:18px" hidden>
-    <label class="field">New password<input id="resetPassword" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
-    <label class="field">Confirm new password<input id="resetPasswordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label>
-    <div id="resetError" class="bad" style="font-size:10px" hidden></div>
-    <button id="resetSubmit" class="btn primary" type="submit">Reset password</button>
-  </form>
-  <div id="verifyPanel" style="margin-top:18px" hidden>
-    <div class="card" style="padding:14px">
-      <div class="kicker">EMAIL VERIFICATION</div>
-      <div id="verifyStatus" class="sub" style="margin-top:7px">Verifying your email address…</div>
-    </div>
-    <button id="verifySubmit" class="btn primary" type="button" style="margin-top:12px">Verify email</button>
+<div id="authModal" class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-describedby="authSubtitle" hidden>
+  <div class="auth-shell">
+    <aside class="auth-story" aria-label="About the private workspace">
+      <a class="auth-brand" href="#overview" aria-label="Project Autopsy home">
+        <span class="auth-brand-mark" aria-hidden="true">◈</span>
+        <span><strong>Project Autopsy</strong><small>ENGINEERING EVIDENCE</small></span>
+      </a>
+      <div class="auth-story-copy">
+        <span class="auth-eyebrow"><i aria-hidden="true"></i> PRIVATE ENGINEERING WORKSPACE</span>
+        <h2>Your code has a history.<br><em>Make it make sense.</em></h2>
+        <p>Reconnect decisions, changes and releases to the evidence in your repository.</p>
+        <div class="auth-proof-list">
+          <div><span class="auth-proof-icon" aria-hidden="true">01</span><span><strong>Your source stays yours</strong><small>Analysis reads repository history. It never changes your source.</small></span></div>
+          <div><span class="auth-proof-icon" aria-hidden="true">02</span><span><strong>Evidence before conclusions</strong><small>Open the records behind every finding and report.</small></span></div>
+          <div><span class="auth-proof-icon" aria-hidden="true">03</span><span><strong>One workspace, eleven views</strong><small>Move from repository overview to details without losing context.</small></span></div>
+        </div>
+      </div>
+      <div class="auth-story-foot"><span class="auth-security-mark" aria-hidden="true">✓</span><span><strong>Private by design</strong><small>Account-based access · encrypted credentials</small></span></div>
+    </aside>
+    <section class="auth-panel" aria-label="Account access">
+      <button id="authClose" class="auth-close" type="button" aria-label="Close sign in dialog">×</button>
+      <div class="auth-panel-head">
+        <span class="auth-step-label">YOUR WORKSPACE</span>
+        <h3 id="authTitle">Sign in to Project Autopsy</h3>
+        <p id="authSubtitle">Use the account that owns your Autopsy repositories.</p>
+      </div>
+      <form id="authForm" class="auth-form">
+        <label class="auth-field" for="authEmail"><span>Email address</span><input id="authEmail" type="email" autocomplete="email" maxlength="320" placeholder="you@company.com" required></label>
+        <label class="auth-field" for="authPassword"><span>Password</span><input id="authPassword" type="password" autocomplete="current-password" minlength="12" maxlength="256" placeholder="Enter your password" required><small id="authPasswordHint" class="auth-field-hint" hidden>Use at least 12 characters.</small></label>
+        <div id="authError" class="auth-message auth-message-error" role="alert" hidden></div>
+        <div id="authNotice" class="auth-message auth-message-success" role="status" hidden></div>
+        <button id="authSubmit" class="auth-submit" type="submit" data-action="auth-submit"><span>Sign in</span><b aria-hidden="true">→</b></button>
+        <button id="authForgotLink" class="auth-forgot" type="button">Forgot password?</button>
+      </form>
+      <form id="forgotForm" class="auth-form" hidden>
+        <label class="auth-field" for="forgotEmail"><span>Account email</span><input id="forgotEmail" type="email" autocomplete="email" maxlength="320" placeholder="you@company.com" required></label>
+        <div id="forgotError" class="auth-message auth-message-error" role="alert" hidden></div>
+        <div id="forgotNotice" class="auth-message auth-message-success" role="status" hidden></div>
+        <button id="forgotSubmit" class="auth-submit" type="submit"><span>Send reset link</span><b aria-hidden="true">→</b></button>
+      </form>
+      <form id="resetForm" class="auth-form" hidden>
+        <label class="auth-field" for="resetPassword"><span>New password</span><input id="resetPassword" type="password" autocomplete="new-password" minlength="12" maxlength="256" placeholder="At least 12 characters" required></label>
+        <label class="auth-field" for="resetPasswordConfirm"><span>Confirm new password</span><input id="resetPasswordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="256" placeholder="Enter it again" required></label>
+        <div id="resetError" class="auth-message auth-message-error" role="alert" hidden></div>
+        <button id="resetSubmit" class="auth-submit" type="submit"><span>Set new password</span><b aria-hidden="true">→</b></button>
+      </form>
+      <div id="verifyPanel" class="auth-verify" hidden>
+        <div class="auth-verify-icon" aria-hidden="true">✉</div>
+        <div class="auth-step-label">EMAIL VERIFICATION</div>
+        <div id="verifyStatus">Verifying your email address…</div>
+        <button id="verifySubmit" class="auth-submit" type="button"><span>Verify email</span><b aria-hidden="true">→</b></button>
+      </div>
+      <div class="auth-panel-foot">
+        <button id="resendVerification" class="auth-resend" type="button">Resend verification email</button>
+        <button id="authModeToggle" class="auth-mode-toggle" type="button">New here? Create an account</button>
+        <p><span aria-hidden="true">⌑</span> Your account is protected with secure, private sessions.</p>
+      </div>
+    </section>
   </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
-    <button id="resendVerification" class="btn link" type="button">Resend verification email</button>
-    <button id="authModeToggle" class="btn link" type="button">New here? Create an account</button>
-  </div>
-</div></div>
+</div>
 <div id="modal" class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
   <div class="settings-sheet">
     <div class="settings-head">
