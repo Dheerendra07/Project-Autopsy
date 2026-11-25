@@ -4,8 +4,12 @@ import path from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
-const html = readFileSync(path.join(root, "public", "index.html"), "utf8");
-const app = readFileSync(path.join(root, "public", "app.js"), "utf8");
+function readNormalizedFile(...segments: string[]): string {
+  return readFileSync(path.join(root, ...segments), "utf8").replace(/\r\n/g, "\n");
+}
+
+const html = readNormalizedFile("public", "index.html");
+const app = readNormalizedFile("public", "app.js");
 
 test("authentication UI contract stays explicit and mode-correct", () => {
   assert.match(

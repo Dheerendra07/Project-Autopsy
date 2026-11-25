@@ -34,7 +34,8 @@ export async function discoverCommits(
   range?: {
     fromExclusive?: string;
     toInclusive?: string;
-  }
+  },
+  onProgress?: (completed: number, total: number) => void | Promise<void>
 ): Promise<DiscoveredCommit[]> {
   const git = createAnalysisGit(repositoryPath);
 
@@ -44,6 +45,7 @@ export async function discoverCommits(
       : ["--all"];
 
   const commitCount = await countCommits(git, range);
+  await onProgress?.(0, commitCount);
 
   if (commitCount > env.MAX_ANALYZED_COMMITS) {
     throw new Error(
@@ -91,6 +93,8 @@ export async function discoverCommits(
         applyNumstat(commit, pageNumstat.get(commit.sha))
       );
     }
+
+    await onProgress?.(commits.length, commitCount);
   }
 
   return commits;

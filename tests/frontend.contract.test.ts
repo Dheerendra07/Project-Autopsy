@@ -36,6 +36,8 @@ test("product frontend contains the core evidence workflow", () => {
     'id="evidenceSearch"',
     'id="drawer"',
     'id="testConnection"',
+    'id="connectionNotice"',
+    'id="connectionRetry"',
     "function architectureMap(ar)",
     "function openEvidence(id,trigger)",
     "function loadProvenance(deploymentId,trigger)",
@@ -80,6 +82,11 @@ test("product frontend contains the core evidence workflow", () => {
     "function runtimeFilterDate(value)",
     "function sameRevision(a,b)",
     "function safeApiBase(value)",
+    "function showConnectionNotice(message)",
+    "function retryConnection()",
+    "function analysisProgressText(progress)",
+    "analysis.progressUnavailable",
+    "Reading commit history",
     "API base URL must use HTTPS outside localhost.",
     "function storageGet(key)",
     "function storageSet(key,value)",
@@ -254,7 +261,7 @@ test("frontend workflow detailing exposes a contextual micro-flow and fully clic
     "function viewFlowMarkup()",
     "workspace-flow-rail",
     "workspace-flow-step",
-    "navigation only",
+    "select a step to load its evidence",
     "STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))",
     "Open History",
     "Inspect Evidence"
@@ -311,6 +318,17 @@ test("frontend account security exposes a working revoke-all-sessions action", (
   assert.ok(appJs.includes("currentResult.signedOutCurrentSession"));
   assert.ok(appJs.includes("S.user=null"));
   assert.ok(appJs.includes("openAuth('login')"));
+});
+
+test("repository import resumes after sign-in and the skip link follows the active screen", () => {
+  const html = readFileSync(fileURLToPath(new URL("../public/index.html", import.meta.url)), "utf8").replace(/\r\n/g, "\n");
+  const appJs = readFileSync(fileURLToPath(new URL("../public/app.js", import.meta.url)), "utf8").replace(/\r\n/g, "\n");
+
+  assert.ok(html.includes('id="skipLink" class="skip-link" href="#url">Skip to repository import</a>'));
+  assert.ok(appJs.includes("S.pendingImport=true;"));
+  assert.ok(appJs.includes("if(shouldResumeImport){\n        landing();\n        await importRepo();"));
+  assert.ok(appJs.includes("$('skipLink').href='#url';"));
+  assert.ok(appJs.includes("$('skipLink').href='#root';"));
 });
 
 

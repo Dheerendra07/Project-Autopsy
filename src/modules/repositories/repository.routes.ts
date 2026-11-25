@@ -30,6 +30,8 @@ import {
 import { listRepeatedBugAreas } from "./bug-area.persistence.js";
 import { listRepeatedlyModifiedFiles } from "../metrics/change-patterns.persistence.js";
 import {
+  type AnalysisJobProgress,
+  getAnalysisJobProgress,
   enqueueRepositoryAnalysis,
   enqueueRepositoryImport,
   enqueueRepositoryRefresh
@@ -510,6 +512,21 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
       analysis = refreshedAnalysis;
     }
 
+    let progress: AnalysisJobProgress | null = null;
+    let progressUnavailable = false;
+
+    if (analysis.status === "queued" || analysis.status === "running") {
+      try {
+        progress = await getAnalysisJobProgress(analysisRunId);
+      } catch (progressError) {
+        progressUnavailable = true;
+        console.error(
+          `Unable to read analysis progress for run ${analysisRunId}:`,
+          progressError
+        );
+      }
+    }
+
     res.json({
       success: true,
       repositoryId,
@@ -522,6 +539,8 @@ router.get("/:repositoryId/analysis/:analysisRunId", async (req, res, next) => {
         targetHeadSha: analysis.target_head_sha,
         startedAt: analysis.started_at,
         completedAt: analysis.completed_at,
+        progress,
+        progressUnavailable,
         errorMessage: sanitizePublicAnalysisErrorMessage(
           analysis.error_message,
           getRepositoryStoragePath(repositoryId)

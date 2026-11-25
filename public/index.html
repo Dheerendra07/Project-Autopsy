@@ -1226,12 +1226,12 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
 </style>
 <link rel="stylesheet" href="ui-v2.css?v=b045b5b7">
 <link rel="stylesheet" href="ui-chatz.css?v=chatz-rebuild-v1">
-<link rel="stylesheet" href="autopsy-atlas.css?v=atelier-20261121">
+<link rel="stylesheet" href="autopsy-atlas.css?v=atelier-20261125">
 
 </head>
 <body>
 
-<a class="skip-link" href="#root">Skip to workspace</a>
+<a id="skipLink" class="skip-link" href="#url">Skip to repository import</a>
 <main class="pa-app">
   <header class="top">
       <nav class="pa-nav" aria-label="Primary">
@@ -1253,6 +1253,13 @@ html[data-theme="light"] .import > #importButton.btn.primary:hover{
       </nav>
     </header>
 <section id="landing" class="pa-landing">
+    <div id="connectionNotice" class="pa-connection-notice" role="alert" hidden>
+      <div>
+        <strong>Unable to connect to Project Autopsy</strong>
+        <span id="connectionNoticeMessage"></span>
+      </div>
+      <button id="connectionRetry" class="btn" type="button">Retry connection</button>
+    </div>
     <div class="pa-grain" aria-hidden="true"></div>
     <div class="pa-grid" aria-hidden="true"></div>
 

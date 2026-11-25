@@ -7,7 +7,7 @@ function readRepoFile(path: string): string {
   return readFileSync(
     fileURLToPath(new URL("../" + path, import.meta.url)),
     "utf8"
-  );
+  ).replace(/\r\n/g, "\n");
 }
 
 test("package remains private and exposes bounded production commands", () => {
@@ -116,6 +116,21 @@ test("Git history discovery paginates commit and numstat output", () => {
       discovery.indexOf("const pageNumstat = await discoverNumstatPage(")
   );
   assert.ok(discovery.includes("const pageNumstat = await discoverNumstatPage("));
+});
+
+test("analysis progress reports real worker stages and commit counts", () => {
+  const discovery = readRepoFile("src/modules/commits/commit.discovery.ts");
+  const queue = readRepoFile("src/modules/analysis/analysis.queue.ts");
+  const worker = readRepoFile("src/workers/analysis.worker.ts");
+  const routes = readRepoFile("src/modules/repositories/repository.routes.ts");
+
+  assert.ok(discovery.includes("await onProgress?.(0, commitCount)"));
+  assert.ok(discovery.includes("await onProgress?.(commits.length, commitCount)"));
+  assert.ok(queue.includes("export async function getAnalysisJobProgress("));
+  assert.ok(worker.includes('stage: "Reading commit history"'));
+  assert.ok(worker.includes('stage: "Saving evidence"'));
+  assert.ok(routes.includes("progressUnavailable = true"));
+  assert.ok(routes.includes("Unable to read analysis progress for run"));
 });
 
 
@@ -568,7 +583,7 @@ test("unauthenticated boot stays on landing unless legacy migration is required"
 test("landing import requires auth without leaving a stale inline error flow", () => {
   const appJs = readRepoFile("public/app.js");
   assert.ok(
-    appJs.includes("if(!S.user){\n        $('formerr').textContent='Sign in is required before an analysis can start.';")
+    appJs.includes("if(!S.user){\n        S.pendingImport=true;\n        $('formerr').textContent='Sign in is required before an analysis can start.';")
   );
   assert.ok(appJs.includes("openAuth('login');"));
   assert.ok(appJs.includes("return;\n      }"));
@@ -1130,18 +1145,18 @@ test("completed analysis hydrates only the active view and invalidates stale vie
 test("output action loaders bind after their view DOM is rendered", () => {
   const appJs = readRepoFile("public/app.js");
   const cases = [
-    ["loadReport", "report"],
-    ["loadInterview", "interview"],
-    ["loadInterpretation", "interpretation"]
+    ["loadReport", "report", "setView('report',{skipLoad:true})"],
+    ["loadInterview", "interview", "setView('interview',{skipLoad:true})"],
+    ["loadInterpretation", "interpretation", "setView('interpretation')"]
   ];
 
-  for (const [name, action] of cases) {
+  for (const [name, action, renderCall] of cases) {
     const start = appJs.indexOf("async function " + name + "()");
     const next = appJs.indexOf("\n  async function ", start + 1);
     assert.ok(start >= 0);
     assert.ok(next > start);
     const block = appJs.slice(start, next);
-    const renderAt = block.indexOf("setView('"+action+"')");
+    const renderAt = block.indexOf(renderCall);
     const busyAt = block.indexOf("actionBusy('"+action+"',true");
     const releaseAt = block.indexOf("actionBusy('"+action+"',false");
     assert.ok(renderAt >= 0 && busyAt > renderAt);
@@ -2061,7 +2076,7 @@ test("frontend loads evidence by active workspace view", () => {
   assert.ok(appJs.includes("quality:['bugs','repeated','refactors','migrations','tests','testSummary']"));
   assert.ok(appJs.includes("runtime:['runtime','runtimeEvents','deployments','historicalSummary','historicalCorrelation','historicalSourceContext']"));
   assert.ok(appJs.includes("async function loadViewData(view,options)"));
-  assert.ok(appJs.includes("if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v)"));
+  assert.ok(appJs.includes("if(VIEW_DATA[v]&&!hasViewData(v))loadViewData(v);"));
   assert.ok(appJs.includes("await loadViewData(initialView)"));
   assert.ok(appJs.includes("setView(view,{skipLoad:true})"));
 });
@@ -2276,7 +2291,7 @@ test("frontend navigation exposes accessible active state and deterministic brow
   assert.ok(appJs.includes("document.title='Project Autopsy — '+(VIEW_TITLES[v]||'Workspace')"));
   assert.ok(appJs.includes("document.title='Project Autopsy — Engineering Evidence'"));
   assert.ok(indexHtml.includes('href="#overview" aria-label="Project Autopsy overview"'));
-  assert.ok(indexHtml.includes('class="skip-link" href="#root"'));
+  assert.ok(indexHtml.includes('id="skipLink" class="skip-link" href="#url"'));
   assert.ok(indexHtml.includes('id="root" tabindex="-1"'));
 });
 
@@ -3062,7 +3077,7 @@ test("frontend workflow detailing exposes a contextual micro-flow and fully clic
     "function viewFlowMarkup()",
     "workspace-flow-rail",
     "workspace-flow-step",
-    "navigation only",
+    "select a step to load its evidence",
     "STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))",
     "Open History",
     "Inspect Evidence"
@@ -3071,6 +3086,16 @@ test("frontend workflow detailing exposes a contextual micro-flow and fully clic
   }
   assert.ok(html.includes("/* WORKSPACE WORKFLOW DETAILING V7"));
   assert.equal((appJs.match(/\{number:'(?:01|02|03|04|05|06|07|08|09|10|11)'/g) || []).length, 11);
+});
+
+test("workflow navigation loads report and interview evidence on entry without recursive fetches", () => {
+  const appJs = readRepoFile("public/app.js");
+  assert.ok(appJs.includes("function hasCurrentReport()"));
+  assert.ok(appJs.includes("function hasCurrentInterview()"));
+  assert.ok(appJs.includes("else if(v==='report'&&!hasCurrentReport())loadReport();"));
+  assert.ok(appJs.includes("else if(v==='interview'&&!hasCurrentInterview())loadInterview();"));
+  assert.ok(appJs.includes("setView('report',{skipLoad:true});"));
+  assert.ok(appJs.includes("setView('interview',{skipLoad:true});"));
 });
 
 test("frontend analysis lifecycle workflow has a real status renderer and truthful stage markup", () => {

@@ -170,6 +170,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         };
       }
 
+      await job.updateProgress({ stage: "Preparing analysis" });
       await updateAnalysisRun(analysisRunId, "running");
 
       if (jobKind === "import") {
@@ -187,6 +188,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
           ? decryptRepositoryAccessToken(encryptedCredential)
           : undefined;
 
+        await job.updateProgress({ stage: "Cloning repository history" });
         const metadata = await cloneRepository(
           repositoryId,
           job.data.remoteUrl,
@@ -215,6 +217,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
             repositoryId,
             analysisRunId
           );
+        await job.updateProgress({
+          stage: "Repository cloned; analysis queued"
+        });
 
         return {
           status: "imported",
@@ -378,6 +383,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({ stage: "Reading commit history" });
       const commits =
         analysis.analysis_mode === "incremental" &&
         analysis.base_head_sha
@@ -386,9 +392,26 @@ export const analysisWorker = new Worker<AnalysisJobData>(
               {
                 fromExclusive: analysis.base_head_sha,
                 toInclusive: analysis.target_head_sha
+              },
+              async (completed, total) => {
+                await job.updateProgress({
+                  stage: "Reading commit history",
+                  completed,
+                  total
+                });
               }
             )
-          : await discoverCommits(repository.storage_path);
+          : await discoverCommits(
+              repository.storage_path,
+              undefined,
+              async (completed, total) => {
+                await job.updateProgress({
+                  stage: "Reading commit history",
+                  completed,
+                  total
+                });
+              }
+            );
 
       if (
         analysis.analysis_mode === "incremental" &&
@@ -402,12 +425,16 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({ stage: "Analyzing file changes" });
       const fileChurn = await discoverFileChurn(
         repository.storage_path
       );
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({
+        stage: "Analyzing dependency history"
+      });
       const dependencyEvolution =
         await discoverDependencyEvolution(
           repository.storage_path,
@@ -422,6 +449,9 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({
+        stage: "Analyzing architecture history"
+      });
       const architectureEvolution =
         await discoverArchitectureEvolution(
           repository.storage_path,
@@ -436,11 +466,21 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({
+        stage: "Analyzing migrations and tests",
+        completed: 0,
+        total: 2
+      });
       const databaseMigrationEvolution =
         await discoverDatabaseMigrationEvolution(
           repository.storage_path,
           commits
         );
+      await job.updateProgress({
+        stage: "Analyzing migrations and tests",
+        completed: 1,
+        total: 2
+      });
 
       deadline.assertNotExpired();
 
@@ -451,6 +491,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({ stage: "Analyzing code complexity" });
       const complexityCache = {
         get: (cacheKey: string) =>
           getAnalysisCache(
@@ -481,6 +522,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({
+        stage: "Persisting evidence",
+        completed: 0,
+        total: 8
+      });
       const persistedCount =
         analysis.analysis_mode === "incremental"
           ? await persistCommitBatch(repositoryId, commits)
@@ -490,10 +536,20 @@ export const analysisWorker = new Worker<AnalysisJobData>(
             );
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 1,
+        total: 8
+      });
 
       await replaceFileChangeMetrics(repositoryId, fileChurn);
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 2,
+        total: 8
+      });
 
       if (analysis.analysis_mode === "incremental") {
         await appendDependencyEvolution(
@@ -510,6 +566,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       }
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 3,
+        total: 8
+      });
 
       if (analysis.analysis_mode === "incremental") {
         await appendArchitectureEvolution(
@@ -526,6 +587,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       }
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 4,
+        total: 8
+      });
 
       if (analysis.analysis_mode === "incremental") {
         await appendDatabaseMigrationEvolution(
@@ -540,6 +606,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       }
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 5,
+        total: 8
+      });
 
       if (analysis.analysis_mode === "incremental") {
         await appendTestEvolution(repositoryId, testEvolution);
@@ -548,6 +619,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       }
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 6,
+        total: 8
+      });
 
       if (analysis.analysis_mode === "incremental") {
         await appendCodeComplexityEvolution(
@@ -562,6 +638,11 @@ export const analysisWorker = new Worker<AnalysisJobData>(
       }
 
       deadline.assertNotExpired();
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 7,
+        total: 8
+      });
 
       const couplingPairs = await rebuildFileChangeCoupling(
         repositoryId
@@ -569,6 +650,14 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
       deadline.assertNotExpired();
 
+      await job.updateProgress({
+        stage: "Saving evidence",
+        completed: 8,
+        total: 8
+      });
+      await job.updateProgress({
+        stage: "Finalizing analysis snapshot"
+      });
       await updateAnalysisRun(analysisRunId, "completed");
 
       return {

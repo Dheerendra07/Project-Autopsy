@@ -42,7 +42,7 @@
     legacyMigrationKey:'',
     repoId:storageGet('autopsy.repoId'),
     runId:storageGet('autopsy.runId'),
-    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',authInterrupt:false,dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,commandPaletteFocus:null,commandPaletteIndex:0,commandPaletteQuery:'',evidenceFamily:'all',focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
+    authMode:'login',authSubmitting:false,authToken:'',repo:null,analysis:null,data:{},dataErrors:[],view:'overview',timer:null,evidence:[],evidenceSeq:0,importing:false,pendingImport:false,workspaceToken:0,commitLoading:false,commitLoadToken:0,runtimeLoading:false,runtimeFilter:{from:'',to:'',deploymentId:'',revisionSha:'',environment:'',operationName:'',signalType:''},runtimeEvents:[],runtimePagination:null,analysisRunsLoading:false,analysisRunsLoadToken:0,timelineLoading:false,timelineLoadToken:0,historicalLoading:false,confirmResolver:null,confirmFocus:null,historicalLoadToken:0,historicalFilter:{windowMinutes:60,minSamples:10,deploymentId:'',environment:'',operationName:'',signalType:''},connectionState:'unknown',authInterrupt:false,dataRunId:'',viewScroll:{},viewFilter:{},tableSort:{},viewLoading:{},settingsFocus:null,commandPaletteFocus:null,commandPaletteIndex:0,commandPaletteQuery:'',evidenceFamily:'all',focusReturn:null,currentEvidence:null,reportLoading:false,interviewLoading:false,interpretationLoading:false,refreshLoading:false,connectionTesting:false,provenanceLoading:false,operationalLoading:false,operationalLoadToken:0,operationalTimer:null,operationalPollMs:30_000
   };
   function $(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -150,6 +150,16 @@
       button.title=verified?'Account & security settings':'Sign in to your private workspace';
     }
   }
+  function showConnectionNotice(message){
+    var notice=$('connectionNotice'),detail=$('connectionNoticeMessage');
+    if(!notice||!detail)return;
+    detail.textContent=message||'The service may be starting after an idle period. Try again in a moment.';
+    notice.hidden=false;
+  }
+  function hideConnectionNotice(){
+    var notice=$('connectionNotice');
+    if(notice)notice.hidden=true;
+  }
   function banner(show,title,subtitle,status){
     var box=$('banner');
     if(!box)return;
@@ -181,6 +191,18 @@
         (normalized==='failed'&&stageState==='queued')
       );
     });
+  }
+
+  function analysisProgressText(progress){
+    if(!progress||typeof progress.stage!=='string'||!progress.stage)return '';
+    var completed=Number(progress.completed),total=Number(progress.total);
+    if(progress.stage==='Reading commit history'&&Number.isFinite(completed)&&Number.isFinite(total)&&total>0){
+      return progress.stage+' · '+n(completed)+' of '+n(total)+' commits';
+    }
+    if(Number.isFinite(completed)&&Number.isFinite(total)&&total>0){
+      return progress.stage+' · '+n(completed)+' of '+n(total)+' steps';
+    }
+    return progress.stage+'…';
   }
 
   function syncAnalysisRefreshControl(){
@@ -383,11 +405,13 @@
     try{
       $('formerr').hidden=true;$('importButton').disabled=true;S.importing=true;
       if(!S.user){
+        S.pendingImport=true;
         $('formerr').textContent='Sign in is required before an analysis can start.';
         $('formerr').hidden=false;
         openAuth('login');
         return;
       }
+      S.pendingImport=false;
       var r=await api('/api/repositories/import',{method:'POST',body:JSON.stringify(payload)});
       if(token!==S.workspaceToken)return;
       S.workspaceToken+=1;S.commitLoadToken+=1;S.commitLoading=false;S.runtimeLoading=false;S.analysisRunsLoading=false;S.analysisRunsLoadToken+=1;S.historicalLoading=false;S.historicalLoadToken+=1;clearInterval(S.timer);S.timer=null;
@@ -427,7 +451,9 @@
         if(st==='failed'){
           clearInterval(S.timer);S.timer=null;syncAnalysisRefreshControl();banner(true,'Analysis failed',analysis.errorMessage||'The worker reported a failure; inspect the analysis run for more detail.','failed');toast('Analysis failed','bad');return
         }
-        banner(true,st==='running'?'Analysis running':'Analysis queued',st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…',st)
+        var progressText=analysisProgressText(analysis.progress);
+        var fallback=analysis.progressUnavailable?'Detailed progress is temporarily unavailable.':st==='running'?'Persisting engineering evidence…':'Waiting for the analysis worker…';
+        banner(true,st==='running'?'Analysis running':'Analysis queued',progressText||fallback,st)
       }catch(e){
         if(token!==S.workspaceToken||repoId!==S.repoId||runId!==S.runId)return;
         var message=e&&e.message?String(e.message):'Analysis status could not be checked.';
@@ -671,7 +697,7 @@ function shell(title,desc,actions){
     return '<div class="view-flow card" aria-label="Workspace workflow navigation">'+
       '<div class="view-flow-head">'+
         '<div class="view-flow-copy"><span class="kicker">WORKSPACE PATH</span><strong>'+esc(current)+'</strong><small>'+esc(flow.nextWhy)+'</small></div>'+
-        '<div class="view-flow-meta"><span>STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))+'</span><span>navigation only</span></div>'+
+        '<div class="view-flow-meta"><span>STEP '+esc(String(currentIndex+1))+' / '+esc(String(WORKFLOW_STEPS.length))+'</span><span>select a step to load its evidence</span></div>'+
       '</div>'+
       '<div class="workspace-flow-rail" role="list" aria-label="Project Autopsy workflow stages">'+rail+'</div>'+
       '<div class="view-flow-actions">'+previous+next+'</div>'+
@@ -1152,6 +1178,8 @@ function shell(title,desc,actions){
   const VALID_VIEWS=['overview','history','structure','quality','runtime','report','interview','interpretation','evidence','contributors','operations'];
   const VIEW_TITLES={overview:'Overview',history:'History',structure:'Structure',quality:'Quality',runtime:'Runtime & provenance',report:'Report',interview:'Interview',interpretation:'Insights',evidence:'Evidence explorer',contributors:'Contributors',operations:'Operations'};
   function viewFromHash(){var v=(location.hash||'').replace(/^#/,'').trim();return VALID_VIEWS.indexOf(v)>=0?v:'overview'}
+  function hasCurrentReport(){var rep=S.data.report,a=S.analysis||{};return !!(rep&&currentAnalysisSnapshot()&&rep.analysis&&rep.analysis.runId===S.runId&&sameRevision(rep.analysis.targetHeadSha,a.targetHeadSha))}
+  function hasCurrentInterview(){var stories=S.data.interview,a=S.analysis||{};return !!(stories&&currentAnalysisSnapshot()&&stories.analysisRunId===S.runId&&a.status==='completed')}
   function setView(v,options){
     options=options||{};
     if($('drawer')&&!$('drawer').hidden)closeEvidence(false);
@@ -1190,7 +1218,12 @@ function shell(title,desc,actions){
         apply();
       }
     }
-    if(v==='operations'&&!options.skipLoad&&S.data.operational===undefined)loadOperations();else if(!options.skipLoad&&VIEW_DATA[v]&&!hasViewData(v))loadViewData(v);
+    if(!options.skipLoad){
+      if(v==='operations'&&S.data.operational===undefined)loadOperations();
+      else if(VIEW_DATA[v]&&!hasViewData(v))loadViewData(v);
+      else if(v==='report'&&!hasCurrentReport())loadReport();
+      else if(v==='interview'&&!hasCurrentInterview())loadInterview();
+    }
     syncOperationsMonitoring()
   }
   const COMMAND_DEFS=[
@@ -1444,14 +1477,14 @@ function shell(title,desc,actions){
     if(S.reportLoading)return;
     S.reportLoading=true;
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
-    setView('report');
+    setView('report',{skipLoad:true});
     actionBusy('report',true,'Generating…');
     $('root').innerHTML=loadingPage('Evidence report','Building a readable report from the current completed evidence snapshot.');
     try{
       var r=await api('/api/repositories/'+id+'/report?limit=10');
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='report')return;
       S.data.report=r.report;
-      setView('report');
+      setView('report',{skipLoad:true});
       toast('Evidence report refreshed','good');
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='report'){
@@ -1467,14 +1500,14 @@ function shell(title,desc,actions){
     if(S.interviewLoading)return;
     S.interviewLoading=true;
     var token=S.workspaceToken,id=S.repoId,runId=S.runId;
-    setView('interview');
+    setView('interview',{skipLoad:true});
     actionBusy('interview',true,'Loading…');
     $('root').innerHTML=loadingPage('Interview','Turning the evidence snapshot into verifiable talking points.');
     try{
       var r=await api('/api/repositories/'+id+'/interview-stories?limit=6');
       if(token!==S.workspaceToken||id!==S.repoId||runId!==S.runId||S.view!=='interview')return;
       S.data.interview=r;
-      setView('interview');
+      setView('interview',{skipLoad:true});
       toast('Interview stories loaded','good');
     }catch(e){
       if(token===S.workspaceToken&&id===S.repoId&&runId===S.runId&&S.view==='interview'){
@@ -1729,6 +1762,8 @@ function shell(title,desc,actions){
   function landing(){
     $('landing').hidden=false;
     $('workspace').hidden=true;
+    $('skipLink').href='#url';
+    $('skipLink').textContent='Skip to repository import';
     document.title='Project Autopsy — Engineering Evidence';
   }
   function syncRepositoryAccessSettings(){
@@ -1754,6 +1789,8 @@ function shell(title,desc,actions){
   function workspace(){
     $('landing').hidden=true;
     $('workspace').hidden=false;
+    $('skipLink').href='#root';
+    $('skipLink').textContent='Skip to current view';
     document.body.dataset.view=S.view||'overview';
     syncWorkspaceMeta();
     connected(S.connectionState);
@@ -1858,6 +1895,7 @@ function shell(title,desc,actions){
     toast('Account settings saved.','good');
   }
   $('form').onsubmit=function(e){e.preventDefault();importRepo()};$('refresh').onclick=refresh;
+  $('connectionRetry').onclick=function(){void retryConnection()};
   $('authForm').onsubmit=function(e){e.preventDefault();submitAuth()};
   $('forgotForm').onsubmit=function(e){e.preventDefault();submitForgotPassword()};
   $('resetForm').onsubmit=function(e){e.preventDefault();resetPasswordFromLink()};
@@ -2038,8 +2076,15 @@ function shell(title,desc,actions){
       persist();
       await loadRecentRepositories();
       toast(mode==='register'?'Account created and signed in.':'Signed in successfully.','good');
-      var restored=await restoreSavedWorkspace();
-      if(!restored)landing();
+      var shouldResumeImport=S.pendingImport;
+      S.pendingImport=false;
+      if(shouldResumeImport){
+        landing();
+        await importRepo();
+      }else{
+        var restored=await restoreSavedWorkspace();
+        if(!restored)landing();
+      }
     }catch(e){
       $('authError').textContent=e.message||'Authentication failed.';
       $('authError').hidden=false;
@@ -2308,6 +2353,20 @@ function shell(title,desc,actions){
       return false;
     }
   }
+  async function retryConnection(){
+    var button=$('connectionRetry');
+    if(!button||button.disabled)return;
+    button.disabled=true;
+    button.setAttribute('aria-busy','true');
+    button.textContent='Checking…';
+    try{
+      await boot();
+    }finally{
+      button.disabled=false;
+      button.removeAttribute('aria-busy');
+      button.textContent='Retry connection';
+    }
+  }
   async function boot(){
     var authLink=consumeAuthLink();
     if(authLink){
@@ -2315,6 +2374,7 @@ function shell(title,desc,actions){
       openAuth(authLink);
       return;
     }
+    hideConnectionNotice();
     S.legacyMigrationKey=storageGet('autopsy.key');
     storageRemove('autopsy.key');
     storageRemove('autopsy.aiKey');
@@ -2333,6 +2393,9 @@ function shell(title,desc,actions){
       S.connectionState='unknown';
       connected('unknown');
       landing();
+      if(!e||e.message!=='Your session has expired. Sign in again.'){
+        showConnectionNotice(e&&e.message?e.message:undefined);
+      }
       if(S.legacyMigrationKey)openAuth('migrate');
     }
   }
