@@ -1910,6 +1910,8 @@ function shell(title,desc,actions){
   };
   $('refreshSessions').onclick=function(){void loadSecuritySessions()};
   $('authModeToggle').onclick=function(){
+    $('authError').hidden=true;
+    $('authNotice').hidden=true;
     if(['forgot','reset','verify','migrate'].indexOf(S.authMode)>=0){
       setAuthMode('login');
       return;
@@ -2072,6 +2074,7 @@ function shell(title,desc,actions){
       S.authInterrupt=false;
       S.connectionState='verified';
       connected('verified');
+      $('formerr').hidden=true;
       closeAuth();
       persist();
       await loadRecentRepositories();
@@ -2169,6 +2172,7 @@ function shell(title,desc,actions){
       S.authInterrupt=false;
       S.connectionState='verified';
       connected('verified');
+      $('formerr').hidden=true;
       closeAuth();
       persist();
       await loadRecentRepositories();

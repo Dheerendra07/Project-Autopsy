@@ -48,6 +48,11 @@ test("authentication UI contract stays explicit and mode-correct", () => {
   );
   assert.match(
     app,
+    /\$\('authModeToggle'\)\.onclick=function\(\)\{\s*\$\('authError'\)\.hidden=true;\s*\$\('authNotice'\)\.hidden=true;/
+  );
+  assert.equal((app.match(/\$\('formerr'\)\.hidden=true;\s*closeAuth\(\);/g) ?? []).length, 2);
+  assert.match(
+    app,
     /toast\('Email verified\.'[\s\S]*?restoreSavedWorkspace\(\)/
   );
 });
