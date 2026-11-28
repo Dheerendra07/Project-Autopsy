@@ -11,6 +11,7 @@ import { renderAuth } from "./pages/auth.js";
 import { renderProjects } from "./pages/projects.js";
 import { renderWorkspace, leaveWorkspace } from "./pages/workspace.js";
 import { renderAccount } from "./pages/account.js";
+import { mountAmbient } from "./ui/ambient.js";
 
 const app = document.getElementById("app");
 let currentCleanup = null;
@@ -27,7 +28,7 @@ function topbar(route) {
   let actions;
   if (user) {
     actions =
-      (inApp ? "" : '<a class="btn primary sm" href="' + href("projects") + '"><span class="hide-xs">Open&nbsp;</span>workspace ' + icon("arrowRight") + "</a>") +
+      (inApp ? "" : '<a class="btn primary sm" href="' + href("projects") + '"><span class="hide-xs">Open workspace</span><span class="show-xs">Workspace</span> ' + icon("arrowRight") + "</a>") +
       '<button class="btn icon sm" type="button" data-account-menu aria-haspopup="menu" aria-expanded="false" aria-label="Account menu" title="' + esc(user.email) + '">' + icon("user") + "</button>";
   } else {
     actions =
@@ -250,4 +251,5 @@ document.addEventListener("click", (event) => {
   }
 });
 
+mountAmbient();
 render();

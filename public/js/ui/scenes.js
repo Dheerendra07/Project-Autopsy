@@ -140,7 +140,7 @@ export const SCENES = {
     label: "How History works",
     chapters: ["Commits are listed newest first", "Each event is labeled by its subject", "Filter by type and inspect a commit"],
     html: `<div class="scene" style="display:flex;flex-direction:column;gap:7px">
-      ${[["feature", "var(--accent)"], ["fix", "var(--bad)"], ["refactor", "#7a4fd6"], ["test", "var(--good)"], ["dependency", "var(--warn)"]].map(([t, c], i) =>
+      ${[["feature", "var(--accent)"], ["fix", "var(--bad)"], ["refactor", "#8250df"], ["test", "var(--good)"], ["dependency", "var(--warn)"]].map(([t, c], i) =>
         `<div class="s-row" data-at="${i < 2 ? 1 : 2}"><span style="width:.8em;height:.8em;border-radius:50%;background:${c};flex:none"></span>${line(58 - i * 6, 0, "dark")}${chip(t, "", 2, 'style="margin-left:auto"')}</div>`).join("")}
       <div class="s-row" style="gap:5px;margin-top:auto">${chip("all")}${chip("fix", "accent s-hl", 3)}${chip("refactor")}</div>
     </div>`
@@ -150,8 +150,8 @@ export const SCENES = {
     chapters: ["See which directories appeared and when", "Track dependency changes per commit", "Find files that always change together"],
     html: `<div class="scene">
       <svg class="s-svg" viewBox="0 0 200 125" preserveAspectRatio="none" aria-hidden="true">
-        <path class="draw" data-at="1" d="M100 20 V45 M100 45 H45 V70 M100 45 H155 V70 M100 45 V70" stroke="#c9c8bf" stroke-width="1.2" fill="none"/>
-        <path class="draw" data-at="3" d="M45 95 C 80 118, 120 118, 155 95" stroke="#3346ff" stroke-width="1.6" stroke-dasharray="3 3" fill="none"/>
+        <path class="draw" data-at="1" d="M100 20 V45 M100 45 H45 V70 M100 45 H155 V70 M100 45 V70" stroke="#b7c0ca" stroke-width="1.2" fill="none"/>
+        <path class="draw" data-at="3" d="M45 95 C 80 118, 120 118, 155 95" stroke="#0969da" stroke-width="1.6" stroke-dasharray="3 3" fill="none"/>
       </svg>
       <div style="position:absolute;left:41%;top:8%;width:18%" class="s-card" data-at="1">${line(80, 0, "ink")}</div>
       <div style="position:absolute;left:12%;top:52%;width:20%" class="s-card" data-at="1"><span class="s-label">src/</span></div>
@@ -176,9 +176,9 @@ export const SCENES = {
     chapters: ["Telemetry you send is summarized by revision", "Deployments mark exact releases", "Windows compare before and after — no causal claims"],
     html: `<div class="scene">
       <svg class="s-svg" viewBox="0 0 200 125" preserveAspectRatio="none" aria-hidden="true">
-        <rect x="88" y="14" width="44" height="92" fill="rgba(51,70,255,.07)" data-at="3"/>
+        <rect x="88" y="14" width="44" height="92" fill="rgba(9,105,218,.07)" data-at="3"/>
         <path class="draw" data-at="1" d="M10 90 L30 82 L50 86 L70 70 L90 74 L110 52 L130 60 L150 44 L170 48 L190 36" stroke="#111" stroke-width="1.8" fill="none"/>
-        <line x1="110" y1="14" x2="110" y2="106" stroke="#a8650a" stroke-width="1.2" stroke-dasharray="3 3" data-at="2"/>
+        <line x1="110" y1="14" x2="110" y2="106" stroke="#9a6700" stroke-width="1.2" stroke-dasharray="3 3" data-at="2"/>
       </svg>
       <div style="position:absolute;left:52%;top:6%" data-at="2">${chip("deploy", "warn")}</div>
       <div style="position:absolute;left:6%;bottom:6%" data-at="3">${chip("observation, not cause", "")}</div>
