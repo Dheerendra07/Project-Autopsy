@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildEvidenceReport } from "../src/modules/reports/report.service.js";
+import { balancedSample, buildEvidenceReport } from "../src/modules/reports/report.service.js";
 import type { ReportBuildInput } from "../src/modules/reports/report.types.js";
 
 function baseInput(): ReportBuildInput {
@@ -380,6 +380,47 @@ test("keeps exact commit references on evolution evidence", () => {
     architectureClaim?.evidence[0]?.path,
     "src/reports"
   );
+});
+
+test("balancedSample shares a limit fairly and keeps each family's order", () => {
+  assert.deepEqual(balancedSample([[1, 2, 3, 4], [10, 11], [20]], 5), [1, 2, 10, 11, 20]);
+  assert.deepEqual(balancedSample([[1, 2, 3, 4], [], [20]], 4), [1, 2, 3, 20]);
+  assert.deepEqual(balancedSample([[1, 2], [3]], 10), [1, 2, 3]);
+  assert.deepEqual(balancedSample([[1, 2], [3]], 0), []);
+});
+
+test("a large evidence family cannot crowd the others out of a section", () => {
+  const input = baseInput();
+  input.sampleLimit = 4;
+  input.coupling = Array.from({ length: 12 }, (_, i) => ({
+    path_a: "src/a" + i + ".ts",
+    path_b: "src/b" + i + ".ts",
+    co_change_count: 20 - i
+  }));
+  input.bugAreas = Array.from({ length: 12 }, (_, i) => ({
+    path: "src/bug" + i + ".ts",
+    signal_commits: 12 - i,
+    total_commits_touched: 30,
+    signal_ratio: 0.4,
+    total_churn: 100,
+    first_signal_at: null,
+    last_signal_at: null
+  }));
+  const report = buildEvidenceReport(input, new Date("2026-09-29T00:00:00.000Z"));
+
+  const evolution = report.sections.find((s) => s.id === "evolution");
+  const families = new Set(evolution?.claims.map((c) => c.id.replace(/-\d+$/, "")));
+  assert.ok(evolution && evolution.claims.length <= 4);
+  assert.ok(families.has("coupling"));
+  assert.ok(families.has("dependency"), "dependency evidence must survive a large coupling family");
+  assert.ok(families.has("architecture"), "architecture evidence must survive a large coupling family");
+  assert.equal(evolution?.claims[0]?.id, "coupling-1", "each family keeps its own ranking");
+
+  const quality = report.sections.find((s) => s.id === "quality-signals");
+  const qualityFamilies = new Set(quality?.claims.map((c) => c.id.replace(/-\d+$/, "")));
+  if (input.repeatedlyModified.length) {
+    assert.ok(qualityFamilies.has("repeated-file"), "repeated-file evidence must survive a large bug-area family");
+  }
 });
 
 test("does not turn absent runtime telemetry into a negative performance claim", () => {

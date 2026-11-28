@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Validate evidence-first Atlas homepage
+      - name: Validate frontend workspace
         run: node scripts/qa-homepage.mjs
 
       - name: Setup Node.js

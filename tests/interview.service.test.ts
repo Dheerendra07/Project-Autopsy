@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildInterviewStoriesFromReport
 } from "../src/modules/interview/interview.service.js";
+import type { EvidenceReport } from "../src/modules/reports/report.types.js";
 
 function reportWithSections() {
   const claim = {
@@ -152,6 +153,48 @@ test("falls back to runtime observations when historical runtime evidence is abs
     runtimeStory?.evidenceSummary.join(" ") ?? "",
     /10 runtime telemetry observations/i
   );
+});
+
+test("never builds a story from an explicit absence claim", () => {
+  const report: EvidenceReport = reportWithSections();
+  report.sections = report.sections
+    .filter((section) => section.id !== "historical-runtime")
+    .map((section) =>
+      section.id === "runtime-observations"
+        ? {
+            ...section,
+            claims: [
+              {
+                id: "runtime-none",
+                statement: "No persisted runtime telemetry observations are available for this repository.",
+                evidence: [{ source: "runtime_telemetry_summary", key: "repository:repo" }],
+                limitation: "Absence of telemetry is not evidence of absence."
+              }
+            ]
+          }
+        : section
+    );
+
+  const result = buildInterviewStoriesFromReport(report, "repo", 6);
+
+  assert.equal(
+    result.stories.some((story) => story.type === "runtime-observability"),
+    false
+  );
+  assert.equal(
+    result.stories.some((story) => /No persisted/i.test(story.headline)),
+    false
+  );
+});
+
+test("joins evidence statements without doubled punctuation", () => {
+  const result = buildInterviewStoriesFromReport(reportWithSections(), "repo", 1);
+  const draft = result.stories[0]?.draftAnswer;
+
+  assert.ok(draft);
+  assert.doesNotMatch(draft.evidenceBackedResult, /\.\./);
+  assert.doesNotMatch(draft.approach, /\.\./);
+  assert.match(draft.evidenceBackedResult, /120 lines of recorded churn\. Add any/);
 });
 
 test("never fabricates missing sections and clamps story limit", () => {

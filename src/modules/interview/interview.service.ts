@@ -87,14 +87,31 @@ function selectEvidence(claims: EvidenceClaim[]): EvidenceRef[] {
   return claims.flatMap((claim) => claim.evidence);
 }
 
+// Report sections state explicit absence with "<area>-none" claims (for example
+// "No persisted runtime telemetry observations are available"). Those document a gap;
+// they are not a historical signal, so they must never anchor an interview story.
+export function isAbsenceClaim(claim: EvidenceClaim): boolean {
+  return /(^|-)none$/.test(claim.id);
+}
+
+function substantiveClaims(sections: EvidenceReportSection[]): EvidenceClaim[] {
+  return sections
+    .flatMap((section) => section.claims)
+    .filter((claim) => !isAbsenceClaim(claim));
+}
+
+function joinStatements(statements: string[]): string {
+  return statements
+    .map((statement) => statement.trim().replace(/[.\s]+$/, ""))
+    .join(" | ");
+}
+
 function buildStory(
   definition: StoryDefinition,
   storySections: EvidenceReportSection[],
   repositoryName: string
 ): InterviewStory {
-  const claims = storySections
-    .flatMap((section) => section.claims)
-    .slice(0, 3);
+  const claims = substantiveClaims(storySections).slice(0, 3);
   const evidence = selectEvidence(claims);
   const evidenceSummary = claims.map((claim) => claim.statement);
   const anchor = claims[0]?.statement ?? "No evidence statement is available.";
@@ -121,10 +138,11 @@ function buildStory(
         "Trace the referenced commits and files, compare adjacent evidence, and validate the signal against compatible tests, deployment records, or runtime observations where available. " +
         definition.framing +
         " Relevant evidence: " +
-        evidenceSummary.join(" | "),
+        joinStatements(evidenceSummary) +
+        ".",
       evidenceBackedResult:
         "Actual result visible in the current evidence snapshot (not a separately verified engineering or business outcome): " +
-        evidenceSummary.join(" | ") +
+        joinStatements(evidenceSummary) +
         ". Add any engineering, user, or business outcome only after independent verification.",
       limitation: storySections
         .map((section) => section.limitation)
@@ -157,7 +175,7 @@ export function buildInterviewStoriesFromReport(
 
     if (
       storySections.length === 0 ||
-      storySections.every((section) => section.claims.length === 0)
+      substantiveClaims(storySections).length === 0
     ) {
       continue;
     }

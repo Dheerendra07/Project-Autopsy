@@ -231,18 +231,19 @@ async function deleteRepositoryAfterActiveAnalysis(
 const home = await requestPublicWarmup("/");
 assert(home.response.ok, `Home page returned HTTP ${home.response.status}.`);
 assert(home.text.includes("Project Autopsy"), "Home page does not contain the Project Autopsy surface.");
-assert(home.text.includes('<script src="app.js" defer></script>'), "Home page is missing the dependency-free app.js asset.");
+assert(home.text.includes('<script type="module" src="js/main.js"></script>'), "Home page is missing the module entry point.");
 
-const appJs = await request("/app.js");
-assert(appJs.response.ok, `Frontend asset returned HTTP ${appJs.response.status}.`);
-assert(appJs.text.includes("function storageGet(key)"), "Frontend asset is not the expected Autopsy client.");
-assert(appJs.text.includes("const COMMAND_DEFS="), "Production frontend is missing the developer command center.");
-assert(home.text.includes("PRODUCT UI SYSTEM V6"), "Production page is not serving the final V6 visual system.");
-assert(home.text.includes('<script src="theme.js"></script>'), "Production page is missing the CSP-safe theme bootstrap asset.");
-
-const themeJs = await request("/theme.js");
-assert(themeJs.response.ok, `Theme bootstrap asset returned HTTP ${themeJs.response.status}.`);
-assert(themeJs.text.includes("prefers-color-scheme: light"), "Theme bootstrap asset is not the expected Autopsy implementation.");
+for (const [assetPath, marker] of [
+  ["/js/main.js", "renderWorkspace"],
+  ["/js/core/api.js", "x-autopsy-csrf-token"],
+  ["/js/phases/report.js", "export function searchReport"],
+  ["/js/phases/interview.js", "REPORT_NOT_READY"],
+  ["/css/app.css", "color-scheme: light"]
+]) {
+  const asset = await request(assetPath);
+  assert(asset.response.ok, `${assetPath} returned HTTP ${asset.response.status}.`);
+  assert(asset.text.includes(marker), `${assetPath} is not the expected Autopsy frontend asset.`);
+}
 
 for (const assetPath of ["/favicon.svg", "/favicon.ico"]) {
   const asset = await request(assetPath);
