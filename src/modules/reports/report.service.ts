@@ -93,6 +93,27 @@ function evidenceSection(
   return { id, title, evidenceBasis, claims, limitation };
 }
 
+// Shares a section's sample limit fairly across its evidence families (round-robin
+// quotas) so one large family cannot crowd the others out. Each family keeps its own
+// ranking and stays contiguous; unused quota flows to families that have more items.
+export function balancedSample<T>(groups: T[][], limit: number): T[] {
+  const quotas = groups.map(() => 0);
+  let remaining = Math.max(0, limit);
+  let progressed = true;
+  while (remaining > 0 && progressed) {
+    progressed = false;
+    for (let i = 0; i < groups.length && remaining > 0; i++) {
+      const used = quotas[i] ?? 0;
+      if (used < (groups[i]?.length ?? 0)) {
+        quotas[i] = used + 1;
+        remaining -= 1;
+        progressed = true;
+      }
+    }
+  }
+  return groups.flatMap((group, i) => group.slice(0, quotas[i]));
+}
+
 function hashJson(value: unknown): string {
   return createHash("sha256")
     .update(JSON.stringify(value), "utf8")
@@ -230,8 +251,8 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
       "quality-signals",
       "Quality-related historical signals",
       "bug-subject heuristics and repeated file history",
-      [
-        ...input.bugAreas.map((item, index) =>
+      balancedSample([
+        input.bugAreas.map((item, index) =>
           evidenceClaim(
             "bug-area-" + String(index + 1),
             item.path +
@@ -244,7 +265,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Bug-area signals are commit-subject heuristics and do not prove defects or root cause."
           )
         ),
-        ...input.repeatedlyModified.map((item, index) =>
+        input.repeatedlyModified.map((item, index) =>
           evidenceClaim(
             "repeated-file-" + String(index + 1),
             item.path +
@@ -257,7 +278,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Touch frequency is historical and is not an architectural or maintainability verdict."
           )
         )
-      ].slice(0, input.sampleLimit),
+      ], input.sampleLimit),
       "These signals are observational and not causal conclusions."
     )
   );
@@ -267,8 +288,8 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
       "evolution",
       "Architecture and change evolution",
       "persisted coupling, refactor, dependency, architecture, and complexity evidence",
-      [
-        ...input.coupling.map((item, index) =>
+      balancedSample([
+        input.coupling.map((item, index) =>
           evidenceClaim(
             "coupling-" + String(index + 1),
             item.path_a +
@@ -287,7 +308,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Co-change is not proof of dependency or architectural coupling."
           )
         ),
-        ...input.refactors.map((item, index) =>
+        input.refactors.map((item, index) =>
           evidenceClaim(
             "refactor-" + String(index + 1),
             item.sha.slice(0, 12) +
@@ -297,7 +318,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Refactor classification is keyword-based and does not establish intent."
           )
         ),
-        ...input.dependencyChanges.map((item, index) =>
+        input.dependencyChanges.map((item, index) =>
           evidenceClaim(
             "dependency-" + String(index + 1),
             item.package_name +
@@ -312,7 +333,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Dependency history does not establish runtime compatibility or production impact."
           )
         ),
-        ...input.architectureEvents.map((item, index) =>
+        input.architectureEvents.map((item, index) =>
           evidenceClaim(
             "architecture-" + String(index + 1),
             item.event_type +
@@ -325,7 +346,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
             "Architecture events are inferred from Git tree structure, not runtime topology."
           )
         ),
-        ...input.complexityEvents.map((item, index) =>
+        input.complexityEvents.map((item, index) =>
           evidenceClaim(
             "complexity-" + String(index + 1),
             item.analysis_status === "read_error"
@@ -350,7 +371,7 @@ function buildSections(input: ReportBuildInput): EvidenceReportSection[] {
               : "Complexity is AST-derived source evidence and may be absent when parsing or size limits apply."
           )
         )
-      ].slice(0, input.sampleLimit),
+      ], input.sampleLimit),
       "Evolution sections describe history without claiming causality or future impact."
     )
   );

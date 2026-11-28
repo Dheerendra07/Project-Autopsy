@@ -284,6 +284,30 @@ Stories are evidence anchors for interview preparation rather than claims of per
 
 The runtime-observability story can combine historical runtime/source-change evidence with current runtime observations when both sections contain evidence. When historical runtime evidence is unavailable, the story falls back to the runtime-observations section without fabricating historical context.
 
+Explicit absence claims (report claims whose id ends in `-none`, such as "No persisted runtime telemetry observations are available") document a gap and never anchor a story. The endpoint shares the report's readiness rule and returns `409 REPORT_NOT_READY` when the latest completed snapshot does not match the repository head.
+
+Report sections that combine several evidence families (quality signals; architecture and change evolution) share the per-section sample limit across those families, so one large family such as co-change pairs cannot crowd dependency, structure or complexity evidence out of the report.
+
+## Browser workspace
+
+The same service serves the browser workspace from `public/index.html`. It is dependency-free: native ES modules under `public/js/` and one stylesheet, `public/css/app.css`, loaded under the API's default Content-Security-Policy (`script-src 'self'`, no inline scripts or handlers).
+
+```text
+public/
+├── index.html              # shell; loads js/main.js as a module
+├── css/app.css             # light, grid-based design system (tokens, components, mobile/safe-area, print)
+└── js/
+    ├── main.js             # session boot, top bar, hash router dispatch
+    ├── core/               # api (cookies + CSRF), store (per-run evidence cache), router, util
+    ├── ui/                 # components, icons, chaptered animation player and scenes
+    ├── pages/              # home, auth, projects, workspace shell, account
+    └── phases/             # the eleven workspace phases (meta.js is the single definition)
+```
+
+The workspace is organised into eleven phases — Overview, History, Structure, Quality, Runtime, Report, Interview, Insights, Evidence, Contributors and Operations — each with an animated side guide. A live pipeline mirrors the worker's eleven progress stages during analysis. The Report phase's question box returns only the report's own claims, ranked by question intent and quoted with their evidence; Interview keeps verification ticks and private notes in the viewer's browser only.
+
+Email links use `#auth-verify=<token>` and `#auth-reset=<token>` fragments, which the router maps to the verification and password-reset screens. `tests/frontend.contract.test.ts` and `scripts/qa-homepage.mjs` check these contracts against the API source.
+
 
 
 ## AI evidence interpretation
