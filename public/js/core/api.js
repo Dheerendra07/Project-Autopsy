@@ -22,6 +22,34 @@ let apiBaseCache = "";
 function apiBase() {
   return apiBaseCache || (apiBaseCache = defaultApiBase());
 }
+
+// Absolute URL for full-page navigations to the API (e.g. the GitHub OAuth start).
+export function apiUrl(path) {
+  return apiBase() + path;
+}
+
+export function githubStartUrl({ intent = "signin", access = "public", next = "" } = {}) {
+  const q = new URLSearchParams({ intent, access });
+  if (next) q.set("next", next);
+  return apiUrl("/api/auth/github/start?" + q.toString());
+}
+
+// Plain-language messages for the ?oauth=<code> result of the GitHub flow.
+export const GITHUB_OAUTH_MESSAGES = {
+  GITHUB_CANCELLED: "GitHub sign-in was cancelled.",
+  GITHUB_STATE_INVALID: "The GitHub sign-in link expired or was opened in another browser. Try again.",
+  GITHUB_OAUTH_FAILED: "GitHub didn't complete the sign-in. Try again.",
+  GITHUB_NOT_CONFIGURED: "GitHub sign-in isn't enabled on this server.",
+  GITHUB_EMAIL_UNVERIFIED: "Your GitHub account has no verified email address. Verify one on GitHub, then try again.",
+  GITHUB_ALREADY_LINKED: "That GitHub account is already linked to a different Project Autopsy account.",
+  GITHUB_ACCOUNT_DISABLED: "This account is disabled.",
+  GITHUB_SESSION_REQUIRED: "Sign in again, then connect GitHub.",
+  GITHUB_TOKEN_STORAGE_UNAVAILABLE: "GitHub connections need the server's credential encryption key, which isn't configured.",
+  GITHUB_TOKEN_INVALID: "GitHub rejected the connection. Try again.",
+  GITHUB_NOT_FOUND: "GitHub couldn't find your account details. Try again.",
+  GITHUB_RATE_LIMITED: "GitHub's rate limit was reached. Try again in a few minutes.",
+  GITHUB_UNAVAILABLE: "GitHub couldn't be reached. Try again in a moment."
+};
 let csrfToken = "";
 const listeners = new Set();
 

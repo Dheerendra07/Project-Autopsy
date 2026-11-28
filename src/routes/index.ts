@@ -7,6 +7,7 @@ import { interpretationRouter } from "../modules/interpretation/interpretation.r
 import { deploymentRouter } from "../modules/deployments/deployment.routes.js";
 import contributorEvolutionRouter from "../modules/contributors/contributor-evolution.routes.js";
 import observabilityRouter from "../modules/observability/observability.routes.js";
+import { githubRouter } from "../modules/github/github.routes.js";
 import { requireRepositoryAccess } from "../middleware/repository-access.middleware.js";
 
 export const router = Router();
@@ -28,3 +29,4 @@ router.use("/repositories/:repositoryId/interview-stories", interviewRouter);
 router.use("/repositories/:repositoryId/interpretation", interpretationRouter);
 router.use("/repositories/:repositoryId/contributors", contributorEvolutionRouter);
 router.use("/observability", observabilityRouter);
+router.use("/github", githubRouter);

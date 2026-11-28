@@ -1778,3 +1778,35 @@ a:hover { color: var(--accent); }
 @media print { .ambient { display: none; } }
 .show-xs { display: none; }
 @media (max-width: 480px) { .show-xs { display: inline; } }
+
+/* ---------- GitHub sign-in and repository picker ---------- */
+.github-btn { --btn-bg: var(--night); --btn-fg: #fff; --btn-bd: var(--night); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, var(--sh-2); }
+.github-btn:hover { --btn-bg: var(--night-2); --btn-bd: var(--night-2); color: #fff; }
+.github-btn svg, .gh-panel .btn svg { width: 18px; height: 18px; }
+.or-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 2px; color: var(--muted); font-size: 12px; font-family: var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.or-divider::before, .or-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+.gh-panel { overflow: hidden; }
+.gh-mark { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--night); color: #fff; }
+.gh-mark svg { width: 20px; height: 20px; }
+.gh-avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-3); }
+.gh-connect { display: flex; align-items: center; gap: 18px; padding: clamp(20px, 3vw, 28px); flex-wrap: wrap; }
+.gh-head { display: flex; justify-content: space-between; align-items: center; gap: 12px 16px; flex-wrap: wrap; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.gh-tools { display: flex; gap: 10px 12px; align-items: center; flex-wrap: wrap; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.gh-list { list-style: none; margin: 0; padding: 0; max-height: min(560px, 62vh); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.gh-row { display: flex; gap: 16px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); transition: background .15s; }
+.gh-row:last-child { border-bottom: 0; }
+.gh-row:hover { background: var(--surface-2); }
+.gh-name { font-size: 14.5px; color: var(--ink-3); overflow-wrap: anywhere; }
+.gh-name b { color: var(--ink); font-weight: 600; }
+.gh-desc { margin-top: 4px; font-size: 13px; color: var(--ink-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gh-meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.gh-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.gh-lang { width: 9px; height: 9px; border-radius: 50%; background: var(--brand-gradient); display: inline-block; }
+.gh-action { flex: none; }
+.gh-empty { padding: 22px 20px; font-size: 14px; color: var(--ink-3); }
+@media (max-width: 560px) {
+  .gh-row { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .gh-action, .gh-action .btn { width: 100%; }
+  .gh-connect .btn { width: 100%; }
+}

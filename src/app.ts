@@ -7,6 +7,7 @@ import morgan from "morgan";
 
 import { router } from "./routes/index.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { githubAuthRouter } from "./modules/github/github.routes.js";
 import {
   requireApiCsrfOrMachineIngest,
   requireApiSessionOrMachineIngest
@@ -35,6 +36,8 @@ app.use(
     },
     contentSecurityPolicy: {
       directives: {
+        // GitHub profile avatars are the only cross-origin images.
+        imgSrc: ["'self'", "data:", "https://avatars.githubusercontent.com"],
         upgradeInsecureRequests:
           env.NODE_ENV === "production" ? [] : null
       }
@@ -116,6 +119,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/api", rateLimitMiddleware);
+app.use("/api/auth", githubAuthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api", requireApiSessionOrMachineIngest);
 app.use("/api", requireApiCsrfOrMachineIngest);

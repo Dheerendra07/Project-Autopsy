@@ -246,3 +246,30 @@ test("design system: light grid canvas, safe areas, reduced motion and touch-saf
   assert.match(css, /font-size: 16px; \/\* prevents iOS zoom \*\//);
   assert.match(css, /@media print/);
 });
+
+test("every GitHub sign-in result code the server can return has a user-facing message", async () => {
+  const sources = read("src/modules/github/github.service.ts") + read("src/modules/github/github.client.ts") + read("src/modules/github/github.routes.ts");
+  const codes = new Set([...sources.matchAll(/"(GITHUB_[A-Z_]+)"/g)].map((m) => m[1]!));
+  // Codes only returned as JSON errors from signed-in API calls are handled by their pages.
+  for (const apiOnly of ["GITHUB_RECONNECT_REQUIRED", "GITHUB_NOT_CONNECTED", "GITHUB_SIGN_IN_SCOPES", "GITHUB_PRIVATE_REPO_SCOPES"]) codes.delete(apiOnly);
+  const { GITHUB_OAUTH_MESSAGES } = await importModule("public/js/core/api.js");
+  for (const code of codes) {
+    assert.ok(GITHUB_OAUTH_MESSAGES[code], "no message for " + code);
+  }
+  const panel = read("public/js/pages/github-panel.js");
+  assert.ok(panel.includes('"GITHUB_RECONNECT_REQUIRED"'));
+  assert.ok(panel.includes('"REPOSITORY_ALREADY_IMPORTED"'));
+  assert.ok(panel.includes('"/api/github/import"'));
+});
+
+test("GitHub sign-in links use the server start endpoint with in-app return targets only", async () => {
+  const { githubStartUrl } = await importModule("public/js/core/api.js");
+  (globalThis as any).location = { protocol: "https:", hostname: "app.example.com", origin: "https://app.example.com" };
+  const url = new URL(githubStartUrl({ intent: "connect", access: "private", next: "#/projects" }));
+  assert.equal(url.pathname, "/api/auth/github/start");
+  assert.equal(url.searchParams.get("intent"), "connect");
+  assert.equal(url.searchParams.get("access"), "private");
+  assert.equal(url.searchParams.get("next"), "#/projects");
+  const routes = read("src/modules/github/github.routes.ts");
+  assert.ok(routes.includes("next: safeNextHash(query.data.next)"), "the server re-validates the return target");
+});

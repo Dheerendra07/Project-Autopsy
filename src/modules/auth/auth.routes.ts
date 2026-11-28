@@ -88,7 +88,7 @@ function publicUser(user: {
   };
 }
 
-async function startSession(
+export async function startSession(
   request: Parameters<typeof getAuthContext>[0],
   response: Parameters<typeof setAuthCookies>[0],
   user: { id: string }

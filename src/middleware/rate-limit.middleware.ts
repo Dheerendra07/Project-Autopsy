@@ -39,9 +39,17 @@ export function resolveRateLimitCategory(req: Request): RateLimitCategory {
   }
 
   if (
+    req.method === "GET" &&
+    (path === "/auth/github/start" || path === "/auth/github/callback")
+  ) {
+    return "auth";
+  }
+
+  if (
     (req.method === "POST" &&
       (
         path === "/repositories/import" ||
+        path === "/github/import" ||
         /^\/repositories\/[0-9a-f-]+\/analyze$/i.test(path)
       )) ||
     (req.method === "GET" &&

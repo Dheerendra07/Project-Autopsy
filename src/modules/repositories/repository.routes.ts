@@ -1,13 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
-import { randomUUID } from "node:crypto";
 import {
   deleteRepositoryWithStorage,
-  getRepositoryNameFromUrl,
   getRepositoryStoragePath,
   isSafeBranchName
 } from "./repository.service.js";
-import { validateRemoteRepositoryUrl } from "./repository-url.js";
+import { importRepositoryForUser } from "./repository-import.service.js";
 import { reconcileFailedActiveAnalysisRun } from "./active-analysis-recovery.js";
 import {
   saveRepositoryAccessCredential,
@@ -17,7 +15,6 @@ import {
 import { encryptRepositoryAccessToken } from "./repository-credentials.js";
 import {
   createAnalysisRunForRepository,
-  createPendingRepositoryWithAnalysis,
   createRepositoryWithAnalysis,
   getActiveAnalysisRun,
   getAnalysisRunById,
@@ -33,7 +30,6 @@ import {
   type AnalysisJobProgress,
   getAnalysisJobProgress,
   enqueueRepositoryAnalysis,
-  enqueueRepositoryImport,
   enqueueRepositoryRefresh
 } from "../analysis/analysis.queue.js";
 import { ANALYZER_VERSION } from "../../workers/queue.constants.js";
@@ -108,80 +104,14 @@ const importSchema = z.object({
 router.post("/import", async (req, res, next) => {
   try {
     const input = importSchema.parse(req.body);
-    const safeUrl = validateRemoteRepositoryUrl(input.url);
-    const repositoryId = randomUUID();
-    const encryptedAccessCredential = input.accessToken
-      ? encryptRepositoryAccessToken(input.accessToken)
-      : null;
+    const result = await importRepositoryForUser({
+      url: input.url,
+      branch: input.branch,
+      accessToken: input.accessToken,
+      ownerUserId: req.auth?.userId ?? ""
+    });
 
-    const repository = await createPendingRepositoryWithAnalysis(
-      {
-        id: repositoryId,
-        sourceType: getSourceType(safeUrl.toString()),
-        sourceUrl: safeUrl.toString(),
-        name: getRepositoryNameFromUrl(safeUrl),
-        trackedBranch: input.branch ?? null,
-        storagePath: getRepositoryStoragePath(repositoryId),
-        ownerUserId: req.auth?.userId ?? ""
-      },
-      ANALYZER_VERSION
-    );
-
-    try {
-      if (encryptedAccessCredential) {
-        await saveRepositoryAccessCredential(
-          repository.repositoryId,
-          encryptedAccessCredential
-        );
-      }
-
-      const jobId = await enqueueRepositoryImport(
-        repository.repositoryId,
-        repository.analysisRunId,
-        safeUrl.toString(),
-        input.branch
-      );
-
-      res.status(202).json({
-        success: true,
-        repository: {
-          id: repository.repositoryId,
-          source: safeUrl.toString(),
-          name: getRepositoryNameFromUrl(safeUrl),
-          trackedBranch: input.branch ?? null,
-          accessConfigured: Boolean(encryptedAccessCredential)
-        },
-        analysis: {
-          id: repository.analysisRunId,
-          status: "queued",
-          mode: "full",
-          jobId
-        }
-      });
-    } catch (error) {
-      const rawMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to queue repository import.";
-      const message =
-        sanitizePublicAnalysisErrorMessage(
-          rawMessage,
-          getRepositoryStoragePath(repositoryId)
-        ) ?? "Failed to queue repository import.";
-
-      try {
-        await updateAnalysisRun(repository.analysisRunId, "failed", {
-          errorMessage: message
-        });
-      } catch (persistenceError) {
-        console.error(
-          `Failed to record import queue failure for ${repository.analysisRunId}:`,
-          persistenceError
-        );
-      }
-
-      next(error);
-    }
+    res.status(202).json({ success: true, ...result });
   } catch (error) {
     next(error);
   }
@@ -1406,19 +1336,5 @@ router.get("/:repositoryId/repeated-bug-areas", async (req, res, next) => {
     next(error);
   }
 });
-
-function getSourceType(url: string): "github" | "gitlab" | "bitbucket" {
-  const hostname = new URL(url).hostname.toLowerCase();
-
-  if (hostname === "github.com") {
-    return "github";
-  }
-
-  if (hostname === "gitlab.com") {
-    return "gitlab";
-  }
-
-  return "bitbucket";
-}
 
 export { router as repositoryRouter };

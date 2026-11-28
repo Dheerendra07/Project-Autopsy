@@ -2,7 +2,7 @@
 // and the one-time legacy workspace migration. Every server error code maps to a
 // specific, actionable message.
 
-import { api, ApiError, legacyMigrationKey, clearLegacyMigrationKey } from "../core/api.js";
+import { api, ApiError, legacyMigrationKey, clearLegacyMigrationKey, githubStartUrl, GITHUB_OAUTH_MESSAGES } from "../core/api.js";
 import { setUser, loadRepositories } from "../core/store.js";
 import { href, go, safeNext } from "../core/router.js";
 import { esc, session, local } from "../core/util.js";
@@ -99,6 +99,7 @@ function cardFor(mode, route) {
     return `
       <h1>Sign in</h1>
       <p class="sub">Open your private workspace.</p>
+      <div id="oauthSlot"></div>
       <form id="authForm" novalidate data-mode="signin">
         ${errorBox()}
         <div id="authNotice"></div>
@@ -113,6 +114,7 @@ function cardFor(mode, route) {
     return `
       <h1>Create your account</h1>
       <p class="sub">Analyze repositories privately. Takes a minute.</p>
+      <div id="oauthSlot"></div>
       <form id="authForm" novalidate data-mode="signup">
         ${errorBox()}
         ${emailField()}
@@ -157,10 +159,41 @@ function cardFor(mode, route) {
     </div>`;
 }
 
+const GITHUB_MARK = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>';
+
+export { GITHUB_MARK };
+
+// Shows "Continue with GitHub" only when the server has GitHub OAuth configured.
+async function mountGitHubOption(view, mode, next) {
+  const slot = view.querySelector("#oauthSlot");
+  if (!slot) return;
+  try {
+    const body = await api("/api/auth/providers");
+    if (!body.providers || !body.providers.github || !body.providers.github.enabled || !slot.isConnected) return;
+  } catch {
+    return;
+  }
+  slot.innerHTML = `
+    <a class="btn lg block github-btn" href="${esc(githubStartUrl({ intent: "signin", next }))}" style="margin-top:22px">${GITHUB_MARK}${mode === "signup" ? "Sign up with GitHub" : "Continue with GitHub"}</a>
+    <p class="hint" style="margin-top:8px;text-align:center">Reads your profile, verified email and public repositories.</p>
+    <div class="or-divider"><span>or use email</span></div>`;
+}
+
 export function renderAuth(view, route) {
   const mode = route.name;
   view.innerHTML = `<div class="container auth-page"><div class="card raised auth-card">${cardFor(mode, route)}</div>${side(mode)}</div>`;
   mountDemos(view);
+  if (mode === "signin" || mode === "signup") {
+    mountGitHubOption(view, mode, safeNext(route.query && route.query.next));
+    const oauthCode = route.query && route.query.oauth;
+    if (oauthCode) {
+      const box = view.querySelector("#authError");
+      if (box) {
+        box.textContent = GITHUB_OAUTH_MESSAGES[oauthCode] || "GitHub sign-in didn't complete. Try again.";
+        box.hidden = false;
+      }
+    }
+  }
 
   const form = view.querySelector("#authForm");
   const errorEl = view.querySelector("#authError");

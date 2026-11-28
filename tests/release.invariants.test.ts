@@ -981,7 +981,9 @@ test("private repository access stays encrypted, server-side and outside queue p
   assert.ok(migration.includes("ON DELETE CASCADE"));
   assert.ok(repositoryRoutes.includes('router.put("/:repositoryId/access"'));
   assert.ok(repositoryRoutes.includes('router.delete("/:repositoryId/access"'));
-  assert.ok(repositoryRoutes.includes("encryptRepositoryAccessToken(input.accessToken)"));
+  // Import (manual URL and GitHub one-click) encrypts the token in the shared import service.
+  assert.ok(repositoryRoutes.includes("importRepositoryForUser({"));
+  assert.ok(readRepoFile("src/modules/repositories/repository-import.service.ts").includes("encryptRepositoryAccessToken(input.accessToken)"));
   assert.ok(repositoryService.includes("withRepositoryAccess"));
   assert.ok(gitAuth.includes("GIT_ASKPASS"));
   assert.ok(gitAuth.includes("AUTOPSY_GIT_ACCESS_TOKEN"));
