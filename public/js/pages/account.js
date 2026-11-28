@@ -6,6 +6,50 @@ import { href, go } from "../core/router.js";
 import { esc, date, relative } from "../core/util.js";
 import { icon } from "../ui/icons.js";
 import { toast, notice, confirmDialog } from "../ui/components.js";
+import { githubStartUrl } from "../core/api.js";
+import { GITHUB_MARK } from "./auth.js";
+
+// GitHub connection: status, include private repositories, disconnect. Accounts
+// created through GitHub have no password, so the password form is replaced.
+async function loadGitHub(view) {
+  const box = view.querySelector("#githubSection");
+  let status;
+  try { status = await api("/api/github/status"); } catch { return; }
+  if (!status.hasPassword) {
+    view.querySelector("#passwordSection").innerHTML = '<h3 style="font-size:16px">Password</h3><p class="muted" style="font-size:13.5px;margin-top:4px">You sign in with GitHub, so this account has no password to change.</p>';
+  }
+  if (!status.enabled && !status.connected) return;
+  const gh = status.github;
+  const next = "#/account";
+  box.hidden = false;
+  box.innerHTML = gh
+    ? `<div class="row wrap gap-12" style="justify-content:space-between">
+        <div class="row gap-12" style="min-width:0">
+          ${gh.avatarUrl ? `<img class="gh-avatar" src="${esc(gh.avatarUrl)}" alt="" width="40" height="40" referrerpolicy="no-referrer">` : `<span class="gh-mark">${GITHUB_MARK}</span>`}
+          <div style="min-width:0"><h3 style="font-size:16px">GitHub · @${esc(gh.login)}</h3>
+            <p class="muted" style="font-size:13.5px;margin-top:2px">Connected ${esc(date(gh.connectedAt))} · ${gh.privateRepositories ? "public and private repositories" : "public repositories only"}</p></div>
+        </div>
+        <div class="row wrap gap-8">
+          ${gh.privateRepositories ? "" : `<a class="btn sm" href="${esc(githubStartUrl({ intent: "connect", access: "private", next }))}">${icon("lock")}Include private repos</a>`}
+          <button class="btn sm danger" type="button" data-gh-disconnect>Disconnect</button>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:12px">Disconnecting deletes the stored GitHub token. Repositories already imported keep their own encrypted access token until you remove it in repository settings.${status.hasPassword ? "" : " You can still sign in with GitHub."}</p>`
+    : `<div class="row wrap gap-12" style="justify-content:space-between">
+        <div><h3 style="font-size:16px">GitHub</h3><p class="muted" style="font-size:13.5px;margin-top:2px">Connect GitHub to import repositories from a list and sign in with one click.</p></div>
+        <a class="btn sm primary" href="${esc(githubStartUrl({ intent: "connect", access: "public", next }))}">${GITHUB_MARK}Connect GitHub</a>
+      </div>`;
+  const btn = box.querySelector("[data-gh-disconnect]");
+  if (btn) btn.addEventListener("click", async () => {
+    const ok = await confirmDialog({ title: "Disconnect GitHub?", body: "The stored GitHub token is deleted. You can connect again at any time.", confirmLabel: "Disconnect" });
+    if (!ok) return;
+    try {
+      await api("/api/github/connection", { method: "DELETE" });
+      toast("GitHub disconnected", "good");
+      loadGitHub(view);
+    } catch (error) { toast(error.message, "bad"); }
+  });
+}
 
 function describeAgent(ua) {
   const s = String(ua || "");
@@ -29,7 +73,9 @@ export async function renderAccount(view) {
         <div id="sessions"><div style="padding:18px"><div class="skel" style="height:56px"></div></div></div>
       </section>
 
-      <section class="card pad" style="margin-bottom:18px">
+      <section class="card pad" style="margin-bottom:18px" id="githubSection" hidden></section>
+
+      <section class="card pad" style="margin-bottom:18px" id="passwordSection">
         <h3 style="font-size:16px">Change password</h3>
         <p class="muted" style="font-size:13.5px;margin-top:4px">Other sessions are signed out; this one stays signed in.</p>
         <form id="pwForm" class="stack gap-12" style="margin-top:16px;max-width:460px" novalidate>
@@ -68,6 +114,7 @@ export async function renderAccount(view) {
     }
   }
   await loadSessions();
+  loadGitHub(view);
 
   view.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-revoke]");

@@ -288,6 +288,25 @@ Explicit absence claims (report claims whose id ends in `-none`, such as "No per
 
 Report sections that combine several evidence families (quality signals; architecture and change evolution) share the per-section sample limit across those families, so one large family such as co-change pairs cannot crowd dependency, structure or complexity evidence out of the report.
 
+## GitHub sign-in and one-click import
+
+Optional. When a GitHub OAuth App is configured, users can sign in with GitHub and import any repository they can access from a searchable list instead of pasting a URL.
+
+Setup:
+
+1. Create a GitHub OAuth App (GitHub → Settings → Developer settings → OAuth Apps). Homepage URL: the service's public origin. Authorization callback URL: `<public origin>/api/auth/github/callback`.
+2. Set `GITHUB_OAUTH_CLIENT_ID` and `GITHUB_OAUTH_CLIENT_SECRET` (both or neither) and `REPOSITORY_CREDENTIAL_ENCRYPTION_KEY`. Set `GITHUB_OAUTH_CALLBACK_URL` when the service sits behind a proxy whose public origin differs from the request host.
+
+Behaviour:
+
+- Sign-in requests only `read:user user:email`. "Include private repos" re-authorizes with `repo`, which GitHub requires for private repository access.
+- A GitHub identity signs into its linked account, else the account with the same GitHub-verified email (linked on first use), else a new password-less account. A GitHub identity can be linked to only one account.
+- The OAuth `state` is bound to the browser with a short-lived HttpOnly cookie and checked in constant time; post-sign-in redirects are limited to in-app routes.
+- The GitHub token is stored only encrypted (AES-256-GCM) and never returned. Public repositories are cloned without a token; private ones store the token encrypted per repository, exactly like a manually supplied access token.
+- `GET /api/github/repos` lists owned, collaborator and organisation repositories and marks ones already imported; `POST /api/github/import` verifies access through the GitHub API, refuses duplicates, and queues the same analysis as `POST /api/repositories/import`. `DELETE /api/github/connection` removes the stored token.
+
+`tests/github.integration.test.ts` runs the full flow against the real app and database with a local fake GitHub.
+
 ## Browser workspace
 
 The same service serves the browser workspace from `public/index.html`. It is dependency-free: native ES modules under `public/js/` and one stylesheet, `public/css/app.css`, loaded under the API's default Content-Security-Policy (`script-src 'self'`, no inline scripts or handlers).

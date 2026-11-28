@@ -1,6 +1,10 @@
 import "dotenv/config";
 import { z } from "zod";
 
+function emptyToUndefined(value: unknown): unknown {
+  return typeof value === "string" && value.trim() === "" ? undefined : value;
+}
+
 export const envSchema = z
   .object({
     NODE_ENV: z
@@ -198,7 +202,18 @@ export const envSchema = z
       .int()
       .min(60)
       .max(604_800)
-      .default(86_400)
+      .default(86_400),
+
+    // Optional GitHub OAuth sign-in and repository import. Enabled only when both
+    // the client id and secret are set.
+    // Empty values (e.g. a copied .env.example) mean "not configured".
+    GITHUB_OAUTH_CLIENT_ID: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
+    GITHUB_OAUTH_CLIENT_SECRET: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
+    // Exact callback URL registered on the GitHub OAuth app. When unset it is
+    // derived from the incoming request: <origin>/api/auth/github/callback.
+    GITHUB_OAUTH_CALLBACK_URL: z.preprocess(emptyToUndefined, z.string().trim().url().optional()),
+    GITHUB_OAUTH_BASE_URL: z.string().trim().url().default("https://github.com"),
+    GITHUB_API_BASE_URL: z.string().trim().url().default("https://api.github.com")
   })
   .superRefine((value, ctx) => {
     const hasBootstrapEmail = Boolean(value.AUTOPSY_BOOTSTRAP_EMAIL);
@@ -246,6 +261,34 @@ export const envSchema = z
             "AUTOPSY_PUBLIC_URL is required when transactional email is configured."
         });
       }
+    }
+
+    const hasGitHubClientId = Boolean(value.GITHUB_OAUTH_CLIENT_ID);
+    const hasGitHubClientSecret = Boolean(value.GITHUB_OAUTH_CLIENT_SECRET);
+
+    if (hasGitHubClientId !== hasGitHubClientSecret) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [hasGitHubClientId ? "GITHUB_OAUTH_CLIENT_SECRET" : "GITHUB_OAUTH_CLIENT_ID"],
+        message:
+          "GITHUB_OAUTH_CLIENT_ID and GITHUB_OAUTH_CLIENT_SECRET must be configured together."
+      });
+    }
+
+    // GitHub tokens are stored encrypted; production must not enable GitHub
+    // sign-in without the credential encryption key.
+    if (
+      value.NODE_ENV === "production" &&
+      hasGitHubClientId &&
+      hasGitHubClientSecret &&
+      !value.REPOSITORY_CREDENTIAL_ENCRYPTION_KEY
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["REPOSITORY_CREDENTIAL_ENCRYPTION_KEY"],
+        message:
+          "REPOSITORY_CREDENTIAL_ENCRYPTION_KEY is required when GitHub sign-in is configured."
+      });
     }
 
   });

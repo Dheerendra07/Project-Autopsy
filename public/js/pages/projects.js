@@ -7,6 +7,7 @@ import { esc, relative, shortSha, hostOf, repoLabel, initials } from "../core/ut
 import { icon } from "../ui/icons.js";
 import { toast, notice, empty } from "../ui/components.js";
 import { demo, mountDemos } from "../ui/player.js";
+import { mountGitHubPanel } from "./github-panel.js";
 
 // Mirrors Git's ref-name rules (no lookbehind, so older iOS Safari can parse it).
 function isValidBranch(name) {
@@ -29,6 +30,8 @@ export async function renderProjects(view, route) {
           <p>Start a new analysis or reopen a repository you've already reconstructed.</p>
         </div>
       </div>
+
+      <div id="githubPanel" style="margin-bottom:18px"></div>
 
       <div class="grid" style="grid-template-columns:minmax(0,7fr) minmax(0,5fr);align-items:start" id="projTop">
         <section class="card raised import-card" aria-labelledby="importTitle">
@@ -138,6 +141,15 @@ export async function renderProjects(view, route) {
   });
 
   if (prefill) setTimeout(() => button.focus(), 50);
+
+  // GitHub picker (only when the server has GitHub OAuth configured).
+  mountGitHubPanel(view.querySelector("#githubPanel"), {
+    oauthCode: route.query && route.query.oauth ? String(route.query.oauth) : "",
+    justConnected: !!(route.query && route.query.github === "connected")
+  });
+  if (route.query && (route.query.github || route.query.oauth)) {
+    history.replaceState(null, "", location.pathname + location.search + "#/projects");
+  }
 
   // Repository list
   const list = view.querySelector("#repoList");
